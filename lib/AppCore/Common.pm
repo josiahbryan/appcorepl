@@ -1,0 +1,708 @@
+# Package: AppCore::Common
+# Common routines, EAS include path initalization, mysql schema updates, useful constants, and more.
+use AppCore::Config;
+
+package AppCore::Common;
+{
+	
+	use strict;
+	
+	use AppCore::RunContext;
+	
+	
+	use Data::Dumper;
+	use DateTime;
+	
+	require Exporter;
+	use vars qw/@ISA @EXPORT/;
+	@ISA = qw(Exporter);
+	
+	@EXPORT = qw/
+		Dumper context nice_date date pad rpad called_from 
+		print_stack_trace if_defined ifdefined is_print inlist in_acl_list 
+		stamp commify parse_csv date_math taint_sql 
+		send_email
+		dt_date
+		simple_duration_to_hours
+		to_delta_string
+		delta_minutes
+		seconds_since
+		iso_date_to_seconds
+		
+		taint_sys taint_text taint_number taint
+		
+		guess_title
+		
+		mysql_schema_update
+		mysql_extract_current_schema
+	
+		MY_LINE
+		min max
+		SYS_PATH_BASE 
+		SYS_PATH_MODULES
+		SYS_PACKAGE_BASE
+		GUI_PROTOCAL_CLASS_HTTP
+		GUI_PROTOCAL_CLASS_TELNET
+		CLASS_META
+		CLASS_DBSCHEMA
+	
+		MODULE_INTERFACE
+		MODULE_APPLICATION
+		INTERFACE_ABSTRACT
+		INTERFACE_CONCRETE
+		
+		/;
+		
+	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
+	
+	sub SYS_PATH_BASE    { $AppCore::Config::APPCORE_ROOT }
+	sub SYS_PATH_MODULES { SYS_PATH_BASE . '/modules' }
+	sub SYS_PACKAGE_BASE { 'AppCore::Web::Module' }
+	
+	### Section: Bootstrap Library Paths
+	# This adds the ./lib directory under each moduled to @INC so that
+	# other modules can use packages defined by other modules without
+	# having to prefix everything with EAS::Module::$modname::
+	BEGIN 
+	{
+		#print STDERR "AppCore::Common: BEGIN 1\n";
+		opendir(DIR, SYS_PATH_MODULES);
+		map { unshift @INC, join '/', SYS_PATH_MODULES, $_, 'lib'; unshift @INC, join '/', SYS_PATH_MODULES, $_; } grep { !/^\./ } readdir DIR;
+		closedir(DIR);
+		unshift @INC, SYS_PATH_MODULES;
+		#print STDERR "AppCore::Common: BEGIN 2\n";
+	}
+
+	my $GlobalContext;
+	
+	sub context
+	{
+		$GlobalContext = AppCore::RunContext->new if !$GlobalContext;
+		return $GlobalContext;
+	}
+	
+	sub MY_LINE() {my (undef,$f,$l) = caller(0);"[$f:$l] "}
+	
+	sub min{my($a,$b)=@_;$a<$b?$a:$b}
+	sub max{my($a,$b)=@_;$a>$b?$a:$b}
+	
+	sub nice_date
+	{
+		#return '' unless $_[0] ne '';
+		$_[0] = date() if !$_[0];
+		my ($date,$h1,$m1,$s1) = ($_[0]=~/^(.*\s)?(\d+):(\d+)\:(\d+)$/);
+		my $a='am';
+		if($h1>=12)
+		{
+			$h1-=12 if($h1 ne '12');
+			$h1=rpad($h1);
+			$a='pm';
+			#$h1=~s/^0//g;
+		}
+		return "$date$h1:$m1:$s1 $a";
+	}
+	
+	our %DurationConversion = qw/h 1 d 24 w 168 m 672 y 8760/;
+	our %DurationNames = qw/h hours w weeks m months y years/;
+		
+	sub simple_duration_to_hours
+	{
+		my $dur = shift;
+		my ($num,$unit) = $dur =~ /^(\.\d+|\d(?:\.\d+)?)\s*(\w)?\w*$/;
+		
+		my $ex = "Example: '4.5d' or '4.5 days'";
+		if(!defined $num)
+		{
+			die "No number given in the duration. $ex";
+		}
+		elsif(!$unit)
+		{
+			warn "No unit given in '$dur', assuming hours";
+			$unit = 'h';
+		}
+		elsif(!$DurationConversion{$unit})
+		{
+			die "Invalid unit of time '$unit' - valid units are: hours (h), days (d), weeks (w), months (m), or years (y). $ex";
+		}
+		
+		my $dur_hours = $DurationConversion{$unit} * $num;
+		
+		#print STDERR "Converted '$dur' to $dur_hours hours\n";
+		
+		return $dur_hours;
+		
+	
+	}
+	
+	sub to_delta_string
+	{
+		my $line = { min => shift };
+		
+		
+		if($line->{min} > 60)
+		{
+			my $hr = int($line->{min}/60);
+			$line->{min} =  ($line->{min} - $hr*60);
+			$line->{hour} = $hr;
+			$line->{hour_suffix} = ' hr'.($hr>1?'s':'').', ';
+			
+			if($line->{hour} > 24)
+			{
+				my $day = int($line->{hour} / 24);
+				$line->{hour} = ($line->{hour} - $day*24);
+				$line->{hour_suffix} = ' hr'.($line->{hour}>1?'s':'').', ';
+				$line->{day} = $day;
+				$line->{day_suffix} = ' day'.($day>1?'s':'').', ';
+				
+				if($line->{day} > 7)
+				{
+					my $week = int($line->{day} / 7);
+					$line->{day} = ($line->{day} - $week*7);
+					$line->{day_suffix} = ' day'.($line->{day}>1?'s':'').', ';
+					$line->{week} = $week;
+					$line->{week_suffix} = ' week'.($week>1?'s':'').', ';
+					
+					if($line->{week} > 4)
+					{
+						my $month = int($line->{week} / 4);
+						$line->{week} = ($line->{week} - $month*4);
+						$line->{week_suffix} = ' week'.($line->{week}>1?'s':'').', ';
+						$line->{month} = $month;
+						$line->{month_suffix} = ' month'.($month>1?'s':'').', ';
+						
+						if($line->{month} > 12)
+						{
+							my $year = int($line->{month} / 12);
+							$line->{month} = ($line->{month} - $year*12);
+							$line->{month_suffix} = ' month'.($line->{month}>1?'s':'').', ';
+							$line->{year} = $year;
+							$line->{year_suffix} = ' year'.($year>1?'s':'').', ';
+						}
+					}
+				}
+			}
+		}
+		
+		my @ago;
+		foreach my $key (qw/year month week day hour/)
+		{
+			push @ago, $line->{$key}.$line->{$key.'_suffix'} if $line->{$key};
+		}
+		
+		push @ago, int($line->{min}).' min';
+		
+		return join '', @ago;
+	}
+	
+	
+	sub dt_date
+	{
+		my $date = shift || date();
+		my ($y,$m,$d,$h,$mn,$s) = split/[-\s:]/, $date;
+		my %args;
+		$args{year} = $y if $y;
+		$args{month} = $m if $m;
+		$args{day} = $d if $d;
+		$args{hour} = $h if $h;
+		$args{minute} = $mn if $mn;
+		$args{second} = $s if $s;
+		
+		return DateTime->new(%args);
+	}
+	
+	sub date #{ my $d = `date`; chomp $d; $d=~s/[\r\n]//g; $d; };
+	{
+		if(@_ == 1) { @_ = (epoch=>shift) }
+		my %args = @_;
+		my $x = $args{epoch}||time;
+		my $ty = ((localtime($x))[5] + 1900);
+		my $tm =  (localtime($x))[4] + 1;
+		my $td = ((localtime($x))[3]);
+		my ($sec,$min,$hour) = localtime($x);
+		my $date = "$ty-".rpad($tm).'-'.rpad($td);
+		my $time = rpad($hour).':'.rpad($min).':'.rpad($sec);
+		
+		#shift() ? $time : "$date $time";
+		if($args{small})
+		{
+			my $a = 'a';
+			if($hour>12)
+			{
+				$hour -= 12;
+				$a = 'p';
+				
+				$hour = 12 if $hour == 0;
+			}
+			return int($tm).'/'.int($td).' '.int($hour).':'.rpad($min).$a;
+		}
+		else
+		{
+			return $args{array} ? ($date,$time) : "$date $time";
+		}
+	}
+	
+	
+	# Since learning more perl, I found I probably
+	# could do '$_[0].=$_[1]x$_[2]' but I havn't gotten
+	# around to changing (and testing) this code.
+	sub pad
+	{
+		local $_ = ifdefined(shift,'');
+		my $len = shift || 8;
+		my $chr = shift || ' ';
+		$_.=$chr while length()<$len;
+		$_;
+	}
+	
+	sub rpad
+	{
+		local $_ = ifdefined(shift , '');
+		my $len = shift || 2;
+		my $chr = shift || '0';
+		$_=$chr.$_ while length()<$len;
+		$_;
+	}
+	sub called_from
+	{
+	
+		my ($package, $filename,$line) = caller(1);
+		#my (undef,undef,$line) = caller(1);
+		my (undef,undef,undef,$subroutine) = caller(2);
+	
+		"$filename:$line / $subroutine()";
+	}
+	
+	sub get_stack_trace
+	{
+		my $offset = 1+(shift||0);
+		my $str = ""; #"Stack Trace (Offset: $offset):";
+		for(my $x=0;$x<100;$x++)
+		{
+			#$tmp=(caller($x))[1];
+			my ($package, $filename, $line, $subroutine, $hasargs,
+				$wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($x+$offset);
+			(undef,undef,undef, $subroutine, $hasargs,
+				$wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($x+$offset+1);
+			#print "$x:Base[1]='$tmp' ($package:$line:$subroutine)\n";
+			
+			if($filename && $filename ne '')
+			{
+				#print STDERR "\t$x: Called from $filename:$line".($subroutine?" in $subroutine":"")."\n";
+				$str .= "\t$x: Called from $filename:$line".($subroutine?" in $subroutine":"")."\n";
+			}
+			else
+			{
+				return $str;
+			}
+		}
+		return $str;
+	}
+	
+	sub print_stack_trace
+	{
+		my $x = shift;
+		my $st = get_stack_trace($x+1);
+		print STDERR $st;
+		return $st;
+		
+	}
+	sub ifdefined { foreach(@_) { return $_ if defined } }
+	sub if_defined { ifdefined(@_) }
+	
+	sub is_print($)
+	{
+		local $_ = ord shift ;
+		return $_ >= 32 && $_ < 126;
+	}
+	
+	sub peek{$_[$#_]}
+	
+	sub inlist
+	{
+		my $val = shift;
+		my $list = shift;
+		
+		return undef if !defined $val;
+		
+		local $_;
+		foreach (@$list)
+		{
+			return 1 if $_ && $val && $_ eq $val;
+		}
+		return 0;
+	}
+	
+	
+	sub in_acl_list
+	{
+		my $val = shift;
+		my $valtype = shift || 'empid';
+		my $list = shift;
+		
+		my $g = $valtype eq 'group' ? 1:0;
+		
+		return undef if !defined $val;
+		
+		local $_;
+		foreach (@$list)
+		{
+			return 1 if $g ? /^\@$val$/ : $_ eq $val;
+		}
+		return 0;
+	}
+	
+	
+	# create timestamp down to the second (fmt: YYYY-MM-DD HH:MM:SS)
+	sub stamp 
+	{
+		my $ty = ((localtime)[5] + 1900);
+		my $tm =  (localtime)[4] + 1;
+		my $td = ((localtime)[3]);
+		my ($sec,$min,$hour) = localtime;
+		my $date = "$ty-".rpad($tm).'-'.rpad($td);
+		my $time = rpad($hour).':'.rpad($min).':'.rpad($sec);
+		return "$date $time";
+	}
+	
+	sub commify 
+	{
+		local $_  = shift;
+		1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+		return $_;
+	}
+	
+	
+	sub parse_csv 
+	{
+	my $text = shift;      # record containing comma-separated values
+	my @new  = ();
+	push(@new, $+) while $text =~ m{
+		# the first part groups the phrase inside the quotes.
+		# see explanation of this pattern in MRE
+		"([^\"\\]*(?:\\.[^\"\\]*)*)",?
+		|  ([^,]+),?
+		| ,
+	}gx;
+	push(@new, undef) if substr($text, -1,1) eq ',';
+	return @new;      # list of values that were comma-separated
+	} 
+	
+	
+	sub date_math 
+	{
+		my ($date,$days) = @_;
+			
+		eval 'use DateTime';
+		my ($y,$m,$d) = ( $date =~ /(\d\d\d\d)-(\d\d)-(\d\d)/);
+		my $old = new DateTime(month=>$m,day=>$d,year=>$y);
+		my $n = undef;
+		$days = -($old->day_of_week) if $days == 0; # find week start
+		if($days>0)
+		{
+			return $old->add( days => $days )->ymd;
+		}
+		else
+		{
+			return $old->subtract( days => -($days) )->ymd;
+		}
+	}
+	
+	
+	
+	
+	sub send_email
+	{
+		eval 'use MIME::Lite';
+		if(@_ == 1)
+		{
+			my $args = shift;
+			my $q_ins = AppCore::DBI->dbh('pci')->prepare("insert into emailqueue (`from`,`to`,`msg`,`subject`) values (?,?,?,?)");
+			#$q_ins->execute($args->{from},$args->{to},$args->{data});	
+			
+			my $uuid = `uuidgen`;
+			$uuid =~ s/[\r\n-]//g;
+			my $file = EMAILQUEUE_SPOOL_DIR . '/'. $uuid . '.eml';
+			
+			#print STDERR "(case1) Debug: Attempting to save to $file...\n";
+			if(open(FILE,">$file"))
+			{
+				
+				print FILE $args->{data};
+				close(FILE);
+				
+				$args->{data} = "#file:$file";
+				
+				#print STDERR "(case1) Debug: Wrote file, new str: '$args->{data}'\n";
+			}
+			else
+			{
+				warn "(case1) Couldn't write to $file: $!, sending using raw database blob";
+			}
+		
+			eval
+			{
+				$q_ins->execute($args->{from},$args->{to},$args->{data},$args->{subject}||'');	
+			};
+			
+			return;
+		}
+	
+		my ($list,$subject,$text,$high_import_flag,$from) = @_;
+		
+		$list = [$list] if !ref $list;
+		
+		#print STDERR "send_email(): list=".join(',',@$list),", subject=$subject, high_import_flag=$high_import_flag, text=[$text]\n";
+		#print STDERR "send_email(): CATCH ALL: Sending to jbryan only.\n";
+		#$list = ['jbryan@productiveconcepts.com'];
+		my $host = `hostname`;
+		$host =~ s/[\r\n]//g;
+	
+		$text .= qq{
+		
+	--
+	$0($$)
+	Server: $host
+	}
+	.($ENV{REMOTE_ADDR} ? "IP: $ENV{REMOTE_ADDR}\n":"")
+	.($ENV{HTTP_REFERER} ? "Referer: $ENV{HTTP_REFERER}\n":"")
+		if ! AppCore::Common->context->x('disable_email_footer');
+		
+		$from ||= 'EAS <jbryan@productiveconcepts.com>';
+		#print "From:$from\nTo:$to\nSubj:$subject\nText:$text\n";
+		#print_stack_trace();
+	
+		use AppCore::DBI;
+		my $q_ins = AppCore::DBI->dbh('pci')->prepare("insert into emailqueue (`from`,`to`,`msg`,`subject`) values (?,?,?,?)");
+		
+		foreach my $to (@$list)
+		{
+			
+			my $msg = MIME::Lite->new(
+					From    =>$from,
+					To      =>$to,
+					Subject =>$subject,
+					Type    =>'multipart/mixed'
+					);
+		
+			### Add parts (each "attach" has same arguments as "new"):
+			$msg->attach(Type       =>'TEXT',
+				Data            =>$text);
+		
+			#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
+		
+			my $str = $msg->as_string;
+		
+			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g if $high_import_flag;
+			#die $str;
+			
+			my $uuid = `uuidgen`;
+			$uuid =~ s/[\r\n-]//g;
+			my $file = EMAILQUEUE_SPOOL_DIR . '/'. $uuid . '.eml';
+			
+			#print STDERR "(case2) Debug: Attempting to save to $file...\n";
+			if(open(FILE,">$file"))
+			{
+				
+				print FILE $str;
+				close(FILE);
+				
+				$str = "#file:$file";
+				
+				#print STDERR "(case2) Debug: Wrote file, new str: '$str'\n";
+			}
+			else
+			{
+				warn "(case2) Couldn't write to $file: $!, sending using raw database blob";
+			}
+		
+			eval
+			{
+				$q_ins->execute($from,$to,$str,$subject);
+			};
+			
+			#print STDERR "$str, $from, $to, LEN:".(length($str)/1024)."KB\n$@" if $@;
+		}
+	
+		#print STDERR "Sending\n:[From:$from,To:$to\nMsg:\n",$msg->as_string,"]\n";
+	
+		#print STDERR "Inserted from $from:\n".$msg->as_string()."\nDone.\n";
+	}
+	
+	
+	sub delta_minutes
+	{
+		eval 'use DateTime';
+		
+		my $test = shift;
+		my $test2 = shift || undef;
+		my ($a,$b,$c,$d,$e,$f) = $test=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
+		
+		
+		my $then = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
+		#$then->add(hours=>6);
+		
+		# how many minutes from $test to NOW ?
+		my $dt;
+		# = DateTime->now();
+		if(!defined $test2)
+		{
+			$dt = DateTime->now();
+			$dt->subtract(hours=>5);
+		}
+		else
+		{
+			my ($a,$b,$c,$d,$e,$f) = $test2=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;	
+			$dt = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
+		}
+		
+		my $res = $dt->subtract_datetime_absolute($then);
+		return $res->delta_seconds / 60;
+	}
+		
+	use POSIX;
+	sub seconds_since
+	{ 
+		shift if $_[0] eq __PACKAGE__;
+		my $previous_timestamp = shift;
+		return iso_date_to_seconds(date()) - iso_date_to_seconds($previous_timestamp);
+	}
+	sub iso_date_to_seconds
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $datetime = shift;
+	
+		my @dash = split(/-/, $datetime);
+		my $year = $dash[0];
+		$year = $year - 1900;
+		my $mon = $dash[1];
+		$mon = $mon - 1;
+		my @space = split(/ /,$dash[2]);
+		my $day = $space[0];
+		my @col = split(/:/, $space[1]);
+		my $hour = $col[0];
+		$hour = $hour - 1;
+		my $min = $col[1];
+		my $sec = $col[2];
+		my $wday = 0;
+		my $yday = 0;
+	
+		my $unixtime = mktime ($sec, $min, $hour, $day, $mon, $year, $wday, $yday);
+		return $unixtime;
+	}
+	
+	
+	sub taint_sql
+	{
+		my $val = shift;
+		#$val=~s/(\binsert\b|\bdrop\b|\bdelete\b|\bcreate\b|\bupdate\b|\bselect\b|;)//ig; # basic protection
+		$val=~s/(;)//ig; # basic protection
+		$val=~s/\\//g; # remove '\' from the string
+		$val=~s/(['"])/\\$1/g; # escape ' and "
+		$val=~s/(^\s|\s$)//g; # remove spaces at beginnning/end
+		return $val;
+	}
+	
+	sub taint_text
+	{
+		my $val = shift;
+		$val =~ s/[^\w\d\_\-\.\!\@\#\$\%\^&*\(\)\'\"\[\]\_\=\+\`\~\,\/\?\:\;\{\}\|\\\s]//g;
+		return $val;
+	}
+	
+	
+	sub taint
+	{
+		my $val = shift;
+		my $reg = shift;
+		
+		$reg = '[^\d]+' if $reg eq '\d';
+		
+		$val =~ s/^$reg$//g;
+		return $val;
+	}
+	
+	sub taint_number
+	{
+		my $val = shift;
+		$val =~ s/^[^-+\d\.]+$//g;
+		return $val;
+	}
+	
+	
+	
+	
+	# Function: guess_title($name)
+	# Static - guess the title for $name. E.g. converts foo_bar or FooBar to 'Foo Bar', quoteestid or quoteest to 'Quote Est.' and a few other minor optimizations.
+	my %TITLE_CACHE;
+	sub guess_title#($name)
+	{
+		my $name = shift;
+		return $TITLE_CACHE{$name} if defined $TITLE_CACHE{$name};
+		my $oname = $name;
+		$name =~ s/([a-z])([A-Z])/$1 $2/g;
+		$name =~ s/([a-z])_([a-z])/$1.' '.uc($2)/segi;
+		$name =~ s/^([a-z])/uc($1)/seg;
+		$name =~ s/\/([a-z])/'\/'.uc($1)/seg;
+		$name =~ s/\s([a-z])/' '.uc($1)/seg;
+		$name =~ s/\s(of|the|and|a)\s/' '.lc($1).' '/segi;
+		$name .= '?' if $name =~ /^is/i;
+		$name =~ s/id$//gi;
+		my $chr = '#';
+		$name =~ s/num$/$chr/gi; 
+		$name =~ s/datetime$/Date\/Time/gi;
+		$name =~ s/\best\b/Est./gi;
+		
+		$TITLE_CACHE{$oname} =  $name;
+		#s/id$//g;
+		#s/[_-]/ /g;
+		#s/\best\b/est./g;
+		#s/(^\w|\s\w)/uc($1)/segi;
+		
+		return $name;
+	}
+	
+	my $uniqueid_counter = 0;
+	sub uniqueid { return 'id'.time().($uniqueid_counter++) }
+	
+	
+	sub changes_to_html
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $ref = shift;
+		my %changes = %{ shift || {} };
+		my @keys = keys %changes;
+		my $col;
+		my @out = map {
+			$col = $_;
+			my $title = $ref->field_meta($col);
+			if($title && $title->{linked} && eval '$ref->get($col)->can("stringify")') 
+			{
+				$changes{$col} = $ref->get($col)->stringify;
+			}
+			else
+			{
+				
+			}
+			#print STDERR "Debug: col($col),title(".($title?$title:'(undef)')."),linked(".($title?$title->{linked}:'(undef)')."): changes($changes{$col})\n";
+			
+			$title = $title ? ($title->{title} ? $title->{title} : AppCore::Common::guess_title($col)) : AppCore::Common::guess_title($col);
+			"<span class='field_title'>$title</span> ". 
+				($title=~/to$/i ? "" : "to ").
+				'"<span class="field_value">'.(ref $changes{$col} && eval '$changes{$col}->can("stringify")' ? $changes{$col}->stringify : $changes{$col}).'</span>"'
+		} @keys;
+		@out = grep {$_} @out;
+		my $str = @out > 2 ? (join(', ', @out[0..$#out-1]).', and '.$out[$#out]) : join(' and ',@out);
+		
+		return $str;
+	}
+	
+};
+
+package DateTime;
+sub datetime
+{
+	my $self = shift;
+	my $sep = shift || ' ';
+	return $self->ymd('-').$sep.$self->hms(':');
+}
+1;
