@@ -62,6 +62,8 @@ package Content;
 		my $url  = shift;
 		my $obj = $self->{page_obj_cache}->{$url};
 		
+		print STDERR __PACKAGE__ . "::get_page(): url:'$url'\n'";
+		
 		$obj = $self->{page_obj_cache}->{$url} 
 		     = Content::Page->by_field(url => $url) 
 		     if !$obj;

@@ -1,0 +1,21 @@
+FastCgiConfig -maxClassProcesses 50 -maxProcesses 50 -minProcesses 1 -processSlack 1 -idle-timeout 3600
+
+<VirtualHost *:80>
+        ServerAdmin webmaster@example.com
+        DocumentRoot /opt/httpd-2.2.17/htdocs/
+        ServerName localhost
+
+        <IfModule mod_fastcgi.c>
+                FastCgiServer /opt/httpd-2.2.17/htdocs/appcore/index.fcgi -initial-env -processes 1 -idle-timeout 3600
+        </IfModule>
+
+        RewriteEngine on
+
+        RewriteCond  %{DOCUMENT_ROOT}/%{REQUEST_FILENAME}  -f
+        RewriteRule  ^(.+[^\.pm]) %{DOCUMENT_ROOT}/$1  [L]
+
+        RewriteRule  ^$  /appcore/index.fcgi [L]
+        RewriteRule  ^/$ /appcore/index.fcgi [L]
+        RewriteRule  ^/(.+)$ /appcore/index.fcgi/$1 [L]
+
+</VirtualHost>

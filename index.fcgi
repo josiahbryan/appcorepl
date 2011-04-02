@@ -193,7 +193,7 @@ while(my $q = CGI::Fast->new)
 		else
 		{
 			$response = AppCore::Web::Result->new();
-			$response->error(404, "Module $mod_obj exists, but unable to method '$method' is not valid."); 
+			$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
 		}
 		
 		#die Dumper \@out;

@@ -2,7 +2,7 @@
 package AppCore::Config;
 BEGIN
 {
-	$DEFAULT_MODULE = 'SitePage';
+	$DEFAULT_MODULE = '/';
 	
 	# By convention, all theme modules start with 'Theme'
 	$THEME_MODULE   = 'ThemePHC';
@@ -16,7 +16,7 @@ BEGIN
 	
 	$APPCORE_ROOT = $WWW_DOC_ROOT . $WWW_ROOT;
 	
-	$DB_HOST = 'localhost';
+	$DB_HOST = '127.0.0.1';
 	$DB_USER = 'root';
 	$DB_PASS = 'testsys';
 	$DB_NAME = 'appcore';
