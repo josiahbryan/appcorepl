@@ -124,7 +124,7 @@ package AppCore::Web::Common;
 		my $url = shift;
 	
 		#print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
-		AppCore::Session->save;
+		#AppCore::Session->save;
 			
 		#print STDERR "redirect mark1\n";
 		# For FastCGI usage
