@@ -77,19 +77,23 @@ package AppCore::Web::Common;
 	
 	sub url_encode
 	{
+		shift if $_[0] eq __PACKAGE__;
 		local $_;
 		$_=shift;s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg;$_;
 	}
 	
 	sub url_decode
 	{
-		shift if $_[0] eq __PACKAGE__;	
+		shift if $_[0] eq __PACKAGE__;
+		local $_;	
 		$_=shift;s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg;$_;
 	}
 	
 	sub escape 
 	{  
-		#@_=($_) if !@_; 
+		#@_=($_) if !@_;
+		shift if $_[0] eq __PACKAGE__;
+		local $_; 
 		eval { s/([^A-Za-z0-9])/sprintf("%%%02X", ord($1))/seg foreach @_; };
 		if(defined wantarray) 
 			{ return wantarray ? @_ : "@_" } 
@@ -99,6 +103,8 @@ package AppCore::Web::Common;
 	
 	sub unescape 
 	{
+		shift if $_[0] eq __PACKAGE__;
+		local $_;
 		#@_=($_) if !@_; 
 		eval { s/\%([A-Fa-f0-9]{2})/pack('C', hex($1))/seg foreach @_; };
 		if(defined wantarray) 
@@ -371,7 +377,7 @@ package AppCore::Web::Common;
 	sub load_template
 	{
 		my $file = shift;
-		my $module = shift || undef;
+		#my $module = shift || undef;
 		my $bless_pkg = shift || 'HTML::Template';
 		$TMPL_FILE = $file;
 		#AppCore::Common::print_stack_trace() if $pkg eq 'AppCore::Module::OMS::WebApp';
@@ -409,11 +415,11 @@ package AppCore::Web::Common;
 		}
 		if($user)
 		{
-			my $compref = $user->compref;
-			if($compref)
-			{
-				$tmpl->param('user_' . $_ => $compref->get($_)) foreach $compref->columns;
-			}
+# 			my $compref = $user->compref;
+# 			if($compref)
+# 			{
+# 				$tmpl->param('user_' . $_ => $compref->get($_)) foreach $compref->columns;
+# 			}
 			$tmpl->param('user_' . $_ => $user->{$_}) foreach keys %$user;	
 		}
 		

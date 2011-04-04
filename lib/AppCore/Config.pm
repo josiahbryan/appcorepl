@@ -33,6 +33,19 @@ BEGIN
 	$MOBILE_REDIR = 1;
 	$MOBILE_URL = '/m';
 	
+	$WEBSITE_NAME = 'PHC Beta Site';
+	$WEBSITE_NOUN = 'PHC Beta';
+	
+	@ADMIN_EMAILS = qw/
+		josiahbryan@gmail.com
+	/;
+	
+	$WELCOME_URL = '/welcome';
+	
+	# If apache is rewriting the dispatcher away, this will be empty.
+	# If there is some path prefix to where the appcore starts, then put that in here.  
+	$DISPATCHER_URL_PREFIX = '';
+	
 
 };
 

@@ -205,5 +205,36 @@ package AppCore::Web::Module;
 		return $Method_Lists_Cache{$pkg};
 	}
 	
-};	
+	sub load_template
+	{
+		my $pkg = shift;
+		my $file = shift;
+		$pkg = ref $pkg if ref $pkg;
+		my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+		if($file !~ /^\// && -f $tmp_file_name)
+		{
+			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
+			return $tmpl;
+		}
+		
+		return AppCore::Web::Common::load_template($file);
+	}
+	
+	sub module_url
+	{
+		my $pkg = shift;
+		my $suffix = shift || '';
+		my $include_server = shift || 0;
+		$pkg = ref $pkg if ref $pkg;
+		my $url = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg, $suffix);
+		if($include_server)
+		{
+			return $AppCore::Config::WEBSITE_SERVER . $url;
+		}
+		
+		return $url;
+	}
+	
+};
 1;

@@ -11,19 +11,57 @@ package ThemePHC;
 	# The template chosen is (should be) based on the $view_code requested by the controller.
 	sub output
 	{
-		my $self = shift;
-		my $view_code = shift;
-		my $req  = shift;
-		my $r    = shift;
-		my $page_obj = shift;
+		my $self       = shift;
+		my $r          = shift || $self->{response};
+		my $view_code  = shift || $self->{view_code};
+		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
-		my $tmpl = AppCore::Web::Common::load_template("mods/ThemePHC/tmpl/frontpage.tmpl");
-		$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-		$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
-		
-		#$r->output($page_obj->content);
-		$r->output($tmpl->output);
+		if($view_code eq 'home')
+		{
+			my $tmpl = $self->load_template('frontpage.tmpl');
+			$r->output($tmpl->output);
+		}
+		else
+		{
+			my $tmpl = $self->load_template('subpage.tmpl');
+			
+			my $sub = undef;
+			if($view_code eq 'default')
+			{
+				# do nothing	
+			}
+			elsif($view_code eq 'login')
+			{
+				$sub = $self->load_template('login.tmpl');
+			}
+			elsif($view_code eq 'signup')
+			{
+				$sub = $self->load_template('signup.tmpl');
+			}
+			elsif($view_code eq 'forgot_pass')
+			{
+				$sub = $self->load_template('forgot_pass.tmpl');
+			}
+			
+			if($sub)
+			{
+				my $blob = $sub->output;
+				my @titles = $blob=~/<title>(.*?)<\/title>/g;
+				#$title = $1 if !$title;
+				@titles = grep { !/\$/ } @titles;
+				$tmpl->param(page_title => shift @titles);
+				$tmpl->param(page_content => $blob);
+			}
+			
+			if($page_obj)
+			{
+				$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+			}
+			
+			#$r->output($page_obj->content);
+			$r->output($tmpl->output);
+		}
 	};
 	
 };

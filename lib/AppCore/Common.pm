@@ -46,11 +46,6 @@ package AppCore::Common;
 		CLASS_META
 		CLASS_DBSCHEMA
 	
-		MODULE_INTERFACE
-		MODULE_APPLICATION
-		INTERFACE_ABSTRACT
-		INTERFACE_CONCRETE
-		
 		/;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
@@ -412,6 +407,8 @@ package AppCore::Common;
 	
 	sub send_email
 	{
+		return 1;
+		
 		eval 'use MIME::Lite';
 		if(@_ == 1)
 		{

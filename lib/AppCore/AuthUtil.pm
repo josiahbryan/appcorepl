@@ -88,8 +88,7 @@ package AppCore::AuthUtil;
 	# 	
 		#AppCore::Session->load;
 		
-		my $class = shift;
-		unshift @_, $class if $class && !$class->isa(__PACKAGE__);
+		shift if $_[0] eq __PACKAGE__;
 		
 		my $args = $ctx->http_args || {};
 		
@@ -126,6 +125,10 @@ package AppCore::AuthUtil;
 		}
 		
 		my $user_object = AppCore::User->by_field(user => $user);
+		if(!$user_object)
+		{
+			$user_object = AppCore::User->by_field(email => $user);
+		}
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");

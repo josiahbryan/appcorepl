@@ -96,7 +96,7 @@ package AppCore::Web::Result;
 			$from = $user->display . '<'. $user->email.'>';
 		}
 		
-		if(!$user || $user->empid !=1)
+		if(!$user || $user->id !=1)
 		{
 			#AppCore::Web::Common::send_email([$AppCore::Config::WEBMASTER_EMAIL],"[AppCore Error] Error: $title","Error '$title' in ".AppCore::Web::Common::get_full_url().".\n\n$text",1,$from);
 		}
@@ -109,7 +109,7 @@ package AppCore::Web::Result;
 			"<p>For help with this error, please email <a href='mailto:$AppCore::Config::WEBMASTER_EMAIL"
 				."?subject=[AppCore] ".AppCore::Web::Common::encode_entities($title)
 				."&body=When I went to ".AppCore::Web::Common::encode_entities(AppCore::Web::Common::get_full_url()).", I received this error: "
-				.AppCore::Web::Common::encode_entities($text)."'>$AppCore::Config::WEBMASTER_EMAIL</a>."
+				.AppCore::Web::Common::encode_entities($text)."'>$AppCore::Config::WEBMASTER_EMAIL</a>. "
 				."Sorry for the trouble!</p><p><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a></p>",
 		);
 	}

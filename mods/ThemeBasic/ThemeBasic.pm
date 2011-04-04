@@ -5,27 +5,21 @@ package ThemeBasic;
 	use Content::Page;
 	use base 'Content::Page::ThemeEngine';
 	
-	## Even though the following routines (new/get_view/output) 
-	## are implemented in ThemeEngine, we provide the default implementation
-	## here for reference and for example purposes.
+=head1 View Code Documentation
 	
-	# Themes don't HAVE to provide a new method - if they don't, the output() and get_view()
-	# methods will be called on the package using '->' instead of on an instance or instead of using '::'.
-	sub new
-	{
-		bless {}, shift;
-	}
+	Currently Used View Codes:
 	
-	# Themes don't have to implement get_view() - only if you have separate sub-classes that
-	# implement a specific view code - then you can return that class' instance here based 
-	# on the view_code requestyed.
-	sub get_view
-	{
-		my $self = shift;
-		my $code = shift;
-		$self->{view_code} = $code;
-		return $self;
-	}
+		- 'User' Module:
+			login
+			signup
+			forgot_pass
+		- 'Content' Module:
+			Default Page Type:
+				default
+			
+=cut
+	
+	
 	
 	# The output() routine is the core of the Theme - it's where the theme applies the
 	# data from the Content::Page object and any optional $parameters given
@@ -33,16 +27,21 @@ package ThemeBasic;
 	# The template chosen is (should be) based on the $view_code requested by the controller.
 	sub output
 	{
-		my $self = shift;
-		my $view_code = shift;
-		my $req  = shift;
-		my $r    = shift;
-		my $page_obj = shift;
+		my $self       = shift;
+		my $r          = shift || $self->{response};
+		my $view_code  = shift || $self->{view_code};
+		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
-		my $tmpl = AppCore::Web::Common::load_template("mods/ThemeBasic/tmpl/basic.tmpl");
-		$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-		$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
+		# ThemeEngine::load_template() assumes the file your asking file is in your 'tmpl/' folder in this module
+		my $tmpl = $self->load_template('basic.tmpl');
+		if($page_obj)
+		{
+			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+		}
+		
+		# load_template() automatically adds this template parameter in to your template:
+		#$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl->output);

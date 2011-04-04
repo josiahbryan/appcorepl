@@ -1,0 +1,41 @@
+<h1>Website Setup</h1>
+<style>
+.admin_menu td {padding-right:1em }
+.admin_menu h3 { border-bottom: 1px solid black; margin-bottom: .5em !important}
+
+</style>
+
+
+<tmpl_if page_saved>
+	<div class='ffjc-info' style='margin:2em'>
+		<b>Page Saved!</b><br>
+		<a href='<tmpl_var bin>/<tmpl_var page_saved>'>View the page with the changes applied <b>...</b></a>
+	</div>
+</tmpl_if>
+
+<table border=0 class='admin_menu'>
+<tr>
+	<td valign=top>
+		<h3>Basic Webpages</h3>
+		Select a page to edit:<br>
+		<select name='page' onchange='document.location.href="/phc.cgi/admin/edit?page="+this.value' size=15>
+			<tmpl_loop sitemap>
+				<option %tmpl_if handler%disabled%/tmpl_if% value='<tmpl_var url>'><tmpl_var title></option>
+					<tmpl_if children>
+							<tmpl_loop children>
+								<option %tmpl_if handler%disabled%/tmpl_if%  value='<tmpl_var url>'>     -- <tmpl_var title></option>
+							</tmpl_loop>
+					</tmpl_if>
+			</tmpl_loop>
+		</select>
+	</td>		
+	<td valign=top>
+		<h3>Other Modules</h3>
+		<ul>
+			<li><a href='<tmpl_var bin>/admin/templates'>Webpage Template Setup</a></li>
+			<li><a href='<tmpl_var bin>/admin/users'>Website Users</a></li>
+			<li><a href='<tmpl_var bin>/admin/roles'>Security Groups</a></li>
+		</ul>
+	</td>
+</tr>
+</table>

@@ -1,0 +1,71 @@
+<title>Login to PHC</title>
+<h1>Login to the PHC Website</h1>
+
+<tmpl_if sent_pass>
+	<div class='ffjc-warning'>
+		<b>Your password has been sent to you <tmpl_if user>at <tmpl_var user></tmpl_if>.</b><br>
+		<br>
+		When you receive the email, you may enter your password below. <i>(Yes, its safe to go ahead and close this page while you wait for the email - there's a link back to this page in that email.)</i>
+	</div>
+</tmpl_if>
+		
+<tmpl_if was_loggedin>
+	<div class='ffjc-info' style='margin:2em'>
+		<b>Thanks for visiting! You're now logged out!</b>
+	</div>
+</tmpl_if>
+
+<tmpl_if bad_login>
+	<div class='ffjc-error' style='margin:2em'>
+		<b>Sorry, the password that you entered doesn't match the email on file.</b>
+		<br><br>
+		<b>Hint:</b> If you want to <b>signup</b> for the PHC Website, <a href='<tmpl_var bin>/signup?user=<tmpl_var user>'>visit the signup page</a>!
+	</div>
+</tmpl_if>
+
+<tmpl_if auth_requested>
+	<div class='ffjc-warning'>
+		<b>You must login to access the page that you requested.</b><br>
+		After you login, you'll be sent automatically to the page that you requested.
+	</div>
+</tmpl_if>
+
+
+<form action='/user/login/authenticate' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+	<input type=hidden name=url_from value="<tmpl_var url_from>">
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td>Your E-Mail:</td> <td>
+					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43>
+					<script>var e= $x('user');if(e)e.focus()</script>
+				</td>
+			</tr>
+			
+			<tr>
+				<td>Password:</td> <td>
+					<input type=password name=pass id=pass onfocus='select()' size=20>  <a href='/user/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+				</td>
+			</tr>
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Login"> 
+				<!--<input type=reset value="Reset to Original Values"> -->
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+	
+</form>
+
+
+<div class='ffjc-info' style='margin:2em'>
+If you don't have a password, <i>don't worry</i>! Even if you havn't signed up yet, you can <a href='/user/signup'>signup online</a>!
+</div>

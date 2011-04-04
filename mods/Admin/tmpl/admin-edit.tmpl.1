@@ -1,0 +1,53 @@
+<h1>Edit &quot;<tmpl_if page_title><tmpl_var page_title><tmpl_else><tmpl_var page></tmpl_if>&quot;</h1>
+<script type="text/javascript" src="/fckeditor/fckeditor.js"></script>
+<script>
+function win_onload()
+{
+
+	var oFCKeditor = new FCKeditor('body') ;
+	oFCKeditor.BasePath = '/fckeditor/' ;
+//	oFCKeditor.ToolbarSet = 'JBlog';
+	oFCKeditor.Height = "500px" ;
+	
+	oFCKeditor.ReplaceTextarea();
+	
+	<tmpl_if enable_autosave>setTimeout(autosave,30 * 1000);</tmpl_if>
+
+}
+
+</script>
+<form action='<tmpl_var bin>/admin/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+	<input type=hidden name=page value="<tmpl_var page>">
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td>Page Title:</td> <td>
+					<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page></tmpl_if>' size=65> 
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+					<script>var e= $('title');if(e)e.focus()</script>
+				</td>
+			</tr>
+			<tr>
+				<td colspan=2>
+					<textarea name=body id=body rows=20 cols=95><tmpl_var page_body></textarea>
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+<script>win_onload()</script>	
+</form>
+

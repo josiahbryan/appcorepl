@@ -1,0 +1,77 @@
+<title>Signup for PHC Online</title>
+<h1>Signup for PHC Online!</h1>
+
+<tmpl_if email_exists>
+	<div class='ffjc-error' style='margin:2em'>
+		<b>Sorry, email you entered has already been activated or is in use.</b>
+		<br><br>
+		If you've forgotten your password for this email, you can have it sent to you by using the <a href='<tmpl_var bin>/forgot_password?user=<tmpl_var user>'>forgotten password page</a>. Or, you can use a different email address altogether by changing the email listed below.
+	</div>
+</tmpl_if>
+
+<div class='ffjc-info'>
+	<b>Why should <i>I</i> signup?</b> Good question! When you signup, you can:
+		<ul>
+			<li>Create a blog @ MyPleasantHillChurch.com
+			<li>Post on the PHC Bulliten Boards
+			<li>Submit to the Sunday Bulliten online
+			<!--<li>Access the Member's Directory online (*<a href='#approval'>With approval ...</a>)-->
+			<li>And lots more!
+		</ul>
+</div>
+
+
+<form action='/user/signup/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+	<input type=hidden name=url_from value="<tmpl_var url_from>">
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td>What's your name?</td> <td>
+					<input type=text name=name id=name onfocus='select()' value='<tmpl_var name escape=html>' size=30> 
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+					<script>var e= $x('name');if(e)e.focus()</script>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Your E-Mail:</td> <td>
+					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=30><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>
+				</td>
+			</tr>
+			
+			<tr>
+				<td>Choose a password:</td> <td>
+					<input type=password name=pass id=pass onfocus='select()' size=30> 
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Sign me up!"> 
+				<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+	
+</form>
+
+
+<div class='ffjc-info' style='margin:2em'>
+If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b>! Just verify your name and choose a password. Already chosen a password and just can't remember it? No problem - <a href='<tmpl_var bin>/forgot_password?user=<tmpl_var user>'>use this page to request your password</a>!<br>
+</div>
+<!--
+<div class='ffjc-warning'>
+	<a name='approval'><b>What do you mean, "with approval" for the Member's directory?</b></a><br>
+	 To protect everyone's privacy, there are a restrictions on viewing the member's directory. Primarily, you have to be verified by the PHC Website as someone who attends PHC - this is done by the online volunteers <a href='/attendance_vouching'>who "vouch" for you</a>.<br>
+	<br>
+	So, to access to the member's directory online, first signup then visit the <a href='<tmpl_var bin>/members_directory'>members directory</a> and click the "Verify me!" link to get verified - more information is available on that page.
+</div>
+-->

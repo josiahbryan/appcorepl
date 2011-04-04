@@ -133,8 +133,9 @@ package Content::Page::Controller;
 	our %ViewInstCache;
 	sub get_view
 	{
-		my $self = shift;
+		my $self      = shift;
 		my $view_code = shift;
+		my $r         = shift;
 		
 		my $pkg = $AppCore::Config::THEME_MODULE;
 		if(!$pkg )
@@ -146,15 +147,15 @@ package Content::Page::Controller;
 		
 		if($pkg->can('new'))
 		{
-			return $ViewInstCache{$pkg} if $ViewInstCache{$pkg};
+			return $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
 			
 			$ViewInstCache{$pkg} = $pkg->new();
 			
-			return $ViewInstCache{$pkg}->get_view($view_code);
+			return $ViewInstCache{$pkg}->get_view($view_code,$r);
 		}
 		else
 		{
-			return $pkg->get_view($view_code);
+			return $pkg->get_view($view_code,$r);
 		}
 	}
 	
@@ -170,10 +171,10 @@ package Content::Page::Controller;
 		my $view_code = $type_dbobj->view_code;
 		
 		# Get a view module from the template based on view code so the template can choose to dispatch a view to a different object if needed
-		my $view = $self->get_view($view_code);
+		my $view = $self->get_view($view_code,$r);
 		
 		# Pass the view code onto the view output function so that it can aggregate different view types into one module
-		$view->output($view_code,$req,$r,$page_obj);
+		$view->output($r,$view_code,$page_obj);
 	};
 
 };
@@ -182,32 +183,81 @@ package Content::Page::ThemeEngine;
 {
 	sub new
 	{
-		bless {}, shift;
+		bless 
+		{
+			params => {},
+		}, shift;
 	}
 	
 	sub get_view
 	{
 		my $self = shift;
 		my $code = shift;
+		my $response = shift;
 		$self->{view_code} = $code;
+		$self->{response}  = $response;
+		$self->{params}    = {};
 		return $self;
+	}
+	
+	sub param
+	{
+		my $self = shift;
+		my $key = shift;
+		my $value = shift;
+		$self->{params}->{$key} = $value;
 	}
 
 	sub output
 	{
-		my $self = shift;
-		my $view_code = shift;
-		my $req  = shift;
-		my $r    = shift;
-		my $page_obj = shift;
+		my $self       = shift;
+		my $r          = shift || $self->{response};
+		my $view_code  = shift || $self->{view_code};
+		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
-		my $tmpl = AppCore::Web::Common::load_template("tmpl/basic.tmpl");
-		$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+		my $tmpl = $self->load_template("tmpl/basic.tmpl");
+		if($page_obj)
+		{
+			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+		}
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl->output);
 	};
+	
+	sub load_template
+	{
+		my $self = shift;
+		my $file = shift;
+		my $pkg  = ref $self;
+		my $tmpl = undef;
+		if($pkg ne 'Content::Page::ThemeEngine')
+		{
+			my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+			if($file !~ /^\// && -f $tmp_file_name)
+			{
+				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			}
+			else
+			{
+				#print STDERR "Template file didnt exist: $tmp_file_name\n";
+			}
+		}
+		
+		if(!$tmpl)
+		{
+			$tmpl = AppCore::Web::Common::load_template($file);
+		}
+		
+		if($tmpl)
+		{
+			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
+			$tmpl->param($_ => $self->{params}->{$_}) foreach keys %{$self->{params}}; 
+		}
+	
+		return $tmpl;
+	}
 };
 
 1;
