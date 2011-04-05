@@ -4,18 +4,12 @@ package ThemeBasic;
 {
 	use Content::Page;
 	use base 'Content::Page::ThemeEngine';
+	use Scalar::Util 'blessed';
 	
 =head1 View Code Documentation
 	
-	Currently Used View Codes:
-	
-		- 'User' Module:
-			login
-			signup
-			forgot_pass
-		- 'Content' Module:
-			Default Page Type:
-				default
+	- 'Home' - front page of the wqebsite
+	- 'Sub' - website subpage
 			
 =cut
 	
@@ -28,16 +22,25 @@ package ThemeBasic;
 	sub output
 	{
 		my $self       = shift;
+		my $page_obj   = shift || undef;
 		my $r          = shift || $self->{response};
 		my $view_code  = shift || $self->{view_code};
-		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
 		# ThemeEngine::load_template() assumes the file your asking file is in your 'tmpl/' folder in this module
 		my $tmpl = $self->load_template('basic.tmpl');
-		if($page_obj)
+		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
 			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+		}
+		else
+		{
+			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
+			my @titles = $blob=~/<title>(.*?)<\/title>/g;
+			#$title = $1 if !$title;
+			@titles = grep { !/\$/ } @titles;
+			$tmpl->param(page_title => shift @titles);
+			$tmpl->param(page_content => $blob);
 		}
 		
 		# load_template() automatically adds this template parameter in to your template:

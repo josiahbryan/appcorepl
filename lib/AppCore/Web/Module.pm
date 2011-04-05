@@ -205,17 +205,25 @@ package AppCore::Web::Module;
 		return $Method_Lists_Cache{$pkg};
 	}
 	
-	sub load_template
+	sub get_template
 	{
-		my $pkg = shift;
+		my $self = shift;
 		my $file = shift;
+		
+		my $pkg = $self;
 		$pkg = ref $pkg if ref $pkg;
+		
 		my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
 		if($file !~ /^\// && -f $tmp_file_name)
 		{
 			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
+			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg));
 			return $tmpl;
+		}
+		else
+		{
+			print STDERR "Template file didnt exist: $tmp_file_name\n";
 		}
 		
 		return AppCore::Web::Common::load_template($file);

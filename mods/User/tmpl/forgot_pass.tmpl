@@ -7,11 +7,11 @@
 
 <tmpl_if invalid_email>
 	<div class='ffjc-error'>
-		<b>No email address found!</b> Sorry, but the email address you entered was not found in our database. You may try again or visit the <a href='<tmpl_var bin>/signup?user=<tmpl_var user>'>signup page</a> to signup for your own PHC Online account.
+		<b>No email address found!</b> Sorry, but the email address you entered was not found in our database. You may try again or visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to signup for your own PHC Online account.
 	</div>
 </tmpl_if>
 
-<form action='<tmpl_var bin>/forgot_password/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+<form action='%%binpath%%/forgot_password/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
 
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
@@ -41,5 +41,5 @@
 
 
 <div class='ffjc-info' style='margin:2em'>
-If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b> - you just might not have <b>chosen</b> a password yet. Visit the <a href='<tmpl_var bin>/signup?user=<tmpl_var user>'>signup page</a> to confirm your name and choose a password!
+If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b> - you just might not have <b>chosen</b> a password yet. Visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to confirm your name and choose a password!
 </div>

@@ -31,7 +31,7 @@
 </tmpl_if>
 
 
-<form action='/user/login/authenticate' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+<form action='%%binpath%%/login/authenticate' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
 
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
@@ -46,7 +46,7 @@
 			
 			<tr>
 				<td>Password:</td> <td>
-					<input type=password name=pass id=pass onfocus='select()' size=20>  <a href='/user/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
+					<input type=password name=pass id=pass onfocus='select()' size=20>  <a href='%%binpath%%/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
 				</td>
 			</tr>
@@ -67,5 +67,5 @@
 
 
 <div class='ffjc-info' style='margin:2em'>
-If you don't have a password, <i>don't worry</i>! Even if you havn't signed up yet, you can <a href='/user/signup'>signup online</a>!
+If you don't have a password, <i>don't worry</i>! Even if you havn't signed up yet, you can <a href='%%binpath%%/signup'>signup online</a>!
 </div>

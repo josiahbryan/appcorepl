@@ -170,17 +170,21 @@ package Content::Page::Controller;
 		# No view code will just return the BasicView derivitve which just uses the basic.tmpl template
 		my $view_code = $type_dbobj->view_code;
 		
+		#print STDERR "process_page: view_code is '$view_code', type: $type_dbobj\n";
+		
 		# Get a view module from the template based on view code so the template can choose to dispatch a view to a different object if needed
 		my $view = $self->get_view($view_code,$r);
 		
 		# Pass the view code onto the view output function so that it can aggregate different view types into one module
-		$view->output($r,$view_code,$page_obj);
+		$view->output($page_obj,$r,$view_code);
 	};
 
 };
 
 package Content::Page::ThemeEngine;
 {
+	use Scalar::Util 'blessed';
+	
 	sub new
 	{
 		bless 
@@ -211,16 +215,28 @@ package Content::Page::ThemeEngine;
 	sub output
 	{
 		my $self       = shift;
+		my $page_obj   = shift || undef;
 		my $r          = shift || $self->{response};
 		my $view_code  = shift || $self->{view_code};
-		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
-		my $tmpl = $self->load_template("tmpl/basic.tmpl");
-		if($page_obj)
+		my $tmpl = $self->load_template('basic.tmpl');
+		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
 			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
 		}
+		else
+		{
+			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
+			my @titles = $blob=~/<title>(.*?)<\/title>/g;
+			#$title = $1 if !$title;
+			@titles = grep { !/\$/ } @titles;
+			$tmpl->param(page_title => shift @titles);
+			$tmpl->param(page_content => $blob);
+		}
+		
+		# load_template() automatically adds this template parameter in to your template:
+		#$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl->output);

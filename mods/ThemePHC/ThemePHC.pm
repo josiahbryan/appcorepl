@@ -4,6 +4,8 @@ package ThemePHC;
 {
 	use Content::Page;
 	use base 'Content::Page::ThemeEngine';
+	use Scalar::Util 'blessed';
+
 	
 	# The output() routine is the core of the Theme - it's where the theme applies the
 	# data from the Content::Page object and any optional $parameters given
@@ -12,56 +14,42 @@ package ThemePHC;
 	sub output
 	{
 		my $self       = shift;
+		my $page_obj   = shift || undef;
 		my $r          = shift || $self->{response};
 		my $view_code  = shift || $self->{view_code};
-		my $page_obj   = shift || undef;
 		my $parameters = shift || {};
 		
+		my $tmpl = undef;
+		#print STDERR __PACKAGE__."::output: view_code: '$view_code'\n";
 		if($view_code eq 'home')
 		{
-			my $tmpl = $self->load_template('frontpage.tmpl');
-			$r->output($tmpl->output);
+			$tmpl = $self->load_template('frontpage.tmpl');
+		}
+		# Don't test for 'sub' now because we just want all unsupported view codees to fall thru to subpage
+		#elsif($view_code eq 'sub')
+		else
+		{
+			$tmpl = $self->load_template('subpage.tmpl');
+		}
+		
+		## Add other supported view codes
+			
+		if(blessed $page_obj && $page_obj->isa('Content::Page'))
+		{
+			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
 		}
 		else
 		{
-			my $tmpl = $self->load_template('subpage.tmpl');
-			
-			my $sub = undef;
-			if($view_code eq 'default')
-			{
-				# do nothing	
-			}
-			elsif($view_code eq 'login')
-			{
-				$sub = $self->load_template('login.tmpl');
-			}
-			elsif($view_code eq 'signup')
-			{
-				$sub = $self->load_template('signup.tmpl');
-			}
-			elsif($view_code eq 'forgot_pass')
-			{
-				$sub = $self->load_template('forgot_pass.tmpl');
-			}
-			
-			if($sub)
-			{
-				my $blob = $sub->output;
-				my @titles = $blob=~/<title>(.*?)<\/title>/g;
-				#$title = $1 if !$title;
-				@titles = grep { !/\$/ } @titles;
-				$tmpl->param(page_title => shift @titles);
-				$tmpl->param(page_content => $blob);
-			}
-			
-			if($page_obj)
-			{
-				$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-			}
-			
-			#$r->output($page_obj->content);
-			$r->output($tmpl->output);
+			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
+			my @titles = $blob=~/<title>(.*?)<\/title>/g;
+			#$title = $1 if !$title;
+			@titles = grep { !/\$/ } @titles;
+			$tmpl->param(page_title => shift @titles);
+			$tmpl->param(page_content => $blob);
 		}
+			
+		#$r->output($page_obj->content);
+		$r->output($tmpl->output);
 	};
 	
 };

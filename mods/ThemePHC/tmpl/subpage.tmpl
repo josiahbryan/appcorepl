@@ -30,13 +30,14 @@
 </div>
 
 <div id='header'>
-	<div id='mainlogo-wrap'>
-		<img src='%%modpath%%/images/mainlogo.png' id='mainlogo'>
-	</div>
-
-	&nbsp; <!-- This &nbsp; is required -->
-	
 	<div id='header-shadow'>
+	
+		<div id='mainlogo-wrap'>
+			<img src='%%modpath%%/images/mainlogo-cropped2-250px.png' id='mainlogo'>
+		</div>
+
+	<!--&nbsp;--> <!-- This &nbsp; is required -->
+	
 		<!-- Just a graphic block - no other content needed -->
 	</div>
 </div>
@@ -45,6 +46,14 @@
 	<!-- Main nav links here -->
 	<div class='bodycontent'>
 		%%page_content%%
+		<hr size=1>
+		<span style='font-size:.75em'>
+			<tmpl_if user_display>
+				You are logged in as <i>%%user_display%%</i> | <a href='/user/login'>Signoff</a>
+			<tmpl_else>
+				<a href='/user/login'>Signin</a> | <a href='/usr/signup'>Signup</a>
+			</tmpl_if>
+		</span>
 	</div>
 	<!-- In-page footer here -->
 </div>

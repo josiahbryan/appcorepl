@@ -39,26 +39,31 @@ body
 {
 	background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
 	background-repeat: repeat-x;
-	height: 180px;
-	margin-top: -14px;
+	/*background-attachment: fixed;*/ 
+	/*height: 180px;*/
+	/*margin-top: 25px;*/
+	/*margin-bottom: -25px;*/
+	/*height: 100%;*/
 	width: 100%;
 }
 
 
 #mainlogo-wrap
 {
-	z-index: 500;
-	position: absolute;
+	/*z-index: 500;
+	position: absolute;*/
 	
-	width: 862px;
+	width: 965px;
 	margin: 0 auto;
 	
 }
 
 #mainlogo
 {
-	margin-top: -80px;
-	margin-bottom: -50px;
+	margin-top: -36px;
+	margin-left: -120px;
+	/*margin-bottom: -50px;*/
+	/*padding-left: 100px;*/
 }
 
 

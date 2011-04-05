@@ -82,9 +82,9 @@ package User;
 		
 		print STDERR "auth tmpl output\n";	
 		
-		my $tmpl = Content::Page::Controller->get_view('login',$r);
+		my $view = Content::Page::Controller->get_view('sub',$r);
 		
-		#my $tmpl = $self->load_template('login.tmpl');
+		my $tmpl = $self->get_template('login.tmpl');
 		#$tmpl->param(challenge => AppCore::AuthUtil->get_challenge());
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
@@ -94,7 +94,8 @@ package User;
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';
 		
-		$tmpl->output;
+		
+		$view->output($tmpl);
 	
 		
 		
@@ -168,9 +169,9 @@ package User;
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		
-		my $tmpl = Content::Page::Controller->get_view('signup',$r);
+		my $view = Content::Page::Controller->get_view('sub',$r);
 		
-		#my $tmpl = $skin->load_template('pages/signup.tmpl');
+		my $tmpl = $self->get_template('signup.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -184,7 +185,9 @@ package User;
 		$tmpl->param(email_exists => 1) if $sub_page eq 'post';
 		
 		#$r->output($tmpl);
-		$tmpl->output;
+		$view->output($tmpl);
+		
+		return $r;
 	}
 
 
@@ -221,15 +224,18 @@ package User;
 		my $url_from = AppCore::Web::Common->url_encode(
 					AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		
-		my $view = Content::Page::Controller->get_view('forgot_pass',$r);
-		#my $tmpl = $skin->load_template('pages/forgot_password.tmpl');
-		$view->param(url_from  => $url_from);
-		$view->param(user      => $req->{user});
+		my $view = Content::Page::Controller->get_view('sub',$r);
+		
+		my $tmpl = $self->get_template('forgot_pass.tmpl');
+		$tmpl->param(url_from  => $url_from);
+		$tmpl->param(user      => $req->{user});
 		
 		# Shouldn't get here if signup was ok
-		$view->param(invalid_email => 1) if $sub_page eq 'post';
+		$tmpl->param(invalid_email => 1) if $sub_page eq 'post';
 		
-		$view->output();
+		$view->output($tmpl);
+		
+		return $r;
 	}
 	
 	sub profile
