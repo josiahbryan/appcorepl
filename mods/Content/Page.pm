@@ -241,7 +241,7 @@ package Content::Page::ThemeEngine;
 			}
 			else
 			{
-				#print STDERR "Template file didnt exist: $tmp_file_name\n";
+				print STDERR "Template file didnt exist: $tmp_file_name\n";
 			}
 		}
 		

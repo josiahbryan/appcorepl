@@ -10,4 +10,4 @@ use AppCore::Web::DispatchCore;
 
 my $dispatch = AppCore::Web::DispatchCore->new();
 my $q = CGI->new();
-$dipatch->process($q);
+$dispatch->process($q);
