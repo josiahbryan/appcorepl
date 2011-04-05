@@ -1,0 +1,13 @@
+<h1>Page Doesn't Exist</h1>
+
+<p>Sorry, but the page you are looking for (<i>%%bad_url%%</i>) doesn't exist.</p>
+
+<p><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a></p>
+
+<p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:%%WEBMASTER_EMAIL%%'>%%WEBMASTER_EMAIL%%</a>
+
+<hr size=1>
+
+<tmpl_if user_userid>
+<p>You can create this page by visiting the <a href='/admin/pages/create?url=%%bad_url%%'>Page Administration</a> section.</p>
+</tmpl_if>

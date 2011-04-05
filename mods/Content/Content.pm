@@ -40,7 +40,15 @@ package Content;
 		if(!$self->process_page($req,$r))
 		{
 			my $url = AppCore::Web::Common->get_full_url();
-			return $r->error("Unknown Page Address","The page requested does not exist: <b>$url</b>");
+			#return $r->error("Unknown Page Address","The page requested does not exist: <b>$url</b>");
+			
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			
+			my $tmpl = $self->get_template("bad_url.tmpl");
+			#$tmpl->param(bad_url => AppCore::Web::Common->encode_entities($url));
+			$tmpl->param(bad_url => $url);
+			
+			$view->output($tmpl);
 		}
 		
 		return $r;
