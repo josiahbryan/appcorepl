@@ -1,4 +1,4 @@
-# Package: AppCore::Auth::Util
+# Package: AppCore::AuthUtil
 # Utility methods for authentication using <AppCore::Auth::Entity>.
 package AppCore::AuthUtil;
 {
@@ -61,7 +61,7 @@ package AppCore::AuthUtil;
 	{
 		my $self = shift;
 		
-		AppCore::Auth::Util::http_require_login() if !AppCore::Auth::Util::authenticate();
+		AppCore::AuthUtil::http_require_login() if !AppCore::AuthUtil::authenticate();
 		
 		if(my $user = AppCore::Common->context->user)
 		{

@@ -29,11 +29,7 @@ package ThemeBasic;
 		
 		# ThemeEngine::load_template() assumes the file your asking file is in your 'tmpl/' folder in this module
 		my $tmpl = $self->load_template('basic.tmpl');
-		if(blessed $page_obj && $page_obj->isa('Content::Page'))
-		{
-			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-		}
-		else
+		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
 			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
 			my @titles = $blob=~/<title>(.*?)<\/title>/g;

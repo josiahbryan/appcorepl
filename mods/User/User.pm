@@ -146,7 +146,7 @@ package User;
 			else
 			{
 				# Error getting token, show error msg
-				return $r->error("Facebook API Error","Problem getting access token:<br><code>$response</code>");
+				return $r->error("Facebook API Error","Problem getting access token - make sure \$FB_APP_ID and \$FB_APP_SECRET are correct in appcore/conf/appcore.conf.<br><code>$response</code>");
 			}
 
 			

@@ -383,15 +383,31 @@ package AppCore::Web::Common;
 		#AppCore::Common::print_stack_trace() if $pkg eq 'AppCore::Module::OMS::WebApp';
 		my ($split_path,$split_file) = $file =~ /^(.*)\/([^\/]+)$/;
 		#die Dumper $split_path,$split_file;
-		die "File doesn't exist: $file" if !-f $file;
-		my %args = (filename => $file,
-			die_on_bad_params=>0,
-			#cache_debug => 1, #,cache=>1);
-			#file_cache_dir => '/tmp/',
-			#file_cache => 1,
-			filter	=> \&_template_filter,	
-			search_path_on_include	=> 1,
-			path	=> $split_path);
+		
+		# Assume $file is a filename if no spaces found
+		die "File doesn't exist: $file" if !-f $file && index($file,' ') < 0;
+		 
+		my %args;
+		
+		if(-f $file)
+		{
+			%args = (filename => $file,
+				die_on_bad_params=>0,
+				#cache_debug => 1, #,cache=>1);
+				#file_cache_dir => '/tmp/',
+				#file_cache => 1,
+				filter	=> \&_template_filter,	
+				search_path_on_include	=> 1,
+				path	=> $split_path);
+		}
+		else
+		{
+			%args = (scalarref => \$file,
+				die_on_bad_params=>0,
+				filter	=> \&_template_filter);
+			
+		}
+		
 		use Data::Dumper;
 		#print STDERR Dumper(\%args);
 		my $tmpl = $bless_pkg->new(

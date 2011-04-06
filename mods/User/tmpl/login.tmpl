@@ -39,13 +39,13 @@
 		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
 			<tr>
 				<td>Your E-Mail:</td> <td style='padding-right:1.5em'>
-					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43>
+					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43 tabindex=1>
 					<script>var e= document.getElementById('user');if(e)e.focus()</script>
 				</td>
 				<td rowspan=3 valign=top style='border-left:2px solid rgb(140,140,140);padding-left:1.5em'>
 					<center>
 						<h3 style='margin:0'>You can also Connect with your Facebook account!</h3>
-						<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'>
+						<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'  tabindex=4>
 							<img src='%%modpath%%/images/fb-connect-large.png' style='margin-top:1.5em' border=0 id='fbimg'>
 						</a>
 					</center>
@@ -55,7 +55,7 @@
 			
 			<tr>
 				<td>Password:</td> <td>
-					<input type=password name=pass id=pass onfocus='select()' size=20>  <a href='%%binpath%%/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
+					<input type=password name=pass id=pass onfocus='select()' size=20 tabindex=2>  <a href='%%binpath%%/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
 				</td>
 			</tr>
@@ -63,7 +63,7 @@
 				<td colspan=2 align=center class=focus_highlight>
 				<br>
 				
-				<input type=submit value="Login">
+				<input type=submit value="Login" tabindex=3>
 				<!--<input type=reset value="Reset to Original Values"> -->
 				</td>
 			</tr>

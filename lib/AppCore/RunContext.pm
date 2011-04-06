@@ -73,6 +73,7 @@ sub _reset
 
 sub current_module	{shift->x('module', @_)}
 sub current_user 	{shift->x('user', @_)}
+sub current_request	{shift->x('current_request', @_)}
 
 sub module 		{shift->x('module', @_)}
 sub user   		{shift->x('user', @_)}

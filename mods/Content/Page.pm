@@ -211,6 +211,21 @@ package Content::Page::ThemeEngine;
 		my $value = shift;
 		$self->{params}->{$key} = $value;
 	}
+	
+	sub apply_page_obj
+	{
+		my ($self,$tmpl,$page_obj) = @_;
+		if(blessed $page_obj && $page_obj->isa('Content::Page'))
+		{
+			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+			$tmpl->param(page_content => AppCore::Web::Common::load_template($page_obj->content)->output) if $page_obj->content =~ /%%/;
+			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title)->output)   if $page_obj->title   =~ /%%/;
+			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
+			return 1;
+		}
+		
+		return 0;
+	}
 
 	sub output
 	{
@@ -221,11 +236,8 @@ package Content::Page::ThemeEngine;
 		my $parameters = shift || {};
 		
 		my $tmpl = $self->load_template('basic.tmpl');
-		if(blessed $page_obj && $page_obj->isa('Content::Page'))
-		{
-			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-		}
-		else
+		
+		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
 			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
 			my @titles = $blob=~/<title>(.*?)<\/title>/g;

@@ -1,0 +1,57 @@
+<title>Edit &quot;<tmpl_if page_title><tmpl_var page_title><tmpl_else><tmpl_var page></tmpl_if>&quot;</title>
+<h1>Edit &quot;<tmpl_if page_title><tmpl_var page_title><tmpl_else><tmpl_var page></tmpl_if>&quot;</h1>
+<!--onsubmit="document.forms.content.body.value = WYMeditor.INSTANCES[0].html()"-->
+<form action='%%binpath%%/save' method=POST style='display:inline;border:0;padding:0;margin:0' name=content >
+	<input type=hidden name=pageid value="<tmpl_var pageid>">
+	<input type=hidden name=url_from value="<tmpl_var url_from>">
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em" width='100%'>
+			<tr>
+				<td>Address:</td> <td>
+					%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+				</td>
+			</tr>
+			<tr>
+				<td>Page Title:</td> <td>
+					<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+					<script>var e= $x('title');if(e)e.focus()</script>
+				</td>
+			</tr>
+			<!--<tmpl_if templates>
+				<tr>
+					<td>Page Template:</td> <td>
+						<select name='templateid'>
+							<tmpl_loop templates>
+								<option value='<tmpl_var id>' x:img='<tmpl_var img>' x:options='<tmpl_var options escape=html>' <tmpl_if selected>selected</tmpl_if>><tmpl_var text></option>
+							</tmpl_loop>
+						</select>
+						
+					</td>
+				</tr>
+			</tmpl_if>-->
+			<tr>
+				<td colspan=2>
+					<textarea class="wymeditor" name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+<script>win_onload()</script>	
+</form>
+

@@ -125,7 +125,7 @@ package AppCore::Web::DispatchCore;
 		# httpd.conf's rewrite rules should not have sent us this request if the file existed,
 		# so we assume here that it doesn't exist in htdocs root and do our logic accordingly.
 		if($path eq 'favicon.ico' &&
-		$AppCore::Config::USE_THEME_FAVICON)
+		   $AppCore::Config::USE_THEME_FAVICON)
 		{
 			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $path));
 		}
@@ -138,7 +138,7 @@ package AppCore::Web::DispatchCore;
 		$app =~ s/^(.*?)(?:\/(.*))$/$1/;
 		$path = $2;
 		
-		my $mod_ref = $self->{module_cache}->{lc $app}; #->{module};
+ 		my $mod_ref = $self->{module_cache}->{lc $app}; #->{module};
 		
 		if(!$mod_ref)
 		{
@@ -172,6 +172,10 @@ package AppCore::Web::DispatchCore;
 		my $request = AppCore::Web::Request->new($args);
 		$request->push_page_path($app);
 		
+		$ctx_ref->current_request($request);
+		
+		$app = 'Content' if !$app;
+		
 		eval
 		{
 			# Do the actual processing. 
@@ -182,33 +186,35 @@ package AppCore::Web::DispatchCore;
 			# with 'res/' paths.
 			
 			my $response;
-			my $method;
-			
-			if($request->next_path && 
-			$mod_obj->WebMethods->{$request->next_path} &&
-			$mod_obj->can($request->next_path))
-			{
-				$method = $request->shift_path;
-				$request->push_page_path($method);
-			}
-			elsif($mod_obj->can('DISPATCH_METHOD'))
-			{
-				$method = $mod_ref->DISPATCH_METHOD;
-			}
-			else
-			{
-				$method = 'main';
-			}
-			
-			if($mod_obj->can($method))
-			{
-				$response = $mod_obj->$method($request);
-			}
-			else
-			{
-				$response = AppCore::Web::Result->new();
-				$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
-			}
+# 			my $method;
+# 			
+# 			if($request->next_path && 
+# 			   $mod_obj->WebMethods->{$request->next_path} &&
+# 			   $mod_obj->can($request->next_path))
+# 			{
+# 				$method = $request->shift_path;
+# 				$request->push_page_path($method);
+# 			}
+# 			elsif($mod_obj->can('DISPATCH_METHOD'))
+# 			{
+# 				$method = $mod_ref->DISPATCH_METHOD;
+# 			}
+# 			else
+# 			{
+# 				$method = 'main';
+# 			}
+# 			
+# 			if($mod_obj->can($method))
+# 			{
+# 				$response = $mod_obj->$method($request);
+# 			}
+# 			else
+# 			{
+# 				$response = AppCore::Web::Result->new();
+# 				$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
+# 			}
+
+			my $response = $mod_obj->dispatch($request);
 			
 			#die Dumper \@out;
 			
@@ -249,7 +255,7 @@ package AppCore::Web::DispatchCore;
 			}
 			elsif($code)
 			{
-				error("Unknown Code $code","Unknown Code $code from Module $mod_obj");
+				error("Unknown Code $code","Unknown Code $code from app $app");
 			}
 		};
 		

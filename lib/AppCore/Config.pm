@@ -24,7 +24,7 @@ BEGIN
 	$USERS_DBNAME = $DB_NAME;
 	$USERS_DBTABLE = 'users';
 	
-	$LOGIN_URL = '/login';
+	$LOGIN_URL = '/user/login';
 	
 	$DOMAIN = 'example.com';
 	

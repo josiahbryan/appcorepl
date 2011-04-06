@@ -85,7 +85,10 @@ package AppCore::Web::Module;
 		
 		my $pkg_file = $dir_base   .'/'.$module_name.'.pm';
 		
-		require $pkg_file;
+		#print STDERR "Attempting to load: $pkg_file, exists? ".((-f $pkg_file)?1:0)."\n";
+		eval { require $pkg_file; } if -f $pkg_file;
+		
+		print STDERR "Error loading $pkg_file: $@" if $@;
 		
 		if($module_name->can('new'))
 		{
@@ -93,6 +96,7 @@ package AppCore::Web::Module;
 		}
 		else
 		{
+			$mod_ref_cache{$module_name} = $module_name;
 			return $module_name;
 		}
 	}
@@ -197,8 +201,11 @@ package AppCore::Web::Module;
 		my $pkg = shift;
 		# Want to use the typename as the $pkg key, not the instance ID
 		$pkg = ref $pkg if ref $pkg;
+		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
 		if(@_)
 		{
+			#print STDERR "WebMethods: pkg: '$pkg', list: ".join('|', @_)."\n";
+			
 			my %map = map {$_=>1} @_;
 			$Method_Lists_Cache{$pkg} = \%map;
 		}
@@ -212,14 +219,20 @@ package AppCore::Web::Module;
 		
 		my $pkg = $self;
 		$pkg = ref $pkg if ref $pkg;
+		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
+		#$pkg =~ s/::/\//g;
+		my @parts = split /::/, $pkg;
+		my $first_pkg = shift @parts;
+		@parts = lc $_ foreach @parts;
+		push @parts, $file;
 		
-		my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+		my $tmp_file_name = 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
 		if($file !~ /^\// && -f $tmp_file_name)
 		{
 			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
-			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
-			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg));
+			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg));
+			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $first_pkg, @parts[0..$#parts-1]));
 			return $tmpl;
 		}
 		else
@@ -236,6 +249,8 @@ package AppCore::Web::Module;
 		my $suffix = shift || '';
 		my $include_server = shift || 0;
 		$pkg = ref $pkg if ref $pkg;
+		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
+		$pkg =~ s/::/\//g;
 		my $url = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg, $suffix);
 		if($include_server)
 		{
@@ -245,5 +260,47 @@ package AppCore::Web::Module;
 		return $url;
 	}
 	
+	sub dispatch
+	{
+		my $class = shift;
+		$class = ref $class if ref $class;
+		
+		my $request = shift;
+		my $receiver_class = shift || $class;
+		
+		my $mod_obj = bootstrap($receiver_class);
+		
+		my $response;
+		my $method;
+		
+		#print STDERR "Module::dispatch: class $class, rx $receiver_class, mod_obj '$mod_obj', WebMethods: ".$mod_obj->WebMethods.", next path:".$request->next_path."\n";
+		if($request->next_path && 
+		   $mod_obj->WebMethods->{$request->next_path} &&
+		   $mod_obj->can($request->next_path))
+		{
+			$method = $request->shift_path;
+			$request->push_page_path($method);
+		}
+		elsif($mod_obj->can('DISPATCH_METHOD'))
+		{
+			$method = $mod_obj->DISPATCH_METHOD;
+		}
+		else
+		{
+			$method = 'main';
+		}
+		
+		if($mod_obj->can($method))
+		{
+			$response = $mod_obj->$method($request);
+		}
+		else
+		{
+			$response = AppCore::Web::Result->new();
+			$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
+		}
+		
+		return $response;
+	}
 };
 1;
