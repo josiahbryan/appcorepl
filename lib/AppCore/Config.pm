@@ -36,6 +36,8 @@ BEGIN
 	$WEBSITE_NAME = 'PHC Beta Site';
 	$WEBSITE_NOUN = 'PHC Beta';
 	
+	$WEBSITE_SERVER = 'http://beta.mypleasanthillchurch.org';
+	
 	@ADMIN_EMAILS = qw/
 		josiahbryan@gmail.com
 	/;
@@ -45,6 +47,10 @@ BEGIN
 	# If apache is rewriting the dispatcher away, this will be empty.
 	# If there is some path prefix to where the appcore starts, then put that in here.  
 	$DISPATCHER_URL_PREFIX = '';
+	
+	$FB_APP_ID     = '192357267468389';
+	$FB_APP_SECRET = `cat fb_app_secret.txt`; # read from file so its not saved in subversion!
+	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
 
 };

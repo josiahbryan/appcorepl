@@ -217,6 +217,7 @@ package AppCore::Web::Module;
 		if($file !~ /^\// && -f $tmp_file_name)
 		{
 			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
 			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
 			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg));
 			return $tmpl;
@@ -238,7 +239,7 @@ package AppCore::Web::Module;
 		my $url = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg, $suffix);
 		if($include_server)
 		{
-			return $AppCore::Config::WEBSITE_SERVER . $url;
+			return $AppCore::Config::WEBSITE_SERVER . '/' . $url;
 		}
 		
 		return $url;

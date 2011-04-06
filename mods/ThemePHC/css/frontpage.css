@@ -37,28 +37,41 @@ body
 
 #header #header-shadow
 {
-	background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
+	/*background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
 	background-repeat: repeat-x;
 	height: 180px;
 	margin-top: 135px;
+	width: 100%;*/
+	
+	background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
+	background-repeat: repeat-x;
+	/*background-attachment: fixed;*/ 
+	/*height: 180px;*/
+	/*margin-top: 25px;*/
+	/*margin-bottom: -25px;*/
+	/*height: 100%;*/
 	width: 100%;
+	background-position: 0px 145px;
+	height: 325px;
 }
 
 
 #mainlogo-wrap
 {
-	z-index: 500;
-	position: absolute;
+	/*z-index: 500;
+	position: absolute;*/
 	
-	width: 862px;
+	width: 965px;
 	margin: 0 auto;
 	
 }
 
 #mainlogo
 {
-	margin-top: -80px;
-	margin-bottom: -50px;
+	/*margin-top: -80px;
+	margin-bottom: -50px;*/
+	margin-top: -47px;
+	margin-left: -118px;
 }
 
 
@@ -85,12 +98,12 @@ body
 	height: 324px;
 	padding: 22px 25px;
 	
-	margin: 220px auto 0;
+	margin: 230px auto 0;
 	
 	/*border: 1px solid red;*/
 }
 
-#graphicblock .graphic-wrap
+#graphicblock #graphic-wrap
 {
 	float: left;
 	width: 728px;
@@ -98,22 +111,29 @@ body
 	
 	background-image: url("/appcore/mods/ThemePHC/images/graphicbg.jpg");
 	background-repeat: no-repeat;
-}
-
-#graphicblock .graphic-wrap .graphic
-{
-	width: 272px;
-	height: 250px;
 	
-	margin: auto auto;
+	overflow: hidden;
+	position: relative;
 }
 
-#graphicblock .graphic-wrap iframe
+#graphicblock #graphic-wrap iframe.vimeo-video
 {
 	width: 400px;
 	height: 300px;
 	margin: 11px auto;
 	border: 1px solid black;
+}
+
+#graphicblock #graphic-wrap .block-item
+{
+	/*background: red;
+	border: 1px solid blue;*/
+	width: 728px;
+	height: 322px;
+	position: absolute;
+	top: 322;
+	left: 0;
+	/*display: none;*/
 }
 
 .sidebar
@@ -142,6 +162,13 @@ body
 	text-decoration: none;
 	padding-top: 24px;
 	font-size: 14px;
+}
+
+.sidebar .sidebar-link-block a.current
+{
+	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
+	color: #e7ff30;
+
 }
 
 .sidebar .sidebar-link-block a .title

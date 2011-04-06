@@ -132,7 +132,7 @@ package AppCore::AuthUtil;
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");
-		if($user_object && $user && ($user_object->pass eq $pass || $hash eq $pass))
+		if($user_object && $user && ($user_object->pass eq $pass || $hash eq $pass || $user_object->fb_token eq $pass))
 		{
 			$ctx->user($user_object);
 			if(!$tk)

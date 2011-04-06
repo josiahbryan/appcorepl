@@ -9,6 +9,10 @@ package User;
 	
 	use AppCore::User;
 	
+	# Used in Facebook integration
+	use LWP::Simple;
+	use JSON::XS;
+	
 	sub new { bless {}, shift }
 	
 	my $LOGIN_ACTION  = 'login';
@@ -34,6 +38,126 @@ package User;
 		AppCore::Web::Common->redirect($self->module_url($LOGIN_ACTION));
 	}
 	
+	sub get_facebook_redir_url
+	{
+		return shift->module_url('login/facebook', 1); # 1 = incl server
+	}
+	
+	sub connect_with_facebook
+	{
+		my ($self, $req, $r) = @_;
+		
+		if($req->{code})
+		{
+			# We're at step 1 - They've accepted us, now we have to get the access_token
+			
+			my $code = $req->code;
+			print STDERR "Authenticated FB code $code, now requesting access_token\n";
+				
+			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
+				. 'client_id=192357267468389'
+				.'&redirect_uri='  . $self->get_facebook_redir_url()
+				.'&client_secret=' . $AppCore::Config::FB_APP_SECRET
+				.'&code=' . $code;
+			
+			my $response = LWP::Simple::get($token_url);
+			
+			my ($token) = $response =~ /access_token=(.*)$/;
+			
+			if($token)
+			{
+				my $user_url = 'https://graph.facebook.com/me?access_token='.$token;
+				my $user_json = LWP::Simple::get($user_url);
+				if($user_json =~ /email/)
+				{
+					my $user_data = decode_json($user_json);
+					
+					my $email = $user_data->{email};
+					$email =~ s/\\u0040/@/g;
+					
+					my $display = $user_data->{name};
+					my $first   = $user_data->{first_name};
+					my $last    = $user_data->{last_name};
+					
+					my $user_obj = AppCore::User->by_field(email => $email);
+					$user_obj = AppCore::User->by_field(display => $display) if !$user_obj;
+					
+					if(!$user_obj)
+					{
+						$user_obj = AppCore::User->insert({
+							user	=> $email,
+							email	=> $email,
+							display	=> $display,
+							pass 	=> $token,
+							first 	=> $first,
+							'last'	=> $last,
+						});
+						
+						print STDERR "Created new user from facebook data: $display - $email, userid $user_obj\n"; 
+					}
+					else
+					{
+						print STDERR "Matched facebook user to existing user: $display - $email, userid $user_obj\n";
+						
+						$user_obj->first($first) if !$user_obj->first;
+						$user_obj->last($last)   if !$user_obj->last;
+					}
+					
+					my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
+					my $photo = LWP::Simple::get($photo_url);
+					my $local_photo_url = "/mods/" . __PACKAGE__ . "/user_photos/user". $user_obj->id .".jpg";
+					my $file_path = $AppCore::Config::APPCORE_ROOT . $local_photo_url;
+					if(open(PHOTO, '>' . $file_path))
+					{
+						print PHOTO $photo;
+						close(PHOTO);
+						
+						$user_obj->photo($local_photo_url);
+						
+						print STDERR "Downloaded user photo to $file_path.\n";
+					}
+					else
+					{
+						print STDERR "Error opening $file_path for writing: $!";
+					}
+					
+					
+					$user_obj->is_fbuser(1);
+					$user_obj->fb_token($token);
+					$user_obj->update;
+					
+					if(AppCore::AuthUtil->authenticate($user_obj->user, $token))
+					{
+						my $url_from = $AppCore::Config::WELCOME_URL; # if !$url_from  || $url_from =~ /\/(login|logout)/;
+						print STDERR "Authenticated ".AppCore::Common->context->user->display." with facebook token $token, redirecting to $url_from\n";
+						return $r->redirect($url_from);
+					}
+					else
+					{
+						return $r->error("Facebook API Error","Unable to connect facebook data to local account.");
+					}
+				}
+				else
+				{
+					# Error getting user data, show error msg
+					return $r->error("Facebook API Error","Problem getting user data:<br><code>$user_json</code>");
+				}
+			}
+			else
+			{
+				# Error getting token, show error msg
+				return $r->error("Facebook API Error","Problem getting access token:<br><code>$response</code>");
+			}
+
+			
+		}
+		else
+		{
+			# Error getting code, show error msg
+			return $r->redirect( $self->module_url("login") );
+		}
+	}
+	
 	sub login
 	{
 		my $self = shift;
@@ -44,7 +168,11 @@ package User;
 		
 		#print STDERR "auth($sub_page): ".Dumper($req,$page);
 			
-			
+		if($action eq 'facebook')
+		{
+			return $self->connect_with_facebook($req,$r);
+		}
+		
 		if($action eq 'authenticate' && AppCore::AuthUtil->authenticate($req->{user},$req->{pass})) #,1))
 		{
 			my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
@@ -80,7 +208,7 @@ package User;
 			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1');
 		}
 		
-		print STDERR "auth tmpl output\n";	
+		#print STDERR "auth tmpl output\n";	
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		
@@ -90,6 +218,8 @@ package User;
 		$tmpl->param(user      => $req->{user});
 		$tmpl->param(was_loggedin => $req->{was_loggedin});
 		$tmpl->param(sent_pass    => $req->{sent_pass});
+		$tmpl->param(fb_app_id	  => $AppCore::Config::FB_APP_ID);
+		$tmpl->param(fb_redir_url => $self->get_facebook_redir_url());
 		#$tmpl->param(auth_requested => $req->{auth_requested});
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';

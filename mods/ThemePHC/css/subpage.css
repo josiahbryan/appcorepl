@@ -163,14 +163,13 @@ body
 .bodywrap
 {
 	width: 100%;
-	background-image: url("/appcore/mods/ThemePHC/images/content-bg.jpg");
+	/*background-image: url("/appcore/mods/ThemePHC/images/content-bg.jpg");*/
 	background-repeat: repeat-x;
 	background-color: white;
 	
 	min-height: 400px;
 	
-	padding-top: 40px;
-	padding-bottom: 10px;
+	
 }
 
 .bodywrap h1
@@ -180,9 +179,15 @@ body
 
 .bodycontent
 {
+	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
 	width: 965px;
 	margin: 0 auto;
 	font-size: 1.5em;
+	
+	padding-top: 40px;
+	padding-bottom: 40px;
+	padding-left: 40px;
+	padding-right: 40px;
 }
 
 #footer
