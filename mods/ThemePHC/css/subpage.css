@@ -12,20 +12,9 @@ body
 	background: rgb(100,100,100);
 }
 
-#navblock
-{
 
-	background-image: url("/appcore/mods/ThemePHC/images/bg_repeat_top.jpg");
-	background-repeat: repeat-x;
-	height: 49px;
-	width: 100%;
-}
 
-#navblock *
-{
-	display: none;
 
-}
 
 #header
 {

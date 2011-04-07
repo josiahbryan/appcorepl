@@ -6,28 +6,7 @@
 
 <body>
 
-<div id='navblock'>
-	<ul id='mainav'>
-		<li><a href='#'>Location</a>
-
-		</li>
-		<li><a href='#'>Groups</a>
-			<ul>
-				<li><a href='#'>Small Groups</a></li>
-				<li><a href='#'>Large Groups</a></li>
-			</ul>
-		</li>
-		<li><a href='#'>Ministries</a></li>
-		<li><a href='#'>About Us</a></li>
-		<li><a href='#'>Meaningful Contributions</a></li>
-		<li><a href='#'>Contact Us</a></li>
-	</ul>
-
-	<form action='#' method=GET>
-		<input name='q' id='top-searchbox'>
-	</form>
-
-</div>
+<tmpl_include main-nav.inc.tmpl>
 
 <div id='header'>
 	<div id='header-shadow'>
@@ -43,14 +22,7 @@
 	<!-- Main nav links here -->
 	<div class='bodycontent'>
 		%%page_content%%
-		<hr size=1>
-		<span style='font-size:.75em'>
-			<tmpl_if user_display>
-				You are logged in as <i>%%user_display%%</i> | <a href='/user/login'>Signoff</a> | <a href='/admin/pages/edit?url=%%content_url%%'>Edit Page</a>
-			<tmpl_else>
-				<a href='/user/login'>Signin</a> | <a href='/usr/signup'>Signup</a>
-			</tmpl_if>
-		</span>
+		<tmpl_include user-footer.inc.tmpl>
 	</div>
 	<!-- In-page footer here -->
 </div>

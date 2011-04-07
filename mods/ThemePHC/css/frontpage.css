@@ -12,21 +12,6 @@ body
 	background: rgb(100,100,100);
 }
 
-#navblock
-{
-
-	background-image: url("/appcore/mods/ThemePHC/images/bg_repeat_top.jpg");
-	background-repeat: repeat-x;
-	height: 49px;
-	width: 100%;
-}
-
-#navblock *
-{
-	display: none;
-
-}
-
 #header
 {
 	background-image: url("/appcore/mods/ThemePHC/images/header-bluebg.jpg");
@@ -162,6 +147,8 @@ body
 	text-decoration: none;
 	padding-top: 24px;
 	font-size: 14px;
+	
+	text-shadow: rgb(8,8,8) 1px 1px 1px;
 }
 
 .sidebar .sidebar-link-block a.current
