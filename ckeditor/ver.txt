@@ -1,0 +1,5 @@
+This is version 3.5.2.
+This directory contains only the files generally needed for production -
+samples, source, and other unecessary files have been removed according to the
+instructions given at:
+http://docs.cksource.com/CKEditor_3.x/Developers_Guide/Minimum_Setup

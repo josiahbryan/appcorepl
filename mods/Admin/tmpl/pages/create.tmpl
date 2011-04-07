@@ -1,3 +1,4 @@
+<script src='%%appcore%%/ckeditor/ckeditor.js'></script>
 <title>Edit &quot;<tmpl_if page_title><tmpl_var page_title><tmpl_else><tmpl_var page></tmpl_if>&quot;</title>
 <h1>Edit &quot;<tmpl_if page_title><tmpl_var page_title><tmpl_else><tmpl_var page></tmpl_if>&quot;</h1>
 <!--onsubmit="document.forms.content.body.value = WYMeditor.INSTANCES[0].html()"-->
@@ -35,7 +36,17 @@
 			</tmpl_if>-->
 			<tr>
 				<td colspan=2>
-					<textarea class="wymeditor" name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
+					<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
+					
+					<script>
+					CKEDITOR.replace( 'body_value', {
+						extraPlugins : 'autogrow',
+						width: '96%',
+						removePlugins: 'elementspath',
+						scayt_autoStartup: true,
+					});
+					</script>
+
 					
 				</td>
 			</tr>
