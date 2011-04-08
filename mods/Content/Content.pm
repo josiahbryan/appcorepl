@@ -5,6 +5,7 @@ package Content;
 	use base 'AppCore::Web::Module';
 	
 	use Content::Page;
+	use Content::Admin;
 	
 	sub DISPATCHER_METHOD { 'main'}
 	
@@ -36,6 +37,18 @@ package Content;
 		my $self = shift;
 		my $req = shift;
 		my $r = AppCore::Web::Result->new;
+		
+		# Handle /content/admin/ URLs internally
+		if($req->last_path eq 'content' &&
+		   $req->next_path eq 'admin')
+		{
+			# Move admin into the page_path list
+			$req->push_page_path($req->shift_path);
+			
+			# Use AppCore::Web::Module::dispatch() to re-dispatch the request into the Content::Admin module
+			return $self->dispatch($req, 'Content::Admin');
+			
+		}
 		
 		if(!$self->process_page($req,$r))
 		{

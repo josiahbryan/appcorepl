@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>%%page_title%% - Pleasant Hill Church</title>
+	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>Pleasant Hill Church</title>
 	<link href="%%modpath%%/css/subpage.css" rel="stylesheet" type="text/css" />
 </head>
 
@@ -19,12 +19,10 @@
 </div>
 
 <div class='bodywrap'>
-	<!-- Main nav links here -->
 	<div class='bodycontent'>
 		%%page_content%%
 		<tmpl_include user-footer.inc.tmpl>
 	</div>
-	<!-- In-page footer here -->
 </div>
 
 <div id='footer'>
@@ -32,3 +30,4 @@
 </div>
 
 </body>
+</html>

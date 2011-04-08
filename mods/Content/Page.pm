@@ -36,6 +36,7 @@ package Content::Page;
 			{	field	=> 'teaser',		type	=> 'varchar(255)' },
 			{	field	=> 'content',		type	=> 'text' },
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
+			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
 
 			
 		]	
@@ -217,10 +218,12 @@ package Content::Page::ThemeEngine;
 		my ($self,$tmpl,$page_obj) = @_;
 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
+			my $user = AppCore::Common->context->user;
 			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
 			$tmpl->param(page_content => AppCore::Web::Common::load_template($page_obj->content)->output) if $page_obj->content =~ /%%/;
 			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title)->output)   if $page_obj->title   =~ /%%/;
 			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
+			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN'])); 
 			return 1;
 		}
 		

@@ -79,13 +79,20 @@ package AppCore::Web::Module;
 		
 		return $mod_ref_cache{$module_name} if $mod_ref_cache{$module_name};
 		
-		my $dir_base   = module_root_dir($module_name);
+		my @parts = split /::/, $module_name;
+		my $first_pkg = $parts[0];
+		
+		shift @parts if @parts > 1;
+		
+		my $dir_base   = module_root_dir($first_pkg);
 		
 		#my $class_base = module_base_package($module_name);
 		
-		my $pkg_file = $dir_base   .'/'.$module_name.'.pm';
+		my $pkg_file = join('/', $dir_base, @parts) . '.pm';
 		
 		#print STDERR "Attempting to load: $pkg_file, exists? ".((-f $pkg_file)?1:0)."\n";
+		undef $@;
+		
 		eval { require $pkg_file; } if -f $pkg_file;
 		
 		print STDERR "Error loading $pkg_file: $@" if $@;

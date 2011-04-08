@@ -378,7 +378,7 @@ package AppCore::Web::Common;
 	{
 		my $file = shift;
 		#my $module = shift || undef;
-		my $bless_pkg = shift || 'HTML::Template';
+		my $bless_pkg = shift || 'HTML::Template::RetrievableParameters';
 		$TMPL_FILE = $file;
 		#AppCore::Common::print_stack_trace() if $pkg eq 'AppCore::Module::OMS::WebApp';
 		my ($split_path,$split_file) = $file =~ /^(.*)\/([^\/]+)$/;
@@ -482,4 +482,32 @@ package AppCore::Web::Common;
 	}
 	
 }
+
+package HTML::Template::RetrievableParameters;
+{
+	use base 'HTML::Template';
+	
+	sub param
+	{
+		my @copy = @_;
+		HTML::Template::param(@_);
+		
+		my $self = shift @copy;
+		my $key = shift @copy;
+		my $val = shift @copy;
+		
+		if($val)
+		{
+			$self->{_param_cache} ||= {};
+			$self->{_param_cache}->{$key} = $val;
+		}
+		else
+		{
+			return $self->{_param_cache}->{$key};
+		}
+	};
+	
+	
+};
 1;
+

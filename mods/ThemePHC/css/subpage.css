@@ -1,4 +1,4 @@
-body, td
+body/*, td*/
 {
 	font-family: Calibri, Verdana, Sans-Serif;
 	font-size: 11px;
@@ -190,4 +190,40 @@ body
 
 
 
+/* Table styling */
 
+table.pretty
+{
+	border-collapse:collapse;
+	border: 1px solid #364a90; /* light orange */
+	-moz-box-shadow: 0px 0px 8px #000;
+	margin: 8 0; 
+}
+
+table.pretty th 
+{
+	background: #364a90;
+	color: white;
+	text-shadow: rgb(8,8,8) 1px 1px 1px;
+	font-weight: bold;
+	padding: 2 4;
+	text-align: left;
+	
+	border-bottom: 1px solid #364a90; /* more saturated oragne */
+}
+
+table.pretty td 
+{
+	border: 1px solid #364a90; /* more saturated oragne */
+	padding: 2 4; 
+}
+
+table.pretty tr:hover td
+{
+	background: #c2cdf5;
+}
+
+table.pretty .util
+{
+	color: #364a90;
+}

@@ -1,0 +1,25 @@
+<title>Page List - Admin</title>
+<h1>Page List</h1>
+
+<a href='%%binpath%%/create'>Add a new page...</a>
+
+<table class='pretty'>
+	<thead>
+		<th>Actions</th>
+		<th>URL</th>
+		<th>In Menus?</th>
+		<th>Title</th>
+	</thead>
+	<tbody>
+		<tmpl_loop pages>
+		<tr>
+			<td class='util'>
+				<a href='%%url%%'>Visit</a> | <a href='%%binpath%%/edit?url=%%url%%'>Edit</a> | <a href='%%binpath%%/delete?url=%%url%%' onclick="return confirm('Are you SURE you want to delete %%url%%? This can\'t be undone!')">Delete</a>
+			</td>
+			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
+			<td>%%in_menus%%</td>
+			<td>%%title%%</td>
+		</tr>
+		</tmpl_loop>
+	</tbody>
+</table>
