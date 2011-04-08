@@ -98,36 +98,44 @@ package Content;
 		my $req  = shift;
 		my $r    = shift;
 		
-		# Try to get the database entry for the current URL 
-		my $page_obj = $self->get_page($req->page_path);
+		my @url = split /\//, join('/', $req->page_path, $req->path);
 		
-		#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.", obj? $page_obj\n";
+		@url = '/' if !@url;
 		
-		# If entry is valid, process it
-		if($page_obj)
+		# Basic sanity check
+		@url = @url[0..$AppCore::Config::MAX_URL_DEPTH] if @url > $AppCore::Config::MAX_URL_DEPTH;
+		
+		# reset page path and path info
+		$req->page_path(join '/', @url);
+		$req->path('');
+		
+		my $popped = 0;
+		
+		while(@url)
 		{
-			#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": next_page_path: ".$req->next_page_path."\n";
+			my $cur_url = join('/', @url);
+			#print STDERR __PACKAGE__."::process_page(): Testing '$cur_url'...\n";
+		
+			# Try to get the database entry for the current URL 
+			my $page_obj = $self->get_page($cur_url);
 			
-			# Before just processing this page, check to see if the
-			# next page in the URL is valid, if so, process it instead
-			if($req->next_page_path && 
-			   $self->get_page($req->next_page_path))
+			if($page_obj)
 			{
-				# If the next page path is valid, push the next path element onto the page path
-				# so that the call to process_page() loads the right url
-				$req->push_page_path($req->shift_path);
+				$req->page_path($cur_url);
+				#print STDERR __PACKAGE__."::process_page(): Got valid pageid $page_obj for '$cur_url', sending!\n";
 				
-				$self->process_page($req,$r);
-				return 1;
-			}
-			else
-			
-			# Next page not valid, process this page
-			{
+				# Found valid page, output
 				my $type = $page_obj->typeid;
 				#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
 				if($type && $type->id)
 				{
+					if($popped && $type->id == 1) # static page, ignores page path, so original URL was what user wanted
+					{
+						return 0;
+					}
+					
+					# Other page types might use page path, so allow to process normally
+					
 					# Calls $r->output itself as needed
 					$type->process_page($req,$r,$page_obj);
 				}
@@ -138,20 +146,17 @@ package Content;
 				}
 				return 1;
 			}
+			else
+			{
+				# Chop end off url and reprocess
+				my $pp = pop @url;
+				$req->unshift_path($pp);
+				$popped = 1;
+				#print STDERR __PACKAGE__."::process_page(): '$cur_url' didnt match, popped $pp, retrying...\n";
+			}
+			
 		}
-		
 		return 0;
-		
-		#my $cur_page  = $req->last_path;
-		#my $next_path = $req->next_path;
-		
-# 		print STDERR "SitePage: next_path: $next_path\n";
-# 		print STDERR Dumper $req;
-# 		
-# 		return $r->output("$cur_page: $next_path");
-		
-		
-		
 	};
 	
 	

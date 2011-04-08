@@ -2,7 +2,8 @@
 		<span style='font-size:.75em'>
 			<tmpl_if user_display>
 				You are logged in as <i>%%user_display%%</i> | <a href='/user/login'>Signoff</a>
-				<tmpl_if can_edit> | <a href='/admin/pages/edit?url=%%content_url%%'>Edit Page</a></tmpl_if>
+				<tmpl_if can_edit> | <a href='/content/admin/edit?url=%%content_url%%'>Edit Page</a></tmpl_if>
+				<tmpl_if is_admin> | <a href='/admin'>Administration</a></tmpl_if>
 			<tmpl_else>
 				<a href='/user/login'>Signin</a> | <a href='/usr/signup'>Signup</a>
 			</tmpl_if>

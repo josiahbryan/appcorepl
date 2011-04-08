@@ -53,6 +53,8 @@ BEGIN
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
 
+	# Prevent users from send arbitrarily long URLs and consuming resources
+	$MAX_URL_DEPTH = 25; 
 };
 
 1;

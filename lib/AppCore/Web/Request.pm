@@ -160,6 +160,7 @@ package AppCore::Web::Request;
 		{
 			#AppCore::Common::print_stack_trace();
 			#print STDERR "[DEBUG] page_path('$value'), app_root='".$self->app_root."'\n";
+			$value =~ s/^\///;
 			$self->{PAGE_PATH} = join '/', $self->app_root, $value;
 		}
 		my $p = $self->{PAGE_PATH};
@@ -207,8 +208,9 @@ package AppCore::Web::Request;
 	
 	sub app_root
 	{
-		my $mod_name = eval 'AppCore::Module::MODULE_NAME()';
-		AppCore::Common->context->http_bin . ($mod_name ? '/'.$mod_name : '');
+		return '';
+		#my $mod_name = eval 'AppCore::Module::MODULE_NAME()';
+		#AppCore::Common->context->http_bin . ($mod_name ? '/'.$mod_name : '');
 	}
 
 }

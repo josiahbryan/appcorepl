@@ -198,5 +198,59 @@ body
 
 
 
+/********************* */
+ 
+.event_list a
+{
+	text-decoration: none;
+	
+}
 
+.event_list h5
+{
+	background: url("/appcore/mods/ThemePHC/images/calendar_background.jpg") no-repeat scroll 0 0 transparent;
+	color: #A09F9F;
+	display: block;
+	float: left;
+	font-size: 1.4em;
+	height: 41px;
+	margin: 0 15px 10px 10px;
+	padding: 2px 0 0;
+	text-align: center;
+	width: 41px;
+}	
 
+.event_list h5 strong
+{
+	color: #FFFFFF;
+	display: block;
+	font-size: 0.6em;
+	text-transform: uppercase;
+}
+
+.event_list h3.event_title
+{
+    color: #A67726;
+    padding: 2px 35px 2px 10px;
+}
+
+.event_list p
+{
+	color: #6C6C6C;
+	padding: 0 35px 10px 10px;
+}
+
+.event_list ul
+{
+	margin: 0;
+	padding: 0;
+}
+
+.event_list li
+{
+	background-color: #FFFFFF;
+	border-bottom: 1px solid #FFFFFF;
+	font-size: 1.5em;
+	list-style-type: none;
+	text-align: left;
+}

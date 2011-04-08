@@ -286,6 +286,9 @@ package Content::Page::ThemeEngine;
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
 			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
 			$tmpl->param($_ => $self->{params}->{$_}) foreach keys %{$self->{params}}; 
+			
+			my $user = AppCore::Common->context->user;
+			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
 		}
 	
 		return $tmpl;

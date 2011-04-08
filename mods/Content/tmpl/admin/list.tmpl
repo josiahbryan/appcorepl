@@ -1,6 +1,39 @@
 <title>Page List - Admin</title>
 <h1>Page List</h1>
 
+<style>
+.menu_switch
+{
+	/*margin:6px;*/
+	width: 41px;
+	margin: 0 auto;
+}
+
+.menu_switch a
+{
+	display: block;
+	height: 15px;
+	overflow: hidden;
+	width: 41px;
+	background: url("%%modpath%%/images/toggleOnOff.gif") no-repeat scroll 0 0 transparent;
+	outline-style: none;
+	text-decoration: none;
+}
+
+.menu_switch a.sw1
+{
+	background-position: 0 0;
+}
+
+.menu_switch a.sw0
+{
+	background-position: 0 -15px;
+}
+
+.menu_switch a span {display:none;}
+
+</style>
+
 <a href='%%binpath%%/create'>Add a new page...</a>
 
 <table class='pretty'>
@@ -17,9 +50,31 @@
 				<a href='%%url%%'>Visit</a> | <a href='%%binpath%%/edit?url=%%url%%'>Edit</a> | <a href='%%binpath%%/delete?url=%%url%%' onclick="return confirm('Are you SURE you want to delete %%url%%? This can\'t be undone!')">Delete</a>
 			</td>
 			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
-			<td>%%in_menus%%</td>
+			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>
 			<td>%%title%%</td>
 		</tr>
 		</tmpl_loop>
 	</tbody>
 </table>
+
+<img id='switch_img' style='display:none'/>
+<script>
+
+function x(e){return document.getElementById(e);}
+function a(e,k){return e.getAttribute(k);} 
+function update_sw(elm)
+{
+	//alert(elm);
+	var out = x('switch_img');
+	var url = a(elm,'page_url');
+	var newCls = elm.className == 'sw0' ? 'sw1' : 'sw0';
+	var newUrl = '%%binpath%%/set_in_menus?url='+url+'&flag=' + (newCls == 'sw0' ? '0':'1');
+	//alert(newCls+','+elm.className);
+	out.src = newUrl + '&quiet=1';
+	elm.className = newCls;
+	elm.href = newUrl;
+	document.body.focus();
+	return false;
+}
+
+</script>

@@ -15,6 +15,7 @@ package Content::Admin;
 		edit
 		delete
 		save
+		set_in_menus
 	/);
 
 
@@ -88,6 +89,9 @@ package Content::Admin;
 		$tmpl->param(page_content => '');
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
 		
+		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
+		$tmpl->param(url_from => $url_from);
+		
 		$view->output($tmpl);
 	
 		return $r;
@@ -105,11 +109,12 @@ package Content::Admin;
 		my $view = Content::Page::Controller->get_view('admin',$r);
 		
 		my $url = $req->url;
+		$url = '/' if !$url;
 		
 		my $page_obj = Content::Page->by_field(url => $url);
 		if(!$page_obj)
 		{
-			return $r->redirect( $self->module_path($PAGE_CREATE_ACTION) . '?url='. $url);
+			return $r->redirect( $self->module_url($PAGE_CREATE_ACTION) . '?url='. $url);
 		}
 		
 		$url =~ s/^\///;
@@ -121,6 +126,9 @@ package Content::Admin;
 		$tmpl->param(page_title   => $page_obj->title);
 		$tmpl->param(page_content => $page_obj->content);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
+		
+		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
+		$tmpl->param(url_from => $url_from);
 		
 		$view->output($tmpl);
 	
@@ -145,6 +153,34 @@ package Content::Admin;
 		$page_obj->delete;
 		
 		return $r->redirect($self->module_url());
+	}
+	
+	sub set_in_menus
+	{
+		AppCore::AuthUtil->require_auth(['ADMIN']);
+		
+		my ($self,$req) = @_;
+		my $r = AppCore::Web::Result->new;
+		
+		my $url = $req->url;
+		
+		my $page_obj = Content::Page->by_field(url => $url);
+		if(!$page_obj)
+		{
+			return $r->error("No such page","No such page: <b>$url</b>");
+		}
+		
+		$page_obj->show_in_menus($req->flag);
+		$page_obj->update;
+		
+		if($req->quiet)
+		{
+			return $r->output_data('text/plain','Thanks for all the fish');
+		}
+		else
+		{
+			return $r->redirect($self->module_url());
+		}
 	}
 	
 	sub save
@@ -177,7 +213,9 @@ package Content::Admin;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";
 		
-		return $r->redirect($self->module_url());
+		my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
+		
+		return $r->redirect($url_from ? $url_from : $self->module_url());
 	}
 	
 };

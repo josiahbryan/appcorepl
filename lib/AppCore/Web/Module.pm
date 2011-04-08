@@ -240,6 +240,8 @@ package AppCore::Web::Module;
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
 			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg));
 			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $first_pkg, @parts[0..$#parts-1]));
+			my $user = AppCore::Common->context->user;
+			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
 			return $tmpl;
 		}
 		else
@@ -304,6 +306,7 @@ package AppCore::Web::Module;
 		else
 		{
 			$response = AppCore::Web::Result->new();
+			print STDERR "Cannot dispatch to $mod_obj / $method\n";
 			$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
 		}
 		
