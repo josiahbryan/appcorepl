@@ -75,7 +75,7 @@ ul#mainnav li ul
 	display: none;
 	position: absolute;
 	
-	top: 2em;
+	top: 1.5em;
 	left: 19px;
 	width: 15em;
 	
@@ -139,5 +139,17 @@ ul#mainnav li ul li:hover a
 /* Show the dropdown on hover on main menu */
 ul#mainnav li:hover ul 
 {
-	display:block
+	display:block;
 }
+/*ul#mainnav li:hover
+{
+	background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png") !important;
+}
+
+ul#mainnav li:hover ul li
+{
+	background-image: none !important;
+}
+
+*/
+
