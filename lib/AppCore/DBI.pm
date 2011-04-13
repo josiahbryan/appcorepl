@@ -1487,7 +1487,7 @@ package AppCore::DBI;
 	
 	# Function: onfork
 	# Can be called to clear DB handles when forking the process
-	sub onfork
+	sub clear_handle_cache
 	{
 		%DB_CACHE = ();
 	}

@@ -176,6 +176,8 @@ package AppCore::Web::DispatchCore;
 		
 		$app = 'Content' if !$app;
 		
+		REPROCESS_ON_SERVER_GONE:
+		
 		eval
 		{
 			# Do the actual processing. 
@@ -262,13 +264,22 @@ package AppCore::Web::DispatchCore;
 		if($@)
 		{
 			my $err = $@;
+			
+			if($err =~ /MySQL server has gone away/)
+			{
+				AppCore::DBI->clear_handle_cache;
+				goto REPROCESS_ON_SERVER_GONE;
+			}
+			else
+			{	
+				my $user = AppCore::Common->context->user;
 				
-			my $user = AppCore::Common->context->user;
-			
-			#send_email($AppCore::Config::WEBMASTER_EMAIL,'[AppCore Error] '.get_full_url(),"$err\n----------------------------------\n".AppCore::Common::get_stack_trace()."\n----------------------------------\nURL:  ".get_full_url()."\nUser: ".($user ? $user->display : "(no user logged in)\n"),1,$user ? eval '$user->compref->email' || "noemail-empid-$user\@noemail.error" : 'notloggedin@nouser.error' );
-			
-			#AppCore::Session->save();
-			error("Internal Server Error",$err);
+				
+				#send_email($AppCore::Config::WEBMASTER_EMAIL,'[AppCore Error] '.get_full_url(),"$err\n----------------------------------\n".AppCore::Common::get_stack_trace()."\n----------------------------------\nURL:  ".get_full_url()."\nUser: ".($user ? $user->display : "(no user logged in)\n"),1,$user ? eval '$user->compref->email' || "noemail-empid-$user\@noemail.error" : 'notloggedin@nouser.error' );
+				
+				#AppCore::Session->save();
+				error("Internal Server Error",$err);
+			}
 		}
 		
 		END_HTTP_REQUEST:
