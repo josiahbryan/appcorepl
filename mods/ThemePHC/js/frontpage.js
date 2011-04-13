@@ -2,15 +2,10 @@ $(document).ready(function() {
 	windowsize = window.innerWidth; //Get browser size for slide overs
 	setTimeout(scrollTo, 0, 0, 1); //Hide nav bar in mobile safari
 
-	
-// 	//Hide the AJAX subpages until they're needed
-// 	$('#selected-item').hide();
-// 	$('#sub-selected-item').hide();
-
-	var currentBlock = 0;   //pointer
+	var currentBlock = 0;   //js pointer
 	var transTime    = 400; //milliseconds
 	var blockHeight  = 322; //pixels
-	var lastLink     = 0;   //pointer
+	var lastLink     = 0;   //js pointer
 	function showBlock(blockSuffix)
 	{
 		var newBlockId = 'block-'+blockSuffix;
@@ -70,8 +65,7 @@ $(document).ready(function() {
 	// start the rotator
 	setTimeout(showNextBlock, 100);
 	
-	
-	$('.sidebar .sidebar-link-block .link-block').live("click", function() {
+	$('#sidebar .sidebar-link-block .link-block').live("click", function() {
 	
 		var suffix = $(this).attr('block-suffix');
 		if(!suffix)
@@ -121,15 +115,5 @@ $(document).ready(function() {
 			$('#main-page').animate({left: '-'+windowsize},400);
 		});
 		return false;
-	});
-
-	
-// 	setTimeout(function(){
-// // 		$('#block-title-slide').animate({top: '-322'}, 400);
-// // 		$('#block-video').animate({top: '0'}, 400);
-// 		showBlock('block-video');
-// 	}, 1600);
-	
-	
-	
+	});	
 });

@@ -40,23 +40,29 @@ body
 	height: 325px;
 }
 
+#mainlogo-floater
+{
+	width: 100%;
+	position: absolute;
+	z-index: 200;
+}
 
 #mainlogo-wrap
 {
-	/*z-index: 500;
-	position: absolute;*/
-	
 	width: 965px;
-	margin: 0 auto;
-	
+	margin: 0 auto;	
 }
 
 #mainlogo
 {
 	/*margin-top: -80px;
 	margin-bottom: -50px;*/
-	margin-top: -47px;
+	/*margin-top: -47px;
 	margin-left: -118px;
+	*/
+	margin-top: -70px;
+	margin-left: -120px;
+	
 }
 
 
@@ -68,7 +74,7 @@ body
 	top: 0;
 	left: 0;
 	
-	z-index: 400;
+	z-index: 100;
 	
 	width: 100%;
 	
@@ -83,25 +89,34 @@ body
 	height: 324px;
 	padding: 22px 25px;
 	
-	margin: 230px auto 0;
+	margin: 183px auto 0;
 	
 	/*border: 1px solid red;*/
 }
 
-#graphicblock #graphic-wrap
+#graphicblock-bg
 {
-	float: left;
 	width: 728px;
 	height: 322px;
 	
 	background-image: url("/appcore/mods/ThemePHC/images/graphicbg.jpg");
 	background-repeat: no-repeat;
+
+}
+
+#graphic-wrap
+{
+	width: 728px;
+	height: 322px;
 	
 	overflow: hidden;
 	position: relative;
+	
+	float: left;
+	margin-left: 13px;
 }
 
-#graphicblock #graphic-wrap iframe.vimeo-video
+#graphic-wrap iframe.vimeo-video
 {
 	width: 400px;
 	height: 300px;
@@ -109,7 +124,7 @@ body
 	border: 1px solid black;
 }
 
-#graphicblock #graphic-wrap .block-item
+#graphic-wrap .block-item
 {
 	/*background: red;
 	border: 1px solid blue;*/
@@ -121,23 +136,43 @@ body
 	/*display: none;*/
 }
 
-.sidebar
+#graphic-floater
 {
+	width: 100%;
+	position: absolute;
+	z-index: 300;
+	top: 205;
+	left: 0;
+}
+
+#graphic-centerer
+{
+	width: 965px;
+	margin: 0 auto;
+	
+	z-index: 800;
+}
+
+#sidebar
+{
+	float: left;
+	
 	background-image: url("/appcore/mods/ThemePHC/images/sidebar.jpg");
 	background-repeat: no-repeat;
 	
 	height: 322px;
 	width: 210px;
 	
-	float: left;
+	
+	
 }
 
-.sidebar .sidebar-link-block
+#sidebar .sidebar-link-block
 {
 	display: block;
 }
 
-.sidebar .sidebar-link-block a
+#sidebar .sidebar-link-block a
 {
 	display: block;
 	width: 210px;
@@ -151,19 +186,19 @@ body
 	text-shadow: rgb(8,8,8) 1px 1px 1px;
 }
 
-.sidebar .sidebar-link-block a.current
+#sidebar .sidebar-link-block a.current
 {
 	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
 	color: #e7ff30;
 
 }
 
-.sidebar .sidebar-link-block a .title
+#sidebar .sidebar-link-block a .title
 {
 	font-weight: bold;
 }
 
-.sidebar .sidebar-link-block a .subtitle
+#sidebar .sidebar-link-block a .subtitle
 {
 	font-weight: normal;
 	font-size: 12px;
@@ -199,7 +234,13 @@ body
 
 
 /********************* */
- 
+
+.block-item h1
+{
+	color: white;
+	text-shadow: rgb(8,8,8) 0px 0px 8px;
+}
+
 .event_list a
 {
 	text-decoration: none;
@@ -214,7 +255,7 @@ body
 	float: left;
 	font-size: 1.4em;
 	height: 41px;
-	margin: 0 15px 10px 10px;
+	margin: 0 15px 0px 10px;
 	padding: 2px 0 0;
 	text-align: center;
 	width: 41px;
@@ -228,16 +269,19 @@ body
 	text-transform: uppercase;
 }
 
-.event_list h3.event_title
+.event_list h3.event-title
 {
-    color: #A67726;
-    padding: 2px 35px 2px 10px;
+	color: black;
+	padding: 2px 35px 2px 10px;
+	margin: 0;
 }
 
 .event_list p
 {
 	color: #6C6C6C;
-	padding: 0 35px 10px 10px;
+	padding: 0 35px 0px 10px;
+	margin-top: -5px;
+	margin: 0;
 }
 
 .event_list ul
@@ -249,8 +293,36 @@ body
 .event_list li
 {
 	background-color: #FFFFFF;
-	border-bottom: 1px solid #FFFFFF;
+	/*background: red;*/
+	border-bottom: 1px dotted black;
 	font-size: 1.5em;
 	list-style-type: none;
 	text-align: left;
+	padding-bottom: 10px;
+	margin-top: 10px;
+}
+
+.event_list 
+{
+	background: white;
+	padding: 5px 0 0 0;
+	border-top: 2px solid black;
+	border-bottom: 2px solid black;
+}
+
+.event_list .readmore a 
+{
+	text-align: center;
+	display: block;
+	width: 100%;
+	padding: .5em;
+}
+
+.readmore a span
+{
+	font-weight: bold;
+	font-size: 1em;
+	color: black;
+	text-decoration: none;
+	/*border-bottom: 1px solid blue;*/
 }

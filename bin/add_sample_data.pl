@@ -30,6 +30,6 @@ Content::Page->find_or_create({
 	typeid	=> $sub_type,
 	url	=> '/welcome', # root
 	title	=> 'Welcome %%use_first%%',
-	content => '<h1>Helome, %%use_first%%!</h1>'
+	content => '<h1>Hello, %%use_first%%!</h1>'
 });
 	
