@@ -33,7 +33,7 @@ package Content::Admin;
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $tmpl->param('binpath');
 		
-		my @pages = Content::Page->retrieve_from_sql('1 order by url');
+		my @pages = Content::Page->retrieve_from_sql('1 order by menu_index, url');
 		
 		use Data::Dumper;
 		
@@ -202,7 +202,7 @@ package Content::Admin;
 		
 		if(!$page_obj)
 		{
-			$page_obj = Content::Page->create({url=>$url, typeid=>1});
+			$page_obj = Content::Page->create({url=>$url, typeid=>Content::Page::Type->by_field(view_code=>'sub')});
 			print STDERR "Admin: Created pageid $page_obj for url $url\n";
 		}
 		

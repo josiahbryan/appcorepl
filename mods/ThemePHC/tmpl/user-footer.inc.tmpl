@@ -1,6 +1,6 @@
 		<hr size=1>
 		<span style='font-size:.75em'>
-			<tmpl_if user_display>
+			<tmpl_if user_userid>
 				You are logged in as <i>%%user_display%%</i> | <a href='/user/login'>Signoff</a>
 				<tmpl_if can_edit> | <a href='/content/admin/edit?url=%%content_url%%'>Edit Page</a></tmpl_if>
 				<tmpl_if is_admin> | <a href='/admin'>Administration</a></tmpl_if>

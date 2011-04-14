@@ -163,7 +163,16 @@ package AppCore::Web::DispatchCore;
 		$ctx_ref->http_root(''); #$root);
 		$ctx_ref->http_bin('');#$env);
 		
-		authenticate();
+		REPROCESS_AUTHENTICATION:
+		eval
+		{
+			authenticate();
+		};
+		if($@ =~ /MySQL server has gone away/)
+		{
+			AppCore::DBI->clear_handle_cache;
+			goto REPROCESS_AUTHENTICATION;
+		}
 		
 		my $url = get_full_url;
 		print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /(res\/|forms\/validate)/;

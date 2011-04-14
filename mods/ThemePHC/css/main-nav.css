@@ -30,9 +30,9 @@
 
 #header-content input
 {
-	display: block;
-	float: left;
-	margin-top: -5px;
+	/*display: block;*/
+	/*float: left;*/
+	/*margin-top: -5px;*/
 	
 	
 }
@@ -153,3 +153,19 @@ ul#mainnav li:hover ul li
 
 */
 
+#header-content table
+{
+	margin-top: 6px;
+}
+
+#header-content form
+{
+	display: inline;
+}
+
+#header-content table td
+{
+	font-size: 11px;
+	/*
+	line-height: 17px;*/
+}

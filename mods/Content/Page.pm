@@ -37,6 +37,7 @@ package Content::Page;
 			{	field	=> 'content',		type	=> 'text' },
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
 			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
+			{	field	=> 'menu_index',	type	=> 'int(11)', default => 1 },
 
 			
 		]	
@@ -213,6 +214,81 @@ package Content::Page::ThemeEngine;
 		$self->{params}->{$key} = $value;
 	}
 	
+	our @NavCache;
+	sub load_nav
+	{
+		return \@NavCache if @NavCache;
+		 
+		use Data::Dumper;
+		
+		my @pages = Content::Page->retrieve_from_sql('show_in_menus=1 order by menu_index, url');
+		#die Dumper \@pages;
+		my %hash; # = ( root=>{kids=>{}} );
+		
+		#print STDERR "Building nav...\n";
+		foreach my $page (@pages)
+		{
+			my @url = split /\//, $page->url;
+			shift @url;
+			
+			#print STDERR "Processing page ".$page->url."\n";
+		
+			my $root = shift @url;
+			my $ref = $hash{$root};
+			if(!$ref)
+			{
+				if(@url)
+				{
+					die $page->url.": No root entry for $root, this is not that page!".Dumper(\%hash);
+				}
+				else
+				{
+					$hash{$root} = 
+					{
+						title	=> $page->title,
+						url	=> $page->url,
+						kid_map	=> {},
+						kids	=> []
+					};
+					
+					$ref = $hash{$root};
+					push @NavCache, $ref;
+					
+					#print STDERR $page->url.": Adding entry for '$root'".Dumper(\%hash);
+				}
+			}
+			
+			while(@url)
+			{
+				my $part = shift @url;
+				
+				my $new_ref = $ref->{kid_map}->{$part};
+				if(!$new_ref)
+				{
+					if(@url)
+					{
+						die $page->url.": No entry for url part $part, this is not that page!";
+					}
+					else
+					{
+						$new_ref = $ref->{kid_map}->{$part} = 
+						{
+							title	=> $page->title,
+							url	=> $page->url,
+							kid_map	=> {},
+							kids	=> []
+						};
+						push @{$ref->{kids}}, $new_ref;
+					}
+				}
+			}
+		}
+		
+		#die Dumper \@NavCache;
+		return \@NavCache;
+		
+	}
+	
 	sub apply_page_obj
 	{
 		my ($self,$tmpl,$page_obj) = @_;
@@ -221,9 +297,10 @@ package Content::Page::ThemeEngine;
 			my $user = AppCore::Common->context->user;
 			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
 			$tmpl->param(page_content => AppCore::Web::Common::load_template($page_obj->content)->output) if $page_obj->content =~ /%%/;
-			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title)->output)   if $page_obj->title   =~ /%%/;
+			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title  )->output) if $page_obj->title   =~ /%%/;
 			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
-			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN'])); 
+			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN']));
+			 
 			return 1;
 		}
 		
@@ -285,7 +362,8 @@ package Content::Page::ThemeEngine;
 		{
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
 			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
-			$tmpl->param($_ => $self->{params}->{$_}) foreach keys %{$self->{params}}; 
+			$tmpl->param($_ => $self->{params}->{$_}) foreach keys %{$self->{params}};
+			$tmpl->param(mainnav      => $self->load_nav); 
 			
 			my $user = AppCore::Common->context->user;
 			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));

@@ -492,7 +492,7 @@ package AppCore::User::GroupList;
 				auto	=> 1,
 			},
 			{	field	=> 'userid',	type	=> 'int(11)',	linked => 'AppCore::User'  },
-			{	field	=> 'groupid',	type	=> 'int(11)',	linked => 'AppCore::Group' },
+			{	field	=> 'groupid',	type	=> 'int(11)',	linked => 'AppCore::User::Group' },
 			
 		]
 	});
