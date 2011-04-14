@@ -215,6 +215,14 @@ package Content::Page::ThemeEngine;
 	}
 	
 	our @NavCache;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
+		@NavCache = ();
+	}	
+	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
 	sub load_nav
 	{
 		return \@NavCache if @NavCache;

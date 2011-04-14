@@ -2422,6 +2422,26 @@ package AppCore::DBI;
 		
 		return \@list;
 	}
+
+	my @CacheClearHooks;
+	sub clear_cached_dbobjects
+	{
+		my $class = shift;
+		
+		#print STDERR __PACKAGE__.": Clearing Class::DBI cache...\n";
+		$class->clear_object_index;
+		foreach my $pkg (@CacheClearHooks)
+		{
+			$pkg->clear_cached_dbobjects;
+		}
+	}
+	
+	sub add_cache_clear_hook
+	{
+		my $class = shift;
+		my $hook_pkg = shift;
+		push @CacheClearHooks, $hook_pkg;
+	}
 	
 	
 };
