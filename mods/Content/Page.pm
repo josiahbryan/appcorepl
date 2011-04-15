@@ -290,6 +290,8 @@ package Content::Page::ThemeEngine;
 						push @{$ref->{kids}}, $new_ref;
 					}
 				}
+				
+				$ref = $new_ref;
 			}
 		}
 		

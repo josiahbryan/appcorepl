@@ -17,6 +17,7 @@ package Content::Admin;
 		save
 		set_in_menus
 		change_idx
+		save_title
 	/);
 
 
@@ -33,6 +34,7 @@ package Content::Admin;
 		
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $tmpl->param('binpath');
+		my $modpath = $tmpl->param('modpath');
 		
 		my @pages = Content::Page->retrieve_from_sql('1 order by menu_index, url');
 		
@@ -41,11 +43,14 @@ package Content::Admin;
 		my @cols = Content::Page->columns;
 		my @list;
 		my $idx_cnt = 0;
+		my $tab_cnt = 0;
 		foreach my $page (@pages)
 		{
 			my $row = {};
 			$row->{$_} = $page->get($_) foreach @cols;
 			$row->{binpath} = $binpath;
+			$row->{modpath} = $modpath;
+			$row->{tab_idx} = $tab_cnt++;
 			
 			my @url = split /\//, $row->{url};
 			shift @url;
@@ -192,6 +197,34 @@ package Content::Admin;
 		}
 	}
 	
+	sub save_title
+	{
+		AppCore::AuthUtil->require_auth(['ADMIN']);
+		
+		my ($self,$req) = @_;
+		my $r = AppCore::Web::Result->new;
+		
+		my $pageid = $req->pageid;
+		
+		my $page_obj = Content::Page->retrieve($pageid);
+		if(!$page_obj)
+		{
+			return $r->error("No such page","No such page: <b>$pageid</b>");
+		}
+		
+		$page_obj->title($req->title);
+		$page_obj->update;
+		
+		if($req->quiet)
+		{
+			return $r->output_data('text/plain','Thanks for all the fish');
+		}
+		else
+		{
+			return $r->redirect($self->module_url());
+		}
+	}
+	
 	sub _renumber_page
 	{
 		my $self = shift;
@@ -248,31 +281,39 @@ package Content::Admin;
 		
 		if(scalar(@number_parts) != scalar(@url_parts)-1)
 		{
-			#print STDERR "$url: Corrupt debug: ".Dumper(\@number_parts, \@url_parts)."\n";
-			# Index corrupt, rebuild all sibling indexes
-			my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ?');
-			$sth->execute($url_base . '/%');
-			
-			# Must have parent to get the starting index
-			my $parent = Content::Page->by_field(url => $url_base);
-			if(!$parent)
+			if($url eq '/')
 			{
-				die "Menu index for url '$url' corrupt, but could not find parent '$url_base' to use for rebuild";
+				$page_obj->menu_index(0);
 			}
-			my $parent_idx = $parent->menu_index;
-			print STDERR "$url: Index corrupt, rebuilding based on parent '".$parent->url.", index: $parent_idx \n";
-			
-			# Loop thru siblings and just increment the index counter
-			my $counter = 0;
-			while(my $ref = $sth->fetchrow_hashref)
+			else
 			{
-				my $sib = Content::Page->retrieve($ref->{pageid});
-				$sib->menu_index($parent_idx .'.'. $counter ++);
-				$sib->update;
-				print STDERR "$url: Rebuild: Sib ".$sib->url.", new index: ".$sib->menu_index."\n";
-			}
+				
+				#print STDERR "$url: Corrupt debug: ".Dumper(\@number_parts, \@url_parts)."\n";
+				# Index corrupt, rebuild all sibling indexes
+				my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ?');
+				$sth->execute($url_base . '/%');
+				
+				# Must have parent to get the starting index
+				my $parent = Content::Page->by_field(url => $url_base);
+				if(!$parent)
+				{
+					die "Menu index for url '$url' corrupt, but could not find parent '$url_base' to use for rebuild";
+				}
+				my $parent_idx = $parent->menu_index;
+				print STDERR "$url: Index corrupt, rebuilding based on parent '".$parent->url.", index: $parent_idx \n";
+				
+				# Loop thru siblings and just increment the index counter
+				my $counter = 0;
+				while(my $ref = $sth->fetchrow_hashref)
+				{
+					my $sib = Content::Page->retrieve($ref->{pageid});
+					$sib->menu_index($parent_idx .'.'. $counter ++);
+					$sib->update;
+					print STDERR "$url: Rebuild: Sib ".$sib->url.", new index: ".$sib->menu_index."\n";
+				}
 			
-			goto _RECALC_IDX;
+				goto _RECALC_IDX;
+			}
 		}
 		
 		# Get the current integer for this level of the page (last part of the number)

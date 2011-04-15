@@ -1,6 +1,6 @@
 $(document).ready(function() {
 	windowsize = window.innerWidth; //Get browser size for slide overs
-	setTimeout(scrollTo, 0, 0, 1); //Hide nav bar in mobile safari
+	//setTimeout(scrollTo, 0, 0, 1); //Hide nav bar in mobile safari
 
 	var currentBlock = 0;   //js pointer
 	var transTime    = 400; //milliseconds

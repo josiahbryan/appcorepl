@@ -37,12 +37,34 @@
 	float: right;
 	border-left: 1px dotted rgb(120,120,120);
 	padding-left: 5px;
+	margin-left: 5px;
 }
 .idx_acts a 
 { 
 	text-decoration: none;
 	color: black;
 	font-weight: bold;
+}
+
+.pretty input
+{
+	padding: 0;
+	border: 0;
+	padding: 3 4;
+	margin: -3 -4;
+
+}
+
+.pretty input:hover
+{
+	background: #ffff99;
+}
+
+.loader
+{
+	float: right;
+	margin-right: -2em;
+	display: none;
 }
 
 </style>
@@ -67,7 +89,9 @@
 				%%menu_index%%</td>
 			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
 			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>
-			<td>%%title%%</td>
+			<td>
+				<img src='%%modpath%%/images/ajax-loader-balls-xparent.gif' class='loader' id='loader%%pageid%%'>
+				<input type='text' tabindex='%%tab_idx%%' pageid='%%pageid%%' value='%%title%%' orig_value='%%title%%' onblur='save_title(this)'></td>
 		</tr>
 		</tmpl_loop>
 	</tbody>
@@ -93,6 +117,29 @@ function update_sw(elm)
 	elm.href = newUrl;
 	document.body.focus();
 	return false;
+}
+
+function save_title(elm)
+{
+	if(elm.getAttribute('orig_value') == elm.value)
+		return;
+	//alert(elm.value);		
+	var out = x('switch_img');
+	var pageid = elm.getAttribute('pageid');
+	var url = '%%binpath%%/save_title?pageid=' + pageid + '&title=' + elm.value + '&quiet=1';
+	
+	elm.setAttribute('orig_value', elm.value);
+	
+	//alert(url);
+	
+	var loader = x('loader' + pageid);
+	if(loader)
+	{
+		loader.style.display = 'block';
+		out.onerror = out.onload = function(){ loader.style.display = 'none'; };
+	}
+	
+	out.src = url;
 }
 
 </script>
