@@ -198,9 +198,23 @@ package Content::Admin;
 		my $page_obj = shift;
 		my $new_num = shift;
 		
+		my $old_idx = $page_obj->menu_index;
 		$page_obj->menu_index($new_num);
 		$page_obj->update;
+		
+		my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ?');
+		$sth->execute($page_obj->url.'/%');
+		
+		while(my $ref = $sth->fetchrow_hashref)
+		{
+			my $child = Content::Page->retrieve($ref->{pageid});
 			
+			my $child_idx = $child->menu_index;
+			$child_idx =~ s/^$old_idx/$new_num/;
+			
+			$child->menu_index($child_idx);
+			$child->update;
+		}
 	}
 	
 	sub change_idx
@@ -220,11 +234,70 @@ package Content::Admin;
 		
 		my $dir = $req->dir eq 'up' ? -1 : 1;
 		
-		my $idx = $page_obj->menu_index; 
-		my $new_idx = $dir < 0 ? $idx - 1 : $idx + 1;
+		my @url_parts = split /\//, $page_obj->url;
 		
-		$new_idx = 0 if $new_idx < 0;
-		if($new_idx != $idx)
+		# Get current idx and split at the dots
+		_RECALC_IDX:
+		my $idx = $page_obj->menu_index; 
+		my @number_parts = split /\./, $idx;
+		
+		my @url_base = @url_parts;
+		pop @url_base;
+		my $url_base = join('/', @url_base);
+		
+		
+		if(scalar(@number_parts) != scalar(@url_parts)-1)
+		{
+			#print STDERR "$url: Corrupt debug: ".Dumper(\@number_parts, \@url_parts)."\n";
+			# Index corrupt, rebuild all sibling indexes
+			my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ?');
+			$sth->execute($url_base . '/%');
+			
+			# Must have parent to get the starting index
+			my $parent = Content::Page->by_field(url => $url_base);
+			if(!$parent)
+			{
+				die "Menu index for url '$url' corrupt, but could not find parent '$url_base' to use for rebuild";
+			}
+			my $parent_idx = $parent->menu_index;
+			print STDERR "$url: Index corrupt, rebuilding based on parent '".$parent->url.", index: $parent_idx \n";
+			
+			# Loop thru siblings and just increment the index counter
+			my $counter = 0;
+			while(my $ref = $sth->fetchrow_hashref)
+			{
+				my $sib = Content::Page->retrieve($ref->{pageid});
+				$sib->menu_index($parent_idx .'.'. $counter ++);
+				$sib->update;
+				print STDERR "$url: Rebuild: Sib ".$sib->url.", new index: ".$sib->menu_index."\n";
+			}
+			
+			goto _RECALC_IDX;
+		}
+		
+		# Get the current integer for this level of the page (last part of the number)
+		my $cur_num = pop @number_parts;
+		
+		# Add/subtract one from the current integer
+		my $new_num = $dir < 0 ? $cur_num - 1 : $cur_num + 1;
+		$new_num = 1 if $new_num < 1;
+		
+		# Find the number of sibling pages to this page 
+		my $sth = Content::Page->db_Main->prepare('select count(pageid) as count from pages where url like ?');
+		$sth->execute($url_base . '/%');
+		
+		# Cap the integer for this page at the number of sibling pages
+		my $count = $sth->rows ? $sth->fetchrow_hashref->{count} : 0;
+		$new_num = $count if $new_num > $count;
+		
+		# Push the new integer onto the string of integers
+		push @number_parts, $new_num;
+		
+		# Rejoin numbers with dots to form the new menu index
+		my $new_idx = join '.', @number_parts;
+		
+		print STDERR "$url: new_idx: '$new_idx'\n";
+		if($new_idx ne $idx)
 		{
 			my $existing_obj = Content::Page->by_field(menu_index => $new_idx);
 			
@@ -261,7 +334,35 @@ package Content::Admin;
 		
 		if(!$page_obj)
 		{
-			$page_obj = Content::Page->create({url=>$url, typeid=>Content::Page::Type->by_field(view_code=>'sub')});
+			my @url_parts = split /\//, $url;
+		
+			my @url_base = @url_parts;
+			pop @url_base;
+			my $url_base = join('/', @url_base);
+			
+			# Must have parent to get the starting index
+			my $parent = Content::Page->by_field(url => $url_base);
+			if(!$parent)
+			{
+				die "Must create the parent '$url_base' before creating '$url'";
+			}
+			my $parent_idx = $parent->menu_index;
+			
+			# Find the number of sibling pages to this page 
+			my $sth = Content::Page->db_Main->prepare('select count(pageid) as count from pages where url like ?');
+			$sth->execute($url_base . '/%');
+		
+			# Cap the integer for this page at the number of sibling pages
+			my $count = $sth->rows ? $sth->fetchrow_hashref->{count} : 0;
+			
+			my $idx = $parent_idx . '.' . ($count+1);
+			
+			$page_obj = Content::Page->create({
+				url	=>	$url, 
+				typeid	=>	Content::Page::Type->by_field(view_code=>'sub'),
+				show_in_menus	=> 1,
+				menu_index	=> $idx
+			});
 			print STDERR "Admin: Created pageid $page_obj for url $url\n";
 		}
 		
