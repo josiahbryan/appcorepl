@@ -37,7 +37,7 @@ package Content::Page;
 			{	field	=> 'content',		type	=> 'text' },
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
 			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
-			{	field	=> 'menu_index',	type	=> 'int(11)', default => 1 },
+			{	field	=> 'menu_index',	type	=> 'varchar(100)', default => 0 },
 
 			
 		]	
@@ -247,7 +247,8 @@ package Content::Page::ThemeEngine;
 			{
 				if(@url)
 				{
-					die $page->url.": No root entry for $root, this is not that page!".Dumper(\%hash);
+					#die $page->url.": No root entry for $root, this is not that page!".Dumper(\%hash);
+					# Root isnt in menu, so ignore children
 				}
 				else
 				{

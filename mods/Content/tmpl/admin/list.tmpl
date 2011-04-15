@@ -32,6 +32,19 @@
 
 .menu_switch a span {display:none;}
 
+.idx_acts 
+{
+	float: right;
+	border-left: 1px dotted rgb(120,120,120);
+	padding-left: 5px;
+}
+.idx_acts a 
+{ 
+	text-decoration: none;
+	color: black;
+	font-weight: bold;
+}
+
 </style>
 
 <a href='%%binpath%%/create'>Add a new page...</a>
@@ -39,6 +52,7 @@
 <table class='pretty'>
 	<thead>
 		<th>Actions</th>
+		<th>Order</th>
 		<th>URL</th>
 		<th>In Menus?</th>
 		<th>Title</th>
@@ -49,6 +63,8 @@
 			<td class='util'>
 				<a href='%%url%%'>Visit</a> | <a href='%%binpath%%/edit?url=%%url%%'>Edit</a> | <a href='%%binpath%%/delete?url=%%url%%' onclick="return confirm('Are you SURE you want to delete %%url%%? This can\'t be undone!')">Delete</a>
 			</td>
+			<td><div class='idx_acts'><a href='%%binpath%%/change_idx?url=%%url%%&dir=up'>&#8593;</a><a href='%%binpath%%/change_idx?url=%%url%%&dir=down'>&#8595;</a></div>
+				%%menu_index%%</td>
 			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
 			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>
 			<td>%%title%%</td>
@@ -64,6 +80,8 @@ function x(e){return document.getElementById(e);}
 function a(e,k){return e.getAttribute(k);} 
 function update_sw(elm)
 {
+	return true;
+	
 	//alert(elm);
 	var out = x('switch_img');
 	var url = a(elm,'page_url');

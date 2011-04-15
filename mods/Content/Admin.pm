@@ -16,6 +16,7 @@ package Content::Admin;
 		delete
 		save
 		set_in_menus
+		change_idx
 	/);
 
 
@@ -39,6 +40,7 @@ package Content::Admin;
 		
 		my @cols = Content::Page->columns;
 		my @list;
+		my $idx_cnt = 0;
 		foreach my $page (@pages)
 		{
 			my $row = {};
@@ -55,6 +57,13 @@ package Content::Admin;
 			
 			$row->{url_pretty} = '<span class=util>/</span>' . join('<span class=util>/</span>', @url); 
 			$row->{in_menus} = $row->{show_in_menus} ? '<b>Yes</b>' : 'No';
+			
+			if(!$page->menu_index)
+			{
+				$row->{menu_index} = $idx_cnt ++;
+				$page->menu_index($row->{menu_index});
+				$page->update;
+			}
 			
 			#die Dumper $row;
 			push @list, $row;
@@ -173,6 +182,56 @@ package Content::Admin;
 		$page_obj->show_in_menus($req->flag);
 		$page_obj->update;
 		
+		if($req->quiet)
+		{
+			return $r->output_data('text/plain','Thanks for all the fish');
+		}
+		else
+		{
+			return $r->redirect($self->module_url());
+		}
+	}
+	
+	sub _renumber_page
+	{
+		my $self = shift;
+		my $page_obj = shift;
+		my $new_num = shift;
+		
+		$page_obj->menu_index($new_num);
+		$page_obj->update;
+			
+	}
+	
+	sub change_idx
+	{
+		AppCore::AuthUtil->require_auth(['ADMIN']);
+		
+		my ($self,$req) = @_;
+		my $r = AppCore::Web::Result->new;
+		
+		my $url = $req->url;
+		
+		my $page_obj = Content::Page->by_field(url => $url);
+		if(!$page_obj)
+		{
+			return $r->error("No such page","No such page: <b>$url</b>");
+		}
+		
+		my $dir = $req->dir eq 'up' ? -1 : 1;
+		
+		my $idx = $page_obj->menu_index; 
+		my $new_idx = $dir < 0 ? $idx - 1 : $idx + 1;
+		
+		$new_idx = 0 if $new_idx < 0;
+		if($new_idx != $idx)
+		{
+			my $existing_obj = Content::Page->by_field(menu_index => $new_idx);
+			
+			$self->_renumber_page($page_obj, $new_idx);
+			$self->_renumber_page($existing_obj, $idx) if $existing_obj;
+		}
+			
 		if($req->quiet)
 		{
 			return $r->output_data('text/plain','Thanks for all the fish');
