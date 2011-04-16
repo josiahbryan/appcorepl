@@ -215,10 +215,12 @@ package Content::Page::ThemeEngine;
 	}
 	
 	our @NavCache;
+	our %NavMap;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
 		@NavCache = ();
+		%NavMap = ();
 	}	
 	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
@@ -296,6 +298,7 @@ package Content::Page::ThemeEngine;
 		}
 		
 		#die Dumper \@NavCache;
+		%NavMap = %hash;
 		return \@NavCache;
 		
 	}
@@ -311,7 +314,106 @@ package Content::Page::ThemeEngine;
 			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title  )->output) if $page_obj->title   =~ /%%/;
 			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
 			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN']));
-			 
+			
+			my $url = $page_obj->url;
+			my @parts = split /\//, $url;
+			#shift @parts; # remove start
+			if(@parts == 1)
+			{
+				# no subnav
+			}
+			else
+			{
+				$self->load_nav();
+				
+				my @url_base = @parts;
+				pop @url_base;
+				my $url_base = join('/', @url_base);
+				
+				my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ? and show_in_menus=1 order by menu_index');
+				 
+				my @sibs;
+				$sth->execute($url_base . '/%');
+				push @sibs, Content::Page->retrieve($_) while $_ = $sth->fetchrow;
+				
+				my @kids;
+				$sth->execute($url .'/%');
+				push @kids, Content::Page->retrieve($_) while $_ = $sth->fetchrow;
+				
+				my @tmpl_sibs;
+				foreach my $sib (@sibs)
+				{
+					# This test is to eliminate kids from the sibling list
+					my $test = $sib->url;
+					$test =~ s/^$url_base\///g;
+					#print STDERR "$test\n";
+					next if $test =~ /\//;
+					
+					push @tmpl_sibs,
+					{
+						title => $sib->title,
+						url   => $sib->url,
+					};
+				}
+				$tmpl_sibs[$#tmpl_sibs]->{last} = 1 if @tmpl_sibs;
+				
+				my @tmpl_kids;
+				foreach my $kid (@kids)
+				{
+					# This test is to eliminate kids or kids from the kids list
+					my $test = $kid->url;
+					$test =~ s/^$url\///g;
+					#print STDERR "$test\n";
+					next if $test =~ /\//;
+					
+					push @tmpl_kids,
+					{
+						title => $kid->title,
+						url   => $kid->url,
+					};
+				}
+				$tmpl_kids[$#tmpl_kids]->{last} = 1 if @tmpl_kids;
+				
+				#die Dumper $url_base, \@tmpl_sibs, \@tmpl_kids;
+				
+				$tmpl->param(nav_sibs => \@tmpl_sibs);
+				$tmpl->param(nav_kids => \@tmpl_kids);
+				
+				my @url_build;
+				my @nav_path;
+				foreach my $part (@parts)
+				{
+					push @url_build, $part;
+					my $url = join '/', @url_build;
+					#$url = '/' if !$url;
+					if(!$url)
+					{
+						push @nav_path,
+						{
+							title => 'Home',
+							url   => '/',
+							current => 0,
+						};
+					}
+					else
+					{
+						my $page = Content::Page->by_field(url => $url);
+						if($page)
+						{
+							push @nav_path, 
+							{
+								title => $page->title,
+								url   => $page->url,
+								current => $page->url eq $page_obj->url,
+							};
+						}
+					}
+				}
+				
+				$tmpl->param(nav_path => \@nav_path);
+				
+			}
+			
 			return 1;
 		}
 		
