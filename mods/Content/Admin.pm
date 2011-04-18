@@ -5,9 +5,9 @@ package Content::Admin;
 	use base 'AppCore::Web::Module';
 
 	my $PAGE_CREATE_ACTION = 'create';
-	my $PAGE_EDIT_ACTION = 'edit';
+	my $PAGE_EDIT_ACTION   = 'edit';
 	my $PAGE_DELETE_ACTION = 'delete';
-	my $PAGE_SAVE_ACTION = 'save';
+	my $PAGE_SAVE_ACTION   = 'save';
 	
 	__PACKAGE__->WebMethods(qw/ 
 		main
@@ -70,11 +70,18 @@ package Content::Admin;
 				$page->update;
 			}
 			
+			my @idx_parts = split /\./, $page->menu_index;
+			my $cur = pop @idx_parts;
+			my $pre = join '.', @idx_parts;
+			$row->{menu_index_pre} = $pre;
+			$row->{menu_index_cur} = $cur;
+			
 			#die Dumper $row;
 			push @list, $row;
 		}
 		
 		$tmpl->param(pages => \@list);
+		$tmpl->param(st => $req->st);
 		#die Dumper \@pages;
 		
 		$view->output($tmpl);
@@ -257,15 +264,122 @@ package Content::Admin;
 		my ($self,$req) = @_;
 		my $r = AppCore::Web::Result->new;
 		
-		my $url = $req->url;
 		
-		my $page_obj = Content::Page->by_field(url => $url);
-		if(!$page_obj)
+		my $page_obj;
+		 
+		my $url = $req->url;
+		if($url)
 		{
-			return $r->error("No such page","No such page: <b>$url</b>");
+			$page_obj = Content::Page->by_field(url => $url);
+			if(!$page_obj)
+			{
+				return $r->error("No such page","No such page: <b>$url</b>");
+			}
+		}
+		else
+		{
+			my $id = $req->pageid;
+			$page_obj = Content::Page->retrieve($id);
+			if(!$page_obj)
+			{
+				return $r->error("No such page","No such page: <b>$id</b>");
+			}
+			$url = $page_obj->url;
 		}
 		
-		my $dir = $req->dir eq 'up' ? -1 : 1;
+		if($req->idx)
+		{
+			$self->_change_index($page_obj,$req->idx);
+		}
+		else
+		{
+			$self->_move_page($page_obj,$req->dir);
+		}
+		
+		if($req->quiet)
+		{
+			return $r->output_data('text/plain','Thanks for all the fish');
+		}
+		else
+		{
+			return $r->redirect($self->module_url().'?st='.$req->st);
+		}
+	}
+	
+	sub _change_index
+	{
+		my ($self,$page_obj,$idx) = @_;
+		
+		my @idx_parts = split /\./, $page_obj->menu_index;
+		pop @idx_parts;
+		my $idx_base = join '.', @idx_parts;
+		
+		my $idx_old = $page_obj->menu_index;
+		my $idx_new = $idx_base ? join '.', $idx_base, $idx : $idx;
+		
+		my $idx_a = ($idx_new cmp $idx_old) < 0 ? $idx_new : $idx_old;
+		my $idx_b = ($idx_new cmp $idx_old) < 0 ? $idx_old : $idx_new;
+		
+		my $sth = Content::Page->db_Main->prepare('select pageid from pages where menu_index>=? and menu_index<=? order by menu_index');
+		$sth->execute($idx_a, $idx_b);
+		
+		#print STDERR "_change_index: a: $idx_a, b: $idx_b\n";
+		
+		my @set;
+		while(my $id = $sth->fetchrow)
+		{
+			my $pg = Content::Page->retrieve($id);
+			
+			#print STDERR "Got WS Pg: ".$pg->url." [".$pg->menu_index." | $idx_old]\n";
+			
+			next if $pg->menu_index eq $idx_old;
+			
+			#print STDERR "Got WS Pg: ".$pg->url." [1]\n";
+			my $test = $pg->menu_index;
+			$test =~ s/^$idx_base\.//g;
+			#print STDERR "$test\n";
+			next if $test =~ /\./;
+			
+			#print STDERR "Got WS Pg: ".$pg->url." [GOOD]\n";
+			
+			
+			push @set, $pg;
+		}
+		
+		if($idx_a eq $idx_new) # move @set down to make room for new
+		{
+			my $counter = $idx + 1;
+			foreach my $pg (@set)
+			{
+				my $tmp = $idx_base ? join '.', $idx_base, $counter ++ : $counter ++;
+				#print STDERR "Working Set: ".$pg->url.": [+] $tmp\n";
+				$self->_renumber_page($pg, $tmp);
+			}
+		}
+		else
+		{
+			my $counter = $idx - 1;
+			@set = reverse @set;
+			foreach my $pg (@set)
+			{
+				my $tmp = $idx_base ? join '.', $idx_base, $counter -- : $counter --;
+				#print STDERR "Working Set: ".$pg->url.": [-] $tmp\n";
+				$self->_renumber_page($pg, $tmp);
+			}
+		}
+		
+		#print STDERR "Final: ".$page_obj->url.": $idx_new\n";
+		$self->_renumber_page($page_obj,$idx_new);
+	}
+	
+	
+	sub _move_page
+	{
+		my ($self,$page_obj,$dir) = @_;
+			
+		my $url = $page_obj->url;
+		
+		my $dir = $dir eq 'up' ? -1 : 1;
 		
 		my @url_parts = split /\//, $page_obj->url;
 		
@@ -344,15 +458,6 @@ package Content::Admin;
 			
 			$self->_renumber_page($page_obj, $new_idx);
 			$self->_renumber_page($existing_obj, $idx) if $existing_obj;
-		}
-			
-		if($req->quiet)
-		{
-			return $r->output_data('text/plain','Thanks for all the fish');
-		}
-		else
-		{
-			return $r->redirect($self->module_url());
 		}
 	}
 	

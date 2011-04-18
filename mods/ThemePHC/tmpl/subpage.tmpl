@@ -2,6 +2,7 @@
 <head>
 	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>Pleasant Hill Church</title>
 	<link href="%%modpath%%/css/subpage.css" rel="stylesheet" type="text/css" />
+	<script src='%%appcore%%/js/jquery-1.5.2.min.js'></script>
 </head>
 
 <body>
@@ -13,7 +14,7 @@
 		<div id='mainlogo-wrap'>
 			<a href='/'>
 				<!--<img src='%%modpath%%/images/mainlogo-cropped2-250px.png' id='mainlogo' border=0>-->
-				<img src='%%modpath%%/images/mainlogo-300px.png' id='mainlogo' border=0>
+				<img src='%%modpath%%/images/mainlogo-300px-bcrop.png' id='mainlogo' border=0>
 			</a>
 		</div>
 	</div>
@@ -22,28 +23,7 @@
 <div class='bodywrap'>
 	<div class='bodycontent'>
 		
-		<div class='nav_level2'>
-			<span class=breadcrumbs>
-			<tmpl_if nav_path>
-				<tmpl_loop nav_path>
-					<tmpl_if current>
-						<span class=current>%%title%%</span>
-					<tmpl_else>
-						<a href='%%url%%'>%%title%%</a><span class=divider> &raquo;</span>
-					</tmpl_if>
-				</tmpl_loop>
-			</tmpl_if>
-			</span>
-			
-			<tmpl_if nav_kids>
-				<span class=divider>&raquo;</span>
-				<span class=kids>(
-				<tmpl_loop nav_kids>
-				<a href='%%url%%'>%%title%%</a><tmpl_unless last><span class='or_divider'> | </span></tmpl_unless>
-				</tmpl_loop>
-				)</span>
-			</tmpl_if>
-		</div>
+		<tmpl_include breadcrumbs.inc.tmpl>
 		
 		%%page_content%%
 		

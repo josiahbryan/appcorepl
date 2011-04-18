@@ -46,7 +46,7 @@
 	font-weight: bold;
 }
 
-.pretty input
+.pretty input.page_title
 {
 	padding: 0;
 	border: 0;
@@ -55,7 +55,7 @@
 
 }
 
-.pretty input:hover
+.pretty input.page_title:hover
 {
 	background: #ffff99;
 }
@@ -65,6 +65,17 @@
 	float: right;
 	margin-right: -2em;
 	display: none;
+}
+
+.pretty input.menu_index_cur
+{
+	width: 1.5em;
+	background: rgb(220,220,220);
+	padding: 0;
+	margin: 1 -4 -3 -4;
+	border: 0;
+	font-weight: bold;
+	font-size: 1em;
 }
 
 </style>
@@ -85,13 +96,23 @@
 			<td class='util'>
 				<a href='%%url%%'>Visit</a> | <a href='%%binpath%%/edit?url=%%url%%'>Edit</a> | <a href='%%binpath%%/delete?url=%%url%%' onclick="return confirm('Are you SURE you want to delete %%url%%? This can\'t be undone!')">Delete</a>
 			</td>
-			<td><div class='idx_acts'><a href='%%binpath%%/change_idx?url=%%url%%&dir=up'>&#8593;</a><a href='%%binpath%%/change_idx?url=%%url%%&dir=down'>&#8595;</a></div>
-				%%menu_index%%</td>
+			<td><div class='idx_acts'><a href='%%binpath%%/change_idx?url=%%url%%&dir=up' onclick='add_scrolltop(this)'>&#8593;</a><a href='%%binpath%%/change_idx?url=%%url%%&dir=down' onclick='add_scrolltop(this)'>&#8595;</a></div>
+				<!--%%menu_index%%</td>-->
+				<tmpl_if menu_index_pre>
+					<span class=menu_index_pre>%%menu_index_pre%%.</span>
+				</tmpl_if>
+				<input class='menu_index_cur'
+					value='%%menu_index_cur%%'
+					orig_value='%%menu_index_cur%%'
+					pageid='%%pageid%%'
+					onblur='change_index(this)'
+					onkeypress='check_enter2(event,this)'>
+				</td>
 			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
 			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>
 			<td>
 				<img src='%%modpath%%/images/ajax-loader-balls-xparent.gif' class='loader' id='loader%%pageid%%'>
-				<input type='text' tabindex='%%tab_idx%%' pageid='%%pageid%%' value='%%title%%' orig_value='%%title%%' onblur='save_title(this)' onkeypress='check_enter(event,this)'></td>
+				<input class='page_title' type='text' tabindex='%%tab_idx%%' pageid='%%pageid%%' value='%%title%%' orig_value='%%title%%' onblur='save_title(this)' onkeypress='check_enter(event,this)'></td>
 		</tr>
 		</tmpl_loop>
 	</tbody>
@@ -193,5 +214,44 @@ function save_title(elm)
 	
 	out.src = url;
 }
+
+function check_enter2(evt,elm)
+{
+	if(_event(evt).key.code == 13)
+		change_index(elm);
+}
+
+function change_index(elm)
+{
+	if(elm.getAttribute('orig_value') == elm.value)
+		return;
+	
+	var pageid = elm.getAttribute('pageid');
+	var url = '%%binpath%%/change_idx?pageid=' + pageid + '&idx=' + elm.value + '&st=' + document.body.scrollTop;
+	
+	document.location.href = url;
+}
+
+function add_scrolltop(elm)
+{
+	elm.href += '&st=' + document.body.scrollTop;
+}
+
+<tmpl_if st>
+if(typeof($) == 'function')
+{
+	$(document).ready(function() {
+		var st = <tmpl_var st>;
+		document.body.scrollTop = st; 
+	});
+}
+else
+{
+	setTimeout(function() { 
+		var st = <tmpl_var st>;
+		document.body.scrollTop = st; 
+	}, 100);
+}
+</tmpl_if>
 
 </script>
