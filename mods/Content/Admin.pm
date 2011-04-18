@@ -30,11 +30,13 @@ package Content::Admin;
 		my ($self,$req) = @_;
 		my $r = AppCore::Web::Result->new;
 		
-		my $view = Content::Page::Controller->get_view('admin',$r);
+		#my $view = Content::Page::Controller->get_view('admin',$r);
+		
+		#die Dumper $req;
 		
 		my $tmpl = $self->get_template('list.tmpl');
-		my $binpath = $tmpl->param('binpath');
-		my $modpath = $tmpl->param('modpath');
+		my $binpath = $self->binpath;
+		my $modpath = $self->modpath;
 		
 		my @pages = Content::Page->retrieve_from_sql('1 order by menu_index, url');
 		
@@ -72,9 +74,9 @@ package Content::Admin;
 			
 			my @idx_parts = split /\./, $page->menu_index;
 			my $cur = pop @idx_parts;
-			my $pre = join '.', @idx_parts;
+			my $pre = join '.', map{ $_+0 } @idx_parts;
 			$row->{menu_index_pre} = $pre;
-			$row->{menu_index_cur} = $cur;
+			$row->{menu_index_cur} = $cur+0;
 			
 			#die Dumper $row;
 			push @list, $row;
@@ -84,7 +86,8 @@ package Content::Admin;
 		$tmpl->param(st => $req->st);
 		#die Dumper \@pages;
 		
-		$view->output($tmpl);
+		#$view->output($tmpl);
+		$r->output($tmpl);
 		return $r;
 		
 		
@@ -98,7 +101,7 @@ package Content::Admin;
 		my $r = AppCore::Web::Result->new;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($PAGE_CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
-		my $view = Content::Page::Controller->get_view('admin',$r);
+		#my $view = Content::Page::Controller->get_view('admin',$r);
 		
 		my $url = $req->url;
 		$url =~ s/^\///;
@@ -113,9 +116,10 @@ package Content::Admin;
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		
-		$view->output($tmpl);
+		#$view->output($tmpl);
+		return $r->output($tmpl);
 	
-		return $r;
+		#return $r;
 		
 	}
 	
@@ -127,7 +131,7 @@ package Content::Admin;
 		my $r = AppCore::Web::Result->new;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($PAGE_CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
-		my $view = Content::Page::Controller->get_view('admin',$r);
+		#my $view = Content::Page::Controller->get_view('admin',$r);
 		
 		my $url = $req->url;
 		$url = '/' if !$url;
@@ -151,9 +155,10 @@ package Content::Admin;
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		
-		$view->output($tmpl);
+		#$view->output($tmpl);
+		return $r->output($tmpl);
 	
-		return $r;
+		#return $r;
 	}
 	
 	sub delete
@@ -232,13 +237,31 @@ package Content::Admin;
 		}
 	}
 	
+	sub _pad_index
+	{
+		if(@_ > 1)
+		{
+			return join '.', map { rpad($_+0,3) } @_;
+		}
+		
+		my $new_num = shift;
+		
+		my @split = split /\./, $new_num;
+		my @list = map { rpad($_+0,3) } @split;
+		$new_num = join '.', @list;
+		
+		return $new_num;
+	}
+	
 	sub _renumber_page
 	{
 		my $self = shift;
 		my $page_obj = shift;
-		my $new_num = shift;
+		my $new_num = _pad_index(shift);
 		
 		my $old_idx = $page_obj->menu_index;
+		
+		 
 		$page_obj->menu_index($new_num);
 		$page_obj->update;
 		
@@ -302,7 +325,7 @@ package Content::Admin;
 		}
 		else
 		{
-			return $r->redirect($self->module_url().'?st='.$req->st);
+			return $r->redirect($self->module_url().($req->st ? '?st='.$req->st : ''));
 		}
 	}
 	
@@ -310,12 +333,34 @@ package Content::Admin;
 	{
 		my ($self,$page_obj,$idx) = @_;
 		
+		if($idx =~ /\./)
+		{
+			my @tmp = split /\./, $idx;
+			$idx = shift @tmp;
+		}
+		
+		# Add/subtract one from the current integer
+		$idx = 1 if $idx < 1;
+		
+		my @url_base = split /\//, $page_obj->url;
+		pop @url_base;
+		my $url_base = join('/', @url_base);
+		
+		# Find the number of sibling pages to this page 
+		my $sth = Content::Page->db_Main->prepare('select count(pageid) as count from pages where url like ?');
+		$sth->execute($url_base . '/%');
+		
+		# Cap the integer for this page at the number of sibling pages
+		my $count = $sth->rows ? $sth->fetchrow_hashref->{count} : 0;
+		$idx = $count if $idx > $count;
+		
+		
 		my @idx_parts = split /\./, $page_obj->menu_index;
 		pop @idx_parts;
 		my $idx_base = join '.', @idx_parts;
 		
 		my $idx_old = $page_obj->menu_index;
-		my $idx_new = $idx_base ? join '.', $idx_base, $idx : $idx;
+		my $idx_new = _pad_index($idx_base ? join '.', $idx_base, $idx : $idx);
 		
 		my $idx_a = ($idx_new cmp $idx_old) < 0 ? $idx_new : $idx_old;
 		my $idx_b = ($idx_new cmp $idx_old) < 0 ? $idx_old : $idx_new;
@@ -392,7 +437,8 @@ package Content::Admin;
 		pop @url_base;
 		my $url_base = join('/', @url_base);
 		
-		
+		# The number of dotted index parts in the menu_index
+		# should match the number of '/' parts in the URL
 		if(scalar(@number_parts) != scalar(@url_parts)-1)
 		{
 			if($url eq '/')
@@ -449,7 +495,7 @@ package Content::Admin;
 		push @number_parts, $new_num;
 		
 		# Rejoin numbers with dots to form the new menu index
-		my $new_idx = join '.', @number_parts;
+		my $new_idx = _pad_index(@number_parts);
 		
 		print STDERR "$url: new_idx: '$new_idx'\n";
 		if($new_idx ne $idx)
@@ -487,12 +533,17 @@ package Content::Admin;
 			my $url_base = join('/', @url_base);
 			
 			# Must have parent to get the starting index
-			my $parent = Content::Page->by_field(url => $url_base);
-			if(!$parent)
+			my $parent;
+			my $parent_idx;
+			if($url_base)
 			{
-				die "Must create the parent '$url_base' before creating '$url'";
+				$parent = Content::Page->by_field(url => $url_base);
+				if(!$parent)
+				{
+					die "Must create the parent '$url_base' before creating '$url'";
+				}
+				$parent_idx = $parent->menu_index;
 			}
-			my $parent_idx = $parent->menu_index;
 			
 			# Find the number of sibling pages to this page 
 			my $sth = Content::Page->db_Main->prepare('select count(pageid) as count from pages where url like ?');
@@ -501,7 +552,7 @@ package Content::Admin;
 			# Cap the integer for this page at the number of sibling pages
 			my $count = $sth->rows ? $sth->fetchrow_hashref->{count} : 0;
 			
-			my $idx = $parent_idx . '.' . ($count+1);
+			my $idx = ($parent_idx ? ($parent_idx . '.') : '') . ($count+1);
 			
 			$page_obj = Content::Page->create({
 				url	=>	$url, 

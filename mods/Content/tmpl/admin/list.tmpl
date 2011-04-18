@@ -106,7 +106,8 @@
 					orig_value='%%menu_index_cur%%'
 					pageid='%%pageid%%'
 					onblur='change_index(this)'
-					onkeypress='check_enter2(event,this)'>
+					onkeypress='check_enter2(event,this)'
+					onfocus='select()'>
 				</td>
 			<td><tmpl_if url>%%url_pretty%%<tmpl_else><i>(Home Page)</i></tmpl_if></td>
 			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>

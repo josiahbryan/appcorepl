@@ -7,6 +7,9 @@ package Content;
 	use Content::Page;
 	use Content::Admin;
 	
+	use Admin::ModuleAdminEntry;
+	Admin::ModuleAdminEntry->register(__PACKAGE__);
+	
 	sub DISPATCHER_METHOD { 'main'}
 	
 	__PACKAGE__->WebMethods(qw/ 
@@ -18,6 +21,7 @@ package Content;
 	{
 		Content::Page->apply_mysql_schema;
 	}
+	
 	
 	sub new
 	{
@@ -126,6 +130,10 @@ package Content;
 				
 				# Found valid page, output
 				my $type = $page_obj->typeid;
+				if(!$type || !$type->id)
+				{
+					$type = Content::Page::Type->by_field(view_code => 'sub');
+				}
 				#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
 				if($type && $type->id)
 				{
@@ -141,8 +149,7 @@ package Content;
 				}
 				else
 				{
-					# Output the raw content if no view set
-					Content::Page::Type->failover_output($r,$page_obj)
+					return $r->error("No page type assigned to $cur_url and unable to find 'sub' view_code Page Type");
 				}
 				return 1;
 			}

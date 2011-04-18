@@ -89,44 +89,30 @@ package Content::Page::Type;
 		my $r    = shift;
 		my $page_obj = shift;
 		
-		if($self->controller)
+		# Assume controller is loaded
+		my $pkg = $self->controller;
+		$pkg = 'Content::Page::Controller' if !$pkg;
+		
+		if($pkg == __PACKAGE__)
 		{
-			# Assume controller is loaded
-			my $pkg = $self->controller;
-			
-			if($pkg == __PACKAGE__)
-			{
-				# They really meant to call the base class for types
-				$pkg = 'Content::Page::Controller';
-			}
-			
-			undef $@;
-				
-			eval
-			{
-				# Pass $self as the first arg so subclasses can access the ID of this type
-				$pkg->process_page($self,$req,$r,$page_obj);
-			};
-			
-			if($@)
-			{
-				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$@</pre>"); 
-			}
+			# They really meant to call the base class for types
+			$pkg = 'Content::Page::Controller';
 		}
-		else
+		
+		undef $@;
+			
+		eval
 		{
-			failover_output($r,$page_obj);
+			# Pass $self as the first arg so subclasses can access the ID of this type
+			$pkg->process_page($self,$req,$r,$page_obj);
+		};
+		
+		if($@)
+		{
+			$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$@</pre>"); 
 		}
 		
 		return $r;
-	}
-	
-	sub failover_output
-	{
-		shift if $_[0] eq __PACKAGE__;
-		my $r = shift;
-		my $page_obj = shift;
-		$r->output($page_obj->content);
 	}
 };
 

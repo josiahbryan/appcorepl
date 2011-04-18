@@ -75,6 +75,8 @@ package AppCore::Web::Module;
 	
 	sub bootstrap
 	{
+		shift if $_[0] eq __PACKAGE__;
+		
 		my $module_name = shift;
 		
 		return $mod_ref_cache{$module_name} if $mod_ref_cache{$module_name};
@@ -219,6 +221,65 @@ package AppCore::Web::Module;
 		return $Method_Lists_Cache{$pkg};
 	}
 	
+	sub modpath
+	{
+		my $pkg = shift;
+		
+		my $ref = undef;
+		if(ref $pkg)
+		{
+			if(@_)
+			{
+				return $pkg->{_modpath} = shift;
+			}
+			
+			return $pkg->{_modpath} if $pkg->{_modpath};
+			
+			$ref = $pkg;
+		}
+		
+		$pkg = ref $pkg if ref $pkg;
+		my @parts = split /::/, $pkg;
+		my $first_pkg = shift @parts;
+		
+		my $tmp = join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg);
+		$ref->{_modpath} = $tmp if $ref;
+		
+		return $tmp;
+	}
+	
+	sub binpath
+	{
+		my $pkg = shift;
+		
+		# If we are called with a blessed ref, we assume its a HASH and use it to cache the binpath.
+		# This also allows users to override the binpath (such as in the Admin module)
+		my $ref = undef;
+		if(ref $pkg)
+		{
+			if(@_)
+			{
+				return $pkg->{_binpath} = shift;
+			}
+			
+			return $pkg->{_binpath} if $pkg->{_binpath};
+			
+			$ref = $pkg;
+		}
+		
+		# Binpath not cached, build it up automatically
+		$pkg = ref $pkg if ref $pkg;
+		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
+		#$pkg =~ s/::/\//g;
+		$pkg = lc $pkg;
+		$pkg =~ s/::/\//g;
+		
+		my $tmp = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, $pkg);
+		$ref->{_binpath} = $tmp if $ref;
+		
+		return $tmp;
+	}
+	
 	sub get_template
 	{
 		my $self = shift;
@@ -238,8 +299,8 @@ package AppCore::Web::Module;
 		{
 			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
-			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg));
-			$tmpl->param(binpath => join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $first_pkg, @parts[0..$#parts-1]));
+			$tmpl->param(modpath => $self->modpath);
+			$tmpl->param(binpath => $self->binpath);
 			my $user = AppCore::Common->context->user;
 			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
 			return $tmpl;
@@ -257,10 +318,7 @@ package AppCore::Web::Module;
 		my $pkg = shift;
 		my $suffix = shift || '';
 		my $include_server = shift || 0;
-		$pkg = ref $pkg if ref $pkg;
-		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
-		$pkg =~ s/::/\//g;
-		my $url = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, lc $pkg, $suffix);
+		my $url = join('/', $pkg->binpath, $suffix);
 		if($include_server)
 		{
 			return $AppCore::Config::WEBSITE_SERVER . '/' . $url;

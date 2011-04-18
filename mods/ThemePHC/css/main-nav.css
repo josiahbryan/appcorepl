@@ -63,7 +63,21 @@ ul#mainnav li a
 	padding: 10px 30px 5px 30px; 
 	text-shadow: rgb(8,8,8) 1px 1px 1px;
 	font-weight: bold;
-	 
+	outline: 0;
+}
+
+ul#mainnav li a:hover
+{
+	/*color: #f3ff99;*/
+	/*color: #c14934;*/
+	/*color: #c19891;*/
+	color: #fb7058; 
+}
+
+ul#mainnav li a:active,
+ul#mainnav li a:focus
+{
+	color: #fba495; 
 }
 
 
@@ -115,7 +129,17 @@ ul#mainnav li ul li a
 	/* Padding here instead of the 'li' to make a larger hit target */
 	padding: 5px 10px 5px 10px;
 	text-shadow: rgb(8,8,8) 0px 0px 3px;
+	outline: 0;
 }
+
+
+ul#mainnav li ul li a:hover,
+ul#mainnav li ul li a:active,
+ul#mainnav li ul li a:focus
+{
+	color: white;
+}
+
 
 /* Change submenu item's border colors and bg on hover */
 ul#mainnav li ul li:hover

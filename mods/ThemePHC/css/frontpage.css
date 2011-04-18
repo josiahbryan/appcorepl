@@ -106,7 +106,7 @@ body
 
 #graphic-wrap
 {
-	width: 728px;
+	width: 727px;
 	height: 322px;
 	
 	overflow: hidden;
@@ -184,13 +184,23 @@ body
 	font-size: 14px;
 	
 	text-shadow: rgb(8,8,8) 1px 1px 1px;
+	outline: 0;
+
 }
+
+
+#sidebar .sidebar-link-block a:hover,
+#sidebar .sidebar-link-block a:active,
+#sidebar .sidebar-link-block a:focus
+{
+	color: #f3ff99;
+}
+
 
 #sidebar .sidebar-link-block a.current
 {
 	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
 	color: #e7ff30;
-
 }
 
 #sidebar .sidebar-link-block a .title

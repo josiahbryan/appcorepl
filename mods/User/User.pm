@@ -7,7 +7,12 @@ package User;
 	# Use this to access Content::Page::Controller
 	use Content::Page;
 	
+	# Our user storage object
 	use AppCore::User;
+	
+	# Register our admin component with the Admin module
+	use Admin::ModuleAdminEntry;
+	Admin::ModuleAdminEntry->register(__PACKAGE__);
 	
 	# Used in Facebook integration
 	use LWP::Simple;

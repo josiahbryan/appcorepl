@@ -633,6 +633,7 @@ package AppCore::Common;
 	my %TITLE_CACHE;
 	sub guess_title#($name)
 	{
+		shift if $_[0] eq __PACKAGE__;
 		my $name = shift;
 		return $TITLE_CACHE{$name} if defined $TITLE_CACHE{$name};
 		my $oname = $name;
