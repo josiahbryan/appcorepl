@@ -205,7 +205,7 @@ package Content::Admin;
 		}
 		else
 		{
-			return $r->redirect($self->module_url());
+			return $r->redirect($self->module_url().($req->st ? '?st='.$req->st : ''));
 		}
 	}
 	

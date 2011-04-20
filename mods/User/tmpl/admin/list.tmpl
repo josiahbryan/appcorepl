@@ -1,0 +1,39 @@
+<title>People</title>
+
+<h1>People</h1>
+
+<a href='%%binpath%%/create'>Add a new person...</a>
+
+<table class='pretty'>
+	<thead>
+		<th>Actions</th>
+		<th>Photo</th>
+		<th>Name</th>
+		<th>Email</th>
+		<th>User</th>
+		<th>From FB?</th>
+	</thead>
+	<tbody>
+		<tmpl_loop list>
+		<tr>
+			<td class='util'>
+				<!--<a href='%%url%%'>Visit</a> | -->
+				<a href='%%binpath%%/edit?userid=%%userid%%'>Edit</a> | 
+				<a href='%%binpath%%/delete?userid=%%userid%%' onclick="return confirm('Are you SURE you want to delete %%first%% %%last%%? This can\'t be undone!')">Delete</a>
+			</td>
+			<td align=center>
+				<tmpl_if photo>
+					<img src='/appcore/%%photo%%'>
+				</tmpl_if>
+			</td>
+			<td>%%first%% %%last%%</td>
+			<td><tmpl_if email>
+				<a href='mailto:%%email%%'>%%email%%<a/>
+				<tmpl_else>-</tmpl_if></td>
+			<td>%%user%%</td>
+			<td align=center>
+				<tmpl_if is_fbuser>Yes<tmpl_else>No</tmpl_if></td>
+		</tr>
+		</tmpl_loop>
+	</tbody>
+</table>
