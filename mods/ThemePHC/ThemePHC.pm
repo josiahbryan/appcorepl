@@ -25,6 +25,10 @@ package ThemePHC;
 		{
 			$tmpl = $self->load_template('frontpage.tmpl');
 		}
+		elsif($view_code eq 'admin')
+		{
+			$tmpl = $self->load_template('admin.tmpl');
+		}
 		# Don't test for 'sub' now because we just want all unsupported view codees to fall thru to subpage
 		#elsif($view_code eq 'sub')
 		else

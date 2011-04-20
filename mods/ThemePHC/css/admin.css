@@ -1,0 +1,192 @@
+body/*, td*/
+{
+	font-family: Calibri, Verdana, Sans-Serif;
+	font-size: 11px;
+	
+}
+
+body
+{
+	margin: 0;
+	padding: 0;
+	background: rgb(100,100,100);
+}
+
+#header
+{
+	background-image: url("/appcore/mods/ThemePHC/images/header-bluebg.jpg");
+	width: 100%;
+	
+	height: 47px;
+}
+
+#header #header-shadow
+{
+	background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
+	background-repeat: repeat-x;
+	/*background-attachment: fixed;*/ 
+	/*height: 180px;*/
+	/*margin-top: 25px;*/
+	/*margin-bottom: -25px;*/
+	/*height: 100%;*/
+	background-position: 0 -133;
+	width: 100%;
+}
+
+
+#mainlogo-wrap
+{
+	/*z-index: 500;
+	position: absolute;*/
+	
+	width: 965px;
+	margin: 0 auto;
+	
+	font-size:38px;
+	
+	padding-bottom: 2px;
+	
+	text-shadow: rgb(8,8,8) 2px 2px 2px;
+	color: rgb(100,100,100);
+	
+}
+
+#mainlogo-wrap a
+{
+	color:white;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+#mainlogo
+{
+	margin-top: -111px;
+	margin-left: -175px;
+	/*margin-bottom: -50px;*/
+	/*padding-left: 100px;*/
+}
+
+
+#graphicblock-wrap
+{
+
+	position: absolute;
+	
+	top: 0;
+	left: 0;
+	
+	z-index: 400;
+	
+	width: 100%;
+	
+}
+
+
+.bodywrap
+{
+	width: 100%;
+	/*background-image: url("/appcore/mods/ThemePHC/images/content-bg.jpg");*/
+	background-repeat: repeat-x;
+	background-color: white;
+	
+	min-height: 400px;
+	
+	
+	
+}
+
+.bodywrap h1
+{
+	margin-top: 0;
+}
+
+.bodycontent
+{
+	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
+	width: 965px;
+	margin: 0 auto;
+	font-size: 1.5em;
+	
+	padding-top: 40px;
+	padding-bottom: 40px;
+	padding-left: 40px;
+	padding-right: 40px;
+}
+
+#footer
+{
+	background-image: url("/appcore/mods/ThemePHC/images/footer-shadow.png");
+	background-repeat: repeat-x;
+	height: 180px;
+	width: 100%;
+}
+
+
+
+
+/* Table styling */
+
+table.pretty
+{
+	border-collapse:collapse;
+	border: 1px solid #364a90; /* light orange */
+	-moz-box-shadow: 0px 0px 8px #000;
+	margin: 8 0; 
+}
+
+table.pretty th 
+{
+	background: #364a90;
+	color: white;
+	text-shadow: rgb(8,8,8) 1px 1px 1px;
+	font-weight: bold;
+	padding: 2 4;
+	text-align: left;
+	
+	border-bottom: 1px solid #364a90; /* more saturated oragne */
+}
+
+table.pretty td 
+{
+	border: 1px solid #364a90; /* more saturated oragne */
+	padding: 2 4;
+	cursor: default; 
+}
+
+table.pretty tr:hover td
+{
+	background: #c2cdf5;
+}
+
+table.pretty .util
+{
+	color: #364a90;
+}
+
+.nav_level2
+{
+	padding: 3;
+	margin-bottom: 5px;
+	font-size: .75em;
+	color: rgb(100,100,100);
+	background: rgb(230,230,230);
+	/*text-shadow: rgb(200,200,200) 1px 1px 1px;*/
+	text-shadow: #fff 1px 1px 1px;
+	border-radius: 3px;
+}
+
+
+.nav_level2 a 
+{
+	color: rgb(100,100,100);
+}
+
+.nav_level2 a:hover
+{
+	color: #364a90;
+}
+
+.nav_level2 .current
+{
+	font-weight: bold;
+}

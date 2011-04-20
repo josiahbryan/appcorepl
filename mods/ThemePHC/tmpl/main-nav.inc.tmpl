@@ -20,9 +20,11 @@
 				</ul>
 			</td>
 			<td>
-				<form action='#' method=GET>
-					<input name='q' id='top-searchbox'>
-				</form>
+				<div class=search>
+					<form action='#' method=GET>
+						<input name="q" id="top-searchbox" maxlength="80" alt="Search" class="inputbox" type="text" size="80" value="Search..."  onblur="if(this.value=='') this.value='Search...';" onfocus="if(this.value=='Search...') this.value='';" />
+					</form>
+				</div>
 				
 			</td>
 			</tr>

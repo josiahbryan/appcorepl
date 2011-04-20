@@ -193,3 +193,23 @@ ul#mainnav li:hover ul li
 	/*
 	line-height: 17px;*/
 }
+
+
+.search 
+{
+    background-image: url("/appcore/mods/ThemePHC/images/search_bg.png");
+    /*float: right;*/
+    height: 12px;
+    margin: 4px 0 0 30px;
+    padding: 2px 0 4px 4px;
+    width: 138px;
+}
+
+#top-searchbox 
+{
+    background: transparent;
+    border: none;
+    float: left;
+    width: 135px;
+    padding: 0 0 4px 0;
+}
