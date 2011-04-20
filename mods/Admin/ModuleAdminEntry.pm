@@ -5,7 +5,7 @@
 # package MyDiscussionBoard;
 # {
 #     Admin::ModuleAdminEntry->register('MyDiscussionBoard::Admin');
-#     # register($pkg,$title,$folder,$main) will guess the folder_name and title of the entry unless otherwise specified
+#     # register($pkg,$title,$folder,$diz) will guess the folder_name and title of the entry unless otherwise specified
 #     # register can also be called register(__PACKAGE__) and it will just add '::Admin' to the end of the package name.
 # } 
 use strict;
@@ -31,9 +31,9 @@ package Admin::ModuleAdminEntry;
 				auto	=> 1,
 			},
 			{	field	=> 'package',		type	=> 'varchar(255)', }, # required
-			{	field	=> 'main_method',	type	=> 'varchar(255)', null => 0, default => 'main'},
 			{	field	=> 'title',		type	=> 'varchar(255)' }, # Defaults to guess_title( $first_package_part )
 			{	field	=> 'folder_name',	type	=> 'varchar(255)' }, # Defaults to first part of package
+			{	field	=> 'description',	type	=> 'varchar(255)' }, # Short textual description of module for Admin menus (defaults to blank)
 		]	
 	
 	});
@@ -44,7 +44,7 @@ package Admin::ModuleAdminEntry;
 		my $admin_pkg	= shift;
 		my $title	= shift;
 		my $folder_name	= shift;
-		my $main	= shift || 'main';
+		my $description	= shift;
 		
 		if($admin_pkg !~ /::/)
 		{
@@ -58,9 +58,9 @@ package Admin::ModuleAdminEntry;
 		
 		return $self->find_or_create({
 			'package'	=> $admin_pkg,
-			main_method	=> $main,
 			title		=> $title,
-			folder_name	=> $folder_name
+			folder_name	=> $folder_name,
+			description	=> $description,
 		});
 	}
 	

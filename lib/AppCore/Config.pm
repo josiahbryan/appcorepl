@@ -9,7 +9,10 @@ BEGIN
 	
 	# If this is true, then when user requests '/favicon.ico',
 	# it will be redirected to /appcore/mods/$THEME_MODULE/favicon.ico
-	$USE_THEME_FAVICON = 1;
+	# $USE_THEME_FAVICON = 1;
+	# If set to a string value, redirect will be to:
+	# /appcore/mods/$THEME_MODULE/$USE_THEME_FAVICON
+	$USE_THEME_FAVICON = 'favicon-trans.ico';
 	
 	$WWW_DOC_ROOT = '/opt/httpd-2.2.17/htdocs';
 	$WWW_ROOT     = '/appcore';

@@ -12,7 +12,7 @@ package User;
 	
 	# Register our admin component with the Admin module
 	use Admin::ModuleAdminEntry;
-	Admin::ModuleAdminEntry->register(__PACKAGE__);
+	Admin::ModuleAdminEntry->register(__PACKAGE__, 'Users', 'users', 'Show registered users and associated profile data.');
 	
 	# Used in Facebook integration
 	use LWP::Simple;

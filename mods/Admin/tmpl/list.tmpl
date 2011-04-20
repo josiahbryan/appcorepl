@@ -1,0 +1,15 @@
+<h1>Administration</h1>
+<link href="%%modpath%%/css/admin.css" rel="stylesheet" type="text/css" />
+<tmpl_unless list>
+	<h3>No Admin modules listed - sorry!</h3>
+</tmpl_unless>
+<ul class='admin-mod-list'>
+	<tmpl_loop list>
+		<li>
+			<a href='/admin/%%folder_name%%'>%%title%% <span class=arrow>&raquo;</span></a>
+			<tmpl_if description>
+				<div class='diz'>%%description%%</div>
+			</tmpl_if>
+		</li>
+	</tmpl_loop>
+</ul>

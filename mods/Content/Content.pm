@@ -8,7 +8,8 @@ package Content;
 	use Content::Admin;
 	
 	use Admin::ModuleAdminEntry;
-	Admin::ModuleAdminEntry->register(__PACKAGE__);
+	#Admin::ModuleAdminEntry->register(__PACKAGE__);
+	Admin::ModuleAdminEntry->register(__PACKAGE__, 'Pages', 'content', 'List all pages on this site, and create/update/delete pages.');
 	
 	sub DISPATCHER_METHOD { 'main'}
 	
@@ -47,10 +48,13 @@ package Content;
 		   $req->next_path eq 'admin')
 		{
 			# Move admin into the page_path list
-			$req->push_page_path($req->shift_path);
+			#$req->push_page_path($req->shift_path);
 			
 			# Use AppCore::Web::Module::dispatch() to re-dispatch the request into the Content::Admin module
-			return $self->dispatch($req, 'Content::Admin');
+			#return $self->dispatch($req, 'Content::Admin');
+			
+			# Moved the Admin module to an Admin plugin
+			return $r->redirect('/admin/content');
 			
 		}
 		

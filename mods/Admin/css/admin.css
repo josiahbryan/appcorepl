@@ -1,0 +1,52 @@
+/* Main Admin Menu (list.tmpl) */
+ul.admin-mod-list
+{
+	list-style: none;
+	margin:0;
+	padding: 0;
+	
+}
+
+ul.admin-mod-list li a
+{
+	font-weight: bold;
+	color: rgb(20,20,20);
+	text-shadow: #fff 0px 0px 3px;
+	background: rgb(220,220,220);
+	padding: 5px;
+	display: block;
+	margin-top: 5px;
+	-moz-border-radius: 5px;
+	width: 20em;
+	text-decoration: none;
+
+}
+
+ul.admin-mod-list li a:focus,
+ul.admin-mod-list li a:active,
+ul.admin-mod-list li a:hover
+{
+	outline: 0;
+	background: rgb(180,180,180);
+}
+
+ul.admin-mod-list li a .arrow
+{
+	float:right;
+	display:block;
+	font-size: 5em;
+	color: white;/* rgb(150,150,150);*/
+	text-decoration: none;
+	margin-top:-.53em;
+	margin-right: -.15em;
+	text-shadow: none;
+}
+
+ul.admin-mod-list li .diz
+{
+	font-weight: normal;
+	font-size: .75em;
+	color: rgb(100,100,100);
+	padding: 5px;
+	/*text-shadow: rgb(118,118,118) 0px -1px 1px;*/	
+}

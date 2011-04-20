@@ -52,14 +52,12 @@ package Admin;
 			
 			# Retrieve entry for this admin module and get a blessed ref to the object
 			my $pkg = $entry->package;
-			my $method = $entry->main_method;
 			my $obj = AppCore::Web::Module->bootstrap($pkg);
 			
 			# Override AppCore::Web::Module default binpath with our binpath, but modpath stays the same (for file loading, etc)
 			$obj->binpath(join('/', $self->binpath, $entry->folder_name));
 			
 			# Do the actual work...
-			#my $mod_response = $obj->$method($req);
 			my $mod_response = $self->dispatch($req, $pkg);
 			
 			# If the admin module outputs something other than text/html, let the dispatcher handle the response

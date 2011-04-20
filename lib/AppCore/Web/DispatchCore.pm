@@ -17,6 +17,8 @@ package AppCore::Web::DispatchCore;
 	use HTML::Template;
 	use File::Find;
 	
+	use Time::HiRes qw/time/;
+	
 	# Read modules before starting
 	sub new
 	{
@@ -76,6 +78,8 @@ package AppCore::Web::DispatchCore;
 		
 		my $q = shift;
 		
+		my $time_start = time;
+		
 		AppCore::Common->context->_reset;
 	# 	AppCore::Session->_reset;
 	# # 	
@@ -127,7 +131,12 @@ package AppCore::Web::DispatchCore;
 		if($path eq 'favicon.ico' &&
 		   $AppCore::Config::USE_THEME_FAVICON)
 		{
-			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $path));
+			# If $USE_THEME_FAVICON is any other value than 1, assume its a filename
+			my $file = $AppCore::Config::USE_THEME_FAVICON ne '1' ?
+			           $AppCore::Config::USE_THEME_FAVICON : $path;
+			
+			# Tell the webserver to redirect - that way, we allow the server to check for not-modified (and return status 304), etc
+			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $file));
 		}
 		
 		my $orig_path = $path;
@@ -292,6 +301,10 @@ package AppCore::Web::DispatchCore;
 		}
 		
 		END_HTTP_REQUEST:
+		
+		my $time_end = time;
+		my $diff = $time_end - $time_start;
+		#print STDERR "[Duration: $diff sec]\n";
 		#################
 	}
 
