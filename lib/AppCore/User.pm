@@ -38,8 +38,11 @@ package AppCore::User;
 			# Path relative to $AppCore::Config::WWW_DOC_ROOT for the users image
 			# However, I recommend using the 'get_photo' method to get an appropriate-sized photo (get_photo handles resizing and caching as necessary)
 			{	field	=> 'photo',		type	=> 'varchar(255)' },
+			{	field	=> 'location',		type	=> 'varchar(255)' },
+			{	field	=> 'tz_off',		type	=> 'float',	  default => -4 },
 			{	field	=> 'notes',		type	=> 'text'	  },
-			{	field	=> 'is_fbuser',		type	=> 'int(1)'	  },
+			{	field	=> 'is_fbuser',		type	=> 'int(1)',	  default =>  0 },
+			{	field	=> 'fb_user',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_token',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_token_expires',	type	=> 'datetime'     },
 		]		

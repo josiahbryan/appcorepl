@@ -1,0 +1,60 @@
+<title><tmpl_if userid>Edit &quot;<tmpl_var display>&quot;<tmpl_else>Create New User</tmpl_if></title>
+<h1><tmpl_if userid>Edit &quot;<tmpl_var display>&quot;<tmpl_else>Create New User</tmpl_if></h1>
+
+<form action='%%binpath%%/save' method=POST>
+
+	<input type=hidden name=userid value="<tmpl_var userid>">
+	<input type=hidden name=url_from value="<tmpl_var url_from>">
+
+	<table class='editform'>
+			<tr>
+				<td>User:</td> <td><input type=text name=user class='textinput' value='%%user%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Pass:</td> <td><input type=text name=pass class='textinput' value='%%pass%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Email:</td> <td><input type=text name=email class='textinput' value='%%email%%' size=40></td>
+			</tr>
+			<tr>
+				<td>First:</td> <td><input type=text name=first class='textinput' value='%%first%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Last:</td> <td><input type=text name=last class='textinput' value='%%last%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Display:</td> <td><input type=text name=display class='textinput' value='%%display%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Photo:</td> <td><input type=text name=photo class='textinput' value='%%photo%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Location:</td> <td><input type=text name=location class='textinput' value='%%location%%' size=40></td>
+			</tr>
+			<tr>
+				<td>TZ:</td> <td><input type=text name=tz_off class='textinput' value='%%tz_off%%' size=40></td>
+			</tr>
+			<tr>
+				<td>Notes:</td> <td><input type=text name=notes class='textinput' value='%%notes%%' size=40></td>
+			</tr>
+			
+			<tr>
+				<td colspan=2 class=controls>
+					<input type=submit value="Save Changes"> 
+					<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+		
+		
+		</table>
+</form>
+
+<script>
+$(document).ready(function() {
+	
+	$('.textinput').live("focus", function() {
+		this.select();
+	});
+});
+	
+</script>

@@ -33,6 +33,8 @@ package Content::Admin;
 		#my $view = Content::Page::Controller->get_view('admin',$r);
 		
 		#die Dumper $req;
+		Content::Page::Controller->current_view->breadcrumb_list->last_crumb->{current} = 1;
+			
 		
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $self->binpath;
@@ -98,6 +100,8 @@ package Content::Admin;
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
 		my ($self,$req) = @_;
+		Content::Page::Controller->current_view->breadcrumb_list->push("Create New Page",$self->binpath.'/create',1);
+		
 		my $r = AppCore::Web::Result->new;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($PAGE_CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
@@ -141,6 +145,8 @@ package Content::Admin;
 		{
 			return $r->redirect( $self->module_url($PAGE_CREATE_ACTION) . '?url='. $url);
 		}
+		
+		Content::Page::Controller->current_view->breadcrumb_list->push("Edit \"".$page_obj->title."\"",$self->binpath.'/edit?url='.$url,1);
 		
 		$url =~ s/^\///;
 		

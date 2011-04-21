@@ -136,7 +136,7 @@ package AppCore::Web::DispatchCore;
 			           $AppCore::Config::USE_THEME_FAVICON : $path;
 			
 			# Tell the webserver to redirect - that way, we allow the server to check for not-modified (and return status 304), etc
-			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $file));
+			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $file),{expire_days=>31});
 		}
 		
 		my $orig_path = $path;
@@ -304,7 +304,7 @@ package AppCore::Web::DispatchCore;
 		
 		my $time_end = time;
 		my $diff = $time_end - $time_start;
-		#print STDERR "[Duration: $diff sec]\n";
+		#print STDERR "$url: [Duration: $diff sec]\n";
 		#################
 	}
 

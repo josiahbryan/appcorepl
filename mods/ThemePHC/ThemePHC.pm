@@ -38,18 +38,10 @@ package ThemePHC;
 		
 		## Add other supported view codes
 			
-		if(!$self->apply_page_obj($tmpl,$page_obj))
-		{
-			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
-			my @titles = $blob=~/<title>(.*?)<\/title>/g;
-			#$title = $1 if !$title;
-			@titles = grep { !/\$/ } @titles;
-			$tmpl->param(page_title => shift @titles);
-			$tmpl->param(page_content => $blob);
-		}
+		$self->auto_apply_params($tmpl,$page_obj);
 			
 		#$r->output($page_obj->content);
-		$r->output($tmpl->output);
+		$r->output($tmpl); #->output);
 	};
 	
 };

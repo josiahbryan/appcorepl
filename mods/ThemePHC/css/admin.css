@@ -1,4 +1,12 @@
-body/*, td*/
+/* Table styling */
+@import url("%%modpath%%/css/table.css");
+/* Nav 2 (breadcrumbs) */
+@import url("%%modpath%%/css/nav-level2.css");
+/* Edit form style */
+@import url("%%modpath%%/css/editform.css");
+
+/* Admin Template Styles */
+body
 {
 	font-family: Calibri, Verdana, Sans-Serif;
 	font-size: 11px;
@@ -14,7 +22,7 @@ body
 
 #header
 {
-	background-image: url("/appcore/mods/ThemePHC/images/header-bluebg.jpg");
+	background-image: url("%%modpath%%/images/header-bluebg.jpg");
 	width: 100%;
 	
 	height: 47px;
@@ -22,7 +30,7 @@ body
 
 #header #header-shadow
 {
-	background-image: url("/appcore/mods/ThemePHC/images/header-shadow.png");
+	background-image: url("%%modpath%%/images/header-shadow.png");
 	background-repeat: repeat-x;
 	/*background-attachment: fixed;*/ 
 	/*height: 180px;*/
@@ -67,25 +75,9 @@ body
 }
 
 
-#graphicblock-wrap
-{
-
-	position: absolute;
-	
-	top: 0;
-	left: 0;
-	
-	z-index: 400;
-	
-	width: 100%;
-	
-}
-
-
 .bodywrap
 {
 	width: 100%;
-	/*background-image: url("/appcore/mods/ThemePHC/images/content-bg.jpg");*/
 	background-repeat: repeat-x;
 	background-color: white;
 	
@@ -98,11 +90,11 @@ body
 .bodywrap h1
 {
 	margin-top: 0;
+	margin-bottom: 15px;
 }
 
 .bodycontent
 {
-	/*background-image: url("http://www.mypleasanthillchurch.org/images/nav-bg-w625.png");*/
 	width: 965px;
 	margin: 0 auto;
 	font-size: 1.5em;
@@ -115,78 +107,10 @@ body
 
 #footer
 {
-	background-image: url("/appcore/mods/ThemePHC/images/footer-shadow.png");
+	background-image: url("%%modpath%%/images/footer-shadow.png");
 	background-repeat: repeat-x;
 	height: 180px;
 	width: 100%;
 }
 
 
-
-
-/* Table styling */
-
-table.pretty
-{
-	border-collapse:collapse;
-	border: 1px solid #364a90; /* light orange */
-	-moz-box-shadow: 0px 0px 8px #000;
-	margin: 8 0; 
-}
-
-table.pretty th 
-{
-	background: #364a90;
-	color: white;
-	text-shadow: rgb(8,8,8) 1px 1px 1px;
-	font-weight: bold;
-	padding: 2 4;
-	text-align: left;
-	
-	border-bottom: 1px solid #364a90; /* more saturated oragne */
-}
-
-table.pretty td 
-{
-	border: 1px solid #364a90; /* more saturated oragne */
-	padding: 2 4;
-	cursor: default; 
-}
-
-table.pretty tr:hover td
-{
-	background: #c2cdf5;
-}
-
-table.pretty .util
-{
-	color: #364a90;
-}
-
-.nav_level2
-{
-	padding: 3;
-	margin-bottom: 5px;
-	font-size: .75em;
-	color: rgb(100,100,100);
-	background: rgb(230,230,230);
-	/*text-shadow: rgb(200,200,200) 1px 1px 1px;*/
-	text-shadow: #fff 1px 1px 1px;
-	border-radius: 3px;
-}
-
-
-.nav_level2 a 
-{
-	color: rgb(100,100,100);
-}
-
-.nav_level2 a:hover
-{
-	color: #364a90;
-}
-
-.nav_level2 .current
-{
-	font-weight: bold;
-}

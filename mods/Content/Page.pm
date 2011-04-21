@@ -119,6 +119,13 @@ package Content::Page::Type;
 package Content::Page::Controller;
 {
 	our %ViewInstCache;
+	
+	our $CurrentView;
+	sub current_view
+	{
+		return $CurrentView;
+	}
+	
 	sub get_view
 	{
 		my $self      = shift;
@@ -135,15 +142,15 @@ package Content::Page::Controller;
 		
 		if($pkg->can('new'))
 		{
-			return $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
+			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
 			
 			$ViewInstCache{$pkg} = $pkg->new();
 			
-			return $ViewInstCache{$pkg}->get_view($view_code,$r);
+			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r);
 		}
 		else
 		{
-			return $pkg->get_view($view_code,$r);
+			return $CurrentView = $pkg->get_view($view_code,$r);
 		}
 	}
 	
@@ -169,6 +176,69 @@ package Content::Page::Controller;
 
 };
 
+package Content::Page::ThemeEngine::BreadcrumbList;
+{
+	sub new
+	{
+		return bless { list=> [] }, shift;
+	};
+	
+	sub last_crumb
+	{
+		my @list = @{shift->{list}};
+		return $list[$#list] if @list;
+		return {} if !@list;
+	}
+	
+	sub list
+	{
+		my $self = shift;
+		
+		my @tmp = @{$self->{list}};
+		foreach my $item (@tmp)
+		{
+			$item->{current} = 0;
+			if($item->{title} =~ /%%/)
+			{
+				$item->{title} = AppCore::Web::Common::load_template($item->{title})->output;
+			}
+		}
+		
+		$tmp[$#tmp]->{current} = 1 if @tmp;
+		
+		return \@tmp; 
+	}
+	
+	sub push
+	{
+		my $self = shift;
+		my $ref = shift;
+		
+		# Assume more than one arg is (title,url,current) trifecta
+		if(@_)
+		{
+			$ref = 
+			{
+				title => $ref,
+				url   => shift,
+				current => shift,
+			};
+		}
+		
+		warn __PACKAGE__."::push(): No 'title' in arguments" if !$ref->{title};
+		warn __PACKAGE__."::push(): No 'url' in arguments"   if !$ref->{url};
+		$ref->{current} = 0 if !defined $ref->{current};
+		
+		push @{$self->{list}}, $ref;
+	}
+	
+	sub pop
+	{
+		my $self = shift;
+		pop @{$self->{list}};
+	}
+};
+
 package Content::Page::ThemeEngine;
 {
 	use Scalar::Util 'blessed';
@@ -189,7 +259,13 @@ package Content::Page::ThemeEngine;
 		$self->{view_code} = $code;
 		$self->{response}  = $response;
 		$self->{params}    = {};
+		$self->{bc_list}   = Content::Page::ThemeEngine::BreadcrumbList->new(); 
 		return $self;
+	}
+	
+	sub breadcrumb_list
+	{
+		return shift->{bc_list};
 	}
 	
 	sub param
@@ -386,9 +462,11 @@ package Content::Page::ThemeEngine;
 						my $page = Content::Page->by_field(url => $url);
 						if($page)
 						{
+							my $title = $page->title;
+							$title = AppCore::Web::Common::load_template($title)->output if $title =~ /%%/;
 							push @nav_path, 
 							{
-								title => $page->title,
+								title => $title,
 								url   => $page->url,
 								current => $page->url eq $page_obj->url,
 							};
@@ -397,7 +475,6 @@ package Content::Page::ThemeEngine;
 				}
 				
 				$tmpl->param(nav_path => \@nav_path);
-				
 			}
 			
 			return 1;
@@ -416,22 +493,40 @@ package Content::Page::ThemeEngine;
 		
 		my $tmpl = $self->load_template('basic.tmpl');
 		
-		if(!$self->apply_page_obj($tmpl,$page_obj))
-		{
-			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
-			my @titles = $blob=~/<title>(.*?)<\/title>/g;
-			#$title = $1 if !$title;
-			@titles = grep { !/\$/ } @titles;
-			$tmpl->param(page_title => shift @titles);
-			$tmpl->param(page_content => $blob);
-		}
+		$self->auto_apply_params($tmpl,$page_obj);
 		
 		# load_template() automatically adds this template parameter in to your template:
 		#$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
-		$r->output($tmpl->output);
+		$r->output($tmpl); #->output);
 	};
+	
+	sub auto_apply_params
+	{
+		my ($self,$tmpl,$page_obj) = @_;
+		
+		if(!$self->apply_page_obj($tmpl,$page_obj))
+		{
+			$self->apply_basic_data($tmpl,$page_obj);
+		}
+		
+		$tmpl->param(nav_url_from => $ENV{HTTP_REFERER});
+		
+	}
+	
+	sub apply_basic_data
+	{
+		my ($self,$tmpl,$page_obj) = @_;
+		
+		my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
+		my @titles = $blob=~/<title>(.*?)<\/title>/g;
+		#$title = $1 if !$title;
+		@titles = grep { !/\$/ } @titles;
+		$tmpl->param(page_title	  => shift @titles);
+		$tmpl->param(page_content => $blob);
+		$tmpl->param(nav_path	  => $self->breadcrumb_list->list);
+	}
 	
 	sub load_template
 	{

@@ -11,6 +11,24 @@ package AppCore::Web::Result;
 {
 	use vars qw/$AUTOLOAD/;
 	
+	# For CSSX functionality and CDN 'mod' url replacement
+	use Digest::MD5 qw/md5_hex/;
+	
+	# Used for CDN 'hash' url replacement
+	use Storable;
+	
+	# Used for CSSX image url() to data: url conversions
+	use MIME::Base64;
+	
+	sub read_file
+	{
+		my $file = shift;
+		open(FILE,"<$file") || die "Cannot open $file for reading: $!";
+		my @buffer = <FILE>;
+		close(FILE);
+		return join '', @buffer;
+	}
+	
 	sub new
 	{
 		my $class = shift;
@@ -148,12 +166,306 @@ package AppCore::Web::Result;
 			$ctype = $1 if $1;
 		}
 		
+		if($out =~ /<a:cssx src="[^\"]+"/i)
+		{	
+			if($AppCore::Config::ENABLE_CSSX_COMBINE)
+			{
+				my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
+				$out =~ s/<a:cssx[^\>]+>//gi;
+				my $css_link = _process_multi_cssx($self,$tmpl,@files);
+				$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
+			}
+			else
+			{
+				$out =~ s/<a:cssx src="([^\"]+)"[^\>]+>/_process_cssx($self,$tmpl,$1)/segi;
+			}
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_IMG)
+		{
+			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='"._cdn_url($1)."'"/segi;
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_JS)
+		{
+			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='"._cdn_url($1)."'"/segi;
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_CSS)
+		{
+			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='"._cdn_url($1)."'"/segi;
+		}
 		
 		$self->content_type($ctype);
 		$self->content_title($title);
 		$self->body($out);
 		return $self;
 	}
+	
+	sub data_url
+	{  
+		my $file = shift;
+		my ($ext) = $file =~ /\.(\w+)$/;
+		my $mime = $ext eq 'png' ? 'image/png' :
+		           $ext eq 'gif' ? 'image/gif' : 
+		           $ext eq 'jpg' ? 'image/jpg' : 'image/unknown';
+		
+		my $contents = read_file($file);
+		my $base64   = encode_base64($contents); 
+		$base64 =~ s/\n//g;
+		return "url('data:$mime;base64,$base64')";
+	}
+	
+	our $CDNIndex = @AppCore::Config::CDN_HOSTS;
+	sub _cdn_url
+	{
+		my $url_part = shift;
+		my $url_wrap = shift || 0;
+		#return "url(\"$url_part\")" if !@AppCore::Config::CDN_HOSTS && $url_wrap;
+		return $url_part if !@AppCore::Config::CDN_HOSTS;
+		
+		my $cdn_mode = $AppCore::Config::CDN_MODE || 'hash';
+		#print STDERR "_cdn_url($url_part): \$cdn_mode: $cdn_mode [$AppCore::Config::CDN_MODE]\n";
+		if($cdn_mode eq 'rr')
+		{
+			$CDNIndex ++;
+			$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
+			#print STDERR "_cdn_url($url_part): [rr] Round-robin index: $CDNIndex\n";
+		}
+		elsif($cdn_mode eq 'mod')
+		{
+			my $hex = md5_hex($url_part);
+			
+			my $x = 8;
+			my $part1 = substr($hex,0,$x);
+			my $part2 = substr($hex,$x+=8,8);
+			my $part3 = substr($hex,$x+=8,8);
+			my $part4 = substr($hex,$x+=8,8);
+			
+			my $sum = hex($part1); 
+			$sum+=hex($part2); 
+			$sum+=hex($part3); 
+			$sum+=hex($part4);
+			
+			$CDNIndex = $sum % scalar(@AppCore::Config::CDN_HOSTS);
+			#print STDERR "_cdn_url($url_part): [mod] Modula-derived index: $CDNIndex\n";
+		}
+		elsif($cdn_mode eq 'hash')
+		{
+			#Storable
+			my $hash = -f $AppCore::Config::CDN_HASH_FILE ? Storable::lock_retrieve($AppCore::Config::CDN_HASH_FILE) : {};
+			my $idx = defined $hash->{$url_part} ? $hash->{$url_part} : -1;
+			if($idx < 0)
+			{
+				$CDNIndex ++;
+				$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
+				#print STDERR "_cdn_url($url_part): [hash] NO CACHED INDEX, USING $CDNIndex\n";
+			}
+			else
+			{
+				$CDNIndex = $idx;
+				#print STDERR "_cdn_url($url_part): [hash] Got cached index: $CDNIndex\n";
+			}
+			
+			$hash->{$url_part} = $CDNIndex;
+			#print STDERR "_cdn_url($url_part): [hash] Hash file: '$AppCore::Config::CDN_HASH_FILE'\n";
+			Storable::lock_store($hash, $AppCore::Config::CDN_HASH_FILE);
+		}
+
+		my $server = $AppCore::Config::CDN_HOSTS[$CDNIndex];
+		#print STDERR "_cdn_url($url_part): Decided on server $server, #$CDNIndex\n";
+		
+		my $final_url = join('', 'http://', $server, $url_part);
+		
+		return "url(\"$final_url\")" if $url_wrap;
+		return $final_url;
+	}
+	
+	sub _can_cdn_for_fqdn
+	{
+		if($AppCore::Config::ENABLE_CDN_FQDN_ONLY)
+		{
+			$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
+			my $srv = $AppCore::Config::WEBSITE_SERVER;
+			$srv =~ s/^http:\/\///g;
+			return $ENV{HTTP_HOST} eq $srv;
+		}
+		
+		return 1;
+	}
+
+	sub _read_source_css
+	{
+		my ($tmpl,$src) = @_;
+		my $text = read_file($src);
+		$text =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi;
+		
+		if($AppCore::Config::ENABLE_CSSX_IMAGE_URI)
+		{
+			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\);/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1") . ";\n\t\t\/* Original Image: $1 *\/"/segi;
+		}
+		elsif($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
+		{
+			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\)/_cdn_url($1,1)/segi;
+		}
+		
+		return $text;
+	}
+	
+	sub _process_multi_cssx
+	{
+		my $self = shift;
+		my $tmpl = shift;
+		
+		my @files = @_;
+		
+		my $md5 = md5_hex(join '', @files) . '.css';
+		my $cssx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
+		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
+		
+		#my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		
+		my $need_rebuild = 0;
+		if(!-f $cssx_file)
+		{
+			$need_rebuild = 1;
+		}
+		else
+		{
+			my $cache_mod = (stat($cssx_file))[9];
+			foreach my $file (@files)
+			{
+				my $disk_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				if((stat($disk_file))[9] > $cache_mod)
+				{
+					$need_rebuild = 1;
+					last;
+				}
+			}
+		}
+		
+		if($need_rebuild)
+		{
+			my @css_buffer;
+			foreach my $file (@files)
+			{
+				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				print STDERR "Recompiling CSSX File $orig_file -> $cssx_file\n";
+				my $text = _read_source_css($tmpl,$orig_file);
+				
+				# Note: @imports are not processed in included CSS files in order to prevent recursion problems
+				if($AppCore::Config::ENABLE_CSSX_IMPORT)
+				{
+					$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
+				}
+				
+				push @css_buffer, $text;
+			}
+				
+			open(CSSX,">$cssx_file") || die "Cannot open $cssx_file for writing: $!";
+			print CSSX "/* Built from the following CSS files: ".join(', ', @files)." */\n\n";
+			print CSSX join "\n", @css_buffer;
+			close(CSSX);
+			
+			if($AppCore::Config::USE_CSS_TIDY && 
+			-f $AppCore::Config::USE_CSS_TIDY)
+			{
+				my $tmp_file = "/tmp/csstidy.$$.css";
+				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+				my $cmd = "$tidy $cssx_file $args $tmp_file";
+				print STDERR "Tidy command: '$cmd'\n";
+				system($cmd);
+				system("mv -f $tmp_file $cssx_file");
+			}
+			
+			if($AppCore::Config::USE_YUI_COMPRESS)
+			{
+				my $tmp_file = "/tmp/csstidy.$$.css";
+				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+				my $cmd = "$comp $cssx_file $args -o $tmp_file";
+				print STDERR "YUI Compress command: '$cmd'\n";
+				system($cmd);
+				system("mv -f $tmp_file $cssx_file");
+			}
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
+		{
+			$cssx_url = _cdn_url($cssx_url);
+		}
+		
+		return qq{<link href="$cssx_url" rel="stylesheet" type="text/css" /> <!-- Combined from original CSS files: }. join(', ', @files). '-->';
+	}
+	
+	sub _process_cssx
+	{
+		my $self = shift;
+		my $tmpl = shift;
+		my $src_file = shift;
+		
+		#print STDERR "_process_cssx: tmpl:$tmpl\n";
+	
+		# Find src
+		# Check for compiled ver
+		# If found, just replace name
+		# Otherwise, compile new ver
+		
+		my $md5 = md5_hex($src_file).'.css';
+		my $cssx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
+		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
+		my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		
+		
+		if(!-f $cssx_file || (stat($cssx_file))[9] < (stat($orig_file))[9])
+		{
+			print STDERR "Recompiling CSSX File $orig_file -> $cssx_file \n";
+			my $text = _read_source_css($tmpl,$orig_file);
+			
+			# Note: @imports are not processed in included CSS files in order to prevent recursion problems
+			if($AppCore::Config::ENABLE_CSSX_IMPORT)
+			{
+				$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
+			}
+			
+			open(CSSX,">$cssx_file") || die "Cannot open $cssx_file for writing: $!";
+			print CSSX "/* Original CSS File: $src_file */\n\n";
+			print CSSX $text;
+			close(CSSX);
+			
+			if($AppCore::Config::USE_CSS_TIDY && 
+			-f $AppCore::Config::USE_CSS_TIDY)
+			{
+				my $tmp_file = "/tmp/csstidy.$$.css";
+				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+				my $cmd = "$tidy $cssx_file $args $tmp_file";
+				print STDERR "Tidy command: '$cmd'\n";
+				system($cmd);
+				system("mv -f $tmp_file $cssx_file");
+			}
+			
+			if($AppCore::Config::USE_YUI_COMPRESS)
+			{
+				my $tmp_file = "/tmp/csstidy.$$.css";
+				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+				my $cmd = "$comp $cssx_file $args -o $tmp_file";
+				print STDERR "YUI Compress command: '$cmd'\n";
+				system($cmd);
+				system("mv -f $tmp_file $cssx_file");
+			}
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
+		{
+			$cssx_url = _cdn_url($cssx_url);
+		}
+		
+		return qq{<link href="$cssx_url" rel="stylesheet" type="text/css" /> <!-- Original CSS File: $src_file -->};
+	}
+	
 	
 	sub output_file
 	{

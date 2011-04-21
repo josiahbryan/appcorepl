@@ -89,6 +89,8 @@ package AppCore::Web::Request;
 	
 	
 	sub next_path	{shift->{'_PATH_INFO'}->[0]}
+	
+	sub path_info { return @{shift->{'_PATH_INFO'}}; }
 
 	
 	sub AUTOLOAD 

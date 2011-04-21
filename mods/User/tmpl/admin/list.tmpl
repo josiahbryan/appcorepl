@@ -4,6 +4,33 @@
 
 <a href='%%binpath%%/create'>Add a new person...</a>
 
+<style>
+.pic
+{
+	position:relative;
+}
+
+.pic img
+{
+	border: 1px solid black;
+}
+
+.pic .full
+{
+	display: none;
+	position: absolute;
+	top: -18px;
+	left: -4px;
+	z-index: 500;
+	-moz-box-shadow: 0 0 3px #fff, 0px 0px 8px #000;
+}
+
+table.pretty tr:hover .pic .full
+{
+	display: block;
+}
+</style>
+
 <table class='pretty'>
 	<thead>
 		<th>Actions</th>
@@ -23,7 +50,10 @@
 			</td>
 			<td align=center>
 				<tmpl_if photo>
-					<img src='/appcore/%%photo%%'>
+					<div class='pic'>
+						<img src='%%appcore%%%%photo%%' width=25 height=25>
+						<img src='%%appcore%%%%photo%%' width=60 height=60 class='full'>
+					</div>
 				</tmpl_if>
 			</td>
 			<td>%%first%% %%last%%</td>

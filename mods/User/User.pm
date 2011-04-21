@@ -1,6 +1,7 @@
 use strict;
 package User;
 {
+	use AppCore::Common;
 	use AppCore::Web::Common;
 	use base 'AppCore::Web::Module';
 	
@@ -69,9 +70,22 @@ package User;
 			
 			my ($token) = $response =~ /access_token=(.*)$/;
 			
+			my $expires = '0000-00-00 00:00:00';
+			if($token =~ /&expires=(\d+)$/)
+			{
+				$expires = $1;
+				$token =~ s/&expires=\d+//g;
+				
+				my $dt = DateTime->now(timezone => 'America/Chicago');
+				$dt->add( seconds => $expires );
+				
+				$expires = $dt->datetime;
+			}
+			
 			if($token)
 			{
 				my $user_url = 'https://graph.facebook.com/me?access_token='.$token;
+				print STDERR "User URL: $user_url\n";
 				my $user_json = LWP::Simple::get($user_url);
 				if($user_json =~ /email/)
 				{
@@ -83,6 +97,9 @@ package User;
 					my $display = $user_data->{name};
 					my $first   = $user_data->{first_name};
 					my $last    = $user_data->{last_name};
+					my $fb_user = $user_data->{username};
+					my $local   = $user_data->{location}->{name};
+					my $tz_off  = $user_data->{timezone};
 					
 					my $user_obj = AppCore::User->by_field(email => $email);
 					$user_obj = AppCore::User->by_field(display => $display) if !$user_obj;
@@ -96,6 +113,9 @@ package User;
 							pass 	=> $token,
 							first 	=> $first,
 							'last'	=> $last,
+							fb_user => $fb_user,
+							location=> $local,
+							tz_off  => $tz_off,
 						});
 						
 						print STDERR "Created new user from facebook data: $display - $email, userid $user_obj\n"; 
@@ -106,6 +126,9 @@ package User;
 						
 						$user_obj->first($first) if !$user_obj->first;
 						$user_obj->last($last)   if !$user_obj->last;
+						$user_obj->location($local)  if !$user_obj->location;
+						$user_obj->fb_user($fb_user) if !$user_obj->fb_user;
+						$user_obj->tz_off($tz_off)   if !$user_obj->tz_off;
 					}
 					
 					my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
@@ -129,6 +152,7 @@ package User;
 					
 					$user_obj->is_fbuser(1);
 					$user_obj->fb_token($token);
+					$user_obj->fb_token_expires($expires);
 					$user_obj->update;
 					
 					if(AppCore::AuthUtil->authenticate($user_obj->user, $token))

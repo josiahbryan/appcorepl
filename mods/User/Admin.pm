@@ -34,6 +34,7 @@ package User::Admin;
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $self->binpath;
 		my $modpath = $self->modpath;
+		my $appcore = join('/', $AppCore::Config::WWW_ROOT);
 		
 		my @pages = AppCore::User->retrieve_from_sql('1 order by first, last');
 		
@@ -47,6 +48,7 @@ package User::Admin;
 			$row->{$_} = $page->get($_) foreach @cols;
 			$row->{binpath} = $binpath;
 			$row->{modpath} = $modpath;
+			$row->{appcore} = $appcore;
 # 			$row->{tab_idx} = $tab_cnt++;
 			
 			#die Dumper $row;
@@ -72,7 +74,7 @@ package User::Admin;
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
 		
-		my $tmpl = $self->get_template('create.tmpl');
+		my $tmpl = $self->get_template('edit.tmpl');
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
@@ -103,7 +105,7 @@ package User::Admin;
 			return $r->redirect($self->module_url($CREATE_ACTION));
 		}
 		
-		my $tmpl = $self->get_template('create.tmpl');
+		my $tmpl = $self->get_template('edit.tmpl');
 		$tmpl->param(userid => $obj->id);
 		
 		$tmpl->param($_ => $obj->get($_)) foreach $obj->columns;
@@ -153,18 +155,19 @@ package User::Admin;
 		
 		if(!$obj)
 		{
-			$obj = AppCore::User->create({
+			$obj = AppCore::User->insert({
 				user	=> $req->user 
 			});
 			print STDERR "Admin: Created userid $obj\n";
+			$userid = $obj->id;
 		}
 		
+		#print STDERR "Dump of req: ".Dumper($req);
 		foreach my $col ($obj->columns)
 		{
-			if(defined $req->{$col})
-			{
-				$obj->$col($req->$col);
-			}
+			#print STDERR "Checking col: $col\n";
+			next if $col eq $obj->get_class_primary;
+			$obj->set($col, $req->$col) if defined $req->$col;
 		}
 		
 		$obj->update;

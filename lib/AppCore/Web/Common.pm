@@ -128,6 +128,7 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $url = shift;
+		my $expires_config = shift;
 	
 		#print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
 		#AppCore::Session->save;
@@ -149,7 +150,19 @@ package AppCore::Web::Common;
 					print "Set-Cookie:".$cookies->{$name}."\r\n";
 				}
 			}
-			print "Location: $url\r\n\r\n";
+			
+			my $expires = undef;
+			if($expires_config)
+			{
+				my $dt = DateTime->now();#timezone => 'America/Chicago');
+				$dt->add( days => $expires_config->{days} || 31 );
+				# Expires: Thu, 01 Dec 1994 16:00:00 GMT
+				$expires = "Expires: ".$dt->strftime("%a, %d %b %Y %H:%M:%S +000")."\r\n";
+							  #%a, %d %b %Y %H:%M:%S +0000
+
+			}
+			
+			print "Location: $url\r\n$expires\r\n";
 			
 			goto END_HTTP_REQUEST;
 		}
@@ -324,13 +337,13 @@ package AppCore::Web::Common;
 		$$textref =~ s/\%(\/?)tmpl_(.*?)\%/<$1TMPL_$2>/gi;
 		#$$textref =~ s/\%([^\s](?:.|\n)*?)%/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
 			
-		my ($var_blob)	= $$textref =~ /<!--\[CSSVARS\]([^>]+)-->/si;
-		if($var_blob)
-		{
-			my %pairs = $var_blob =~ /\s*([\w\d_]+):\s*(.*)\s*;.*/gi;
-			#die Dumper \%pairs, $var_blob;
-			$$textref =~ s/<\$([^\>]+)>/$pairs{$1}/gi;
-		}
+# 		my ($var_blob)	= $$textref =~ /<!--\[CSSVARS\]([^>]+)-->/si;
+# 		if($var_blob)
+# 		{
+# 			my %pairs = $var_blob =~ /\s*([\w\d_]+):\s*(.*)\s*;.*/gi;
+# 			#die Dumper \%pairs, $var_blob;
+# 			$$textref =~ s/<\$([^\>]+)>/$pairs{$1}/gi;
+# 		}
 		
 		
 		if(ENABLE_FAKEHOSTS) # && $httpd)

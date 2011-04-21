@@ -55,9 +55,45 @@ BEGIN
 	$FB_APP_SECRET = `cat fb_app_secret.txt`; # read from file so its not saved in subversion!
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
+	$ENABLE_CSSX_IMAGE_URI = 0;
+	$ENABLE_CSSX_IMPORT    = 1;
+	$ENABLE_CSSX_COMBINE   = 1;
+	$ENABLE_NON_CSSX_COMBINE = 1;
+	
+	$USE_CSS_TIDY = '/opt/httpd-2.2.17/htdocs/appcore/csstidy/release/csstidy/csstidy';
+	$CSS_TIDY_SETTINGS = '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+	
+	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
+	$YUI_COMPRESS_SETTINGS = '';
 
 	# Prevent users from send arbitrarily long URLs and consuming resources
 	$MAX_URL_DEPTH = 25; 
+	
+	### Roundrobin CDN replacements
+	# AppCore::Web::Result->output will optionally replace the url()'s in CSSX files,
+	# <link> hrefs (for css), <script> srcs (for javascript), and <img> srcs with a 
+	# server name from the list below. Method for server name choice is given below
+	
+	$CDN_MODE = 'hash';		# Valid options are mod, hash, and rr
+					# 'mod' takes the modula of the md5 of the file and the number of servers below to get the index of the server to use
+					# 'rr' does a round-robin (rotating index) server name each time a server is requested
+					# 'hash' checks to see if the file has been used on the CDN before - if so, uses same server. If not, does 'rr' and stores the result
+	
+	$CDN_HASH_FILE = '/tmp/appcore-cdn.storable'; # Uses Storable freeze/thaw to write hash 
+	
+	$ENABLE_CDN_FQDN_ONLY = 1;	# Only do CDN replacements if requested from $WEBSITE_SERVER 
+					# This helps when testing from a development server (say, localhost!) by not doing CDN replacements if they won't work on the current server.
+	$ENABLE_CDN_CSSX_URL = 1;	# Controls replacement of url() properties in CSSX files
+	$ENABLE_CDN_CSS  = 1;		# Controls replacement of the href attrib of <link> tags for CSS inclusion
+	$ENABLE_CDN_IMG  = 1;		# Controls replacement of the src attrib of <img> tags
+	$ENABLE_CDN_JS   = 1;		# Controls replacement of the src attrib of <script> tags
+	@CDN_HOSTS = qw/
+		cdn1.mypleasanthillchurch.org
+		cdn2.mypleasanthillchurch.org
+		cdn3.mypleasanthillchurch.org
+		cdn4.mypleasanthillchurch.org
+		cdn5.mypleasanthillchurch.org
+	/;
 };
 
 1;

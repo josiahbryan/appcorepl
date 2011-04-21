@@ -55,7 +55,16 @@ package Admin;
 			my $obj = AppCore::Web::Module->bootstrap($pkg);
 			
 			# Override AppCore::Web::Module default binpath with our binpath, but modpath stays the same (for file loading, etc)
-			$obj->binpath(join('/', $self->binpath, $entry->folder_name));
+			my $new_binpath = join('/', $self->binpath, $entry->folder_name);
+			$obj->binpath($new_binpath);
+			
+			# Load the 'admin' view code so that the Content::Page::Controller->current_view returns this $view
+			# so that we can set up the breadcrumb list
+			my $view = Content::Page::Controller->get_view('admin',$r);
+			
+			# Setup the first two breadcrumbs for the client module so they just have to add in their own data
+			$view->breadcrumb_list->push("Admin Home",$self->binpath,0);
+			$view->breadcrumb_list->push($entry->title,$new_binpath,0);
 			
 			# Do the actual work...
 			my $mod_response = $self->dispatch($req, $pkg);
@@ -68,8 +77,7 @@ package Admin;
 			$tmpl->param(content_title => $mod_response->content_title);
 			$tmpl->param(content_body  => $mod_response->body);
 			
-			# Send the wrapped HTML out thru the current theme's view for the 'admin' view_code
-			my $view = Content::Page::Controller->get_view('admin',$r);
+			# Tell the view to output the wrapper template
 			$view->output($tmpl);
 			
 			return $r;
@@ -82,6 +90,7 @@ package Admin;
 		my $r = AppCore::Web::Result->new;
 		
 		my $view = Content::Page::Controller->get_view('admin',$r);
+		$view->breadcrumb_list->push("Admin Home",$self->binpath,1);
 		
 		my $tmpl = $self->get_template('list.tmpl');
 		my @mods = Admin::ModuleAdminEntry->retrieve_from_sql('1 order by title');
