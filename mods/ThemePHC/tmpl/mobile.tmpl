@@ -1,0 +1,55 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
+	<meta name="Description" content="Welcome to Pleasant Hill! Whether your checking out God and church for the first time, or are looking for a new place to call home, Pleasant Hill has a place for you!" />
+	<meta name="viewport" content="user-scalable=no, width=320" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>PHC</title>
+	<a:cssx src="%%modpath%%/css/mobile.css"/>
+	
+	<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico">
+</head>
+
+<body>
+
+<h2 id='full-link'>
+	<a href='/?sitepref=full'>View Full PHC Website</a>
+</h2>
+
+<div id='header'>
+	<div id='header-shadow'>
+		<a href='/'><img src='%%modpath%%/images/mainlogo-120px.png' id='logo' border=0></a>
+	</div>
+</div>
+<div id='nav'>
+	<ul>
+		<li><a href='/m/news'><img src='%%modpath%%/images/mobile/btn_news.png' border=0></a></li>
+		<li><a href='/m/prayer'><img src='%%modpath%%/images/mobile/btn_prayer.png' border=0></a></li>
+		<li><a href='/m/contact'><img src='%%modpath%%/images/mobile/btn_contact.png' border=0></a></li>
+		<li class='last'>
+		    <a href='/m/more'><img src='%%modpath%%/images/mobile/btn_more.png' border=0></a></li>
+	 </ul>
+</div>
+
+
+<div id='bodywrap'>
+	<div id='bodycontent'>
+		
+		<!--<tmpl_include breadcrumbs.inc.tmpl>-->
+		
+		%%page_content%%
+		
+		<!--<tmpl_include user-footer.inc.tmpl>-->
+	</div>
+</div>
+
+<div id='footer'>
+
+</div>
+
+<!--<script src='%%appcore%%/js/jquery-1.5.2.min.js'></script>-->
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
+</body>
+</html>

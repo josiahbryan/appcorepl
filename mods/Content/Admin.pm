@@ -117,10 +117,9 @@ package Content::Admin;
 		$tmpl->param(page_content => '');
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
 		
-		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list);
-		
 		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
-		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($cur_theme));
+		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($cur_theme));
+		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list(undef,$cur_theme));
 		
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
@@ -164,9 +163,8 @@ package Content::Admin;
 		$tmpl->param(page_content => $page_obj->content);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
 		
-		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list);
-		
 		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
+		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($page_obj->theme && $page_obj->theme->themeid ? $page_obj->theme : $cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});

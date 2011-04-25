@@ -106,6 +106,9 @@ package Content;
 		my $req  = shift;
 		my $r    = shift;
 		
+		# Reset current theme
+		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
+		
 		my @url = split /\//, join('/', $req->page_path, $req->path);
 		
 		@url = '/' if !@url;

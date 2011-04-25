@@ -1,0 +1,114 @@
+/* Generic body styles */
+html {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-size: 62.5%; /* enables you to easily size text with ems */
+	font-family: Arial, Helvetica, sans-serif;
+	/*background-color: #ededed;*/
+	background: rgb(100,100,100);
+
+	color: #67675d;
+}
+
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
+}
+
+a:link		{color: #a67726; text-decoration: underline;}
+a:visited	{color: #a67726; text-decoration: underline;}
+a:hover		{color: #a67726; text-decoration: none;}
+a:active	{color: #a67726; text-decoration: underline;}
+
+/* Header/logo styles */
+#header 
+{
+	height: 100px;
+	background-image: url("%%modpath%%/images/header-bluebg.jpg");
+	width: 100%;
+	border-top: 1px solid rgb(80,80,80);
+}
+
+#header #header-shadow
+{
+	background-image: url("%%modpath%%/images/header-shadow.png");
+	background-repeat: repeat-x;
+	background-position: 0 -80px;
+	width: 100%;
+	border-top: 1px solid rgb(60,60,60);
+}
+
+
+
+#header #logo
+{
+	display: block;
+	width: 280px;
+	margin: 0 auto;
+	margin-top: -10px;
+}
+
+/* Link to full site */
+h2#full-link a 
+{
+	display: block; 
+	width: 100%; 
+	color: #fff; 
+	text-align: center; 
+	text-decoration: none; 
+	font-size: 0.7em; 
+	font-weight: 300; 
+	height: 20px; 
+	background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x; 
+	text-shadow: #000 0 -1px 1px; 
+	padding: 4px 0 0 0;
+	margin-bottom: -2px;
+}
+
+/* Nav styles */
+
+#nav {
+	height: 87px;
+	background: url(%%modpath%%/images/mobile/nav_background.jpg) repeat-x;
+}
+
+#nav ul {
+	padding: 10px 0 0 0;
+	width: 297px;
+	margin: 0 auto;
+}
+
+#nav ul li {
+	float: left;
+	list-style-type: none;
+	margin: 0 11px 0 0;
+}
+
+#nav ul li.last {
+	float: left;
+	list-style-type: none;
+	margin: 0;
+}
+
+/* Body styles */
+#bodywrap
+{
+	border-top: 1px solid rgb(0,0,0);
+}
+
+#bodycontent
+{
+	background: white;
+	padding: 1em;
+	margin: 1em;
+	border: 1px solid black;
+	-moz-border-radius: 4px;
+	-moz-box-shadow: 0px 0px 2px #000;
+	font-size: 1.25em;
+}
