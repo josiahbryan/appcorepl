@@ -6,7 +6,7 @@ package ThemePHC;
 	use base 'Content::Page::ThemeEngine';
 	use Scalar::Util 'blessed';
 
-	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub/]);
+	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 
 	
 	# The output() routine is the core of the Theme - it's where the theme applies the

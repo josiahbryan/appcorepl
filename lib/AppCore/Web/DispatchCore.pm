@@ -121,6 +121,8 @@ package AppCore::Web::DispatchCore;
 		   !$path)
 		{
 			my $pref = getcookie('mobile.sitepref');
+			my $ism = ismobile( $ENV{HTTP_USER_AGENT} );
+			print STDERR "ism: $ism, ua: $ENV{HTTP_USER_AGENT}\n";
 			if((ismobile( $ENV{HTTP_USER_AGENT} ) && !$pref) || $pref eq 'mobile')
 			{
 				AppCore::Web::Common->redirect($AppCore::Config::MOBILE_URL);
@@ -318,12 +320,13 @@ package AppCore::Web::DispatchCore;
 	}
 	
 	sub ismobile {
-		my $useragent=lc(@_);
+		my $useragent=lc(shift());
 		my $is_mobile = '0';
 	
 		if($useragent =~ m/(android|up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone)/i) {
 			$is_mobile=1;
 		}
+		print STDERR "ismobile: ua: '$useragent'\n";
 	
 		if((index($ENV{HTTP_ACCEPT},'application/vnd.wap.xhtml+xml')>0) || ($ENV{HTTP_X_WAP_PROFILE} || $ENV{HTTP_PROFILE})) {
 			$is_mobile=1;

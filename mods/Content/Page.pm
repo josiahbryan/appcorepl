@@ -310,7 +310,7 @@ package Content::Page::ThemeEngine::View;
 				value	=> $item->view_code,
 				text	=> $item->name,
 				hint	=> $item->description,
-				selected => $item->view_code == $cur,
+				selected => $item->view_code eq $cur,
 			}
 		}
 		return \@list;
