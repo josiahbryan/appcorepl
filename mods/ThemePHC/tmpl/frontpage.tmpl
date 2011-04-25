@@ -8,7 +8,8 @@
 <body>
 
 <tmpl_include main-nav.inc.tmpl>
-
+<!-- Hack our download order to reduce blockages futher in the download pipeline -->
+<img src='%%modpath%%/images/graphic_box_bg.png' style='display:none'>
 
 <div id='header'>
 	<div id='header-shadow'>
@@ -22,6 +23,10 @@
 		</div>
 	</div>
 </div>
+
+<!-- Downloading these images here instead of later in the order reduces page render time by ~100ms due to blocking at the end -->
+<img src='%%modpath%%/images/sidebar.jpg'       style='display:none'> 
+<img src='%%modpath%%/images/header-bluebg.jpg' style='display:none'>
 
 <div id='graphicblock-wrap'>
 	<div id='graphicblock'>
@@ -42,8 +47,8 @@
 			</div>
 			<div class='block-item' id='block-video'>
 				<center>
-					<iframe src="http://player.vimeo.com/video/22211666?byline=0&amp;portrait=0" width="400" height="300" frameborder="0" class='vimeo-video'></iframe>
-					 <!--<h3>Still working on Video...</h3>-->
+					<!--<iframe src="http://player.vimeo.com/video/22211666?byline=0&amp;portrait=0" width="400" height="300" frameborder="0" class='vimeo-video'></iframe>-->
+					 <h3>Still working on Video...</h3>
 				</center>
 			</div>
 			<div class='block-item' id='block-events'>
@@ -149,8 +154,8 @@
 <div id='footer'>
 
 </div>
-
-<script src='%%appcore%%/js/jquery-1.5.2.min.js'></script>
+<!--<script src='%%appcore%%/js/jquery-1.5.2.min.js'></script>-->
+<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
 <script src='%%appcore%%/js/jquery-scrollto.js'></script>
 <script src='%%modpath%%/js/frontpage.js'></script>
 </body>

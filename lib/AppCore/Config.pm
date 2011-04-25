@@ -87,13 +87,25 @@ BEGIN
 	$ENABLE_CDN_CSS  = 1;		# Controls replacement of the href attrib of <link> tags for CSS inclusion
 	$ENABLE_CDN_IMG  = 1;		# Controls replacement of the src attrib of <img> tags
 	$ENABLE_CDN_JS   = 1;		# Controls replacement of the src attrib of <script> tags
+	
+	# Quoting from: http://yuiblog.com/blog/2007/04/11/performance-research-part-4/
+	# Our rule of thumb is to increase the number of parallel downloads by using at least two, but no more than four hostnames.
+	
+	# Therefore, limit the number of @CDN_HOSTS to 3 or 4 hosts
+	# Make sure to include the initial (main) host (if reasonable)
+	# because this saves 20-150ms on DNS lookup time
+	
 	@CDN_HOSTS = qw/
+		beta.mypleasanthillchurch.org
 		cdn1.mypleasanthillchurch.org
 		cdn2.mypleasanthillchurch.org
 		cdn3.mypleasanthillchurch.org
-		cdn4.mypleasanthillchurch.org
-		cdn5.mypleasanthillchurch.org
-	/;
+		
+	/; 
+	#	
+	#	cdn4.mypleasanthillchurch.org
+	#	cdn5.mypleasanthillchurch.org
+	#/;
 };
 
 1;

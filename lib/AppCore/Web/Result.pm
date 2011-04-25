@@ -172,8 +172,14 @@ package AppCore::Web::Result;
 			{
 				my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
 				$out =~ s/<a:cssx[^\>]+>//gi;
-				my $css_link = _process_multi_cssx($self,$tmpl,@files);
-				$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
+				#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
+				#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
+				
+				my $file = _process_multi_cssx($self,$tmpl,1,@files);
+				my $full_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $css = read_file($full_file);
+				$out =~ s/<\/head>/<style>$css<\/style>\n<\/head>/g;
+				
 			}
 			else
 			{
@@ -318,6 +324,7 @@ package AppCore::Web::Result;
 	{
 		my $self = shift;
 		my $tmpl = shift;
+		my $just_filename = shift || 0;
 		
 		my @files = @_;
 		
@@ -385,9 +392,9 @@ package AppCore::Web::Result;
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
 				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
-				if($comp =~ /([^\s].*?\.jar)/ && !-f $1)
+				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
-					#print STDERR "Unable to find YUI, not compressing.\n";
+					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 				}
 				else
 				{
@@ -399,6 +406,8 @@ package AppCore::Web::Result;
 				}
 			}
 		}
+		
+		return $cssx_url if $just_filename;
 		
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
@@ -472,6 +481,7 @@ package AppCore::Web::Result;
 			$cssx_url = _cdn_url($cssx_url);
 		}
 		
+		#return $cssx_url if $just_filename;
 		return qq{<link href="$cssx_url" rel="stylesheet" type="text/css" /> <!-- Original CSS File: $src_file -->};
 	}
 	
