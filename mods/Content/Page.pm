@@ -27,6 +27,8 @@ package Content::Page;
 			# - Custom types like a Blog app, News app, etc
 			# Types can generate custom content or use the content in this object in some manner
 			{	field	=> 'typeid',		type	=> 'int(11)',	linked => 'Content::Page::Type' },
+			{	field	=> 'themeid',		type	=> 'int(11)',	linked => 'Content::Page::ThemeEngine' },
+			{	field	=> 'view_code',		type	=> 'varchar(100)', default => 'sub' },
 			# The next page up in the nav structure
 			{	field	=> 'parentid',		type	=> 'int(11)',	linked => 'Content::Page' },
 			{	field	=> 'url',		type	=> 'varchar(255)' },
@@ -38,8 +40,6 @@ package Content::Page;
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
 			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
 			{	field	=> 'menu_index',	type	=> 'varchar(100)', default => 0 },
-
-			
 		]	
 	
 	});
@@ -47,8 +47,13 @@ package Content::Page;
 	sub apply_mysql_schema
 	{
 		my $self = shift;
-		$self->mysql_schema_update('Content::Page');	
-		$self->mysql_schema_update('Content::Page::Type');
+		my @db_objects = qw{
+			Content::Page
+			Content::Page::Type
+			Content::Page::ThemeEngine
+			Content::Page::ThemeEngine::View
+		};
+		$self->mysql_schema_update($_) foreach @db_objects;
 	}
 };
 
@@ -75,7 +80,7 @@ package Content::Page::Type;
 			{	field	=> 'name',		type	=> 'varchar(255)' },
 			{	field	=> 'description',	type	=> 'varchar(255)' },
 			{	field	=> 'controller',	type	=> 'varchar(255)' },
-			{	field	=> 'view_code',		type	=> 'varchar(255)' },
+			{	field	=> 'uses_pagepath',	type	=> 'int(1)', default => 0 }
 		]
 	
 	});
@@ -126,17 +131,33 @@ package Content::Page::Controller;
 		return $CurrentView;
 	}
 	
+	our $CurrentTheme;
+	sub theme
+	{
+		my $self = shift;
+		if(@_)
+		{
+			return $CurrentTheme = shift;
+		}
+		if(!$CurrentTheme)
+		{
+			$CurrentTheme = $AppCore::Config::THEME_MODULE;
+		}
+		if(!$CurrentTheme)
+		{
+			$CurrentTheme = 'Content::Page::ThemeEngine';
+		}
+		
+		return $CurrentTheme;
+	}
+	
 	sub get_view
 	{
 		my $self      = shift;
 		my $view_code = shift;
 		my $r         = shift;
 		
-		my $pkg = $AppCore::Config::THEME_MODULE;
-		if(!$pkg )
-		{
-			$pkg = 'Content::Page::ThemeEngine';
-		}
+		my $pkg = $self->theme;
 		
 		$view_code = 'default' if !$view_code;
 		
@@ -163,7 +184,14 @@ package Content::Page::Controller;
 		my $page_obj = shift;
 		
 		# No view code will just return the BasicView derivitve which just uses the basic.tmpl template
-		my $view_code = $type_dbobj->view_code;
+		my $themeid   = $page_obj ? $page_obj->themeid   : undef;
+		my $view_code = $page_obj ? $page_obj->view_code : undef;
+		
+		if($themeid && $themeid->id)
+		{
+			# Change current theme if the page requests it
+			$self->theme($themeid->controller);
+		}
 		
 		#print STDERR "process_page: view_code is '$view_code', type: $type_dbobj\n";
 		
@@ -239,9 +267,151 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 	}
 };
 
+package Content::Page::ThemeEngine::View;
+{
+	use Scalar::Util 'blessed';
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta({
+		class_noun	=> 'View Code',
+		
+		table		=> $AppCore::Config::THEMES_DBTABLE || 'theme_views',
+		
+		schema	=>
+		[
+			{
+				'field'	=> 'viewid',
+				'extra'	=> 'auto_increment',
+				'type'	=> 'int(11)',
+				'key'	=> 'PRI',
+				readonly=> 1,
+				auto	=> 1,
+			},
+			{	field	=> 'themeid',		type	=> 'int(11)',	linked => 'Content::Page::ThemeEngine' },
+			{	field	=> 'name',		type	=> 'varchar(255)' },
+			{	field	=> 'description',	type	=> 'varchar(255)' },
+			{	field	=> 'view_code',		type	=> 'varchar(255)' },
+		]
+	
+	});
+	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $theme = shift;
+		my $themeid = ref $theme ? $theme->id : $theme;
+		
+		my @all = $pkg->retrieve_from_sql(($themeid ? 'themeid='.$themeid : '1').' order by name');
+		my @list;
+		foreach my $item (@all)
+		{
+			push @list, {
+				value	=> $item->view_code,
+				text	=> $item->name,
+				hint	=> $item->description,
+				selected => $item->view_code == $cur,
+			}
+		}
+		return \@list;
+	}
+};
+
 package Content::Page::ThemeEngine;
 {
 	use Scalar::Util 'blessed';
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta({
+		class_noun	=> 'Theme Engine',
+		
+		table		=> $AppCore::Config::THEMES_DBTABLE || 'themes',
+		
+		schema	=>
+		[
+			{
+				'field'	=> 'themeid',
+				'extra'	=> 'auto_increment',
+				'type'	=> 'int(11)',
+				'key'	=> 'PRI',
+				readonly=> 1,
+				auto	=> 1,
+			},
+			{	field	=> 'name',		type	=> 'varchar(255)' },
+			{	field	=> 'description',	type	=> 'varchar(255)' },
+			{	field	=> 'controller',	type	=> 'varchar(255)' },
+		],
+		has_many	=> qw/Content::Page::ThemeEngine::View/,
+	});
+	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $curid = ref $cur ? $cur->id : $cur;
+		
+		my @all = $pkg->retrieve_from_sql('1 order by name');
+		my @list;
+		foreach my $item (@all)
+		{
+			push @list, {
+				value	=> $item->id,
+				text	=> $item->name,
+				hint	=> $item->description,
+				selected => $item->id == $curid,
+			}
+		}
+		return \@list;
+	}
+	
+	
+	sub register_viewcodes
+	{
+		my $self = shift;
+		my @list = @_;
+		@list = @{$list[0]} if ref $list[0] eq 'ARRAY';
+		foreach my $viewcode (@list)
+		{
+			if(ref $viewcode eq 'HASH')
+			{
+				$viewcode->{themeid} = $self;
+				Content::Page::ThemeEngine::View->find_or_create($viewcode);
+			}
+			else
+			{
+				Content::Page::ThemeEngine::View->find_or_create({
+					themeid	=> $self,
+					name	=> AppCore::Common->guess_title($viewcode),
+					view_code => $viewcode,
+				});
+			}
+		}
+	}
+	
+	sub register_theme
+	{
+		undef $@;
+		eval
+		{
+			my $pkg = shift;
+			$pkg = ref $pkg if ref $pkg;
+			
+			my $name = shift;
+			my $diz = shift;
+			my @codes = @_;
+			
+			my $self = $pkg->find_or_create({controller=>$pkg});
+			
+			$self->name($name) if $self->name ne $name;
+			$self->description($diz) if $self->description ne $diz;
+			$self->update if $self->is_changed;
+			
+			$self->register_viewcodes(@codes) if @codes;
+			
+		};
+		warn $@ if $@;
+		
+	}
 	
 	sub new
 	{

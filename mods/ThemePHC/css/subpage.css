@@ -56,8 +56,12 @@ body
 {
 	margin-top: -70px;
 	margin-left: -120px;
-	/*margin-bottom: -50px;*/
-	/*padding-left: 100px;*/
+}
+
+#mainlogo-wrap a:focus, 
+#mainlogo-wrap a:active
+{
+	outline: 0;
 }
 
 

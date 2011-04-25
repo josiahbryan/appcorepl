@@ -117,6 +117,12 @@ package Content::Admin;
 		$tmpl->param(page_content => '');
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
 		
+		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list);
+		
+		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
+		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($cur_theme));
+		
+		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		
@@ -157,6 +163,11 @@ package Content::Admin;
 		$tmpl->param(page_title   => $page_obj->title);
 		$tmpl->param(page_content => $page_obj->content);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
+		
+		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list);
+		
+		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
+		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
@@ -562,9 +573,8 @@ package Content::Admin;
 			
 			$page_obj = Content::Page->create({
 				url	=>	$url, 
-				typeid	=>	Content::Page::Type->by_field(view_code=>'sub'),
 				show_in_menus	=> 1,
-				menu_index	=> $idx
+				menu_index	=> $idx,
 			});
 			print STDERR "Admin: Created pageid $page_obj for url $url\n";
 		}
@@ -572,6 +582,8 @@ package Content::Admin;
 		$page_obj->title($title);
 		$page_obj->content($content);
 		$page_obj->url($url);
+		$page_obj->themeid($req->themeid);
+		$page_obj->view_code($req->view_code);
 		$page_obj->update;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";

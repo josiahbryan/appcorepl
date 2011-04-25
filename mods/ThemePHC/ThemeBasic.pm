@@ -9,6 +9,8 @@ package ThemeBasic;
 	## are implemented in ThemeEngine, we provide the default implementation
 	## here for reference and for example purposes.
 	
+	__PACKAGE__->register('Basic','Very simple theme - no styling.', [qw/sub/]);
+	
 	# Themes don't HAVE to provide a new method - if they don't, the output() and get_view()
 	# methods will be called on the package using '->' instead of on an instance or instead of using '::'.
 	sub new

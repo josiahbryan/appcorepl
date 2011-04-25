@@ -181,17 +181,17 @@ package AppCore::Web::Result;
 			}
 		}
 		
-		if($AppCore::Config::ENABLE_CDN_IMG)
+		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='"._cdn_url($1)."'"/segi;
 		}
 		
-		if($AppCore::Config::ENABLE_CDN_JS)
+		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='"._cdn_url($1)."'"/segi;
 		}
 		
-		if($AppCore::Config::ENABLE_CDN_CSS)
+		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='"._cdn_url($1)."'"/segi;
 		}
@@ -288,7 +288,9 @@ package AppCore::Web::Result;
 			$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
 			my $srv = $AppCore::Config::WEBSITE_SERVER;
 			$srv =~ s/^http:\/\///g;
-			return $ENV{HTTP_HOST} eq $srv;
+			my $flag = $ENV{HTTP_HOST} eq $srv ? 1:0;
+			#print STDERR "_can_cdn_for_fqdn: srv: $srv, current: $ENV{HTTP_HOST}, flag: $flag\n";
+			return $flag; 
 		}
 		
 		return 1;
@@ -383,11 +385,18 @@ package AppCore::Web::Result;
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
 				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
-				my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
-				my $cmd = "$comp $cssx_file $args -o $tmp_file";
-				print STDERR "YUI Compress command: '$cmd'\n";
-				system($cmd);
-				system("mv -f $tmp_file $cssx_file");
+				if($comp =~ /([^\s].*?\.jar)/ && !-f $1)
+				{
+					#print STDERR "Unable to find YUI, not compressing.\n";
+				}
+				else
+				{
+					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $cmd = "$comp $cssx_file $args -o $tmp_file";
+					print STDERR "YUI Compress command: '$cmd'\n";
+					system($cmd);
+					system("mv -f $tmp_file $cssx_file");
+				}
 			}
 		}
 		

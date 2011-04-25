@@ -134,14 +134,10 @@ package Content;
 				
 				# Found valid page, output
 				my $type = $page_obj->typeid;
-				if(!$type || !$type->id)
-				{
-					$type = Content::Page::Type->by_field(view_code => 'sub');
-				}
 				#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
 				if($type && $type->id)
 				{
-					if($popped && $type->id == 1) # static page, ignores page path, so original URL was what user wanted
+					if($popped && !$type->uses_pagepath) # static page, ignores page path, so original URL was what user wanted
 					{
 						return 0;
 					}
@@ -153,7 +149,10 @@ package Content;
 				}
 				else
 				{
-					return $r->error("No page type assigned to $cur_url and unable to find 'sub' view_code Page Type");
+					return 0 if $popped;
+					# Pass to default controller
+					Content::Page::Controller->process_page(undef,$req,$r,$page_obj);
+					
 				}
 				return 1;
 			}

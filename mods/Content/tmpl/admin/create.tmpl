@@ -1,72 +1,91 @@
 <script src='%%appcore%%/ckeditor/ckeditor.js'></script>
 <title><tmpl_if pageid>Edit &quot;<tmpl_var page_title>&quot;<tmpl_else>Create New Page</tmpl_if></title>
 <h1><tmpl_if pageid>Edit &quot;<tmpl_var page_title>&quot;<tmpl_else>Create New Page</tmpl_if></h1>
-<!--onsubmit="document.forms.content.body.value = WYMeditor.INSTANCES[0].html()"-->
-<form action='%%binpath%%/save' method=POST style='display:inline;border:0;padding:0;margin:0' name=content >
+
+<form action='%%binpath%%/save' method=POST name=content >
+	
 	<input type=hidden name=pageid value="<tmpl_var pageid>">
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
-
-	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	<script>function $x(e){return document.getElementById(e)}</script>
 	
-		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em" width='100%'>
-			<tr>
-				<td>Address:</td> <td>
-					%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
-					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-				</td>
-			</tr>
-			<tr>
-				<td>Page Title:</td> <td>
-					<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
-					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					<script>var e= $x('title');if(e)e.focus()</script>
-				</td>
-			</tr>
-			<!--<tmpl_if templates>
-				<tr>
-					<td>Page Template:</td> <td>
-						<select name='templateid'>
-							<tmpl_loop templates>
-								<option value='<tmpl_var id>' x:img='<tmpl_var img>' x:options='<tmpl_var options escape=html>' <tmpl_if selected>selected</tmpl_if>><tmpl_var text></option>
-							</tmpl_loop>
-						</select>
-						
-					</td>
-				</tr>
-			</tmpl_if>-->
-			<tr>
-				<td colspan=2>
-					<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
-					
-					<script>
-					CKEDITOR.replace( 'body_value', {
-						extraPlugins : 'autogrow',
-						width: '96%',
-						//skin: 'office2003'
-						skin: 'kama',
-						disableNativeSpellChecker: false,
-						removePlugins: 'elementspath,scayt,contextmenu',
-
-						//skin: 'v2'
-					});
-					</script>
-
-					
-				</td>
-			</tr>
-			
-			<tr>
-				<td colspan=2 align=center class=focus_highlight>
-				<br>
+	<table class='editform' width='100%'>
+		<tr>
+			<td>Address:</td> <td>
+				%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
+				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+			</td>
+		</tr>
+		<tr>
+			<td>Page Title:</td> <td>
+				<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
+				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+				<script>var e= $x('title');if(e)e.focus()</script>
+			</td>
+		</tr>
+		
+		<tr>
+			<td colspan=2>
+				<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
 				
-				<input type=submit value="Save Changes"> 
-				<input type=reset value="Reset to Original Values">
-				</td>
-			</tr>
+				<script>
+				CKEDITOR.replace( 'body_value', {
+					extraPlugins : 'autogrow',
+					width: '96%',
+					//skin: 'office2003'
+					skin: 'kama',
+					disableNativeSpellChecker: false,
+					removePlugins: 'elementspath,scayt,contextmenu',
+
+					//skin: 'v2'
+				});
+				</script>
+
+				
+			</td>
+		</tr>
 		
+		<tr>
+			<td>Theme:</td> <td>
+				<select id='themeid' name='themeid' onchange='$x("theme_hint").innerHTMl=this.options[this.selectedIndex].getAttribute("hint")'>
+					<tmpl_loop themes>
+						<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+					</tmpl_loop>
+				</select>
+				<span class=hint id='theme_hint'></span>
+				<script>
+					var theme_list =$x('themeid');
+					var theme_hint =$x('theme_hint');
+					if(theme_list)
+					{
+						var opt = theme_list.options[theme_list.selectedIndex];
+						var hint = opt ? opt.getAttribute("hint"): "";
+						if(theme_hint)
+							theme_hint.innerHTML = hint;
+					}
+				</script>
+			</td>
+		</tr>
+		<tr>
+			<td>View Code:</td> <td>
+				<select name='view_code'>
+					<tmpl_loop view_codes>
+						<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+					</tmpl_loop>
+				</select>
+				<span class=hint id='vc_hint'></span>
+			</td>
+		</tr>
 		
-		</table>
-	</div>
-<script>win_onload()</script>	
+		<tr>
+			<td colspan=2 align=center class=focus_highlight>
+			<br>
+			
+			<input type=submit value="Save Changes"> 
+			<input type=reset value="Reset to Original Values">
+			</td>
+		</tr>
+	
+	
+	</table>
 </form>
 
