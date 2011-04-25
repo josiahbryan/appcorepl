@@ -6,6 +6,8 @@ package ThemeBasic;
 	use base 'Content::Page::ThemeEngine';
 	use Scalar::Util 'blessed';
 	
+	__PACKAGE__->register_theme('Basic','Very simple theme - no styling.', [qw/sub/]);
+	
 =head1 View Code Documentation
 	
 	- 'Home' - front page of the wqebsite

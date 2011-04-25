@@ -2300,8 +2300,8 @@ package AppCore::DBI;
 				
 				push @sql, $sql;
 	
-				my @ok = grep { !/\sDROP\s/ } @alter;
-				#my @ok = @alter; #grep { !/\sDROP\s/ } @alter;
+				#my @ok = grep { !/\sDROP\s/ } @alter;
+				my @ok = @alter; #grep { !/\sDROP\s/ } @alter;
 				foreach my $stmt (@ok)
 				{
 					eval
