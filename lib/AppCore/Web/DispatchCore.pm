@@ -130,6 +130,7 @@ package AppCore::Web::DispatchCore;
 			#print STDERR "ism: $ism, ua: $ENV{HTTP_USER_AGENT}\n";
 			if((ismobile( $ENV{HTTP_USER_AGENT} ) && !$pref) || $pref eq 'mobile')
 			{
+				setcookie('mobile.sitepref','mobile');
 				AppCore::Web::Common->redirect($AppCore::Config::MOBILE_URL);
 			}
 		}

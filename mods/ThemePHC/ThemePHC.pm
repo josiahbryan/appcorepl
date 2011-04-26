@@ -23,6 +23,10 @@ package ThemePHC;
 		
 		my $tmpl = undef;
 		#print STDERR __PACKAGE__."::output: view_code: '$view_code'\n";
+		
+		my $pref = AppCore::Web::Common::getcookie('mobile.sitepref');
+		$view_code = 'mobile' if $pref eq 'mobile';
+		
 		if($view_code eq 'home')
 		{
 			$tmpl = $self->load_template('frontpage.tmpl');
