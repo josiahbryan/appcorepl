@@ -219,19 +219,33 @@ ul#mainnav li:hover ul li
 /* Link to mobile site */
 h2#mobile-link
 {
-	margin:0;
-	padding:0;
-	border-bottom: 1px solid black;
-	height: 20px;
-}
-
-h2#mobile-link a 
-{
 	display: block;
 	position: absolute;
 	top:0;
 	left: 0;
-	z-index: 600; 
+	z-index: 700;
+	
+	margin:0;
+	padding:0;
+	border-bottom: 1px solid rgb(40,40,40);
+	border-right: 1px solid rgb(40,40,40);
+	/*-moz-border-radius-bottom-right: 3px;*/
+	-moz-box-shadow: 0px 0px 4px #000;
+	
+	
+	/*width: 7.5em;*/ 
+	height: 34px;
+	width: 80px;
+	text-align: center;
+	padding: 8px 3px 0 3px;
+	/*background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x;*/ 
+	background: -moz-linear-gradient(center top , #FFFFFF 0%, #CCCCCC 100%) repeat scroll 0 0 transparent;
+	/*background-color: rgb(40,40,40);*/
+	
+}
+
+h2#mobile-link a 
+{
 	width: 100%; 
 	color: #fff; 
 	text-align: center; 
@@ -239,8 +253,7 @@ h2#mobile-link a
 	font-size: 0.7em; 
 	font-weight: 300; 
 	height: 20px; 
-	background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x; 
-	text-shadow: #000 0 -1px 1px; 
+	text-shadow: #000 0 0px 3px; 
 	padding: 4px 0 0 0;
 	/*margin-bottom: -2px;*/
 	/*border-bottom: 1px solid black;*/

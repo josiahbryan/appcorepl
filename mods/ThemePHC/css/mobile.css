@@ -1,3 +1,4 @@
+
 /* Generic body styles */
 html {
 	margin: 0;
@@ -85,7 +86,7 @@ h2#full-link a
 	font-size: 0.7em; 
 	font-weight: 300; 
 	height: 20px; 
-	background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x; 
+	background: url("%%modpath%%/images/mobile/full_link_background.jpg") repeat-x; 
 	text-shadow: #000 0 -1px 1px; 
 	padding: 10px 0 0 0;
 	margin-bottom: -2px;
@@ -214,6 +215,7 @@ ul.links li
 	text-align: left;
 }
 
+#bodywrap h1,
 h3.title-divider
 {
   	background: url("%%modpath%%/images/mobile/division_background.jpg") repeat-x scroll 0 0 transparent;
@@ -232,8 +234,14 @@ h3.title-divider div
 
 #bodywrap p
 {
-	padding: 1em;
+	margin: 1em;
 }
+
+#bodywrap p + p
+{
+	margin-top: 0;
+}
+
 
 /* Contact styles */
 #contact ul

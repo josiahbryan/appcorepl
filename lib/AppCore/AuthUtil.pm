@@ -21,7 +21,7 @@ package AppCore::AuthUtil;
 	@EXPORT = qw/authenticate http_require_login require_auth/;
 		
 	use constant TICKET_COOKIE => 'appcore.auth_ticket';
-	sub debug { } #print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; } 
+	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; } 
 	
 	sub _cdbi_load_all_columns
 	{
@@ -104,8 +104,9 @@ package AppCore::AuthUtil;
 		my $redirect = shift;
 		
 		my $tk = getcookie(TICKET_COOKIE); #session(TICKET_COOKIE); #getcookie(TICKET_COOKIE); #$ctx->auth_ticket;
+		#print STDERR "authenticate(): cookie:'$tk'\n";
 		
-		debug("\$tk = '$tk'");
+		debug("cookie = '$tk'");
 		my ($tk_user,$tk_pass) = $tk =~ /^(.*)\.([^\.]+)$/;
 		$user||=$tk_user;
 		$pass||=$tk_pass;
@@ -135,14 +136,11 @@ package AppCore::AuthUtil;
 		if($user_object && $user && ($user_object->pass eq $pass || $hash eq $pass || $user_object->fb_token eq $pass))
 		{
 			$ctx->user($user_object);
-			if(!$tk)
-			{
-				$tk = join('.',$user,$hash);
-				setcookie(TICKET_COOKIE,$tk);
-				#session(TICKET_COOKIE,$tk);
-				#AppCore::Session->save;
-			}
-			
+			$tk = join('.',$user,$hash);
+			setcookie(TICKET_COOKIE,$tk);
+			#session(TICKET_COOKIE,$tk);
+			#AppCore::Session->save;
+		
 			debug("authenticating '$user', returning true");
 			return _cdbi_load_all_columns($ctx->user);
 		}

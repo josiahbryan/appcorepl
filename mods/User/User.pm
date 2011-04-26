@@ -241,7 +241,9 @@ package User;
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		
-		my $tmpl = $self->get_template('login.tmpl');
+		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+		
+		my $tmpl = $self->get_template('login'.($mobile?'-mobile' : '').'.tmpl');
 		#$tmpl->param(challenge => AppCore::AuthUtil->get_challenge());
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
@@ -330,7 +332,9 @@ package User;
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		
-		my $tmpl = $self->get_template('signup.tmpl');
+		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+		
+		my $tmpl = $self->get_template('signup'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -385,7 +389,9 @@ package User;
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		
-		my $tmpl = $self->get_template('forgot_pass.tmpl');
+		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+		
+		my $tmpl = $self->get_template('forgot_pass'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -430,7 +436,9 @@ package User;
 			}
 		}
 		
-		my $tmpl = $skin->load_template('pages/profile.tmpl');
+		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+		
+		my $tmpl = $skin->load_template('profile'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param('profile_saved' => 1) if $sub_page eq 'post';
 		$tmpl->param(fake_pass => join '', ('*') x length(AppCore::Common->context->user->pass));
 		

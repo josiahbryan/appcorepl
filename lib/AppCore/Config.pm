@@ -55,6 +55,7 @@ BEGIN
 	$FB_APP_SECRET = `cat fb_app_secret.txt`; # read from file so its not saved in subversion!
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
+	$ENABLE_CSSX_MOBILE_IMAGE_URI = 1;
 	$ENABLE_CSSX_IMAGE_URI = 0;
 	$ENABLE_CSSX_IMPORT    = 1;
 	$ENABLE_CSSX_COMBINE   = 1;

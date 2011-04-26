@@ -304,17 +304,19 @@ package AppCore::Web::Result;
 
 	sub _read_source_css
 	{
-		my ($tmpl,$src) = @_;
+		my ($tmpl,$src,$mobile) = @_;
 		my $text = read_file($src);
 		$text =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi;
 		
-		if($AppCore::Config::ENABLE_CSSX_IMAGE_URI)
+		if($AppCore::Config::ENABLE_CSSX_IMAGE_URI ||
+		   ($mobile && $AppCore::Config::ENABLE_CSSX_MOBILE_IMAGE_URI))
 		{
-			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\);/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1") . ";\n\t\t\/* Original Image: $1 *\/"/segi;
+# 			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\);/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1") . ";\n\t\t\/* Original Image: $1 *\/"/segi;
+			$text =~ s/url\(["']?(\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
 		}
 		elsif($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
 		{
-			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\)/_cdn_url($1,1)/segi;
+			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/_cdn_url($1,1)/segi;
 		}
 		
 		return $text;
@@ -328,7 +330,9 @@ package AppCore::Web::Result;
 		
 		my @files = @_;
 		
-		my $md5 = md5_hex(join '', @files) . '.css';
+		my $mobile = AppCore::Common->context->x('IsMobile');
+		
+		my $md5 = md5_hex(join '', @files) . ($mobile ? '-m' : ''). '.css';
 		my $cssx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
 		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
 		
@@ -360,12 +364,12 @@ package AppCore::Web::Result;
 			{
 				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				print STDERR "Recompiling CSSX File $orig_file -> $cssx_file\n";
-				my $text = _read_source_css($tmpl,$orig_file);
+				my $text = _read_source_css($tmpl,$orig_file,$mobile);
 				
 				# Note: @imports are not processed in included CSS files in order to prevent recursion problems
 				if($AppCore::Config::ENABLE_CSSX_IMPORT)
 				{
-					$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
+					$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1",$mobile)/segi;
 				}
 				
 				push @css_buffer, $text;
@@ -435,16 +439,17 @@ package AppCore::Web::Result;
 		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
 		my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
 		
+		my $mobile = AppCore::Common->context->x('IsMobile');
 		
 		if(!-f $cssx_file || (stat($cssx_file))[9] < (stat($orig_file))[9])
 		{
 			print STDERR "Recompiling CSSX File $orig_file -> $cssx_file \n";
-			my $text = _read_source_css($tmpl,$orig_file);
+			my $text = _read_source_css($tmpl,$orig_file,$mobile);
 			
 			# Note: @imports are not processed in included CSS files in order to prevent recursion problems
 			if($AppCore::Config::ENABLE_CSSX_IMPORT)
 			{
-				$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
+				$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1",$mobile)/segi;
 			}
 			
 			open(CSSX,">$cssx_file") || die "Cannot open $cssx_file for writing: $!";
