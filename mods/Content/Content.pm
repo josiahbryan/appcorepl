@@ -85,6 +85,19 @@ package Content;
 	}
 	
 	
+	our %LiveObjects;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing page_obj_cache...\n";
+		foreach my $obj (values %LiveObjects)
+		{
+			$obj->{page_obj_cache} = {};
+		}
+		%LiveObjects = ();
+	}	
+	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
 	sub get_page
 	{
 		my $self = shift;
@@ -96,6 +109,9 @@ package Content;
 		$obj = $self->{page_obj_cache}->{$url} 
 		     = Content::Page->by_field(url => $url) 
 		     if !$obj;
+		
+		# Register ourself for when we need to clear the caches
+		$LiveObjects{$self} = $self if !$LiveObjects{$self};
 		
 		return $obj;
 	}

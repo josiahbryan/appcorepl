@@ -7,9 +7,8 @@
 	<meta name="viewport" content="user-scalable=no, width=320" />
 	<meta name="apple-mobile-web-app-capable" content="yes" />
 	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>PHC</title>
-	<a:cssx src="%%modpath%%/css/mobile.css"/>
-	
 	<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico">
+	<a:cssx src="%%modpath%%/css/mobile.css"/>
 </head>
 
 <body>
@@ -27,44 +26,35 @@
 		
 		<div id='nav'>
 			<ul>
-				<li><a href='/m/news'>
-					<img src='%%modpath%%/images/mobile/btn_news.png' border=0>
-					News
-				</a></li>
-				<li><a href='/m/prayer'>
-					<img src='%%modpath%%/images/mobile/btn_prayer.png' border=0>
-					Prayer
-				</a></li>
-				<li><a href='/m/contact'>
-					<img src='%%modpath%%/images/mobile/btn_contact.png' border=0>
-					Contact
-				</a></li>
-				<li class='last'><a href='/m/more'>
-					<img src='%%modpath%%/images/mobile/btn_more.png' border=0>
-					More
-				</a></li>
+				<li>
+					<a href='/m/news' class='news'>News</a>
+				</li>
+				<li>
+					<a href='/m/prayer' class='prayer'>Prayer</a>
+				</li>
+				<li>
+					<a href='/m/contact' class='contact'>Contact</a>
+				</li>
+				<li class='last'>
+					<a href='/m/more' class='more'>More</a>
+				</li>
 			</ul>
 		</div>
 
 	</div>
 </div>
 
-
 <div id='bodywrap'>
-	<div id='bodycontent'>
+	<!--<div id='bodycontent'>-->
 		
 		<!--<tmpl_include breadcrumbs.inc.tmpl>-->
 		
 		%%page_content%%
-	</div>
-	<div id='bodyfooter'>	
-		<!--<tmpl_include user-footer.inc.tmpl>-->
 		
-		<!--<hr size=1>-->
 	<!--</div>
-	<div>-->
+	<div id='bodyfooter'>-->	
 		<tmpl_if user_userid>
-			<h3 class='title-divider'>Welcome, <tmpl_if user_first>%%user_first%%<tmpl_else>%%user_display%%</tmpl_if>!</h3>
+			<h3 class='title-divider'><div>Welcome, <tmpl_if user_first>%%user_first%%<tmpl_else>%%user_display%%</tmpl_if>!</div></h3>
 			<ul class='links'>
 				<li><a href='/user/login'><h4>Signoff</h4></a></li>
 				
@@ -84,14 +74,13 @@
 			</ul>
 		</tmpl_if>
 	
-	</div>
+	<!--</div>-->
 </div>
 
 <div id='footer'>
 
 </div>
 
-<!--<script src='%%appcore%%/js/jquery-1.5.2.min.js'></script>-->
 <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
 </body>
 </html>

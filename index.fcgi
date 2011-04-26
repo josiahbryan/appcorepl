@@ -40,6 +40,10 @@ while(my $q = CGI::Fast->new)
 		#print STDERR "Database updated, clearing cached object index... ($mod > $last_mod)\n";
 		AppCore::DBI->clear_cached_dbobjects;
 	}
+	else
+	{
+		#print STDERR "No DB Change ($mod < $last_mod)\n";
+	}
 	$last_mod = $mod;
 	$dispatch->process($q);
 }

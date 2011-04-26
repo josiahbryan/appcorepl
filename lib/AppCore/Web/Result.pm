@@ -178,7 +178,7 @@ package AppCore::Web::Result;
 				my $file = _process_multi_cssx($self,$tmpl,1,@files);
 				my $full_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				my $css = read_file($full_file);
-				$out =~ s/<\/head>/<style>$css<\/style>\n<\/head>/g;
+				$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
 				
 			}
 			else
