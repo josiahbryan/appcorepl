@@ -209,7 +209,7 @@ body
 	background-repeat: repeat-x;
 	background-color: white;
 	
-	height: 400px;
+	height: 100px;
 	
 	padding-top: 180px;
 }
@@ -227,6 +227,19 @@ body
 	background-repeat: repeat-x;
 	height: 180px;
 	width: 100%;
+}
+
+#footercontent
+{
+	padding: 1em 0 1em 0;
+	width: 965px;
+	margin: 0 auto;
+	/*font-size: 1.5em;*/
+}
+
+#footercontent a
+{
+	color: white; 
 }
 
 

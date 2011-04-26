@@ -13,6 +13,7 @@
 {
 	width: 100%;
 	position: absolute;
+	/*top: 20px;*/
 	top: 0;
 	left: 0;
 	z-index: 600;
@@ -212,4 +213,35 @@ ul#mainnav li:hover ul li
     float: left;
     width: 135px;
     padding: 0 0 4px 0;
+}
+
+
+/* Link to mobile site */
+h2#mobile-link
+{
+	margin:0;
+	padding:0;
+	border-bottom: 1px solid black;
+	height: 20px;
+}
+
+h2#mobile-link a 
+{
+	display: block;
+	position: absolute;
+	top:0;
+	left: 0;
+	z-index: 600; 
+	width: 100%; 
+	color: #fff; 
+	text-align: center; 
+	text-decoration: none; 
+	font-size: 0.7em; 
+	font-weight: 300; 
+	height: 20px; 
+	background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x; 
+	text-shadow: #000 0 -1px 1px; 
+	padding: 4px 0 0 0;
+	/*margin-bottom: -2px;*/
+	/*border-bottom: 1px solid black;*/
 }

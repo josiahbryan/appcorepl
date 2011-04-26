@@ -20,17 +20,33 @@
 
 <div id='header'>
 	<div id='header-shadow'>
-		<a href='/'><img src='%%modpath%%/images/mainlogo-120px.png' id='logo' border=0></a>
+		<!--<a href='/'><img src='%%modpath%%/images/mainlogo-120px.png' id='logo' border=0></a>-->
+		<div id='logo'>
+			<a href='/'>PHC</a>
+		</div>
+		
+		<div id='nav'>
+			<ul>
+				<li><a href='/m/news'>
+					<img src='%%modpath%%/images/mobile/btn_news.png' border=0>
+					News
+				</a></li>
+				<li><a href='/m/prayer'>
+					<img src='%%modpath%%/images/mobile/btn_prayer.png' border=0>
+					Prayer
+				</a></li>
+				<li><a href='/m/contact'>
+					<img src='%%modpath%%/images/mobile/btn_contact.png' border=0>
+					Contact
+				</a></li>
+				<li class='last'><a href='/m/more'>
+					<img src='%%modpath%%/images/mobile/btn_more.png' border=0>
+					More
+				</a></li>
+			</ul>
+		</div>
+
 	</div>
-</div>
-<div id='nav'>
-	<ul>
-		<li><a href='/m/news'><img src='%%modpath%%/images/mobile/btn_news.png' border=0></a></li>
-		<li><a href='/m/prayer'><img src='%%modpath%%/images/mobile/btn_prayer.png' border=0></a></li>
-		<li><a href='/m/contact'><img src='%%modpath%%/images/mobile/btn_contact.png' border=0></a></li>
-		<li class='last'>
-		    <a href='/m/more'><img src='%%modpath%%/images/mobile/btn_more.png' border=0></a></li>
-	 </ul>
 </div>
 
 
@@ -40,8 +56,34 @@
 		<!--<tmpl_include breadcrumbs.inc.tmpl>-->
 		
 		%%page_content%%
-		
+	</div>
+	<div id='bodyfooter'>	
 		<!--<tmpl_include user-footer.inc.tmpl>-->
+		
+		<!--<hr size=1>-->
+	<!--</div>
+	<div>-->
+		<tmpl_if user_userid>
+			<h3 class='title-divider'>Welcome, <tmpl_if user_first>%%user_first%%<tmpl_else>%%user_display%%</tmpl_if>!</h3>
+			<ul class='links'>
+				<li><a href='/user/login'><h4>Signoff</h4></a></li>
+				
+				<tmpl_if can_edit> 
+					<li><a href='/content/admin/edit?url=%%content_url%%'><h4>Edit Page</h4></a></li>
+				</tmpl_if>
+				
+				<tmpl_if is_admin> 
+					<li><a href='/admin'><h4>Administration</h4></a></li>
+				</tmpl_if>
+			</ul>
+		<tmpl_else>
+			<h3 class='title-divider'><div>You're not logged in!</div></h3>
+			<ul class='links'>
+				<li><a href='/user/login'><h4>Signin</h4></a></li>
+				<li><a href='/usr/signup'><h4>Signup</h4></a></li>
+			</ul>
+		</tmpl_if>
+	
 	</div>
 </div>
 

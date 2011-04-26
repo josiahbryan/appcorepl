@@ -164,7 +164,7 @@ package Content::Admin;
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
 		
 		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
-		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($page_obj->theme && $page_obj->theme->themeid ? $page_obj->theme : $cur_theme));
+		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
