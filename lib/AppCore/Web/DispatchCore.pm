@@ -116,16 +116,16 @@ package AppCore::Web::DispatchCore;
 		my $path = $ENV{PATH_INFO};
 		$path =~ s/^\///g;
 		
+		if($ENV{QUERY_STRING} =~ /sitepref=(mobile|full)/)
+		{
+			setcookie('mobile.sitepref',$1);
+		}
+		
 		if($AppCore::Config::MOBILE_REDIR &&
 		   $AppCore::Config::MOBILE_URL   &&
 		   !$path)
 		{
 			my $pref = getcookie('mobile.sitepref');
-			if($ENV{QUERY_STRING} =~ /sitepref=(mobile|full)/)
-			{
-				$pref = $1;
-				setcookie('mobile.sitepref',$pref);
-			}
 			my $ism = ismobile( $ENV{HTTP_USER_AGENT} );
 			#print STDERR "ism: $ism, ua: $ENV{HTTP_USER_AGENT}\n";
 			if((ismobile( $ENV{HTTP_USER_AGENT} ) && !$pref) || $pref eq 'mobile')

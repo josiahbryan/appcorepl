@@ -70,7 +70,7 @@ body
 	background-repeat: repeat-x;
 	background-color: white;
 	
-	min-height: 400px;
+	min-height: 200px;
 	
 	
 	
@@ -103,3 +103,15 @@ body
 }
 
 
+#footercontent
+{
+	padding: 1em 0 1em 0;
+	width: 965px;
+	margin: 0 auto;
+	/*font-size: 1.5em;*/
+}
+
+#footercontent a
+{
+	color: white; 
+}

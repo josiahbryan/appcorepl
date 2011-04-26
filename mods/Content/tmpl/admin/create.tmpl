@@ -7,85 +7,113 @@
 	<input type=hidden name=pageid value="<tmpl_var pageid>">
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
 	<script>function $x(e){return document.getElementById(e)}</script>
+	<script>
+	$(function() {
+		$( "#tabs" ).tabs();
+	});
+	</script>
 	
-	<table class='editform' width='100%'>
-		<tr>
-			<td>Address:</td> <td>
-				%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
-				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-			</td>
-		</tr>
-		<tr>
-			<td>Page Title:</td> <td>
-				<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
-				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-				<script>var e= $x('title');if(e)e.focus()</script>
-			</td>
-		</tr>
-		
-		<tr>
-			<td colspan=2>
-				<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
+	<div id="tabs">
+		<ul>
+			<li><a href="#tabs-1">Edit Page Content</a></li>
+			<li><a href="#tabs-2">Advanced Options</a></li>
+		</ul>
+		<div id="tabs-1">
+			<table class='editform' width='100%'>
+				<tr>
+					<td>Address:</td> <td>
+						%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
+						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+					</td>
+				</tr>
+				<tr>
+					<td>Page Title:</td> <td>
+						<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
+						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+						<script>var e= $x('title');if(e)e.focus()</script>
+					</td>
+				</tr>
 				
-				<script>
-				CKEDITOR.replace( 'body_value', {
-					extraPlugins : 'autogrow',
-					width: '96%',
-					//skin: 'office2003'
-					skin: 'kama',
-					disableNativeSpellChecker: false,
-					removePlugins: 'elementspath,scayt,contextmenu',
-
-					//skin: 'v2'
-				});
-				</script>
-
+				<tr>
+					<td colspan=2>
+						<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>
+						
+						<script>
+						CKEDITOR.replace( 'body_value', {
+							extraPlugins : 'autogrow',
+							width: '96%',
+							//skin: 'office2003'
+							skin: 'kama',
+							disableNativeSpellChecker: false,
+							removePlugins: 'elementspath,scayt,contextmenu',
+		
+							//skin: 'v2'
+						});
+						</script>
+		
+						
+					</td>
+				</tr>
 				
-			</td>
-		</tr>
-		
-		<tr>
-			<td>Theme:</td> <td>
-				<select id='themeid' name='themeid' onchange='$x("theme_hint").innerHTMl=this.options[this.selectedIndex].getAttribute("hint")'>
-					<tmpl_loop themes>
-						<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
-					</tmpl_loop>
-				</select>
-				<span class=hint id='theme_hint'></span>
-				<script>
-					var theme_list =$x('themeid');
-					var theme_hint =$x('theme_hint');
-					if(theme_list)
-					{
-						var opt = theme_list.options[theme_list.selectedIndex];
-						var hint = opt ? opt.getAttribute("hint"): "";
-						if(theme_hint)
-							theme_hint.innerHTML = hint;
-					}
-				</script>
-			</td>
-		</tr>
-		<tr>
-			<td>View Code:</td> <td>
-				<select name='view_code'>
-					<tmpl_loop view_codes>
-						<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
-					</tmpl_loop>
-				</select>
-				<span class=hint id='vc_hint'></span>
-			</td>
-		</tr>
-		
-		<tr>
-			<td colspan=2 align=center class=focus_highlight>
-			<br>
+				<tr>
+					<td colspan=2 align=center class=focus_highlight>
+					<br>
+					
+					<input type=submit value="Save Changes"> 
+					<input type=reset value="Reset to Original Values">
+					</td>
+				</tr>
 			
-			<input type=submit value="Save Changes"> 
-			<input type=reset value="Reset to Original Values">
-			</td>
-		</tr>
-	
-	
-	</table>
+			
+			</table>
+		</div>
+		
+		<div id='tabs-2'>
+			<table class='editform' width='100%'>
+				
+				<tr>
+					<td>Theme:</td> <td>
+						<select id='themeid' name='themeid' onchange='$x("theme_hint").innerHTMl=this.options[this.selectedIndex].getAttribute("hint")'>
+							<tmpl_loop themes>
+								<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+							</tmpl_loop>
+						</select>
+						<span class=hint id='theme_hint'></span>
+						<script>
+							var theme_list =$x('themeid');
+							var theme_hint =$x('theme_hint');
+							if(theme_list)
+							{
+								var opt = theme_list.options[theme_list.selectedIndex];
+								var hint = opt ? opt.getAttribute("hint"): "";
+								if(theme_hint)
+									theme_hint.innerHTML = hint;
+							}
+						</script>
+					</td>
+				</tr>
+				<tr>
+					<td>View Code:</td> <td>
+						<select name='view_code'>
+							<tmpl_loop view_codes>
+								<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+							</tmpl_loop>
+						</select>
+						<span class=hint id='vc_hint'></span>
+					</td>
+				</tr>
+				
+				<tr>
+					<td colspan=2 align=center class=focus_highlight>
+					<br>
+					
+					<input type=submit value="Save Changes"> 
+					<input type=reset value="Reset to Original Values">
+					</td>
+				</tr>
+			
+			
+			</table>
+		</div>
+	</div>
 </form>
-
