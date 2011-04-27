@@ -239,7 +239,6 @@ h2#mobile-link
 	text-align: center;
 	padding: 8px 3px 0 3px;
 	/*background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x;*/ 
-	background: -moz-linear-gradient(center top , #FFFFFF 0%, #CCCCCC 100%) repeat scroll 0 0 transparent;
 	/*background-color: rgb(40,40,40);*/
 	
 }

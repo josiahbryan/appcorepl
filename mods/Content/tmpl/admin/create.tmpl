@@ -56,8 +56,7 @@
 				</tr>
 				
 				<tr>
-					<td colspan=2 align=center class=focus_highlight>
-					<br>
+					<td colspan=2 class='controls'>
 					
 					<input type=submit value="Save Changes"> 
 					<input type=reset value="Reset to Original Values">
@@ -73,7 +72,7 @@
 				
 				<tr>
 					<td>Theme:</td> <td>
-						<select id='themeid' name='themeid' onchange='$x("theme_hint").innerHTMl=this.options[this.selectedIndex].getAttribute("hint")'>
+						<select id='themeid' name='themeid' onchange='$x("theme_hint").innerHTML=this.options[this.selectedIndex].getAttribute("hint")'>
 							<tmpl_loop themes>
 								<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
 							</tmpl_loop>
@@ -102,10 +101,30 @@
 						<span class=hint id='vc_hint'></span>
 					</td>
 				</tr>
+				<tr>
+					<td>Page Type:</td> <td>
+						<select id='typeid' name='typeid' onchange='$x("type_hint").innerHTML=this.options[this.selectedIndex].getAttribute("hint")'>
+							<tmpl_loop page_types>
+								<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+							</tmpl_loop>
+						</select>
+						<span class=hint id='type_hint'></span>
+						<script>
+							var type_list =$x('typeid');
+							var type_hint =$x('type_hint');
+							if(type_list)
+							{
+								var opt = type_list.options[type_list.selectedIndex];
+								var hint = opt ? opt.getAttribute("hint"): "";
+								if(type_hint)
+									type_hint.innerHTML = hint;
+							}
+						</script>
+					</td>
+				</tr>
 				
 				<tr>
-					<td colspan=2 align=center class=focus_highlight>
-					<br>
+					<td colspan=2 class='controls'>
 					
 					<input type=submit value="Save Changes"> 
 					<input type=reset value="Reset to Original Values">

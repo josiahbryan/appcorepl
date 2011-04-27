@@ -41,7 +41,7 @@ package Content;
 	{
 		my $self = shift;
 		my $req = shift;
-		my $r = AppCore::Web::Result->new;
+		my $r = shift;
 		
 		# Handle /content/admin/ URLs internally
 		if($req->last_path eq 'content' &&
@@ -79,7 +79,7 @@ package Content;
 	{
 		my $self = shift;
 		my $req = shift;
-		my $r = AppCore::Web::Result->new;
+		my $r = shift;
 		
 		return $r->output("<pre>".Dumper($req)."</pre>");
 	}
@@ -164,6 +164,7 @@ package Content;
 					# Other page types might use page path, so allow to process normally
 					
 					# Calls $r->output itself as needed
+					#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
 					$type->process_page($req,$r,$page_obj);
 				}
 				else

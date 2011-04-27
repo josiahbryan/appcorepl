@@ -1,0 +1,123 @@
+
+/* Generic body styles */
+html {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	/*background-color: #ededed;*/
+	background: white;
+	color: black;
+}
+
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
+}
+
+body, td
+{
+	font-size: 62.5%; /* enables you to easily size text with ems */
+	/*font-family: Arial, Helvetica, sans-serif;*/
+	font-family: Calibri, Verdana, Sans-Serif;
+}
+
+#header
+{
+	/*background-image: url("%%modpath%%/images/header-bluebg2.jpg");*/
+	width: 100%;
+	
+	height: 75px;
+}
+
+#header #header-shadow
+{
+	background-image: url("%%modpath%%/images/footer-shadow2.png");
+	background-repeat: repeat-x;
+	width: 100%;
+	background-position: 0px 0;/*-155px;*/
+	height: 75px;
+	 
+	padding-top: 15px;
+}
+
+
+#header h1
+{
+	color: black;
+	font-size:5em;
+	text-align: center;
+	width: 100%;
+	/*margin-top: 50px;*/
+	text-shadow: /*inset */rgb(255,255,255) 0px 0px 8px;
+	/*-moz-box-shadow: 0px 0px 4px #000;*/
+}
+
+#bodywrap
+{
+	width: 100%;
+	background-repeat: repeat-x;
+	/*background-color: white;*/
+	
+	min-height: 200px;
+	
+	
+	
+	
+}
+
+#bodywrap h1
+{
+	margin-top: 0;
+	margin-bottom: 15px;
+}
+
+#bodycontent
+{
+	background: white;
+	
+	width: 965px;
+	margin: 0 auto;
+	font-size: 1.5em;
+	
+	padding: 40px;
+	
+	border: 1px solid #aaa;
+	-moz-box-shadow: 0px 0px 8px #aaa;
+	-webkit-box-shadow: 0px 0px 8px #aaa;
+	box-shadow: 0px 0px 8px #aaa;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	
+	margin-top: -14px;
+}
+
+#footer
+{
+	/*background-image: url("%%modpath%%/images/footer-shadow2.png");*/
+	background-repeat: repeat-x;
+	height: 180px;
+	width: 100%;
+	/*position: fixed;*/
+	/*bottom: 100%;
+	left: 0;*/
+	
+}
+
+
+#footercontent
+{
+	padding: 1em 0 1em 0;
+	width: 965px;
+	margin: 0 auto;
+	/*font-size: 1.5em;*/
+}
+
+#footercontent a
+{
+	color: white; 
+}

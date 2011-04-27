@@ -29,19 +29,17 @@ package Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
+		my ($self,$req,$r) = @_;
 		
 		#AppCore::Web::Common->redirect("/content/admin");
 		
 		my $np = $req->next_path;
 		if(!$np)
 		{
-			return $self->admin_menu($req);
+			return $self->admin_menu($req,$r);
 		}
 		else
 		{
-			my $r = AppCore::Web::Result->new;
-			
 			my $entry = Admin::ModuleAdminEntry->by_field(folder_name => $np);
 			if(!$entry)
 			{
@@ -67,7 +65,7 @@ package Admin;
 			$view->breadcrumb_list->push($entry->title,$new_binpath,0);
 			
 			# Do the actual work...
-			my $mod_response = $self->dispatch($req, $pkg);
+			my $mod_response = $self->dispatch($req, $r, $pkg);
 			
 			# If the admin module outputs something other than text/html, let the dispatcher handle the response
 			return $mod_response if $mod_response->content_type ne 'text/html';
@@ -86,8 +84,9 @@ package Admin;
 	
 	sub admin_menu
 	{
-		my ($self,$req) = shift;
-		my $r = AppCore::Web::Result->new;
+		my $self = shift;
+		my $req = shift;
+		my $r = shift;
 		
 		my $view = Content::Page::Controller->get_view('admin',$r);
 		$view->breadcrumb_list->push("Admin Home",$self->binpath,1);

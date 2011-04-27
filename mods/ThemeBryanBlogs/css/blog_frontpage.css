@@ -1,0 +1,70 @@
+h1.blogs-title { display: none; }
+
+ul.blogs
+{
+	list-style: none;
+	padding:0;
+	margin:0;
+}
+
+ul.blogs li 
+{
+	display: block;
+	/*margin-bottom: 2em;*/
+	border-bottom: 1px solid rgb(240,240,240);
+	/*background: rgb(230,230,230);*/
+}
+
+/* blog title */
+ul.blogs li h2
+{
+	/*background: rgb(220,220,220);*/
+	/*text-shadow: rgb(8,8,8) 0px 0px 8px;*/
+	/*color: black;*/
+	/*border-top: 1px solid rgb(130,130,130);*/
+	padding: .25em .25em;
+	
+	background: rgb(220,220,220);
+	color: white;
+	/*border: 1px solid rgb(80,80,80);*/
+	-moz-border-radius: 3px;
+}
+
+ul.blogs li h2 a
+{
+	color: black;
+	
+}
+
+/* blog tagline */
+ul.blogs li h3
+{
+	color: rgb(80,80,80);
+	font-style: italic; 
+	margin-left: .25em;
+	float: right;
+	margin-top: -1.75em;
+	margin-right: .25em;
+	font-size: 1em;
+}
+
+/* most recent post */
+ul.blogs li div.lastpost
+{
+	margin: 1em 0 .25em 2em;
+	padding: 1em;
+	background: rgb(220,220,220);
+	-moz-box-shadow: inset 0px 0px 5px 1px black;
+}
+
+ul.blogs li div.allposts
+{
+	margin-left: 2em;
+	margin-bottom: 1em;
+}
+
+ul.blogs li div.allposts a
+{
+	font-size: .75em;
+	color: rgb(80,80,80);
+}

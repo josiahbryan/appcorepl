@@ -494,6 +494,66 @@ package AppCore::Web::Common;
 		}
 	}
 	
+	our $StopwordOrRegex;
+	our @StopwordList;
+	our %StopwordMap;
+	
+	sub init_stopwords
+	{
+		if(!@StopwordList)
+		{
+			@StopwordList = split /\n/, AppCore::Common->read_file('conf/stopwords.txt');
+			
+			%StopwordMap = map { lc $_ => 1 } @StopwordList;
+			 
+			$StopwordOrRegex = '(' . join('\b|\b', @StopwordList).')';
+		}
+		
+		
+	}
+	
+	sub remove_stopwords
+	{
+		shift if $_[0] eq __PACKAGE__;
+		init_stopwords();
+		
+		my $text = shift;
+		if(ref $text)
+		{
+			$$text =~ s/$StopwordOrRegex//g;
+		}
+		else
+		{
+			$text =~ s/$StopwordOrRegex//g;
+			return $text;
+		}
+	}
+	
+	sub html2text
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $html = shift;
+		$html =~ s/<(script|style)[^\>]*?>(.|\n)*?<\/(script|style)>//g;
+		$html =~ s/<!--(.|\n)*?-->//g;
+		$html =~ s/(<br>|<\/(p|div|blockquote)>)/\n/gi;
+		$html =~ s/<\/li><li>/, /g;
+		$html =~ s/<[^\>]+>//g;
+		$html =~ s/&amp;/&/g;
+		$html =~ s/&nbsp;/ /g;
+		$html =~ s/&quot;/"/g;
+		$html =~ s/&mdash;/--/g;
+		$html =~ s/&rsquo;/'/g;
+		## template-specific codes
+		$html =~ s/\%\%(.*?)\%\%//gi;
+		$html =~ s/\%(\/?)tmpl_(.*?)\%//gi;
+		$html =~ s/\%([^\d\s\'](?:.|\n)*?)%//gi;
+		
+		
+		return $html;
+	}
+	
+	
+	
 }
 
 package HTML::Template::RetrievableParameters;

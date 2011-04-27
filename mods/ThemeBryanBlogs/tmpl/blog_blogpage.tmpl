@@ -1,0 +1,17 @@
+<h1 class='blog-title'>%%blog_title%%</h1>
+<h2 class='tag'>%%blog_tagline%%</h2>
+
+<table class=pretty>
+	<thead>
+		<th>Date</th>
+		<th>Title</th>
+	</thead>
+	<tbody>
+		<tmpl_loop posts>
+			<tr>
+				<td>%%postdate%%</td>
+				<td><a href='%%binpath_page%%/%%folder_name%%'>%%title%%</a></td>	
+			</tr>
+		</tmpl_loop>
+	</tbody>
+</table>

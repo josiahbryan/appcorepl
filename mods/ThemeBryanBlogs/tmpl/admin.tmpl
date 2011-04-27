@@ -1,0 +1,47 @@
+<html>
+<head>
+	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>Pleasant Hill Church</title>
+	<!--<link href="%%modpath%%/css/admin.css" rel="stylesheet" type="text/css" />-->
+	<a:cssx src="%%modpath%%/css/admin.css"/>
+	<!--<script src='%%appcore%%/js/jquery-1.8.12.min.js'></script>-->
+	
+	<link href='%%appcore%%/jquery-ui/css/smoothness/jquery-ui-1.8.12.custom.css' rel="stylesheet" type="text/css">
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
+	<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js'></script>
+
+</head>
+
+<body>
+
+<tmpl_include main-nav.inc.tmpl>
+
+<div id='header'>
+	<div id='header-shadow'>
+		<div id='mainlogo-wrap'>
+			<a href='/' id='homelink'>
+				<!--<img src='%%modpath%%/images/mainlogo-cropped2-250px.png' id='mainlogo' border=0>-->
+				<!--<img src='%%modpath%%/images/mainlogo-300px-bcrop.png' id='mainlogo' border=0>-->
+				PHC</a>
+			&raquo;
+			<a href='/admin' id='adminhome'>
+				ADMIN</a>
+		</div>
+	</div>
+</div>
+
+<div class='bodywrap'>
+	<div class='bodycontent'>
+		
+		<tmpl_include breadcrumbs.inc.tmpl>
+		
+		%%page_content%%
+		
+		<tmpl_include user-footer.inc.tmpl>
+	</div>
+</div>
+
+<div id='footer'>
+
+</div>
+</body>
+</html>

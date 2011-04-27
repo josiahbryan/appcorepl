@@ -1,0 +1,287 @@
+
+/* Generic body styles */
+html {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	margin: 0;
+	padding: 0;
+	font-size: 62.5%; /* enables you to easily size text with ems */
+	font-family: Arial, Helvetica, sans-serif;
+	/*background-color: #ededed;*/
+	background: rgb(100,100,100);
+
+	color: #67675d;
+}
+
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
+}
+
+a:link		{color: #a67726; text-decoration: underline;}
+a:visited	{color: #a67726; text-decoration: underline;}
+a:hover		{color: #a67726; text-decoration: none;}
+a:active	{color: #a67726; text-decoration: underline;}
+
+/* Header/logo styles */
+#header 
+{
+	/*height: 100px;*/
+	width: 100%;
+	background-image: url("%%modpath%%/images/header-bluebg2.jpg");
+	border-top: 1px solid rgb(80,80,80);
+}
+
+#header #header-shadow
+{
+	background-image: url("%%modpath%%/images/header-shadow2.png");
+	background-repeat: repeat-x;
+	/*background-position: 0 -80px;*/
+	background-position: 0 -18px;
+	width: 100%;
+	border-top: 1px solid rgb(60,60,60);
+}
+
+
+
+#header #logo
+{
+	display: block;
+	/*width: 280px;*/
+	/*margin: 0 auto;*/
+	/*margin-top: -10px;*/
+	
+	text-align:center;
+	font-size:4em;
+	
+	/*padding-bottom: 2px;*/
+	
+	text-shadow: rgb(8,8,8) 0px 0px 8px;
+	color: rgb(100,100,100);
+	
+	margin-bottom: -.1em;
+	margin-top: .2em;
+
+}
+
+#header #logo a
+{
+	color:white;
+	text-decoration: none;
+	font-weight: bold;
+}
+
+/* Link to full site */
+h2#full-link a 
+{
+	display: block; 
+	width: 100%; 
+	color: #fff; 
+	text-align: center; 
+	text-decoration: none; 
+	font-size: 0.7em; 
+	font-weight: 300; 
+	height: 20px; 
+	background: url("%%modpath%%/images/mobile/full_link_background.jpg") repeat-x; 
+	text-shadow: #000 0 -1px 1px; 
+	padding: 10px 0 0 0;
+	margin-bottom: -2px;
+}
+
+/* Nav styles */
+
+#nav {
+	height: 97px;
+	/*background: url(%%modpath%%/images/mobile/nav_background.jpg) repeat-x;*/
+	/*background: rgb(0,0,0);*/
+}
+
+#nav ul {
+	padding: 10px 0 0 0;
+	width: 297px;
+	margin: 0 auto;
+}
+
+#nav ul li {
+	float: left;
+	list-style-type: none;
+	margin: 0 11px 0 0;
+}
+
+#nav ul li.last {
+	float: left;
+	list-style-type: none;
+	margin: 0;
+}
+
+#nav ul li a
+{
+	display: block;
+	width: 66px;
+
+	text-decoration: none;
+	text-transform: uppercase;
+	color: white;
+	text-align: center;
+	
+	background: url("%%modpath%%/images/mobile/phc-m-btns.png") repeat-x;
+	padding-top: 66px;
+}
+
+#nav ul li a.news
+{
+	background-position: 0 0;
+}
+
+#nav ul li a.prayer
+{
+	background-position: 198px 0;
+}
+
+#nav ul li a.contact
+{
+	background-position: 132px 0;
+}
+
+#nav ul li a.more
+{
+	background-position: 66px 0;
+}
+
+
+/* Body styles */
+
+
+#bodywrap
+{
+	background: white;
+	/*padding: 1em;*/
+	margin: 1em;
+	/*border-top: 1px solid rgb(0,0,0);*/
+	border: 1px solid black;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	-moz-box-shadow: 0px 0px 4px #000;
+	-webkit-box-shadow: 0px 0px 4px #000;
+	box-shadow: 0px 0px 4px #000;
+	font-size: 1.25em;
+}
+
+
+#bodycontent
+{
+	padding: 1em;
+}
+
+ul.links
+{
+	list-style: none;
+	/*margin-top: 1.5em;*/
+	/*margin-bottom: -.5em;*/
+}
+
+
+ul.links li
+{
+	display: block;
+	padding: 11px 0 10px 0px;
+	width: 100%;
+	border-top: 1px solid rgb(180, 180, 180);
+	
+}
+
+ul.links a
+{
+	display: block;
+	background: url("%%modpath%%/images/mobile/more_arrow.jpg") no-repeat scroll right center transparent;
+	color: #000000;
+	text-decoration: none;
+	padding-left: 1em;
+	/*margin-left: -5px;*/
+	/*margin-left: -.225em;*/
+	/*margin-right: -.55em;*/
+}
+
+ul.links li
+{
+	background-color: #FFFFFF;
+	border-bottom: 1px solid #FFFFFF;
+	font-size: 1.5em;
+	list-style-type: none;
+	text-align: left;
+}
+
+#bodywrap h1,
+h3.title-divider
+{
+  	background: url("%%modpath%%/images/mobile/division_background.jpg") repeat-x scroll 0 0 transparent;
+	color: #5E5E5E;
+	font-size: 1.8em;
+	height: 24px;
+	padding: 3px 0 0 0;
+	text-align: left;
+	text-shadow: 0 1px 1px #DBDBDB;
+	width: 100%;
+}
+h3.title-divider div
+{
+	padding-left: 3px;
+}
+
+#bodywrap p
+{
+	margin: 1em;
+}
+
+#bodywrap p + p
+{
+	margin-top: 0;
+}
+
+
+/* Contact styles */
+#contact ul
+{
+	margin: .5em 0 1.5em;
+}
+
+#contact ul li 
+{
+	font-size: 1.6em;
+	list-style-type: none;
+	text-align: center;
+	display: block;
+}
+
+#contact ul li a
+{
+	-moz-border-radius: 5px 5px 5px 5px;
+	border-radius: 4px;
+	background: #6C6C6C;
+	color: #FFFFFF;
+	display: block;
+	font-size: 1.4em;
+	/*height: 26px;*/
+	margin: 3px auto;
+	padding: 6px;
+	text-align: left;
+	text-decoration: none;
+	width: 190px;
+}
+
+#contact ul li a.phone
+{
+	background: url("%%modpath%%/images/mobile/phone_background.jpg") no-repeat scroll 0 0 #6C6C6C;
+	height: 26px;
+	padding: 1px 0 6px 36px;
+}
+
+#contact ul li a.address,
+#contact ul li a.email
+{
+	width: 216px;
+}

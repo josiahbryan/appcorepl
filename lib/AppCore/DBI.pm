@@ -121,7 +121,7 @@ package AppCore::DBI;
 			if($meta->{database} || $meta->{db})
 			{
 				$meta->{database} ||= $meta->{db};
-				$class->setup_default_dbparams($meta->{database});
+				$class->setup_default_dbparams($meta->{database},$meta->{db_host},$meta->{db_user},$meta->{db_pass});
 			}
 			
 			# Setup AppCore::DBI aliasing of the class->table and the CDBI table name
@@ -2388,6 +2388,8 @@ package AppCore::DBI;
 	# Simple utility function to export the schmea for a table from MySQL.
 	# If {dump=>1} is passed in the $opts ref, it will print to STDOUT code as a perl call to mysql_schema_update($db,$table,$fields)
 	# Example usage:  perl -MAppCore::DBI -e "mysql_extract_current_schema('pci','widget_notes_data',{dump=>1})" > out.txt
+	# Or, for a bulk dump of a list of tables and generate packages, dumping each table to its own file:
+	#  for i in `echo comments posts post_likes comment_likes read_flags read_post_flags read_comment_flags post_tags`; do(echo Dumping $i ...; perl -Mlib='lib' -MAppCore::DBI -e "AppCore::DBI::mysql_extract_current_schema('jblog','$i',{dump=>1,host=>'database',user=>'root',pass=>'...',pkg=>'BryanBlogs::$i'})"  > "dump_$i.txt"); done;
 	sub mysql_extract_current_schema
 	{
 		my $db = shift;
@@ -2409,15 +2411,79 @@ package AppCore::DBI;
 		# If {dump} is true, then print to STDOUT a call to mysql_schema_update with some basic variables filled in - ($db,$table,$fields)
 		if($opts->{dump})
 		{
-			my $v = Dumper \@list;
-			$v =~ s/\$VAR1 = //g;
-			my @l = split/\n/,$v;
-			s/^\s*/\t\t/g foreach @l;
-			$l[0]=~s/^\s+/\t/g;
-			$l[$#l]=~s/^\s+];/\t]/g;
-			$v = join "\n",@l;
+# 			my $v = Dumper \@list;
+# 			$v =~ s/\$VAR1 = //g;
+# 			my @l = split/\n/,$v;
+# 			s/^\s*/\t\t/g foreach @l;
+# 			$l[0]=~s/^\s+/\t/g;
+# 			$l[$#l]=~s/^\s+];/\t]/g;
+# 			$v = join "\n",@l;
+
+			my $prefix = '';
+			if($opts->{pkg})
+			{
+				$opts->{pkg} =~ s/\s//g;
+				my $first = shift @list;
+				print qq|
+package $opts->{pkg};
+{
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta({
+		table		=> '$table',
+		
+		db		=> '$db',
+		db_host		=> '$opts->{host}',
+		db_user		=> '$opts->{user}',
+		db_pass		=> '$opts->{pass}',
+		
+		schema	=>
+		[
+			{
+				'field'	=> '$first->{field}',
+				'extra'	=> 'auto_increment',
+				'type'	=> 'int(11)',
+				'key'	=> 'PRI',
+				readonly=> 1,
+				auto	=> 1,
+			},
+|;
+				$prefix = "		";
+			}
+			else
+			{
+
+				print "[\n";
+			}
 			
-			print "\tmysql_schema_update('$db','$table',\n$v);\n";
+			foreach my $dat(@list)
+			{
+				my $q = $dat->{type} =~ /enum/i ? '"' : "'";
+				print "$prefix\t{\tfield\t=> '$dat->{field}',\t\ttype\t=> $q$dat->{type}$q";
+				
+				if(defined $dat->{default} && $dat->{default} ne 'NULL')
+				{
+					my $q = $dat->{default} =~ /[^\d]/? "'":'';
+					print ",\tdefault => $q$dat->{default}$q";
+				}
+				
+				if(defined $dat->{null} && $dat->{null} ne 'YES')
+				{
+					my $q = $dat->{null} =~ /[^\d]/? "'":'';
+					print ",\tnull => $q$dat->{null}$q";
+				}
+				
+				print " },\n";
+			}
+			
+			print "$prefix]\n";
+			
+			if($opts->{pkg})
+			{
+				print "	});\n};\n1;\n";
+			};
+			
+			#print "\tmysql_schema_update('$db','$table',\n$v);\n";
 		}
 		
 		return \@list;

@@ -29,6 +29,9 @@ package AppCore::Common;
 		seconds_since
 		iso_date_to_seconds
 		
+		read_file 
+		write_file
+		
 		taint_sys taint_text taint_number taint
 		
 		guess_title
@@ -693,6 +696,27 @@ package AppCore::Common;
 		
 		return $str;
 	}
+	
+	sub read_file
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $file = shift;
+		open(FILE,"<$file") || die "Cannot open $file for reading: $!";
+		my @buffer = <FILE>;
+		close(FILE);
+		return join '', @buffer;
+	}
+	
+	
+	sub write_file
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $file = shift;
+		open(FILE,">$file") || die "Cannot open $file for writing: $!";
+		print FILE join '', @_;
+		close(FILE);
+	}
+	
 	
 };
 

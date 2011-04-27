@@ -216,38 +216,9 @@ package AppCore::Web::DispatchCore;
 			# can choose to handle process_request themselves and do whatever they want
 			# with 'res/' paths.
 			
-			my $response;
-# 			my $method;
-# 			
-# 			if($request->next_path && 
-# 			   $mod_obj->WebMethods->{$request->next_path} &&
-# 			   $mod_obj->can($request->next_path))
-# 			{
-# 				$method = $request->shift_path;
-# 				$request->push_page_path($method);
-# 			}
-# 			elsif($mod_obj->can('DISPATCH_METHOD'))
-# 			{
-# 				$method = $mod_ref->DISPATCH_METHOD;
-# 			}
-# 			else
-# 			{
-# 				$method = 'main';
-# 			}
-# 			
-# 			if($mod_obj->can($method))
-# 			{
-# 				$response = $mod_obj->$method($request);
-# 			}
-# 			else
-# 			{
-# 				$response = AppCore::Web::Result->new();
-# 				$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
-# 			}
-
-			my $response = $mod_obj->dispatch($request);
+			my $response = $mod_obj->dispatch($request, AppCore::Web::Result->new);
 			
-			#die Dumper \@out;
+			#die Dumper $response;
 			
 			binmode STDOUT;
 			

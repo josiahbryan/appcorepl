@@ -191,7 +191,7 @@ package User;
 	{
 		my $self = shift;
 		my $req = shift;
-		my $r = AppCore::Web::Result->new;
+		my $r = shift;
 		
 		my $action = $req->next_path || '';
 		
@@ -267,7 +267,7 @@ package User;
 	{
 		my $self = shift;
 		my $req = shift;
-		my $r = AppCore::Web::Result->new;
+		my $r = shift;
 		
 		my $sub_page = $req->next_path;
 		
@@ -358,7 +358,7 @@ package User;
 	{
 		my $self = shift;
 		my $req = shift;
-		my $r = AppCore::Web::Result->new;
+		my $r = shift;
 		
 		my $sub_page = $req->next_path;
 		

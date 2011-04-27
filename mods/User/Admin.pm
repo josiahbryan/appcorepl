@@ -24,8 +24,7 @@ package User::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
 		
@@ -68,8 +67,7 @@ package User::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
@@ -89,8 +87,7 @@ package User::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
@@ -123,8 +120,7 @@ package User::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		my $id = $req->userid;
 		
@@ -143,8 +139,7 @@ package User::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		#use Data::Dumper;
 		#print STDERR Dumper $req;

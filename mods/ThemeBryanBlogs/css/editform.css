@@ -1,0 +1,40 @@
+.editform
+{
+	padding: 1em;
+	background:rgb(220,220,220);
+	-moz-border-radius: 4px;
+	border:rgb(220,220,220);
+	/*margin-bottom:.5em;*/
+}
+
+.editform td
+{
+	padding: .1em;
+	color: rgb(80,80,80);
+	text-shadow: #fff 0px 0px 3px;
+	/*font-weight: bold;*/
+}
+
+.editform td.controls
+{
+	padding-top: 1em;
+	text-align: center;
+}
+
+.editform .textinput
+{
+	border: 1px solid rgb(80,80,80);
+	/*-moz-border-radius: 3px;*/
+	background: white;
+	color: black;
+	padding: 1 2 1 2 ;
+	text-shadow: none;
+	-moz-box-shadow: 0px 0px 3px #000;
+}
+
+.editform .textinput:focus
+{
+	background: #fff67c;
+	border: 1px solid #8e8500; 
+	-moz-box-shadow: 0px 0px 5px #5a5400;
+}

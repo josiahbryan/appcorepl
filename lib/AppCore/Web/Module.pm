@@ -79,7 +79,10 @@ package AppCore::Web::Module;
 		
 		my $module_name = shift;
 		
-		return $mod_ref_cache{$module_name} if $mod_ref_cache{$module_name};
+		#print STDERR "bootstrap($module_name): mark1\n";
+		return $mod_ref_cache{$module_name} if defined $mod_ref_cache{$module_name};
+		
+		#print STDERR "bootstrap($module_name): mark2\n";
 		
 		my @parts = split /::/, $module_name;
 		my $first_pkg = $parts[0];
@@ -101,10 +104,13 @@ package AppCore::Web::Module;
 		
 		if($module_name->can('new'))
 		{
-			return $mod_ref_cache{$module_name} = $module_name->new;
+			my $ref = $module_name->new;
+			#print STDERR "bootstrap($module_name): mark3, ref:'$ref'\n";
+			return $mod_ref_cache{$module_name} = $ref;
 		}
 		else
 		{
+			#print STDERR "bootstrap($module_name): mark4\n";
 			$mod_ref_cache{$module_name} = $module_name;
 			return $module_name;
 		}
@@ -218,7 +224,7 @@ package AppCore::Web::Module;
 			my %map = map {$_=>1} @_;
 			$Method_Lists_Cache{$pkg} = \%map;
 		}
-		return $Method_Lists_Cache{$pkg};
+		return $Method_Lists_Cache{$pkg} || {};
 	}
 	
 	sub modpath
@@ -248,34 +254,24 @@ package AppCore::Web::Module;
 		return $tmp;
 	}
 	
+	our %BinpathCache;
 	sub binpath
 	{
 		my $pkg = shift;
 		
-		# If we are called with a blessed ref, we assume its a HASH and use it to cache the binpath.
-		# This also allows users to override the binpath (such as in the Admin module)
-		my $ref = undef;
-		if(ref $pkg)
-		{
-			if(@_)
-			{
-				return $pkg->{_binpath} = shift;
-			}
-			
-			return $pkg->{_binpath} if $pkg->{_binpath};
-			
-			$ref = $pkg;
-		}
+		$pkg = ref $pkg if ref $pkg;
+		
+		return $BinpathCache{$pkg} = shift if @_;
+		return $BinpathCache{$pkg}         if $BinpathCache{$pkg};
 		
 		# Binpath not cached, build it up automatically
-		$pkg = ref $pkg if ref $pkg;
 		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
 		#$pkg =~ s/::/\//g;
 		$pkg = lc $pkg;
 		$pkg =~ s/::/\//g;
 		
 		my $tmp = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, $pkg);
-		$ref->{_binpath} = $tmp if $ref;
+		$BinpathCache{$pkg} = $tmp;
 		
 		return $tmp;
 	}
@@ -332,12 +328,13 @@ package AppCore::Web::Module;
 		my $class = shift;
 		$class = ref $class if ref $class;
 		
-		my $request = shift;
+		my $request  = shift;
+		my $response = shift;
+		
 		my $receiver_class = shift || $class;
 		
 		my $mod_obj = bootstrap($receiver_class);
 		
-		my $response;
 		my $method;
 		
 		#print STDERR "Module::dispatch: class $class, rx $receiver_class, mod_obj '$mod_obj', WebMethods: ".$mod_obj->WebMethods.", next path:".$request->next_path."\n";
@@ -359,11 +356,10 @@ package AppCore::Web::Module;
 		
 		if($mod_obj->can($method))
 		{
-			$response = $mod_obj->$method($request);
+			$response = $mod_obj->$method($request,$response);
 		}
 		else
 		{
-			$response = AppCore::Web::Result->new();
 			print STDERR "Cannot dispatch to $mod_obj / $method\n";
 			$response->error(404, "Module $mod_obj exists, but method '$method' is not valid."); 
 		}

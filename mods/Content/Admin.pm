@@ -27,8 +27,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		#my $view = Content::Page::Controller->get_view('admin',$r);
 		
@@ -99,10 +98,9 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
+		my ($self,$req,$r) = @_;
 		Content::Page::Controller->current_view->breadcrumb_list->push("Create New Page",$self->binpath.'/create',1);
 		
-		my $r = AppCore::Web::Result->new;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($PAGE_CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
 		#my $view = Content::Page::Controller->get_view('admin',$r);
@@ -117,9 +115,10 @@ package Content::Admin;
 		$tmpl->param(page_content => '');
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
 		
-		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
+		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
 		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list(undef,$cur_theme));
+		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list(Content::Page::Type->default_type));
 		
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
@@ -136,8 +135,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		#return $r->error("TBD - Create","TBD - Create: ".$self->module_url($PAGE_CREATE_ACTION)." or tmpl: ".$self->get_template('create.tmpl'));
 		
 		#my $view = Content::Page::Controller->get_view('admin',$r);
@@ -163,9 +161,10 @@ package Content::Admin;
 		$tmpl->param(page_content => $page_obj->content);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
 		
-		my $cur_theme = Content::Page::ThemeEngine->by_field(controller => Content::Page::Controller->theme());
+		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
 		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
+		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list($page_obj->typeid && $page_obj->typeid->id ? $page_obj->typeid : Content::Page::Type->default_type));
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
@@ -180,8 +179,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		my $url = $req->url;
 		
@@ -200,8 +198,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		my $url = $req->url;
 		
@@ -228,8 +225,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		my $pageid = $req->pageid;
 		
@@ -299,9 +295,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
-		
+		my ($self,$req,$r) = @_;
 		
 		my $page_obj;
 		 
@@ -526,8 +520,7 @@ package Content::Admin;
 	{
 		AppCore::AuthUtil->require_auth(['ADMIN']);
 		
-		my ($self,$req) = @_;
-		my $r = AppCore::Web::Result->new;
+		my ($self,$req,$r) = @_;
 		
 		#use Data::Dumper;
 		#print STDERR Dumper $req;
@@ -582,6 +575,7 @@ package Content::Admin;
 		$page_obj->url($url);
 		$page_obj->themeid($req->themeid);
 		$page_obj->view_code($req->view_code);
+		$page_obj->typeid($req->typeid);
 		$page_obj->update;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";

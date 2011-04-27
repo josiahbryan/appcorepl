@@ -85,6 +85,72 @@ package Content::Page::Type;
 	
 	});
 	
+	sub type_for_controller
+	{
+		my $self = shift;
+		return $self->by_field(controller => shift);
+	}
+	
+	sub default_type
+	{
+		return shift->type_for_controller('Content::Page::Controller');
+	}
+	
+	sub register
+	{
+		my $class = shift;
+		
+		my $pkg = shift;
+		$pkg = ref $pkg if ref $pkg;
+		
+		my $name = shift;
+		my $diz = shift;
+		
+		my $uses_pagepath = shift || 0;
+		
+		undef $@;
+		eval
+		{
+			my $self = $class->find_or_create({controller=>$pkg});
+			
+			$self->name($name) if $self->name ne $name;
+			$self->description($diz) if $self->description ne $diz;
+			$self->uses_pagepath($uses_pagepath) if $self->uses_pagepath != $uses_pagepath;
+			$self->update if $self->is_changed;
+		};
+		warn $@ if $@;
+		
+	}
+	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $curid = ref $cur ? $cur->id : $cur;
+		
+		my @all = $pkg->retrieve_from_sql('1 order by name');
+		my @list;
+		foreach my $item (@all)
+		{
+			push @list, {
+				value	=> $item->id,
+				text	=> $item->name,
+				hint	=> $item->description,
+				selected => $item->id == $curid,
+			}
+		}
+		return \@list;
+	}
+	
+	our %ControllerObjectCache;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing controllers...\n";
+		%ControllerObjectCache = ();
+	}	
+	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
 	
 	sub process_page
 	{
@@ -98,12 +164,27 @@ package Content::Page::Type;
 		my $pkg = $self->controller;
 		$pkg = 'Content::Page::Controller' if !$pkg;
 		
-		if($pkg == __PACKAGE__)
+		if($pkg eq __PACKAGE__)
 		{
 			# They really meant to call the base class for types
 			$pkg = 'Content::Page::Controller';
 		}
 		
+		if($pkg->can('new'))
+		{
+			my $pkg_name = ref $pkg ? ref $pkg : $pkg;
+			if(!$ControllerObjectCache{$pkg_name})
+			{
+				$pkg = $pkg->new();
+				#print STDERR __PACKAGE__."->process_page(): Created new controller '$pkg'\n";
+			}
+			else
+			{
+				$pkg = $ControllerObjectCache{$pkg_name};
+				#print STDERR __PACKAGE__."->process_page(): Used cached controller '$pkg'\n";
+			}
+		}
+			
 		undef $@;
 			
 		eval
@@ -123,6 +204,14 @@ package Content::Page::Type;
 
 package Content::Page::Controller;
 {
+	Content::Page::Type->register(__PACKAGE__, 'Static Page','Simple static webpage');
+	
+	sub register_controller
+	{
+		my $pkg = shift;
+		Content::Page::Type->register($pkg, @_);
+	}
+	
 	our %ViewInstCache;
 	
 	our $CurrentView;
@@ -245,7 +334,7 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 		# Assume more than one arg is (title,url,current) trifecta
 		if(@_)
 		{
-			$ref = 
+				$ref = 
 			{
 				title => $ref,
 				url   => shift,
@@ -390,6 +479,7 @@ package Content::Page::ThemeEngine;
 	
 	sub register_theme
 	{
+		my $theme_ref = undef;
 		undef $@;
 		eval
 		{
@@ -408,10 +498,21 @@ package Content::Page::ThemeEngine;
 			
 			$self->register_viewcodes(@codes) if @codes;
 			
+			$theme_ref = $self;
+			
 		};
 		warn $@ if $@;
 		
+		return $theme_ref;
+		
 	}
+	
+	sub theme_for_controller
+	{
+		my $pkg = shift;
+		my $controller = shift || Content::Page::Controller->theme();
+		return $pkg->by_field(controller => $controller);
+	} 
 	
 	sub new
 	{

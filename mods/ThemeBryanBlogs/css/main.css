@@ -1,0 +1,180 @@
+body, td
+{
+	font-family: Calibri, Verdana, Sans-Serif;
+	font-size: 11px;
+	
+}
+
+body
+{
+	margin: 0;
+	padding: 0;
+	background: rgb(100,100,100);
+}
+
+#navblock
+{
+
+	background-image: url("bg_repeat_top.jpg");
+	background-repeat: repeat-x;
+	height: 49px;
+	width: 100%;
+}
+
+#navblock *
+{
+	display: none;
+
+}
+
+#header
+{
+	background-image: url("header-bluebg.jpg");
+	width: 100%;
+	
+	height: 400px;
+}
+
+#header #header-shadow
+{
+	background-image: url("header-shadow.png");
+	background-repeat: repeat-x;
+	height: 180px;
+	margin-top: 210px;
+	width: 100%;
+}
+
+
+#mainlogo-wrap
+{
+	z-index: 500;
+	position: absolute;
+	
+	width: 862px;
+	margin: 0 auto;
+	
+}
+
+#mainlogo
+{
+	margin-top: -50px;
+	margin-bottom: -50px;
+}
+
+
+#graphicblock-wrap
+{
+
+	position: absolute;
+	
+	top: 0;
+	left: 0;
+	
+	z-index: 400;
+	
+	width: 100%;
+	
+}
+
+#graphicblock
+{
+	background-image: url("graphic_box_bg.png");
+	background-repeat: no-repeat;
+	
+	width: 940px;
+	height: 324px;
+	padding: 22px 25px;
+	
+	margin: 250px auto 0;
+	
+	/*border: 1px solid red;*/
+}
+
+#graphicblock .graphic-wrap
+{
+	float: left;
+	width: 728px;
+	height: 322px;
+	
+	background-image: url("graphicbg.jpg");
+	background-repeat: no-repeat;
+}
+
+#graphicblock .graphic-wrap .graphic
+{
+	width: 272px;
+	height: 250px;
+	
+	margin: auto auto;
+}
+
+#graphicblock .graphic-wrap iframe
+{
+	width: 400px;
+	height: 300px;
+	margin: 11px auto;
+	border: 1px solid black;
+}
+
+.sidebar
+{
+	background-image: url("sidebar.jpg");
+	background-repeat: no-repeat;
+	
+	height: 322px;
+	width: 210px;
+	
+	float: left;
+}
+
+.sidebar .sidebar-link-block
+{
+	display: block;
+}
+
+.sidebar .sidebar-link-block a
+{
+	display: block;
+	width: 210px;
+	height: 56px;
+	text-align: center;
+	color: white;
+	text-decoration: none;
+	padding-top: 24px;
+	font-size: 14px;
+}
+
+.sidebar .sidebar-link-block a .title
+{
+	font-weight: bold;
+}
+
+.sidebar .sidebar-link-block a .subtitle
+{
+	font-weight: normal;
+	font-size: 12px;
+}
+
+.bodywrap
+{
+	width: 100%;
+	background-image: url("content-bg.jpg");
+	background-repeat: repeat-x;
+	background-color: white;
+	
+	height: 400px;
+	
+}
+
+#footer
+{
+	background-image: url("footer-shadow.png");
+	background-repeat: repeat-x;
+	height: 180px;
+	width: 100%;
+}
+
+
+
+
+

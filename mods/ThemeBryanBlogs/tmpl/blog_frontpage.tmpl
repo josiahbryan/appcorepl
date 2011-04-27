@@ -1,0 +1,29 @@
+<h1 class='blogs-title'>Blogs</h1>
+
+<a:cssx src="%%modpath%%/css/blog_frontpage.css"/>
+
+<ul class='blogs'>
+	<tmpl_loop blogs>
+	<li>
+		<h2><a href='%%binpath%%/%%folder_name%%'>%%title%%</a></h2>
+		<h3>%%tagline%%</h3>
+		<tmpl_if post_postid>
+			<div class='lastpost'>
+				<div class='title'>
+					<a href='%%binpath%%/%%folder_name%%/%%post_folder_name%%'>
+						<h4>%%post_title%%</h4>
+					</a>
+				</div>
+				<div class='text'>%%first_para%%</div>
+				<div class='readmore'>
+					<a href='%%binpath%%/%%folder_name%%/%%post_folder_name%%#more'>Read more...</a>
+				</div>
+			</div>
+			<div class='allposts'>
+				<a href='%%binpath%%/%%folder_name%%'>See all posts by this blogger ...</a>
+			</div>
+		</tmpl_if>
+	</li>
+	</tmpl_loop>
+</ul>
+		
