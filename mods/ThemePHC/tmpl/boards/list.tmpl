@@ -1,0 +1,123 @@
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<title><tmpl_var board_title> - Bulletin Boards</title>
+
+<h1><tmpl_var board_title></h1>
+
+<!--%macro::sub_nav()%-->
+<tmpl_var board_nav>
+
+<p class='board-tagline'><tmpl_var board_tagline></p>
+
+<tmpl_if description>
+	<div id='board-intro'>
+		<tmpl_var board_description>
+	</div>
+</tmpl_if>
+
+	<a class='new_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/print_list' id='printlist_link' onclick='return setup_printlink()'><img src='/eas_www/images/silk/printer.png' align=absmiddle border=0> Print Selected Posts</a>
+	
+	
+	
+	<script>
+	var print_list = [];
+	
+	function setup_printlink()
+	{
+		if(print_list.length <= 0)
+		{
+			alert("Sorry, nothing selected yet! Click the little check box to the left of each post's subject to select that post for printing.");
+			return false;
+		}
+		
+		var linkElm = $x('printlist_link');
+		if(!linkElm)
+		{
+			alert("Sorry, wierd error - can't setup printing. Please call Josiah at 765-964-6009 x224");
+			return false;
+		}
+		
+		linkElm.href += "?id_list=" + print_list.join(",");
+		
+		return true;
+	}
+	
+	function printlist_changed(item,postid)
+	{
+		if(item.checked)
+		{
+			print_list.push(postid);
+		}
+		else
+		{
+			print_list.remove(postid);
+			
+		}
+		console.debug(print_list);
+	}
+	</script>
+<tmpl_if can_admin>
+	<a class='new_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/delete_list' style='float:right;margin-right:.5em' id='dellist_link' onclick='return setup_dellink()'><img src='/eas_www/images/silk/delete.png' align=absmiddle border=0> Delete Selected Posts</a>
+	
+	
+	
+	<script>
+	
+	function setup_dellink()
+	{
+		if(print_list.length <= 0)
+		{
+			alert("Sorry, nothing selected yet! Click the little check box to the left of each post's subject to select that post for deletion.");
+			return false;
+		}
+		
+		if(!confirm("Are you SURE you want to delete the selected posts?"))
+			return false;
+			
+		
+		
+		var linkElm = $x('dellist_link');
+		if(!linkElm)
+		{
+			alert("Sorry, wierd error - can't setup deletion. Please call Josiah at 765-964-6009 x224");
+			return false;
+		}
+		
+		linkElm.href += "?id_list=" + print_list.join(",");
+		
+		return true;
+	}
+	</script>
+	
+</tmpl_if>
+
+<a class='new_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add a new post to this forum!</a>
+<tmpl_if posts>
+	<table class='posts' width='100%' cellpadding=0 cellspacing=0>
+		<thead>
+			<th align=left class='title'>Post Title</th>
+			<th nowrap align=right>Views</th>
+			<th nowrap align=right>Replies</th>
+			<th align=left nowrap>Last Comment</th>
+		</thead>
+		<tbody>
+			<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
+			<tmpl_loop posts>
+				<tr class='<tmpl_var post_flags>'>
+					<td width='65%' class='subject'><input type='checkbox' onchange='printlist_changed(this,%%postid%%)'><tmpl_if can_admin></tmpl_if><a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'><tmpl_var subject></a><span class='by'> <tmpl_var timestamp> | %%poster_name%%</span><tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if><span class='tagline'><span class='tagline'><span class='hidden'> - </span><tmpl_var short_text></span></td>
+					<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>
+					<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>
+					<td width='15%' nowrap class='lastpost' valign=top >
+						<tmpl_if post_postid>
+							<span class='post'>
+								<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+								<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+							</span>
+						<tmpl_else>-</tmpl_if>
+					</td>
+				</tr>
+			</tmpl_loop> 
+		</tbody>
+	</table>
+<tmpl_else>
+	<h3>Sorry, no posts added yet to this forum.</h3>
+</tmpl_if>

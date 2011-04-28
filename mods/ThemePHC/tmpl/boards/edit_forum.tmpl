@@ -1,0 +1,65 @@
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+
+<title><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></title>
+<h1><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></h1>
+
+%macro::sub_nav()%
+<!--<tmpl_var board_nav>-->
+
+
+
+<form action='<tmpl_var post_url>' method=POST style='display:inline;border:0;padding:0;margin:0' name=comment>
+	<input type=hidden name=boardid value="<tmpl_var board_boardid>">
+	<input type=hidden name=groupid value="<tmpl_var group_groupid>">
+	
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td >Group:</td> <td>
+					<input type=text name=notused readonly style='background:rgb(220,220,220)'  value="<tmpl_var group_title>" size=30><br>
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>-->
+				</td>
+			</tr>
+			<tr>
+				<td>Folder Name:</td> <td>
+					/<tmpl_var short_noun>/<input type=text name=folder_name onfocus='select()' value='<tmpl_var board_folder_name escape=html>' size=20>/
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+					<!--<script>var e= $x('name');if(e)e.focus()</script>-->
+				</td>
+			</tr>
+			<tr>
+				<td >Forum Name:</td> <td>
+					<input type=text name=title onfocus='select()' value='<tmpl_var board_title escape=html>' size=30><br>
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>-->
+				</td>
+			</tr>
+			
+			<tr>
+				<td valign=top>Short Description:</td> <td valign=top><input type=text name=tagline id=tagline value="<tmpl_var board_tagline escape=html>" size=50><br>
+				<span style='font-size:.85em;color:rgb(100,100,100)'>(This appears at beside the forum name in the main page and at the top of the page when viewing the forum individually.)</span>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Sorting Number:</td> <td valign=top>
+					<input type=text name=sort_key onfocus='select()' value='<tmpl_var board_sort_key escape=html>' size=5><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>(This tells the website where to put this forum in the list of forums in this group.)</span>
+				</td>
+			</tr>
+			
+			
+			<tr>
+				<td>&nbsp;</td><td>
+				<br>
+				
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values"> 
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+	
+</form>
