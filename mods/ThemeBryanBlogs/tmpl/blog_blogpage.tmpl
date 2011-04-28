@@ -1,17 +1,53 @@
+<style>
+
+h1.blog-title
+{
+	color: #444;
+	display: block;
+	font-family: MetaBlack,"Trebuchet MS",sans-serif;
+	/*font-size: 130%;*/
+	font-size: 50px;
+	font-style: normal;
+	font-weight: bold;
+	letter-spacing: -0.02em;
+	text-transform: uppercase;
+	text-align: center;
+}
+h2.tag
+{
+	color: #111;
+	display: block;
+	font-family: MetaBlack,"Trebuchet MS",sans-serif;
+	/*font-size: 130%;*/
+	font-style: italic;
+	font-size: 25px;
+	/*font-style: normal;*/
+	font-weight: bold;
+	letter-spacing: -0.02em;
+	/*text-transform: uppercase;*/
+	margin-top: -.8em;
+	text-align: center;
+}
+
+.pretty{margin-top:2em !important}
+
+</style>
 <h1 class='blog-title'>%%blog_title%%</h1>
 <h2 class='tag'>%%blog_tagline%%</h2>
 
-<table class=pretty>
-	<thead>
-		<th>Date</th>
-		<th>Title</th>
-	</thead>
-	<tbody>
-		<tmpl_loop posts>
-			<tr>
-				<td>%%postdate%%</td>
-				<td><a href='%%binpath_page%%/%%folder_name%%'>%%title%%</a></td>	
-			</tr>
-		</tmpl_loop>
-	</tbody>
-</table>
+<center>
+	<table class=pretty>
+		<thead>
+			<th>Date</th>
+			<th>Title</th>
+		</thead>
+		<tbody>
+			<tmpl_loop posts>
+				<tr>
+					<td nowrap>%%postdate%%</td>
+					<td><a href='%%binpath_page%%/%%folder_name%%'>%%title%%</a></td>	
+				</tr>
+			</tmpl_loop>
+		</tbody>
+	</table>
+</center>

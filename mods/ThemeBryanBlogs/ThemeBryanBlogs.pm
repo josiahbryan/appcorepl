@@ -250,7 +250,7 @@ package ThemeBryanBlogs;
 		my $blog_folder = $req->next_path;
 		
 		# Push the current path (the blog name) onto the page path list
-		$req->push_page_path($blog_folder);
+		$req->push_page_path($req->shift_path);
 		
 		my $blog = BryanBlogs::Blog->by_field( folder_name => $blog_folder );
 		if(!$blog)
@@ -282,7 +282,7 @@ package ThemeBryanBlogs;
 		
 		my $binpath_page = $binpath . '/' . $blog->folder_name;
 		
-		my @posts = BryanBlogs::Post->retrieve_from_sql('blogid=? and draft_flag="no" order by postdate desc');
+		my @posts = BryanBlogs::Post->retrieve_from_sql('blogid='.$blog->id.' and draft_flag="no" order by postdate desc');
 		foreach my $post (@posts)
 		{
 			$post->{$_} = $post->get($_) foreach $post->columns;
@@ -308,6 +308,7 @@ package ThemeBryanBlogs;
 		
 		my $post_folder = $req->next_path;
 		my $post = BryanBlogs::Post->by_field( folder_name => $post_folder );
+		
 		if(!$post)
 		{
 			return $r->error('No Post','No posts match the requested folder');
@@ -325,6 +326,7 @@ package ThemeBryanBlogs;
 		$tmpl->param('blog_' . $_ => $blog->get($_)) foreach $blog->columns;
 		
 		$tmpl->param(content => $post->get_content);
+		$tmpl->param(comments => $self->load_comments($post));
 		
 		$view->output($tmpl);
 		

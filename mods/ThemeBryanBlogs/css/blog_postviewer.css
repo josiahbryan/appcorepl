@@ -1,0 +1,238 @@
+
+h1.post-title
+{
+	/*font-family: Georgia,"Times New Roman",Times,serif;*/
+	font-family: MetaBlack,"Trebuchet MS",sans-serif
+	font-size: 250%;
+	text-align: center;
+}
+
+.postbody
+{
+	margin-top: 1em;
+	border-top: 1px solid #aaa;
+	padding-top: 1em;
+	padding: .25em 3em .5em 3em;
+}
+
+.postbody td,
+.postbody
+{
+	font-family: Georgia,"Times New Roman",Times,serif;
+	font-size: 1.5em;
+	line-height: 1.2em;
+}
+
+.postbody p
+{
+	padding: .5em 0 .5em;
+	text-indent: 3em;
+}
+
+.postbody p + p 
+{
+	/*text-indent: 0;*/
+}
+
+.postbody li
+{
+	margin-top: 1em;
+}
+
+.postdate
+{
+	float: right;
+	background: #aaa;
+	padding: 0 2px;
+	color: #fff;
+	margin-top: -1px;
+	/*-moz-border-bottom-left-radius: 10px;*/ 
+}
+
+/****************************************** */
+
+.comments_block
+{
+	/*float: none;*/
+/*	border: 1px solid #838183;*/
+	border-top: 1px solid #838183; 
+	background: rgb(250,250,250);
+	/*padding: .95em;*/
+	/*margin-left: .5em;*/
+ 	margin-bottom: 2em; 
+	/*width: 55em;*/
+	/*margin-right: -5em;*/
+	/*margin-top: .95em;*/ 
+	padding-top:.95em;
+	
+	
+}
+
+/*margin-top: 1em;
+	padding-top: .5em;
+	border-top: 1px solid #838183;
+	margin-left: .5em;
+	background: rgb(230,230,230);*/
+
+.comments_block .comments_title 
+{
+	font-weight: bold;
+	border-bottom: 1px solid #838183;
+	
+}
+
+.comments_block .comment_link
+{
+	float: right;
+} 
+
+.comments_block  .timestamp 
+{ 
+	font-size: 1em; 
+	color: rgb(60,160,60);
+	font-family: Courier New, Monospace;
+	font-weight: bold;
+}
+
+.comments_box .subject { display: none }
+
+.comments_block  .meta 
+{
+	font-size: 1em; font-weight: bold;
+	color: rgb(60,160,60);
+}
+
+.comments_block .nocomments {}
+
+.comment_text  blockquote { margin:0;padding:0;margin-left:3em; }
+
+.comment_text + .comment_text  { border-top: 1px dotted #838183; margin-top: .1em; padding-top: .1em }
+
+.nav_links .selected
+{
+	color:white !important;
+	background: blue;
+	font-weight: bold;
+	font-size: 1.2em;
+	padding: 3px;
+}
+
+
+
+.bpboth img {border:0 none; }
+.bpboth
+{
+	background-color:black;
+	border:2px solid black;
+	color:white;
+	margin-top:25px;
+	
+	/*border: 1px solid #000;*/
+	-moz-box-shadow: 0px 0px 8px #333;
+	-moz-border-radius: 1px;
+}
+
+.bpcap
+{
+	font-family:arial,helvetica,sans-serif;
+	font-size:13px;
+	padding:4px 10px;
+}
+.bpcap a{color:white !important; }
+.bphotos, .bphotos2, .bphotos3 
+{
+	position: relative;
+	margin: 20px -77px;
+	/*border-top: 1px solid black;*/ 
+	padding: 0px 0 0px 0;
+	/*background: white; */
+	width: 904px;
+}
+.bpline, 
+.bpline2
+{
+	height: 0;
+	width: 742px;
+	border-top: 1px solid black;
+	margin-left:77px;
+	display: none;
+}
+
+.bpline2 { margin-top: 25px;  }
+
+.bphotos2
+{
+	width:979;
+	margin: 20px -120px;
+}
+
+.bphotos3
+{
+	width: 929;
+	margin: 20px -89;
+}
+
+.bphotos2 .bpline, 
+.bphotos2 .bpline2 { margin-left: 114px }
+
+.bphotos3 .bpline,
+.bphotos3 .bpline2 { margin-left: 89px }
+.bpnav
+{
+	float: right;
+	margin-right: -65px;
+	/*background: white;*/
+}
+.bpnav .nextlink,
+.bpnav .prevlink
+{
+	width: 32px;
+	height: 32px;
+	display: block;
+}
+.bpnav .nextlink:hover,
+.bpnav .prevlink:hover
+{
+}
+
+.bpnav.hasnext .prevlink
+{
+	border-bottom: 1px solid rgb(200,200,200);
+	padding-bottom: 10px;
+	margin-bottom: 10px;
+}
+
+.bpnav .nextlink
+{
+	background: url(http://www.mybryanlife.com/linux-icons/Bluecurve/32x32/actions/down.png) no-repeat;
+}
+.bpnav .prevlink
+{
+	background: url(http://www.mybryanlife.com/linux-icons/Bluecurve/32x32/actions/up.png) no-repeat;
+}
+
+.bpmark
+{
+/*	margin-bottom: -50px;*/
+}
+
+.nextlink, .prevlink
+{
+	font-size: .75em;
+}
+
+.nextprev_bot
+{
+	margin-top: 1em;
+	padding-top: .5em;
+	border-top: 1px solid #838183;
+	/*margin-left: .5em;*/
+	background: rgb(230,230,230);
+}
+
+.photo
+{
+	border: 1px solid #000;
+	-moz-box-shadow: 0px 0px 8px #333;
+	-moz-border-radius: 1px;
+}

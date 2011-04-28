@@ -1,8 +1,209 @@
 <h1 class='post-title'>%%post_title%%</h1>
-<h2 class='tag'>%%blog_title%% - %%blog_tagline%%</h2>
+<!--<h2 class='tag'>%%blog_title%% - %%blog_tagline%%</h2>-->
+<a:cssx src="%%modpath%%/css/blog_postviewer.css"/>
 
 <div class='postdate'>%%post_postdate%%</div>
-<div class='text'>
+<div class='postbody'>
 	%%content%%
+</div>
+
+<script>
+	function insertAfter(parent, node, referenceNode) 
+	{
+		parent.insertBefore(node, referenceNode.nextSibling);
+	}
+	var hasFirst = false;
+	var allImages = document.getElementsByTagName('img');
+	for(var i=0;i<allImages.length;i++)
+	{
+		var img = allImages[i];
+		if(img)
+		{
+		
+			var pn = img.parentNode;
+			if(pn.nodeName.toLowerCase() == "a")
+				pn = pn.parentNode;
+				
+			if(pn && pn.className.indexOf('bpboth') >-1)
+			{
+				var navDiv = document.createElement('div');
+				navDiv.className = 'bpnav';
+				var hasNext = i<allImages.length-1;
+				navDiv.innerHTML = 
+					(hasFirst ? "<a href='#img"+(i-1)+"' class='prevlink' title='Previous Image'></a>":"")+
+					(hasNext  ? "<a href='#img"+(i+1)+"' class='nextlink' title='Next Image'></a>":"");
+				if(hasNext)
+					navDiv.className += ' hasnext';
+				var mark = document.createElement('a');
+				mark.name = 'img'+i;
+				mark.className = 'bpmark';
+				
+				pn.insertBefore(navDiv,pn.firstChild);
+				pn.parentNode.insertBefore(mark,pn);
+			
+				hasFirst = true;
+			}
+		}
+	}
+</script>
+
+<div class=nextprev_bot style='background:rgb(210,210,210);'>
+	<table border=0 width='100%' style='margin-top:-6px'>
+		<tr>
+			<td nowrap valign=center style='font-size:11px' width='25%'>
+					<a href="/blog/api?cmd=postcomment&postid=<tmpl_var postid>">Add a comment...</a>
+
+			</td>
+			<td width='50%' align=center>
+
+				<div style="background: #ccd7ed; overflow:hidden; width:150px; height:auto; margin:0 auto; border: 1px solid #9dacce;padding:5px;-moz-border-radius:5px;font-size:11px">
+					<span id='postlikelink' <tmpl_if you_like>style='display:none'</tmpl_if>><a href='#' likeurl='/blog/api?cmd=likepost&postid=<tmpl_var postid>&blogid=<tmpl_var blogid>' onclick='return send_like(this)'>Like</a> </span>
+					
+					<div class='postlikes'>
+						<span id='youlike' <tmpl_unless you_like>style='display:none'</tmpl_unless>><b>You</b><tmpl_if others_like> and<tmpl_else> like this post</tmpl_if></span>
+						<tmpl_if others_like><a class=others_like href='#' onclick='alert(this.getAttribute("name_list"));return false;' name_list="<tmpl_var others_like_names_list>" title="<tmpl_var others_like_names>"><b><tmpl_var others_like> others</b></a> like this post</tmpl_if>
+						<span id='postunlike' <tmpl_unless you_like>style='display:none'</tmpl_unless>>(<a href='/blog/api?cmd=unlikepost&postid=<tmpl_var postid>' onclick='return send_unlike(this)'>Unlike</a>)</span>
+					</div>
+					
+					<img id='postlikeimg' style='display:none'/>
+					<script>
+						function x(e){return document.getElementById(e);}
+						function send_like(elm)
+						{
+							var img = x('postlikeimg');
+							if(!img) { alert("Error liking post"); return false; }
+							var span = x('postlikelink');
+							span.oldInner = span.innerHTML;
+							span.innerHTML = "<img src='http://www.mybryanlife.com/images/ajax-loader.gif'>";
+							img.onerror = img.onload = function(){
+								span.style.display = 'none';
+								x('youlike').style.display = 'block';
+								x('postunlike').style.display = '';
+								span.innerHTML = span.oldInner;
+							};
+							img.src = elm.getAttribute('likeurl');
+							return false;
+						}
+						function send_unlike(elm)
+						{
+							var img = x('postlikeimg');
+							if(!img) { alert("Error liking post"); return false; }
+							var span = x('postunlike');
+							span.oldInner = span.innerHTML;
+							span.innerHTML = "<img src='http://www.mybryanlife.com/images/ajax-loader.gif'>";
+							img.onerror = img.onload = function(){
+								x('postunlike').style.display = 'none';
+								x('youlike').style.display = 'none';
+								x('postlikelink').style.display='';
+								span.innerHTML = span.oldInner;
+							};
+							img.src = elm.href;
+							return false;
+						}
+					</script>
+
+                                </div>
+
+			</td>
+			<td nowrap valign=top style='font-size:14px' width='25%' align=center>
+				<span style='font-size:.85em;color:rgb(100,100,100);'>More Posts</span><br>
+				
+				<tmpl_if next_postid>
+				<a class='nextlink' title='Go to the next post, "<tmpl_var next_title escape=html>"' href='/blog/<tmpl_var folder_name>/<tmpl_var next_postid>'><tmpl_var next_title> &raquo;</a><br>
+				</tmpl_if>
+	
+				<tmpl_if prev_postid>
+				<a  class='prevlink' title='Go to the previous post, "<tmpl_var prev_title escape=html>"' href='/blog/<tmpl_var folder_name>/<tmpl_var prev_postid>'>&laquo; <tmpl_var prev_title></a>
+				</tmpl_if>
+			</td>
+		</tr>
+	</table>
+</div>
+				
+<div class=comments_block>
+	<tmpl_if comments>
+	
+		<div class=comments_title>
+			<div class=comment_link>
+				(<a href="/blog/api?cmd=postcomment&postid=<tmpl_var postid>">Add a comment...</a>)
+			</div>
+			
+			Comments:
+		</div>
+							
+		<tmpl_loop comments>
+			<div class=comment_text style='<tmpl_if new_comment>background:#ffec6e;padding-left:.25em;</tmpl_if> <tmpl_if depth_em>margin-left:<tmpl_var depth_em>em;</tmpl_if>'>
+				<a name='c<tmpl_var commentid>'><span class=timestamp><tmpl_var timestamp></span></a>: <br>
+				<blockquote><span class=text><tmpl_var comment></span>
+					<span class=meta><!--(<span class=subject><tmpl_if subject>"<tmpl_var subject>" - </tmpl_if></span><span class=person><tmpl_var commentor></span>)--> <span class=person>-- <tmpl_var commentor></span></span> (<a href="/blog/api?cmd=postcomment&postid=<tmpl_var postid>&pid=<tmpl_var commentid>" class='reply_link' title='Post a reply directly to this comment...'>Reply</a><span id='like<tmpl_var commentid>' class='cmtlike' <tmpl_if you_like>style='display:none'</tmpl_if>> | <a href="#" likeurl="/blog/api?cmd=likecmt&commentid=<tmpl_var commentid>&postid=<tmpl_var postid>&blogid=<tmpl_var blogid>" onclick='return like_cmt(this,<tmpl_var commentid>,0)'>Like</a>
+					</span>)
+					<div class='cmtlikes <tmpl_if you_like>content</tmpl_if> <tmpl_if others_like>content</tmpl_if>' id='cmtlikes<tmpl_var commentid>' has_others="<tmpl_if others_like>1<tmpl_else>0</tmpl_if>">
+						<span id='youlike<tmpl_var commentid>' <tmpl_unless you_like>style='display:none'</tmpl_unless>><b>You</b><tmpl_if others_like> and<tmpl_else> like this</tmpl_if></span>
+							<tmpl_if others_like><a href='#' class='others_like' onclick='alert(this.getAttribute("names_list"));return false' names_list='<tmpl_var others_like_names_list>'><b><tmpl_var others_like> others</b><div class='names'><tmpl_var others_like_names></div></a> like this
+							<span id='alsolike<tmpl_var commentid>' <tmpl_if you_like>style='display:none'</tmpl_if>>(<a href='#' likeurl='/blog/api?cmd=likecmt&commentid=<tmpl_var commentid>&postid=<tmpl_var postid>&blogid=<tmpl_var blogid>' onclick='return like_cmt(this,<tmpL_var commentid>,1)'>Like</a>)</span>
+								
+							</tmpl_if>
+							<span id='unlike<tmpl_var commentid>' <tmpl_unless you_like>style='display:none'</tmpl_unless>>(<a href='/blog/api?cmd=unlikecmt&commentid=<tmpl_var commentid>' onclick='return unlike_cmt(this,<tmpl_var commentid>)'>Unlike</a>)</span>
+					</div>
+				</blockquote>
+			</div>
+		</tmpl_loop>
+		<script>
+			function like_cmt(elm,id,also)
+			{
+				var img = x('cmtlikeimg');
+				if(!img){alert("Error liking comment");return false;}
+				var span = x((also ? 'also':'')+'like'+id);
+				span.oldInner = span.innerHTML;
+				span.innerHTML = " | <img src='http://www.mybryanlife.com/images/ajax-loader.gif'>";
+				img.onerror = img.onload = function()
+				{
+					span.style.display = 'none';
+					span.innerHTML = span.oldInner;
+	
+					var tmp = x((also?'':'also')+'like'+id);
+					if(tmp) tmp.style.display='none';
+	
+					tmp = x('youlike'+id);
+					tmp.style.display = 'inline';
+	
+					tmp = x('cmtlikes'+id);
+					tmp.className+=" content";
+	
+					x('unlike'+id).style.display = 'inline';
+				};
+				img.src = elm.getAttribute('likeurl');
+				return false;
+				
+			}
+			function unlike_cmt(elm,id)
+			{
+				var img = x('cmtlikeimg');
+				if(!img){alert("Error unliking comment");return false;}
+				var span = x('unlike'+id);
+				span.oldInner = span.innerHTML;
+				span.innerHTML = "(<img src='http://www.mybryanlife.com/images/ajax-loader.gif'>)";
+				img.onerror = img.onload = function()
+				{
+					span.style.display = 'none';
+					span.innerHTML = span.oldInner;
+					x('youlike'+id).style.display = 'none';
+					x('like'+id).style.display = '';
+					var tmp = x('alsolike'+id);
+					if(tmp) tmp.style.display = '';
+					var elm = x('cmtlikes'+id);
+					if(elm.getAttribute("has_others") == "0")
+					{
+						elm.className = "cmtlikes";
+					}
+				};
+				img.src = elm.href;
+				return false;
+			}
+		</script>
+		<img id='cmtlikeimg' style='display:none' src="http://www.mybryanlife.com/images/ajax-loader.gif"/>
+	<tmpl_else>
+		<div class=nocomments>(No comments added... <a href="/blog/api?cmd=postcomment&postid=<tmpl_var postid>">Add a comment about this post...</a>)</div>
+	</tmpl_if>
 </div>
 

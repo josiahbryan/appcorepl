@@ -57,6 +57,12 @@ body, td
 	/*-moz-box-shadow: 0px 0px 4px #000;*/
 }
 
+#header h1 a
+{
+	color: black;
+	text-decoration: none;
+}
+
 #bodywrap
 {
 	width: 100%;
@@ -80,7 +86,7 @@ body, td
 {
 	background: white;
 	
-	width: 965px;
+	width: 885px;
 	margin: 0 auto;
 	font-size: 1.5em;
 	
@@ -120,4 +126,53 @@ body, td
 #footercontent a
 {
 	color: white; 
+}
+
+/********************************/
+
+table.pretty
+{
+	border-collapse:collapse;
+	/*border: 1px solid black; */
+	/*-moz-box-shadow: 0px 0px 8px #000;*/
+	/*-moz-box-shadow: 0 0 3px #fff, 0px 0px 8px #000;*/
+	margin: 1em 0; 
+}
+
+table.pretty th 
+{
+	/*background: black;*/
+	/*color: white;*/
+	/*text-shadow: rgb(8,8,8) 1px 1px 1px;*/
+	font-weight: bold;
+	padding: 2 4;
+	text-align: left;
+	font-size: 1.2em;
+	
+	/*border-bottom: 1px solid black;*/
+}
+
+table.pretty td 
+{
+	border: 1px solid #777;
+	padding: 6 5;
+	cursor: default; 
+	font-size: 1em;
+}
+
+table.pretty tr:hover td
+{
+	background: /*#c2cdf5*/#ddd;
+	color: black;
+	text-shadow: #777 0px 0px 3px;
+}
+
+table.pretty tr:hover td a
+{
+	color: black;
+}
+
+table.pretty .util
+{
+	color: #364a90;
 }

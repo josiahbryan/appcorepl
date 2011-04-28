@@ -183,7 +183,7 @@ package BryanBlogs::Post;
 		my $content = shift || $self->content;
 		
 		# Add '#more' marker to end of first paragraph
-		$content =~ s/<\/p>/<a name='#more'>&nbsp;<\/a><\/p>/g;
+		$content =~ s/<\/p>/<a name='more'>&nbsp;<\/a><\/p>/;
 		
 		# Fix plaintext blogs
 		if(index($content,'<') < 0)
@@ -278,7 +278,7 @@ package BryanBlogs::Post;
 		{
 			print STDERR "Working on postid $post, # $counter/$#all ... ";
 			 
-			$post->generate_folder_name;
+			$post->pick_folder_name;
 			
 			$counter ++;
 		}
