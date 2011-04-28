@@ -19,6 +19,9 @@ package AppCore::Web::DispatchCore;
 	
 	use Time::HiRes qw/time/;
 	
+	# To access ::theme()
+	use Content::Page;
+	
 	# Read modules before starting
 	sub new
 	{
@@ -206,6 +209,10 @@ package AppCore::Web::DispatchCore;
 		$app = 'Content' if !$app;
 		
 		REPROCESS_ON_SERVER_GONE:
+		
+		# Reset current theme incase it gets changed
+		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
+		
 		
 		eval
 		{

@@ -160,9 +160,6 @@ package Content::Page::Type;
 		my $r    = shift;
 		my $page_obj = shift;
 		
-		# Reset current themes
-		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE)
-		
 		# Assume controller is loaded
 		my $pkg = $self->controller;
 		$pkg = 'Content::Page::Controller' if !$pkg;

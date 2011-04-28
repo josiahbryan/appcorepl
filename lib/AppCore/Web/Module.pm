@@ -227,29 +227,22 @@ package AppCore::Web::Module;
 		return $Method_Lists_Cache{$pkg} || {};
 	}
 	
+	our %ModpathCache;
+	
 	sub modpath
 	{
 		my $pkg = shift;
 		
-		my $ref = undef;
-		if(ref $pkg)
-		{
-			if(@_)
-			{
-				return $pkg->{_modpath} = shift;
-			}
-			
-			return $pkg->{_modpath} if $pkg->{_modpath};
-			
-			$ref = $pkg;
-		}
-		
 		$pkg = ref $pkg if ref $pkg;
+	
+		return $ModpathCache{$pkg} = shift if @_;
+		return $ModpathCache{$pkg}         if $ModpathCache{$pkg};
+		
 		my @parts = split /::/, $pkg;
 		my $first_pkg = shift @parts;
 		
 		my $tmp = join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg);
-		$ref->{_modpath} = $tmp if $ref;
+		$ModpathCache{$pkg} = $tmp;
 		
 		return $tmp;
 	}
