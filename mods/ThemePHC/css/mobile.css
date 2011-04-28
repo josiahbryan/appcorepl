@@ -55,24 +55,38 @@ a:active	{color: #a67726; text-decoration: underline;}
 	/*margin: 0 auto;*/
 	/*margin-top: -10px;*/
 	
-	text-align:center;
-	font-size:4em;
+	/*text-align:center;
+	font-size:4em;*/
 	
 	/*padding-bottom: 2px;*/
 	
-	text-shadow: rgb(8,8,8) 0px 0px 8px;
+	/*text-shadow: rgb(8,8,8) 0px 0px 8px;
 	color: rgb(100,100,100);
 	
 	margin-bottom: -.1em;
-	margin-top: .2em;
+	margin-top: .2em;*/
+	
+	width: 320px;
+	height: 114px;
+	
+	margin: -20px auto -29px auto;
+	
+	z-index: -1;
 
 }
+
 
 #header #logo a
 {
 	color:white;
 	text-decoration: none;
 	font-weight: bold;
+}
+
+#header #logo a:focus,
+#header #logo a:active
+{
+	outline: 0;
 }
 
 /* Link to full site */
@@ -172,10 +186,10 @@ h2#full-link a
 }
 
 
-#bodycontent
+/*#bodycontent
 {
 	padding: 1em;
-}
+}*/
 
 ul.links
 {

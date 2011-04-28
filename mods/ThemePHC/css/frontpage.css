@@ -71,7 +71,7 @@ body
 
 #graphicblock
 {
-	background-image: url("%%modpath%%/images/graphic_box_bg.png");
+	background-image: url("%%modpath%%/images/graphic_box_bg_sm.png");
 	background-repeat: no-repeat;
 	
 	width: 940px;
