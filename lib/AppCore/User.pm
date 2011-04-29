@@ -46,6 +46,9 @@ package AppCore::User;
 			{	field	=> 'fb_token',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_token_expires',	type	=> 'datetime'     },
 			{	field	=> 'extra_data',	type	=> 'text'	  },
+			{ 	field	=> 'last_seen',		type	=> 'datetime'	  },
+			{	field	=> 'last_ip',		type	=> 'varchar(100)' },
+			{	field	=> 'hitcount',		type	=> 'int(11)',	  null => 0, default => 0 },
 		]		
 	
 	});

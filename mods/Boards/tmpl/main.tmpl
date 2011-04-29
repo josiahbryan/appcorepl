@@ -1,0 +1,90 @@
+<a:cssx src="%%modpath%%/css/boards.css"/>
+<title>PHC Bulletin Boards</title>
+<h1>PHC Bulletin Boards</h1>
+<!--%macro::sub_nav()%-->
+<tmpl_var board_nav>
+
+
+<div id='board-intro'>
+	<p class='first'><span class='w'>W</span>elcome to the PHC Bulletin Boards (you might also know this style of webpage as a &quot;web forum&quot;). These boards/forums are provided for your enjoyment and for connection with other people from PHC and around the world. There are a variety of "folders" available below for you to add your own discussion posts to and for you to read what others have posted. Explore and enjoy!</p>
+	<p>If you have any questions about the bulletin boards or if you spot objectionable content, please <a href='mailto:josiahbryan@gmail.com'>email Josiah</a>. (After all, this is a <i>church</i> website - so keep it <a href='http://www.biblegateway.com/passage/?search=Philippians+4:8' title='Philippians 4:8 - ...if anything is excellent or praiseworthy—think about such things...'>clean and <i>good</i></a>, please!)</p>
+</div>
+
+<table cellpadding=0 cellspacing=0 class='group-list'>
+	<tmpl_if groups>
+		<tmpl_loop groups>
+
+
+			<tmpl_if boards>
+				<tr>
+					<td>
+						<table class='boards' width='100%' cellpadding=0 cellspacing=0>
+							<tbody class='head'>
+								<tr>
+									<td colspan=4 class='group-title'>
+										<tmpl_if can_admin>
+											<tmpl_if can_admin><a class='add_new_forum_link' href='%%bin%%/new?groupid=<tmpl_var groupid>'><img src='%%appcore%%/images/silk/page_add.png' border=0 align=absmiddle> Add a new Forum</a></tmpl_if>
+										</tmpl_if>
+										<h3><tmpl_var title></h3>
+									</td>
+								</tr>
+								<tr class='column-titles'>
+									<td align=left>Forum Title</td>
+									<td nowrap align=right>Posts</td>
+									<td nowrap align=right>Replies</td>
+									<td align=left nowrap>Last Post</td>
+								</tr>
+							</tbody>
+
+							<tbody class='body'>
+								<tr>
+									<td class='group-header' colspan=4>&nbsp;</td>
+								</tr>
+								<tmpl_loop boards>
+									<tr class='<tmpl_var post_flags>'>
+										<td width='65%' class='title'><tmpl_if can_admin><a class='edit_forum_link' href='%%bin%%/edit?boardid=<tmpl_var boardid>'><img src='%%appcore%%/images/silk/page_edit.png' border=0 align=absmiddle></a> </tmpl_if> <a href='%%bin%%/<tmpl_var folder_name>' class='title_link'><tmpl_var title></a><tmpl_if has_new><span class='new'>- Unread Posts: <span class='count'><tmpl_var new_count></span></span></tmpl_if><span class='tagline'><span class='hidden'> - </span><tmpl_var tagline></span></td>
+										<td width='10%' nowrap class='num_posts' valign=top align=right><tmpl_if num_posts><tmpl_var num_posts><tmpl_else>-</tmpl_if></td>
+										<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>
+										<td width='15%' nowrap class='lastpost' valign=top >
+											<tmpl_if post_postid>
+												<span class='post'>
+													<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+													<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+												</span>
+											<tmpl_else>-</tmpl_if>
+										</td>
+									</tr>
+								</tmpl_loop>
+								<tr>
+									<td class='group-footer' colspan=4>&nbsp;</td>
+								</tr>
+							</tbody>
+
+						</table>
+					</td>
+				</tr>
+			<tmpl_else>
+				<tr>
+					<td>
+						<table class='boards' width='100%' cellpadding=0 cellspacing=0>
+							<tr>
+								<td class='group-title'><h3><tmpl_var title></h3></td>
+							</tr>
+							<tbody class='body'>
+								<tr>
+									<td><h3>Sorry, no forums added yet to this group.</h3></td>
+								</tr>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+
+			</tmpl_if>
+
+		</tmpl_loop>
+	<tmpl_else>
+		<tr>
+			<td><h3>Sorry, no groups added yet.</h3></td>
+		</tr>
+	</tmpl_if>
+</table>

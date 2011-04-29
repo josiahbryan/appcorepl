@@ -52,7 +52,9 @@ BEGIN
 	$DISPATCHER_URL_PREFIX = '';
 	
 	$FB_APP_ID     = '192357267468389';
-	$FB_APP_SECRET = `cat fb_app_secret.txt`; # read from file so its not saved in subversion!
+	
+	my $fb_secret_file = $WWW_DOC_ROOT . $WWW_ROOT . '/fb_app_secret.txt';
+	$FB_APP_SECRET = `cat $fb_secret_file` if -f $fb_secret_file; # read from file so its not saved in subversion!
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
 	$ENABLE_CSSX_MOBILE_IMAGE_URI = 1;

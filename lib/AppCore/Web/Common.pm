@@ -552,8 +552,15 @@ package AppCore::Web::Common;
 		return $html;
 	}
 	
+	sub clean_html
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $html = shift;
+		$html =~ s/<(style|!--)[^\>]*>(.|\n)*<\/(style|--)>//gi;
+		
+		return $html;
 	
-	
+	}
 }
 
 package HTML::Template::RetrievableParameters;

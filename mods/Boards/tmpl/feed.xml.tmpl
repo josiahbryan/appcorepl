@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:taxo="http://purl.org/rss/1.0/modules/taxonomy/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:syn="http://purl.org/rss/1.0/modules/syndication/" xmlns:admin="http://webns.net/mvcb/" xmlns:feedburner="http://rssnamespace.org/feedburner/ext/1.0">
+
+	<channel rdf:about="http://mypleasanthillchurch.org">
+		<title><tmpl_if feed_title>%%feed_title%%<tmpl_else>Pleasant Hill Church</tmpl_if></title>
+		<link>http://mypleasanthillchurch.org/%%feed_path%%</link>
+		<description><tmpl_if feed_description>%%feed_description%%<tmpl_else>Pleasant Hill Church's online user's comunity - Ask Pastor, Pastor's Blog, Bulletin Boards, Photo Gallery, News, and Events!</tmpl_if></description>
+		<dc:language>en-us</dc:language>
+		<dc:rights>Copyright 2008, Pleasant Hill Church.  All Rights Reserved.</dc:rights>
+		<dc:date>%%xml_datetime%%-05:00</dc:date>
+		<dc:publisher>Pleasant Hill Church</dc:publisher>
+
+		<dc:creator>webmaster@josiahbryan.com</dc:creator>
+		<dc:subject></dc:subject>
+		<syn:updatePeriod>hourly</syn:updatePeriod>
+		<syn:updateFrequency>1</syn:updateFrequency>
+		<syn:updateBase>1970-01-01T00:00+00:00</syn:updateBase>
+		<items>
+			<rdf:Seq>
+				<tmpl_loop rdf_items>
+					<rdf:li rdf:resource="http://mypleasanthillchurch.org/phc/%%section_name%%/%%folder_name%%/%%fake_folder_name%%?from=rss" />
+				</tmpl_loop>
+			</rdf:Seq>
+		</items>
+		<image rdf:resource="http://mypleasanthillchurch.org/images/phc-logo-transparent.png" />
+		<textinput rdf:resource="http://mypleasanthillchurch.org/phc/search" />
+	</channel>
+
+	<image rdf:about="http://mypleasanthillchurch.org/images/phc-logo-transparent.png">
+		<title>PHC</title>
+		<url>http://mypleasanthillchurch.org/images/phc-logo-transparent.png</url>
+		<link>http://mypleasanthillchurch.org/</link>
+	</image>
+
+	<tmpl_loop rdf_items>
+	<item rdf:about="http://mypleasanthillchurch.org/phc/%%section_name%%/%%folder_name%%/%%fake_folder_name%%?from=rss">
+		<title><tmpl_var escape=html name=subject></title>
+		<link>http://mypleasanthillchurch.org/phc/%%section_name%%/%%folder_name%%/%%fake_folder_name%%?from=rss</link>
+		<description><tmpl_if text><tmpl_var text escape=html><tmpl_else>(No description given - see webpage for original item.)</tmpl_if></description>
+		<dc:creator><tmpl_var poster_name></dc:creator>
+		<dc:date><tmpl_var xml_timestamp>-05:00</dc:date>
+		<feedburner:origLink>http://mypleasanthillchurch.org/phc/%%section_name%%/%%folder_name%%/%%fake_folder_name%%?from=rss</feedburner:origLink>
+	</item>
+	</tmpl_loop>
+
+
+	<textinput rdf:about="http://mypleasanthillchurch.org/phc/search">
+		<title>Search PHC</title>
+		<description>Search PHC's Website</description>
+		<name>q</name>
+		<link>http://mypleasanthillchurch.org/phc/search</link>
+
+	</textinput>
+
+</rdf:RDF>

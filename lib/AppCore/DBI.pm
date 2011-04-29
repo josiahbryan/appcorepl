@@ -63,7 +63,7 @@ package AppCore::DBI;
 		
 		if ( !$dbh ) 
 		{
-			#print STDERR "Debug: class=$class, DBPARAMS CACHE = ".Dumper($DBPARAMS_CLASS_CACHE{$class});
+			#print STDERR __PACKAGE__."::db_Main(): class:'$class', DBPARAMS CACHE = ".Dumper($DBPARAMS_CLASS_CACHE{$class});
 			$dbh = $class->dbh($DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_DB}   || DEFAULT_DB,
 					$DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_HOST} || DEFAULT_HOST,
 					$DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
@@ -89,6 +89,7 @@ package AppCore::DBI;
 	{
 		my $class = shift;
 		$class = ref $class if ref $class;
+		#print STDERR __PACKAGE__."::setup_default_dbparams(): class:'$class', args: ".join('|', @_)."\n";
 		$DBPARAMS_CLASS_CACHE{$class} = 
 		{
 			DEFAULT_DB   => shift,
@@ -117,10 +118,13 @@ package AppCore::DBI;
 			$META_CACHE{$class} = $meta;
 			
 			
+			#print STDERR __PACKAGE__."::meta(): class:'$class', db:'$meta->{db}'\n";
+			
 			# Setup AppCore::DBI db_Main parameters
 			if($meta->{database} || $meta->{db})
 			{
 				$meta->{database} ||= $meta->{db};
+				#print STDERR __PACKAGE__."::meta(): class:'$class', calling setup dbparams, other args: host:'$meta->{db_host}',user:'$meta->{db_user}',pass: ***\n";
 				$class->setup_default_dbparams($meta->{database},$meta->{db_host},$meta->{db_user},$meta->{db_pass});
 			}
 			
