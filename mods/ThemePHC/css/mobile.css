@@ -240,6 +240,7 @@ h3.title-divider
 	text-align: left;
 	text-shadow: 0 1px 1px #DBDBDB;
 	width: 100%;
+	line-height: 20px;
 }
 h3.title-divider div
 {
