@@ -51,11 +51,13 @@ package AppCore::Web::Request;
 		if(@_ > 1)
 		{
 			$self->{_PATH_INFO} = [@_];
+			$self->{PATH_INF} = join('/', @_);
 		}
 		else
 		{
 			my $v = shift;
 			$self->{_PATH_INFO} = ref $v eq 'ARRAY' ? $v : [split/\//, $v];
+			$self->{PATH_INFO} = join('/', @{$self->{_PATH_INFO}});
 		}
 		
 			
@@ -164,6 +166,10 @@ package AppCore::Web::Request;
 			#print STDERR "[DEBUG] page_path('$value'), app_root='".$self->app_root."'\n";
 			$value =~ s/^\///;
 			$self->{PAGE_PATH} = join '/', $self->app_root, $value;
+			
+			my @path = split /\//, $self->{PAGE_PATH};
+			shift @path;
+			$self->{_PAGE_PATH} = \@path;
 		}
 		my $p = $self->{PAGE_PATH};
 		if(substr($p,-1) eq '/')

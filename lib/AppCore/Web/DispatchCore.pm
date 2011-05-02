@@ -115,27 +115,57 @@ package AppCore::Web::DispatchCore;
 		
 		#print STDERR "($$) $ENV{REMOTE_ADDR}: ".get_full_url()."\n";
 		
-		# Mudge path info and extract the request app name from the path
-		my $path = $ENV{PATH_INFO};
-		$path =~ s/^\///g;
-		
+		my $is_mobile = 0;
+		# If user specifies mobile pref in query, set cookie and flag
 		if($ENV{QUERY_STRING} =~ /sitepref=(mobile|full)/)
 		{
 			setcookie('mobile.sitepref',$1);
+			$is_mobile = $1 eq 'mobile';
 		}
-		
-		if($AppCore::Config::MOBILE_REDIR &&
-		   $AppCore::Config::MOBILE_URL   &&
-		   !$path)
+		else
 		{
+			# No explicit mobile pref specified, check cookie
 			my $pref = getcookie('mobile.sitepref');
-			my $ism = ismobile( $ENV{HTTP_USER_AGENT} );
 			#print STDERR "ism: $ism, ua: $ENV{HTTP_USER_AGENT}\n";
-			if((ismobile( $ENV{HTTP_USER_AGENT} ) && !$pref) || $pref eq 'mobile')
+			
+			# No cookie, check if is mobile based on UA
+			if(!$pref && ismobile($ENV{HTTP_USER_AGENT}))
 			{
 				setcookie('mobile.sitepref','mobile');
-				AppCore::Web::Common->redirect($AppCore::Config::MOBILE_URL);
+				$is_mobile = 1;
 			}
+			else
+			{
+			# Got cookie, set flag based on pref
+				$is_mobile = $pref eq 'mobile';
+			}
+		}
+		
+		# Store mobile flag for other modules to use so they dont have to check cookie
+		AppCore::Common->context->mobile_flag($is_mobile);
+		
+		# Reset current theme incase it gets changed
+		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
+		
+		# Mudge path info and extract the request app name from the path
+		my $path = $ENV{PATH_INFO};
+		
+		# Give current theme a chance to remap the URL before ANY processing is done on it
+		if(my $new_url = Content::Page::Controller->theme->remap_url($path))
+		{
+			$path = $ENV{PATH_INFO} = $new_url;
+		}
+		
+		# Strip first slash from URL since not relevant
+		$path =~ s/^\///g;
+		
+		# Redirect frontpage to a dedicated mobile landing
+		if($AppCore::Config::MOBILE_REDIR &&
+		   $AppCore::Config::MOBILE_URL   &&
+		   $is_mobile &&
+		  !$path)
+		{
+			AppCore::Web::Common->redirect($AppCore::Config::MOBILE_URL);
 		}
 		
 		# httpd.conf's rewrite rules should not have sent us this request if the file existed,
@@ -209,10 +239,6 @@ package AppCore::Web::DispatchCore;
 		$app = 'Content' if !$app;
 		
 		REPROCESS_ON_SERVER_GONE:
-		
-		# Reset current theme incase it gets changed
-		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
-		
 		
 		eval
 		{

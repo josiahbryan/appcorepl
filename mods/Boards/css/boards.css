@@ -233,7 +233,7 @@
 		color: rgb(100,100,100);
 		font-size: 10px;
 		/*margin-top: -.5em;*/
-		margin-top:-1em  !important;
+		/*margin-top:-1em  !important;*/
 		margin-bottom: .75em;
 		/*border: 1px dotted #c9ac93;*/
 		/*border-top: 2px solid #c9ac93;*/
@@ -248,7 +248,7 @@
 	.attribution .date { color: rgb(60,160,60); font-weight: bold }
 	/*.attribution .name { font-size: 1.5em }*/
 	
-	.edit_post_link { float: right; width: 100px; margin-top:-.75em }
+	.edit_post_link { float: right; width: 100px; margin-top:-1.4em }
 	
 	#printlist_link { float:right}
 	

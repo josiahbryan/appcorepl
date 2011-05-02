@@ -831,10 +831,40 @@ package Content::Page::ThemeEngine;
 			$tmpl->param(mainnav      => $self->load_nav); 
 			
 			my $user = AppCore::Common->context->user;
-			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
+			$tmpl->param(is_admin  => $user && $user->check_acl(['ADMIN']));
+			$tmpl->param(is_mobile => AppCore::Common->context->mobile_flag);
 		}
 	
 		return $tmpl;
+	}
+	
+	sub get_template_path
+	{
+		my $self = shift;
+		my $file = shift;
+		my $pkg = ref $self ? ref $self : $self;
+		
+		my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+		return -f $tmp_file_name ?  $tmp_file_name : $file;
+	}
+	
+	# Subclasses can override this method to remap a template to a different filename
+	# just before the template is loaded. This is called in AppCore::Web::Module::get_template()
+	sub remap_template
+	{
+# 		my $class = shift;
+# 		my $requesting_package = shift;
+# 		my $requested_theme_file = shift;
+		return undef; 
+	}
+	
+	# Subclasses can override this method to remap the entire URL - this is called
+	# very early in the dispatching process - before any module is called. Called from
+	# AppCore::Web::DispatchCore::process()
+	sub remap_url
+	{
+# 		my $class = shift;
+# 		my $requested_url = shift;
 	}
 };
 

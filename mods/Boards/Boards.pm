@@ -25,9 +25,7 @@ package Boards;
 	# TODO #
 	
 	# Register our pagetype
-	# TODO - Implement pagetype
-	#__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1); # 1 = uses page path
-	# TODO #
+	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1); # 1 = uses page path
 	
 	# Setup the Web Module 
 	sub DISPATCH_METHOD { 'main_page'}
@@ -92,6 +90,65 @@ package Boards;
 		
 		#print STDERR Dumper $self->config;
 	}
+	
+	
+	# Implemented from Content::Page::Controller
+	sub process_page
+	{
+		my $self = shift;
+		my $type_dbobj = shift;
+		my $req  = shift;
+		my $r    = shift;
+		my $page_obj = shift;
+		
+		# No view code will just return the BasicView derivitve which just uses the basic.tmpl template
+		my $themeid   = $page_obj ? $page_obj->themeid   : undef;
+		my $view_code = $page_obj ? $page_obj->view_code : undef;
+		
+		if($themeid && $themeid->id)
+		{
+			# Change current theme if the page requests it
+			$self->theme($themeid->controller);
+		}
+		
+		#print STDERR "process_page: view_code is '$view_code', type: $type_dbobj\n";
+		
+# 		# Get a view module from the template based on view code so the template can choose to dispatch a view to a different object if needed
+# 		my $view = $self->get_view($view_code,$r);
+		
+		#print STDERR "process_page: view_code is '$view_code', type: $type_dbobj\n";
+		
+		# If the last part of the URL is a valid bulletin board (e.g. this page)
+		# then move that part from the page path to path info
+		my $lp = $req->last_path;
+		my $other = Boards::Board->by_field(folder_name => $lp);
+		
+# 		use Data::Dumper;
+# 		print STDERR __PACKAGE__."::process_page(): lp: '$lp', other:'$other', dump:".Dumper($req)."\n";
+		
+		if($other)
+		{
+			my $pp = $req->pop_page_path;  # pop from pagepath ...
+			$req->unshift_path($pp); # and unshift into path info
+#			print STDERR __PACKAGE__."::process_page(): poped and unshiffted, new page_path:".$req->page_path.", dump:".Dumper($req)."\n";
+		}
+		
+		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
+		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
+		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
+		$self->binpath($new_binpath);
+		
+		## Redispatch thru the ::Module dispatcher which will handle calling main_page()
+		#return $self->dispatch($req, $r);
+		return $self->main_page($req,$r);
+		
+# 		# Get a view module from the template based on view code so the template can choose to dispatch a view to a different object if needed
+# 		my $view = $self->get_view($view_code,$r);
+# 		
+# 		# Pass the view code onto the view output function so that it can aggregate different view types into one module
+# 		$view->output($page_obj,$r,$view_code);
+	};
 	
 	
 	## TODO ##

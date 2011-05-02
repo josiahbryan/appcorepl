@@ -81,13 +81,11 @@ sub user   		{shift->x('user', @_)}
 sub http_root  		{shift->x('http_root',@_)}
 sub http_bin   		{shift->x('http_bin',@_)}
 
-sub master_template	{shift->x('master_template',@_)}
-
-sub auth_ticket		{shift->x('auth_ticket',@_)}
+#sub auth_ticket		{shift->x('auth_ticket',@_)}
 
 sub http_args		{shift->x('http_args',@_)}
 
-sub color_scheme 	{shift->x('color_scheme',@_)}
-sub telnet_app		{shift->x('telnet_app',@_)}
+sub mobile_flag		{shift->x('mobile_flag',@_)}
+
 
 1;

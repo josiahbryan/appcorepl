@@ -9,6 +9,9 @@ package AppCore::Web::Module;
 	
 	use AppCore::Common;
 	
+	# Required to access Content::Page::Controller->theme->remap_template()
+	use Content::Page;
+	
 	require Exporter;
 	use vars qw/@ISA @EXPORT/;
 	@ISA = qw(Exporter);
@@ -276,27 +279,35 @@ package AppCore::Web::Module;
 		
 		my $pkg = $self;
 		$pkg = ref $pkg if ref $pkg;
-		#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
-		#$pkg =~ s/::/\//g;
-		my @parts = split /::/, $pkg;
-		my $first_pkg = shift @parts;
-		@parts = lc $_ foreach @parts;
-		push @parts, $file;
 		
-		my $tmp_file_name = 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
-		if($file !~ /^\// && -f $tmp_file_name)
+		# Give the current theme an opportunity to remap the template into something different if desired
+		my $abs_file = Content::Page::Controller->theme->remap_template($pkg,$file);
+		if(!$abs_file || !-f $abs_file)
 		{
-			my $tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
+			#$pkg =~ s/::/\//g;
+			my @parts = split /::/, $pkg;
+			my $first_pkg = shift @parts;
+			@parts = lc $_ foreach @parts;
+			push @parts, $file;
+			
+			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
+		}
+		
+		if($file !~ /^\// && -f $abs_file)
+		{
+			my $tmpl = AppCore::Web::Common::load_template($abs_file);
 			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
 			$tmpl->param(modpath => $self->modpath);
 			$tmpl->param(binpath => $self->binpath);
 			my $user = AppCore::Common->context->user;
 			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
+			$tmpl->param(is_mobile => AppCore::Common->context->mobile_flag);
 			return $tmpl;
 		}
 		else
 		{
-			print STDERR "Template file didnt exist: $tmp_file_name\n";
+			print STDERR "Template file didnt exist: $abs_file\n";
 		}
 		
 		return AppCore::Web::Common::load_template($file);

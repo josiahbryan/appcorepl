@@ -56,5 +56,45 @@ package ThemePHC;
 		$r->output($tmpl); #->output);
 	};
 	
+	sub remap_template
+	{
+ 		my $class = shift;
+ 		my $requesting_package = shift;
+ 		my $requested_theme_file = shift;
+ 		#print STDERR __PACKAGE__."::remap_template(): $requesting_package wants '$requested_theme_file'\n"; 
+		return undef; 
+	}
+	
+	sub remap_url
+	{
+ 		my $class = shift;
+ 		my $url = shift;
+ 		#print STDERR __PACKAGE__."::remap_url(): Accessing '$url'\n";
+ 		
+ 		if(AppCore::Common->context->mobile_flag)
+ 		{
+			if($url eq '/contact')
+			{
+				return '/m/contact';
+			}
+			elsif($url eq '/')
+			{
+				return '/m';
+			}
+		}
+		else
+		{
+ 			if($url eq '/m/contact')
+			{
+				return '/contact';
+			}
+			elsif($url eq '/m')
+			{
+				return '/';
+			}
+		}
+		return undef;
+	}
+	
 };
 1;

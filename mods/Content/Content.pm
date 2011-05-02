@@ -149,7 +149,7 @@ package Content;
 			if($page_obj)
 			{
 				$req->page_path($cur_url);
-				#print STDERR __PACKAGE__."::process_page(): Got valid pageid $page_obj for '$cur_url', sending!\n";
+				#print STDERR __PACKAGE__."::process_page(): Got valid pageid $page_obj for '$cur_url'\n"; #, sending!\n";
 				
 				# Found valid page, output
 				my $type = $page_obj->typeid;
@@ -164,7 +164,8 @@ package Content;
 					# Other page types might use page path, so allow to process normally
 					
 					# Calls $r->output itself as needed
-					#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
+					#use Data::Dumper;
+					#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type, dumper:".Dumper($req)."\n";
 					$type->process_page($req,$r,$page_obj);
 				}
 				else
@@ -181,6 +182,7 @@ package Content;
 				# Chop end off url and reprocess
 				my $pp = pop @url;
 				$req->unshift_path($pp);
+				$req->pop_page_path();
 				$popped = 1;
 				#print STDERR __PACKAGE__."::process_page(): '$cur_url' didnt match, popped $pp, retrying...\n";
 			}
