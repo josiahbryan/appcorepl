@@ -37,9 +37,12 @@ package Content::Page;
 			{	field	=> 'description',	type	=> 'varchar(255)' },
 			{	field	=> 'teaser',		type	=> 'varchar(255)' },
 			{	field	=> 'content',		type	=> 'text' },
+			{	field	=> 'mobile_content',	type	=> 'text' },
+			{	field	=> 'mobile_alt_url',	type	=> 'varchar(255)' },
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
 			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
 			{	field	=> 'menu_index',	type	=> 'varchar(100)', default => 0 },
+			
 		]	
 	
 	});
@@ -80,7 +83,8 @@ package Content::Page::Type;
 			{	field	=> 'name',		type	=> 'varchar(255)' },
 			{	field	=> 'description',	type	=> 'varchar(255)' },
 			{	field	=> 'controller',	type	=> 'varchar(255)' },
-			{	field	=> 'uses_pagepath',	type	=> 'int(1)', default => 0 }
+			{	field	=> 'uses_pagepath',	type	=> 'int(1)', default => 0 },
+			{	field	=> 'uses_content',	type	=> 'int(1)', default => 1 },
 		]
 	
 	});
@@ -107,15 +111,18 @@ package Content::Page::Type;
 		my $diz = shift;
 		
 		my $uses_pagepath = shift || 0;
+		my $uses_content  = shift;
+		$uses_content = 1 if !defined $uses_content;
 		
 		undef $@;
 		eval
 		{
 			my $self = $class->find_or_create({controller=>$pkg});
 			
-			$self->name($name) if $self->name ne $name;
-			$self->description($diz) if $self->description ne $diz;
+			$self->name($name)                   if $self->name          ne $name;
+			$self->description($diz)             if $self->description   ne $diz;
 			$self->uses_pagepath($uses_pagepath) if $self->uses_pagepath != $uses_pagepath;
+			$self->uses_content($uses_content)   if $self->uses_content  != $uses_content;
 			$self->update if $self->is_changed;
 		};
 		warn $@ if $@;
@@ -137,6 +144,7 @@ package Content::Page::Type;
 				text	=> $item->name,
 				hint	=> $item->description,
 				selected => $item->id == $curid,
+				uses_content => $item->uses_content,
 			}
 		}
 		return \@list;
@@ -642,8 +650,14 @@ package Content::Page::ThemeEngine;
 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
 			my $user = AppCore::Common->context->user;
+			
+			# Substitute alternative content in case of mobile content
+			my $content = AppCore::Common->context->mobile_flag && $page_obj->mobile_content ?
+				$page_obj->mobile_content :
+				$page_obj->content;
+			
 			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-			$tmpl->param(page_content => AppCore::Web::Common::load_template($page_obj->content)->output) if $page_obj->content =~ /%%/;
+			$tmpl->param(page_content => $content =~ /%%/ ? AppCore::Web::Common::load_template($content)->output : $content);
 			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title  )->output) if $page_obj->title   =~ /%%/;
 			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
 			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN']));

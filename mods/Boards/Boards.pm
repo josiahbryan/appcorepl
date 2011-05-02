@@ -25,7 +25,7 @@ package Boards;
 	# TODO #
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1); # 1 = uses page path
+	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1,0); # 1 = uses page path,  0 = doesnt use content
 	
 	# Setup the Web Module 
 	sub DISPATCH_METHOD { 'main_page'}

@@ -102,12 +102,19 @@ package Content;
 	{
 		my $self = shift;
 		my $url  = shift;
-		my $obj = $self->{page_obj_cache}->{$url};
+		my $mobile_flag = shift || 0;
+		my $cache_key = "$url.$mobile_flag";
+		my $obj = $self->{page_obj_cache}->{$cache_key};
+		return $obj if $obj;
 		
-		#print STDERR __PACKAGE__ . "::get_page(): url:'$url'\n'";
+		my $field = $mobile_flag ? 'mobile_alt_url' : 'url';
 		
-		$obj = $self->{page_obj_cache}->{$url} 
-		     = Content::Page->by_field(url => $url) 
+# 		print STDERR __PACKAGE__ . "::get_page(): url:'$url', field: $field, mobile_flag: $mobile_flag, cache key: $cache_key\n'";
+# 		use Data::Dumper;
+# 		print STDERR Dumper $self->{page_obj_cache};
+		
+		$obj = $self->{page_obj_cache}->{$cache_key} 
+		     = Content::Page->by_field($field => $url) 
 		     if !$obj;
 		
 		# Register ourself for when we need to clear the caches
@@ -151,6 +158,27 @@ package Content;
 				$req->page_path($cur_url);
 				#print STDERR __PACKAGE__."::process_page(): Got valid pageid $page_obj for '$cur_url'\n"; #, sending!\n";
 				
+				# Honor the 'mobile_alt_url' field in Content::Page
+				if(AppCore::Common->context->mobile_flag)
+				{
+					# If mobile page available for this URL, then redirect there
+					if($page_obj->mobile_alt_url &&
+						$page_obj->mobile_alt_url ne $page_obj->url)
+					{
+						return $r->redirect($page_obj->mobile_alt_url);
+					}
+				}
+				else
+				{
+					# If this page IS the mobile page for another 'main' page AND this is not mobile, redirect to the other 'main' page
+					my $alt_page = $self->get_page($page_obj->url,1); # get page that matches mobile_alt_url not url
+					if($alt_page)
+					{
+						return $r->redirect($alt_page->url);
+					}
+				}
+				
+				
 				# Found valid page, output
 				my $type = $page_obj->typeid;
 				#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type\n";
@@ -172,6 +200,7 @@ package Content;
 				{
 					return 0 if $popped;
 					# Pass to default controller
+					#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type, dumper:".Dumper($req)."\n";
 					Content::Page::Controller->process_page(undef,$req,$r,$page_obj);
 					
 				}

@@ -116,8 +116,8 @@ package Content::Admin;
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
-		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($cur_theme));
-		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list(undef,$cur_theme));
+		$tmpl->param(themes     => Content::Page::ThemeEngine->tmpl_select_list($cur_theme));
+		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list('sub',$cur_theme));
 		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list(Content::Page::Type->default_type));
 		
 		
@@ -159,10 +159,12 @@ package Content::Admin;
 		
 		$tmpl->param(page_title   => $page_obj->title);
 		$tmpl->param(page_content => $page_obj->content);
+		$tmpl->param(page_mobile_content => $page_obj->mobile_content);
+		$tmpl->param(page_mobile_alt_url => $page_obj->mobile_alt_url);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
-		$tmpl->param(themes => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
+		$tmpl->param(themes     => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
 		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list($page_obj->typeid && $page_obj->typeid->id ? $page_obj->typeid : Content::Page::Type->default_type));
 		
@@ -529,6 +531,9 @@ package Content::Admin;
 		my $title   = $req->title;
 		my $url     = '/' . $req->url;
 		my $content = $req->content;
+		my $mobile_content = $req->mobile_content;
+		my $mobile_alt_url = $req->mobile_alt_url;
+		
 		
 		my $page_obj = $pageid ? Content::Page->retrieve($pageid) : undef;
 		
@@ -576,6 +581,8 @@ package Content::Admin;
 		$page_obj->themeid($req->themeid);
 		$page_obj->view_code($req->view_code);
 		$page_obj->typeid($req->typeid);
+		$page_obj->mobile_alt_url($req->mobile_alt_url);
+		$page_obj->mobile_content($req->mobile_content);
 		$page_obj->update;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";

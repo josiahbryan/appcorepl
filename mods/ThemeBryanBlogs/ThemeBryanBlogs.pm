@@ -16,7 +16,7 @@ package ThemeBryanBlogs;
 
 	our $ThemeHandle = __PACKAGE__->register_theme('Bryan Blogs','Bryan Blogs Website Theme', [qw/home admin sub mobile/]);
 	
-	__PACKAGE__->register_controller('Bryan Blogs','Bryan Blogs Controller',1); # 1 = uses page path
+	__PACKAGE__->register_controller('Bryan Blogs','Bryan Blogs Controller',1,0); # 1 = uses page path, 0 = doesnt use content
 	
 # 	sub apply_mysql_schema
 # 	{

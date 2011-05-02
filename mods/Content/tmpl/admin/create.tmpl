@@ -10,13 +10,34 @@
 	<script>
 	$(function() {
 		$( "#tabs" ).tabs();
+		
+		var type_list =$x('typeid');
+		var type_hint =$x('type_hint');
+		if(type_list)
+		{
+			var opt = type_list.options[type_list.selectedIndex];
+			if(opt)
+			{
+				var hint = opt.getAttribute("hint");
+				if(type_hint)
+					type_hint.innerHTML = hint;
+					
+				var uses_content = opt.getAttribute("x:usescontent") == "1";
+				if(!uses_content)
+				{
+					$("#tabs").tabs('select',2);
+					$("#tabs").tabs({disabled: [0,1]});
+				}
+			}
+		}
 	});
 	</script>
 	
 	<div id="tabs">
 		<ul>
 			<li><a href="#tabs-1">Edit Page Content</a></li>
-			<li><a href="#tabs-2">Advanced Options</a></li>
+			<li><a href="#tabs-2">Mobile Content</a></li>
+			<li><a href="#tabs-3">Advanced Options</a></li>
 		</ul>
 		<div id="tabs-1">
 			<table class='editform' width='100%'>
@@ -54,20 +75,42 @@
 						
 					</td>
 				</tr>
-				
-				<tr>
-					<td colspan=2 class='controls'>
-					
-					<input type=submit value="Save Changes"> 
-					<input type=reset value="Reset to Original Values">
-					</td>
-				</tr>
-			
-			
 			</table>
 		</div>
 		
-		<div id='tabs-2'>
+		<div id="tabs-2">
+			<table class='editform' width='100%'>
+				<tr>
+					<td valign=top>Alternative Mobile URL:</td> <td>
+						<!--%%server_name%%/--><input type=text name=mobile_alt_url id=page_mobile_alt_url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_mobile_alt_url escape=html></tmpl_if>' size=40>
+						<br> 
+						<span style='font-size:.85em;color:rgb(100,100,100)'>In this field you can specify a different page that should be used if the user is accessing with a mobile browser such as a cellphone. <b>If you give a URL here,</b> the content below will <b>not be used!</b> Leave this field blank to use the content below.</span>
+					</td>
+				</tr>
+				<tr>
+					<td colspan=2>
+						<textarea name=mobile_content id=body_value2 rows=20 cols=95 style='width:96%'><tmpl_if page_mobile_content><tmpl_var page_mobile_content></tmpl_if></textarea>
+						
+						<script>
+						CKEDITOR.replace( 'body_value2', {
+							extraPlugins : 'autogrow',
+							width: '96%',
+							//skin: 'office2003'
+							skin: 'kama',
+							disableNativeSpellChecker: false,
+							removePlugins: 'elementspath,scayt,contextmenu',
+		
+							//skin: 'v2'
+						});
+						</script>
+		
+						
+					</td>
+				</tr>
+			</table>
+		</div>
+		
+		<div id='tabs-3'>
 			<table class='editform' width='100%'>
 				
 				<tr>
@@ -103,36 +146,44 @@
 				</tr>
 				<tr>
 					<td>Page Type:</td> <td>
-						<select id='typeid' name='typeid' onchange='$x("type_hint").innerHTML=this.options[this.selectedIndex].getAttribute("hint")'>
+						<select id='typeid' name='typeid' onchange='updateTypeHint(this)' onkeyup='updateTypeHint(this)'>
 							<tmpl_loop page_types>
-								<option value='%%value%%' x:img='%%image%%' hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+								<option value='%%value%%' x:img='%%image%%' x:usescontent="%%uses_content%%" hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
 							</tmpl_loop>
 						</select>
 						<span class=hint id='type_hint'></span>
 						<script>
-							var type_list =$x('typeid');
-							var type_hint =$x('type_hint');
-							if(type_list)
+// 							$("#tabs").tabs('select',2);
+// 							$("#tabs").tabs({disabled: [0,1]});
+							function updateTypeHint(elm)
 							{
-								var opt = type_list.options[type_list.selectedIndex];
-								var hint = opt ? opt.getAttribute("hint"): "";
-								if(type_hint)
-									type_hint.innerHTML = hint;
+								var opt = elm.options[elm.selectedIndex];
+								$x("type_hint").innerHTML = opt.getAttribute("hint");
+								
+								var uses_content = opt.getAttribute("x:usescontent") == "1";
+								if(!uses_content)
+								{
+									$("#tabs").tabs('select',2);
+									$("#tabs").tabs({disabled: [0,1]}); 
+								}
+								else
+								{
+									$("#tabs").tabs('select',2);
+									$("#tabs").tabs("option", "disabled", false);
+								}
 							}
 						</script>
 					</td>
 				</tr>
-				
-				<tr>
-					<td colspan=2 class='controls'>
-					
-					<input type=submit value="Save Changes"> 
-					<input type=reset value="Reset to Original Values">
-					</td>
-				</tr>
-			
 			
 			</table>
 		</div>
+
+	</div>
+	
+			
+	<div class='editform-controls'>
+		<input type=submit value="Save Changes"> 
+		<input type=reset value="Reset to Original Values">
 	</div>
 </form>
