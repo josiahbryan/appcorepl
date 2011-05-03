@@ -126,8 +126,8 @@ package Boards::Post;
 			{ field => 'poster_name',		type => 'varchar(255)'},
 			{ field => 'poster_email',		type => 'varchar(255)'},
 			{ field	=> 'posted_by',			type => 'int',	linked => 'AppCore::User' },
-			{ field => 'posted_at',			type => 'datetime' },
-			{ field	=> 'timestamp',			type => 'timestamp' },
+			#{ field => 'posted_at',			type => 'datetime' }, # not used for legacy reasons for now
+			{ field	=> 'timestamp',			type => 'datetime' }, # leave as datetime for legacy reasons for now
 			{ field	=> 'top_commentid',		type => 'int', linked => 'Boards::Post' },
 			{ field	=> 'parent_commentid',		type => 'int', linked => 'Boards::Post' },
 			{ field	=> 'last_commentid',		type => 'int', linked => 'Boards::Post' },
