@@ -11,6 +11,9 @@ package Boards;
 		Content::Page::Controller
 	};
 	
+	# For making MD5's of emails
+	use Digest::MD5 qw/md5_hex/;
+	
 	# Contains all the data packages we need, such as Boards::Post, etc
 	use Boards::Data;
 	
@@ -25,7 +28,13 @@ package Boards;
 	# TODO #
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1,0); # 1 = uses page path,  0 = doesnt use content
+	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1,0,  # 1 = uses page path,  0 = doesnt use content
+		[
+			{ field => 'title',		type => 'string',	description => 'The title of the bulletin board' },
+			{ field => 'tagline',		type => 'string',	description => 'A short description of the board' },
+			{ field => 'description', 	type => 'text',		description => 'A long description of the board to appear on the board page itself' }, 
+		]
+	);
 	
 	# Setup the Web Module 
 	sub DISPATCH_METHOD { 'main_page'}
@@ -511,6 +520,7 @@ package Boards;
 				$b->{short_text}  = AppCore::Web::Common->html2text($b->{text});
 				$b->{short_text}  = substr($b->{short_text},0,$short_len) . (length($b->{short_text}) > $short_len ? '...' : '');
 				$b->{folder_name} = $b->folder_name;
+				$b->{poster_email_md5} = md5_hex($b->{poster_email});
 				
 				my $lc = $b->last_commentid;
 				if($lc && $lc->id && !$lc->deleted)
@@ -518,6 +528,7 @@ package Boards;
 					$b->{'post_'.$_} = $lc->get($_) foreach $lc->columns;
 					$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
 					$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
+					$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
 				}
 				
 				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});

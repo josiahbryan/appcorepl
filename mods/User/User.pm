@@ -76,7 +76,7 @@ package User;
 				$expires = $1;
 				$token =~ s/&expires=\d+//g;
 				
-				my $dt = DateTime->now(timezone => 'America/Chicago');
+				my $dt = DateTime->now(); #timezone => 'America/Chicago');
 				$dt->add( seconds => $expires );
 				
 				$expires = $dt->datetime;

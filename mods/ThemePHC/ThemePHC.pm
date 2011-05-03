@@ -59,10 +59,23 @@ package ThemePHC;
 	sub remap_template
 	{
  		my $class = shift;
- 		my $requesting_package = shift;
- 		my $requested_theme_file = shift;
- 		#print STDERR __PACKAGE__."::remap_template(): $requesting_package wants '$requested_theme_file'\n"; 
-		return undef; 
+ 		my $pkg   = shift;
+ 		my $file  = shift;
+ 		
+ 		#print STDERR __PACKAGE__."::remap_template(): $pkg wants '$file'\n";
+ 		my $abs_file = undef;
+ 		if($pkg eq 'Boards')
+ 		{
+ 			if($file eq 'list.tmpl')
+ 			{
+ 				# Repmap the list.tmpl from Boards into our template folder 
+ 				$abs_file = $class->get_template_path('boards/list.tmpl');
+ 			}
+ 		}
+ 		
+ 		#print STDERR __PACKAGE__."::remap_template(): $pkg wants '$file', giving '$abs_file'\n" if defined $abs_file;
+ 		
+		return $abs_file; 
 	}
 	
 	sub remap_url

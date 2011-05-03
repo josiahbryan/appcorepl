@@ -4,13 +4,19 @@
 			
 <p>You can Connect with your Facebook account - no typing passwords or entering your name, just click Connect!</p>
 
+<style>
+.fbloginimg 
+{
+	border: 0;
+	margin-right: .5em;
+	margin-top: 3px;
+}
+</style>
+
 <ul class='links'>
 	<li>
-		<!--<a href='/user/login'><h4>Signin</h4></a></li>-->
-
 		<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'  tabindex=4>
-			<!--<img src='%%modpath%%/images/fb-connect-large.png' style='margin-top:1.5em' border=0 id='fbimg'>-->
-			<h4>Connect with Facebook</h4>
+			<img src='%%modpath%%/images/small_facebook_icon.png' align='left' class='fbloginimg'> <h4>Connect with Facebook</h4>
 		</a>
 	</li>
 </ul>

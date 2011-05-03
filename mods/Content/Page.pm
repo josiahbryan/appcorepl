@@ -63,6 +63,7 @@ package Content::Page;
 package Content::Page::Type;
 {
 	use base 'AppCore::DBI';
+	use JSON qw/encode_json decode_json/;
 	
 	__PACKAGE__->meta({
 		class_noun	=> 'Page Type',
@@ -85,9 +86,29 @@ package Content::Page::Type;
 			{	field	=> 'controller',	type	=> 'varchar(255)' },
 			{	field	=> 'uses_pagepath',	type	=> 'int(1)', default => 0 },
 			{	field	=> 'uses_content',	type	=> 'int(1)', default => 1 },
+			{	field	=> 'custom_fields',	type	=> 'text' },
 		]
 	
 	});
+	
+	sub set_custom_fields
+	{
+		my $self = shift;
+		my $listref = shift;
+		my $no_update = shift || 0;
+		my $data = encode_json($listref);
+		if($self->custom_fields ne $data)
+		{
+			$self->custom_fields($data);
+			$self->update unless $no_update;
+		}
+	}
+	
+	sub get_custom_fields
+	{
+		my $self = shift;
+		return decode_json($self->custom_fields); 
+	}
 	
 	sub type_for_controller
 	{
@@ -114,6 +135,8 @@ package Content::Page::Type;
 		my $uses_content  = shift;
 		$uses_content = 1 if !defined $uses_content;
 		
+		my $field_list = shift || [];
+		
 		undef $@;
 		eval
 		{
@@ -123,6 +146,7 @@ package Content::Page::Type;
 			$self->description($diz)             if $self->description   ne $diz;
 			$self->uses_pagepath($uses_pagepath) if $self->uses_pagepath != $uses_pagepath;
 			$self->uses_content($uses_content)   if $self->uses_content  != $uses_content;
+			$self->set_custom_fields($field_list, 1); # 1 = dont update even if changed
 			$self->update if $self->is_changed;
 		};
 		warn $@ if $@;

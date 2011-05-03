@@ -148,7 +148,7 @@
 					<td>Page Type:</td> <td>
 						<select id='typeid' name='typeid' onchange='updateTypeHint(this)' onkeyup='updateTypeHint(this)'>
 							<tmpl_loop page_types>
-								<option value='%%value%%' x:img='%%image%%' x:usescontent="%%uses_content%%" hint='%%hint%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+								<option value='%%value%%' x:img='%%image%%' x:usescontent="%%uses_content%%" hint='%%hint%%' fields='%%custom_fields%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
 							</tmpl_loop>
 						</select>
 						<span class=hint id='type_hint'></span>
@@ -171,6 +171,8 @@
 									$("#tabs").tabs('select',2);
 									$("#tabs").tabs("option", "disabled", false);
 								}
+								
+								// TODO: Create field inputs for custom fields!
 							}
 						</script>
 					</td>

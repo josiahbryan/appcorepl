@@ -81,39 +81,39 @@ $(document).ready(function() {
 		return false;
 	});
 	
-	$("#header .logo a").live("click", function() { // Main Navigation
-		var url = $(this).attr('href');
-		$(this).ajaxSend(function() {
-			$('#loading-box').show();
-		});
-		$(this).ajaxSuccess(function() {
-			$('#loading-box').hide();
-			$(this).unbind("ajaxSend");
-		});
-		$('#site-container').load(url);
-		return false;
-	});
-	
-	$("#nav ul li a").live("click", function() { // Main Navigation
-		var url = $(this).attr('href');
-		$(this).ajaxSend(function() {
-			$('#loading-box').show();
-		});
-		$(this).ajaxSuccess(function() {
-			$('#loading-box').hide();
-			$(this).unbind("ajaxSend");
-		});
-		$('#site-container').load(url);
-		return false;
-	});
-	
-	$('.content .other-link').live("click", function() { // Ajax link to contact forms
-		var url = $(this).attr('href');
-		$('#selected-item .content').load(url, function() {
-			$('#selected-item').show();
-			$.scrollTo(0,0);
-			$('#main-page').animate({left: '-'+windowsize},400);
-		});
-		return false;
-	});	
+// 	$("#header .logo a").live("click", function() { // Main Navigation
+// 		var url = $(this).attr('href');
+// 		$(this).ajaxSend(function() {
+// 			$('#loading-box').show();
+// 		});
+// 		$(this).ajaxSuccess(function() {
+// 			$('#loading-box').hide();
+// 			$(this).unbind("ajaxSend");
+// 		});
+// 		$('#site-container').load(url);
+// 		return false;
+// 	});
+// 	
+// 	$("#nav ul li a").live("click", function() { // Main Navigation
+// 		var url = $(this).attr('href');
+// 		$(this).ajaxSend(function() {
+// 			$('#loading-box').show();
+// 		});
+// 		$(this).ajaxSuccess(function() {
+// 			$('#loading-box').hide();
+// 			$(this).unbind("ajaxSend");
+// 		});
+// 		$('#site-container').load(url);
+// 		return false;
+// 	});
+// 	
+// 	$('.content .other-link').live("click", function() { // Ajax link to contact forms
+// 		var url = $(this).attr('href');
+// 		$('#selected-item .content').load(url, function() {
+// 			$('#selected-item').show();
+// 			$.scrollTo(0,0);
+// 			$('#main-page').animate({left: '-'+windowsize},400);
+// 		});
+// 		return false;
+// 	});	
 });

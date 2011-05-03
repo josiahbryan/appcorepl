@@ -202,7 +202,6 @@ ul.links
 ul.links li
 {
 	display: block;
-	padding: 11px 0 10px 0px;
 	width: 100%;
 	border-top: 1px solid rgb(180, 180, 180);
 	
@@ -211,6 +210,8 @@ ul.links li
 ul.links a
 {
 	display: block;
+	padding: 11px 0 10px 0px;
+	
 	background: url("%%modpath%%/images/mobile/more_arrow.jpg") no-repeat scroll right center transparent;
 	color: #000000;
 	text-decoration: none;
