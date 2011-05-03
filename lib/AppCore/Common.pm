@@ -18,10 +18,30 @@ package AppCore::Common;
 	@ISA = qw(Exporter);
 	
 	@EXPORT = qw/
-		Dumper context nice_date date pad rpad called_from 
-		print_stack_trace if_defined ifdefined is_print inlist in_acl_list 
-		stamp commify parse_csv date_math taint_sql 
+		Dumper 
+		context 
+		
+		pad 
+		rpad 
+		min 
+		max
+		commify 
+		
+		called_from 
+		print_stack_trace
+		 
+		if_defined 
+		is_print 
+		inlist 
+		in_acl_list
+		peek
+		 
 		send_email
+		
+		date_math 
+		stamp 
+		nice_date 
+		date 
 		dt_date
 		simple_duration_to_hours
 		to_delta_string
@@ -32,23 +52,21 @@ package AppCore::Common;
 		read_file 
 		write_file
 		
-		taint_sys taint_text taint_number taint
+		parse_csv 
+		
+		taint_sql 
+		taint_sys 
+		taint_text 
+		taint_number 
+		taint
 		
 		guess_title
 		
-		mysql_schema_update
-		mysql_extract_current_schema
-	
 		MY_LINE
-		min max
 		SYS_PATH_BASE 
 		SYS_PATH_MODULES
 		SYS_PACKAGE_BASE
-		GUI_PROTOCAL_CLASS_HTTP
-		GUI_PROTOCAL_CLASS_TELNET
-		CLASS_META
-		CLASS_DBSCHEMA
-	
+		
 		/;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
@@ -245,7 +263,8 @@ package AppCore::Common;
 	# around to changing (and testing) this code.
 	sub pad
 	{
-		local $_ = ifdefined(shift,'');
+		shift if $_[0] eq __PACKAGE__;
+		local $_ = if_defined(shift,'');
 		my $len = shift || 8;
 		my $chr = shift || ' ';
 		$_.=$chr while length()<$len;
@@ -254,7 +273,8 @@ package AppCore::Common;
 	
 	sub rpad
 	{
-		local $_ = ifdefined(shift , '');
+		shift if $_[0] eq __PACKAGE__;
+		local $_ = if_defined(shift , '');
 		my $len = shift || 2;
 		my $chr = shift || '0';
 		$_=$chr.$_ while length()<$len;
@@ -304,8 +324,7 @@ package AppCore::Common;
 		return $st;
 		
 	}
-	sub ifdefined { foreach(@_) { return $_ if defined } }
-	sub if_defined { ifdefined(@_) }
+	sub if_defined { foreach(@_) { return $_ if defined } }
 	
 	sub is_print($)
 	{
@@ -318,14 +337,13 @@ package AppCore::Common;
 	sub inlist
 	{
 		my $val = shift;
-		my $list = shift;
+		my $listref = shift;
 		
 		return undef if !defined $val;
 		
-		local $_;
-		foreach (@$list)
+		foreach my $item (@$listref)
 		{
-			return 1 if $_ && $val && $_ eq $val;
+			return 1 if $item && $val && $item eq $val;
 		}
 		return 0;
 	}
@@ -721,10 +739,12 @@ package AppCore::Common;
 };
 
 package DateTime;
-sub datetime
 {
-	my $self = shift;
-	my $sep = shift || ' ';
-	return $self->ymd('-').$sep.$self->hms(':');
+	sub datetime
+	{
+		my $self = shift;
+		my $sep = shift || ' ';
+		return $self->ymd('-').$sep.$self->hms(':');
+	}
 }
 1;

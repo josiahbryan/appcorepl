@@ -1,5 +1,5 @@
 # Package: AppCore::Web::Common
-# Common routines for Web modules, primarily of use is the load_template(), master_template(), error(), and get_full_url() functions.
+# Common routines for Web modules, primarily of use is the load_template(), error(), and get_full_url() functions.
 
 package AppCore::Web::Common;
 {
@@ -15,19 +15,15 @@ package AppCore::Web::Common;
 	use HTML::Entities;
 	use HTML::Template;
 	
-	use constant ENABLE_FAKEHOSTS => 0;#$^O eq 'MSWin32' ? 0:1;
-	use constant MAX_FAKEHOSTS => 10;
-	
-	
 	require Exporter;
 	use vars qw/@ISA @EXPORT/;
 	@ISA = qw(Exporter);
 	
-	@EXPORT = qw/HTTP rpad get_full_url url_encode url_decode 
+	@EXPORT = qw/HTTP get_full_url url_encode url_decode 
 		escape unescape
 		param Vars
 		redirect getcookie setcookie 
-		load_template master_template
+		load_template
 		error
 		encode_entities decode_entities/;
 		
@@ -315,19 +311,6 @@ package AppCore::Web::Common;
 		}
 	}
 	
-	
-	my $FAKE_HOSTCOUNT = 0;
-	sub _http_host
-	{
-		my $host = shift;
-		my $root = shift;
-		$FAKE_HOSTCOUNT = 0 if ++ $FAKE_HOSTCOUNT >= MAX_FAKEHOSTS;
-		my $new = "http://eas${FAKE_HOSTCOUNT}.".$host.$root;
-		#print STDERR "new: $new\n";
-		
-		return $new;
-	}
-	
 	sub _template_filter
 	{
 		my $textref = shift;
@@ -344,15 +327,6 @@ package AppCore::Web::Common;
 # 			#die Dumper \%pairs, $var_blob;
 # 			$$textref =~ s/<\$([^\>]+)>/$pairs{$1}/gi;
 # 		}
-		
-		
-		if(ENABLE_FAKEHOSTS) # && $httpd)
-		{
-			my $root = AppCore::Common->context->eas_http_root;
-			my $host = $ENV{HTTP_HOST};
-			$host = 'web' if $host eq '10.0.1.6';
-			$$textref =~ s/<tmpl_var eas_root>/_http_host($host,$root)/segi;
-		}
 		
 		$$textref =~ s/<perl>((?:.|\n)*?)<\/perl>/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
 		
@@ -430,8 +404,6 @@ package AppCore::Web::Common;
 		#print STDERR MY_LINE(). "Debug: eas_http_root: ".AppCore::Common->context->eas_http_root." ($root)\n";	
 		$tmpl->param(http_root => AppCore::Common->context()->http_root || '');
 		$tmpl->param(http_bin  => AppCore::Common->context()->http_bin  || '');
-		$tmpl->param(MAX_FAKEHOSTS    => MAX_FAKEHOSTS);
-		$tmpl->param(ENABLE_FAKEHOSTS => ENABLE_FAKEHOSTS);
 		
 		my $host = $ENV{HTTP_HOST};
 		# TODO add aliasing for backend servers back to front end
@@ -460,39 +432,39 @@ package AppCore::Web::Common;
 	}
 	
 	use Data::Dumper;
-	sub HTTP 
-	{
-		#print STDERR Dumper \@_;
-		my $code;
-		if(@_ == 2)
-		{
-			$code = 200;
-		}
-		
-		$code = shift if !$code;
-		
-	#	$code = 200; ### NO OTHER CODES SUPPORTED RIGHT NOW
-		if($code == 200)
-		{
-			return ($code,@_);
-		}
-		elsif($code == 302)
-		{
-			return ($code,@_);
-		}
-		elsif($code == 404)
-		{
-			return ($code,@_);
-		}
-		elsif($code == 500)
-		{
-			return ($code,@_);
-		}
-		else
-		{
-			die "Invalid HTTP Code '$code'";
-		}
-	}
+# 	sub HTTP 
+# 	{
+# 		#print STDERR Dumper \@_;
+# 		my $code;
+# 		if(@_ == 2)
+# 		{
+# 			$code = 200;
+# 		}
+# 		
+# 		$code = shift if !$code;
+# 		
+# 	#	$code = 200; ### NO OTHER CODES SUPPORTED RIGHT NOW
+# 		if($code == 200)
+# 		{
+# 			return ($code,@_);
+# 		}
+# 		elsif($code == 302)
+# 		{
+# 			return ($code,@_);
+# 		}
+# 		elsif($code == 404)
+# 		{
+# 			return ($code,@_);
+# 		}
+# 		elsif($code == 500)
+# 		{
+# 			return ($code,@_);
+# 		}
+# 		else
+# 		{
+# 			die "Invalid HTTP Code '$code'";
+# 		}
+# 	}
 	
 	our $StopwordOrRegex;
 	our @StopwordList;

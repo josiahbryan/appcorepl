@@ -376,7 +376,7 @@ package Content::Admin;
 		my $idx_a = ($idx_new cmp $idx_old) < 0 ? $idx_new : $idx_old;
 		my $idx_b = ($idx_new cmp $idx_old) < 0 ? $idx_old : $idx_new;
 		
-		my $sth = Content::Page->db_Main->prepare('select pageid from pages where menu_index>=? and menu_index<=? order by menu_index');
+		$sth = Content::Page->db_Main->prepare('select pageid from pages where menu_index>=? and menu_index<=? order by menu_index');
 		$sth->execute($idx_a, $idx_b);
 		
 		#print STDERR "_change_index: a: $idx_a, b: $idx_b\n";
@@ -435,7 +435,7 @@ package Content::Admin;
 			
 		my $url = $page_obj->url;
 		
-		my $dir = $dir eq 'up' ? -1 : 1;
+		$dir = $dir eq 'up' ? -1 : 1;
 		
 		my @url_parts = split /\//, $page_obj->url;
 		
