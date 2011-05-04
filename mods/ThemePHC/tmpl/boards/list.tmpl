@@ -71,6 +71,23 @@
 		float: right;
 	}
 	
+	#postas_form table
+	{
+		border-collapse: collapse; 
+	}
+	
+	#postas_form td
+	{
+		color: #364a90;
+		font-size: .7225em;
+		padding: 0;
+	}
+	
+	#postas_form 
+	{
+		display: none;
+	}
+	
 	</style>
 	
 	<!--max-height: 70px;-->
@@ -79,14 +96,25 @@
 			<h2>Add a new post</h2>
 			
 			<div class='content'>
-				<textarea class='expandText' style="width: 41.25em; height:1.675em" class="expandText" name="myTextarea"></textarea>
+				<textarea class='expandText' style="width: 41.25em; height:5em" class="expandText" name="myTextarea"></textarea>
 			</div>
-			<div class='ident'>
-				Posting as <b>%%user_display%%</b> - <a href='#'>Change</a>
-			</div>
-				
 			<div class='controls'>
 				<input type='submit' class='button' value='Post'>
+			</div>
+			<div class='form' id='postas_form'>
+				<table>
+					<tr>
+						<td>Name:</td>
+						<td><input value='%%user_display%%'></td>
+					</tr>
+					<tr>
+						<td>Email:</td>
+						<td><input value='%%user_email%%'></td>
+					</tr>
+				</table>
+			</div>
+			<div class='ident'>
+				Posting as <b>%%user_display%%</b> - <a href='#' onclick='return show_postas_form()'>Change</a>
 			</div>
 		</div>
 	</div>
@@ -125,7 +153,7 @@
 	{
 		/*border: 1px solid #364a90;*/
 		/*padding: 2 4;*/
-		cursor: default; 
+		cursor: pointer; 
 		background: #e9eeff;
 		border-bottom: 1px solid #c7cddf;
 		border-top: 1px solid white;
@@ -135,6 +163,11 @@
 	{
 		width: 60px;
 		padding: 10px;
+	}
+	
+	.postlist td img
+	{
+		cursor: default;
 	}
 	
 	.postlist td.data
@@ -191,6 +224,11 @@
 
 	}
 	
+	.long_text
+	{
+		display: none;
+	}
+	
 	</style>
 	
 	<table class='postlist' width='100%'>
@@ -213,7 +251,12 @@
 						<span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span>
 					</tmpl_if>-->
 					<div class='text'>
-						<tmpl_var short_text>
+						<div id='short_text_%%postid%%' class='short_text'>
+							%%short_text%%
+						</div>
+						<div id='text_%%postid%%' class='long_text'>
+							%%text%%
+						</div>
 						<span class='more'>(<a href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='more_link'>More<!-- <b>%%subject%%</b>-->...</a>)</span>
 					</div>
 					

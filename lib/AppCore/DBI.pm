@@ -2128,7 +2128,7 @@ package AppCore::DBI;
 			}
 			
 			eval 'use '.$pkg;
-			die "Error loading package '$pkg': $@" if $@;
+			die "Error loading package '$pkg': $@" if $@ && $@ !~ /Can't locate/;
 			
 			foreach my $class (@classes)
 			{
