@@ -122,25 +122,25 @@ package Boards::Post;
 		schema	=> 
 		[
 			{ field => 'postid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
-			{ field	=> 'boardid',			type => 'int', linked => 'Boards::Board' },
+			{ field	=> 'boardid',			type => 'int', linked => 'Boards::Board', default => 0 },
 			{ field => 'poster_name',		type => 'varchar(255)'},
 			{ field => 'poster_email',		type => 'varchar(255)'},
-			{ field	=> 'posted_by',			type => 'int',	linked => 'AppCore::User' },
+			{ field	=> 'posted_by',			type => 'int',	linked => 'AppCore::User', default => 0 },
 			#{ field => 'posted_at',			type => 'datetime' }, # not used for legacy reasons for now
 			{ field	=> 'timestamp',			type => 'datetime' }, # leave as datetime for legacy reasons for now
-			{ field	=> 'top_commentid',		type => 'int', linked => 'Boards::Post' },
-			{ field	=> 'parent_commentid',		type => 'int', linked => 'Boards::Post' },
-			{ field	=> 'last_commentid',		type => 'int', linked => 'Boards::Post' },
+			{ field	=> 'top_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
+			{ field	=> 'parent_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
+			{ field	=> 'last_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
 			{ field => 'subject',			type => 'text'},
 			{ field => 'text',			type => 'longtext'},
 			{ field => 'extra_data',		type => 'longtext'},
 			#{ field => 'attribute_data',		type => 'longtext'},  # Legacy name of extra_data
 			{ field => 'folder_name',		type => 'varchar(255)' },
 			#{ field => 'fake_folder_name',		type => 'varchar(255)' }, # Legacy name of folder_name
-			{ field => 'deleted',			type => 'int'},
-			{ field => 'num_views',			type => 'int'},
-			{ field => 'num_replies',		type => 'int'},
-			{ field => 'ticker_priority',		type => 'int'},
+			{ field => 'deleted',			type => 'int', default => 0},
+			{ field => 'num_views',			type => 'int', default => 0},
+			{ field => 'num_replies',		type => 'int', default => 0},
+			{ field => 'ticker_priority',		type => 'int', default => 0},
 			{ field => 'ticker_class',		type => 'varchar(255)' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
 			

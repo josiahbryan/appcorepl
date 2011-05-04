@@ -86,38 +86,155 @@
 	#postas_form 
 	{
 		display: none;
+		margin-top: -1px;
+	}
+	
+	.newpost textarea, 
+	.newpost input
+	{
+		/*border: 1px solid #364a90;*/
+		border: 1px solid #b9c0da;
+		
+		/*-moz-box-shadow: 0px 0px 2px #000;*/
+	}
+	
+	.newpost textarea:focus, 
+	.newpost input:focus
+	{
+		-moz-box-shadow: 0px 0px 9px #364a90;
+		box-shadow: 0px 0px 9px #364a90;
+	}
+	
+	.newpost input
+	{
+		margin-top: 2px;
 	}
 	
 	</style>
 	
 	<!--max-height: 70px;-->
 	<div class='newpost'>
-		<div class='wrap'>
+	<!--action='%%binpath%%/post' method='POST'-->
+		<form class='wrap'  onsubmit='return ajax_post_new(this)'>
+			<!--<input type='hidden' name='poster_name' value='%%user_display%%'>
+			<input type='hidden' name='poster_email' value='%%user_email%%'>-->
 			<h2>Add a new post</h2>
 			
 			<div class='content'>
-				<textarea class='expandText' style="width: 41.25em; height:5em" class="expandText" name="myTextarea"></textarea>
+				<textarea class='expandText' style="width: 41.25em; height:5em" class="expandText" name="text"></textarea>
 			</div>
 			<div class='controls'>
-				<input type='submit' class='button' value='Post'>
+				<button type='submit' class='button'>Post</button>
 			</div>
 			<div class='form' id='postas_form'>
 				<table>
 					<tr>
 						<td>Name:</td>
-						<td><input value='%%user_display%%'></td>
+						<td><input value='%%user_display%%' name='poster_name'></td>
 					</tr>
 					<tr>
 						<td>Email:</td>
-						<td><input value='%%user_email%%'></td>
+						<td><input value='%%user_email%%' name='poster_email'></td>
 					</tr>
 				</table>
 			</div>
-			<div class='ident'>
-				Posting as <b>%%user_display%%</b> - <a href='#' onclick='return show_postas_form()'>Change</a>
+			<div class='ident' id='postas_display'>
+				<script>
+				function show_postas_form()
+				{
+					$("#postas_form").show(200);
+					$("#postas_display").hide(200);
+				}
+				</script>
+				Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
 			</div>
-		</div>
+		</form>
 	</div>
+	
+	<script>
+	
+	function ajax_post_new(formElm)
+	{
+		var postData = {
+			comment: formElm.text.value,
+			poster_name: formElm.poster_name.value,
+			poster_email: formElm.poster_email.value,
+			output_fmt: "json"
+		};
+		
+		$("#post-placeholder").show();
+		
+		var errorFunc = function() 
+		{
+			$("#post-placeholder").hide();
+			if(confirm("There was an error saving your post to the server - nothing was saved. Do you want to use the simple post page instead of this fancy page to make your post?"))
+			{
+				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
+			}
+		}
+		
+		var postUrl = "%%binpath%%/%%board_folder_name%%/post";
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			data: postData,
+			success: function(data)
+			{
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				if(typeof(data) == "string")
+				{
+					// something wierd on server - should be JSON!
+					errorFunc();
+				}
+				else
+				{
+					//alert(data);
+					//console.debug(data);
+					$("#post-tmpl").tmpl(data).insertAfter("#post-placeholder");
+					$("#post-placeholder").hide();
+					formElm.text.value = "";
+				}	
+			},
+			error: errorFunc,
+			
+		});
+		
+		return false;
+	}
+	</script>
+		
+	<script id="post-tmpl" type="text/x-jquery-tmpl">
+		<tr href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='post' id='post${postid}'> <!-- onclick='document.location.href=this.getAttribute("href")'>-->
+			<td valign='top' align='center' class='photo'>
+				<img class='user_photo' src='http://www.gravatar.com/avatar/${poster_email_md5}?d=http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg&s=50'>
+			</td>
+			<td valign='top' class='data'>
+				<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='title_link'>
+					${subject}
+				</a>
+				
+				<div class='posted_by'>
+					<span class='by'>by</span> <span class='name'>${poster_name}</span>
+				</div>
+				
+				<div class='post_text'>
+					<div id='short_text_${postid}' class='short_text'>
+						${short_text}
+						<span class='more'>(<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='more_link' onclick='return show_more_post(${postid})'>More...</a>)</span>
+					</div>
+					<div id='text_${postid}' class='long_text'>
+						${text}
+						<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(${postid})'>&laquo; Less</a>)</div>
+					</div>
+				</div>
+				
+				<div class='timestamp'>${timestamp}</div>
+			</td>
+		</tr>
+	</script>
+	
+
 	
 	<style>
 	table.postlist
@@ -145,8 +262,8 @@
 	
 	.postlist .user_photo
 	{
-		border: 1px solid #364a90; /* light orange */
-		-moz-box-shadow: 0px 0px 8px #000;
+		border: 1px solid #364a90;
+		-moz-box-shadow: 0px 0px 3px #000;
 	}
 	
 	table.postlist td 
@@ -214,7 +331,7 @@
 		font-size: .7225em;
 	}
 	
-	.postlist .text
+	.postlist .post_text
 	{
 		/*-moz-box-shadow:inset 0 0 8px #000;
 		-webkit-box-shadow:inset 0 0 8px #000;
@@ -229,16 +346,51 @@
 		display: none;
 	}
 	
-	</style>
+	#post-placeholder { display: none; }
 	
+	</style>
+	<script>
+	function show_more_post(postid)
+	{
+		var shortId = "#short_text_"+postid;
+		var longId = "#text_"+postid;
+		$(shortId).hide(300);
+		$(longId).show(300);
+		return false;
+	}
+	
+	function show_less_post(postid)
+	{
+		var shortId = "#short_text_"+postid;
+		var longId = "#text_"+postid;
+		var rowId = "tr.#post"+postid;
+		$(shortId).show(300);
+		$(longId).hide(300);
+		// only scroll doc if top of the post is above the window top.
+		// That way we dont "confuse" the user with unnecessary changes
+		if($(rowId).offset().top < document.body.scrollTop)
+			$.scrollTo($(rowId),300);
+		return false;
+	}
+	</script>
 	<table class='postlist' width='100%'>
+		<tbody>
+			<tr class='post post-placeholder' id='post-placeholder'>
+				<td valign='top' align='center' class='photo'>
+					<img class='user_photo' src="http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg">
+				</td>
+				<td valign='top' class='data'>
+					<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
+				</td>
+			</tr>
+				
 		<tmpl_loop posts>
-			<tr href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='post' onclick='document.location.href=this.getAttribute("href")'>
+			<tr href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='post' id='post%%postid%%'> <!-- onclick='document.location.href=this.getAttribute("href")'>-->
 				<td valign='top' align='center' class='photo'>
 					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg&s=50">
 				</td>
 				<td valign='top' class='data'>
-					<a href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='title_link'>
+					<a href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='title_link'>
 						<tmpl_var subject>
 					</a>
 					
@@ -246,18 +398,15 @@
 						<span class='by'>by</span> <span class='name'>%%poster_name%%</span>
 					</div>
 					
-					
-					<!--<tmpl_if has_new>
-						<span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span>
-					</tmpl_if>-->
-					<div class='text'>
+					<div class='post_text'>
 						<div id='short_text_%%postid%%' class='short_text'>
 							%%short_text%%
+							<span class='more'>(<a href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='more_link' onclick='return show_more_post(%%postid%%)'>More...</a>)</span>
 						</div>
 						<div id='text_%%postid%%' class='long_text'>
 							%%text%%
+							<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a>)</div>
 						</div>
-						<span class='more'>(<a href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='more_link'>More<!-- <b>%%subject%%</b>-->...</a>)</span>
 					</div>
 					
 					<div class='timestamp'>%%timestamp%%</div>
@@ -273,75 +422,20 @@
 				</td>
 			</tr>
 		</tmpl_loop>
+		</tbody>
 	</table>
-	
-	<!-- List of Posts -->
-	<!--<tmpl_if posts>
-		<table class='posts' width='100%' cellpadding=0 cellspacing=0>
-			<thead>
-				<th align=left class='title'>Post Title</th>
-				<th nowrap align=right>Views</th>
-				<th nowrap align=right>Replies</th>
-				<th align=left nowrap>Last Comment</th>
-			</thead>
-			<tbody>
-				<tmpl_loop posts>
-					<tr class='<tmpl_var post_flags>'>
-						<td width='65%' class='subject'>
-							<a href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='title_link'>
-								<tmpl_var subject>
-							</a>
-							<span class='by'> <tmpl_var timestamp> | %%poster_name%%</span>
-							<tmpl_if has_new>
-								<span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span>
-							</tmpl_if>
-							<span class='tagline'>
-								<span class='hidden'> - </span>
-								<tmpl_var short_text>
-							</span>
-							</td>
-						<td width='10%' nowrap class='num_views' valign=top align=right>
-							<tmpl_if num_views>
-								<tmpl_var num_views>
-							<tmpl_else>
-								-
-							</tmpl_if>
-						</td>
-						<td width='10%' nowrap class='num_replies' valign=top align=right>
-							<tmpl_if num_replies>
-								<tmpl_var num_replies>
-							<tmpl_else>
-								-
-							</tmpl_if>
-						</td>
-						<td width='15%' nowrap class='lastpost' valign=top >
-							<tmpl_if post_postid>
-								<span class='post'>
-									<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
-									<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
-								</span>
-							<tmpl_else>-</tmpl_if>
-						</td>
-					</tr>
-				</tmpl_loop> 
-			</tbody>
-		</table>
-	<tmpl_else>
-		<h3>Sorry, no posts added yet to this forum.</h3>
-	</tmpl_if>-->
 
 
 <script type="text/javascript">
-setTimeout(function(){
-	$(document).ready (function() {
-		$('textarea.expandText').autogrow();
-	});
-
-}, 500);
+	setTimeout(function(){
+		$(document).ready (function() {
+			$('textarea.expandText').autogrow();
+		});
+	
+	}, 1500);
 
 // $(function() {
 //           $('textarea').autogrow();
 //         });
 
 </script>
-

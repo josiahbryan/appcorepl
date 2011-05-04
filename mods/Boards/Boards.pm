@@ -14,6 +14,9 @@ package Boards;
 	# For making MD5's of emails
 	use Digest::MD5 qw/md5_hex/;
 	
+	# For outputting JSON for new posts
+	use JSON qw/encode_json decode_json/;
+	
 	# Contains all the data packages we need, such as Boards::Post, etc
 	use Boards::Data;
 	
@@ -423,6 +426,44 @@ package Boards;
 			
 			$controller->email_new_post($post);
 			#$r->redirect(AppCore::Common->context->http_bin."/$section_name/$folder_name#c$post");
+			
+			if($req->output_fmt eq 'json')
+			{
+				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
+				my $short_len = 60;
+				#my $last_post_subject_len = 20;
+				
+				my $b = {};
+				# Force stringification...
+				$b->{$_} = $post->get($_). "" foreach $post->columns;
+				$b->{bin}         = $bin;
+				$b->{appcore}     = $AppCore::Config::WWW_ROOT;
+				$b->{board_folder_name} = $folder_name;
+				$b->{can_admin}   = $can_admin;
+				$b->{short_text}  = AppCore::Web::Common->html2text($b->{text});
+				$b->{short_text}  = substr($b->{short_text},0,$short_len) . (length($b->{short_text}) > $short_len ? '...' : '');
+				$b->{poster_email_md5} = md5_hex($b->{poster_email});
+				
+# 				my $lc = $b->last_commentid;
+# 				if($lc && $lc->id && !$lc->deleted)
+# 				{
+# 					$b->{'post_'.$_} = $lc->get($_) foreach $lc->columns;
+# 					$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
+# 					$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
+# 					$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
+# 				}
+				
+				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
+				
+				$controller->forum_list_hook($b);
+				
+				#use Data::Dumper;
+				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
+				
+				my $json = encode_json($b);
+				return $r->output_data("application/json", $json);
+			}
+			
 			return $r->redirect("$bin/$folder_name");
 		}
 		elsif($sub_page eq 'new')
@@ -508,7 +549,7 @@ package Boards;
 			
 			my $appcore = $AppCore::Config::WWW_ROOT;
 			
-			my $short_len = 60;
+			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});my $short_len = 60;
 			my $last_post_subject_len = 20;
 			foreach my $b (@posts)
 			{
