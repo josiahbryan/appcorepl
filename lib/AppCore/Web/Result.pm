@@ -166,7 +166,7 @@ package AppCore::Web::Result;
 			$ctype = $1 if $1;
 		}
 		
-		if($out =~ /<a:cssx src="[^\"]+"/i)
+		if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
 		{	
 			if($AppCore::Config::ENABLE_CSSX_COMBINE)
 			{
@@ -178,6 +178,49 @@ package AppCore::Web::Result;
 				my $file = _process_multi_cssx($self,$tmpl,1,@files);
 				my $full_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				my $css = read_file($full_file);
+				
+				my @css = $out =~ /<style(?:\s*type="text\/css")?>((?:\n|.)+?)<\/style>/g;
+				$out =~ s/<style(?:\s*type="text\/css")?>(?:\n|.)+?<\/style>//g;
+				
+				if($AppCore::Config::USE_YUI_COMPRESS)
+				{
+					my $block = join '', @css;
+					my $tmp_file = "/tmp/yuic-".md5_hex($block).".css";
+					if(-f $tmp_file)
+					{
+						$block = AppCore::Common->read_file($tmp_file);
+					}
+					else
+					{
+						my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+						if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
+						{
+							print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+						}
+						else
+						{
+							print STDERR "Compressing in-page CSS to cache $tmp_file with YUI Compress...\n";
+							my $tmp_file_pre = "/tmp/yuic.$$.css";
+							AppCore::Common->write_file($tmp_file_pre, $block);
+							
+							my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+							my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
+							print STDERR "YUI Compress command: '$cmd'\n";
+							system($cmd);
+							unlink($tmp_file_pre);
+							
+							$block = AppCore::Common->read_file($tmp_file);
+						}
+					}
+					
+					$css .= $block;
+				}
+				else
+				{
+					unshift @css, $css;
+					$css = join '', @css;
+				}
+				
 				$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
 				
 			}
@@ -185,6 +228,61 @@ package AppCore::Web::Result;
 			{
 				$out =~ s/<a:cssx src="([^\"]+)"[^\>]+>/_process_cssx($self,$tmpl,$1)/segi;
 			}
+		}
+		
+		if($AppCore::Config::ENABLE_JS_COMBINE && $out =~ /<script.*?src=['"][^'"]+['"]/i)
+		{	
+			my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
+			
+			my %hash = @files;
+			# Sort scripts by their 'index' attribute
+			my @sorted_files = sort { $hash{$a} <=> $hash{$b} } keys %hash;
+			
+			$out =~ s/<script[^\>]+><\/script>//gi;
+			
+			my $js_link = _process_multi_js($self,$tmpl,0,@sorted_files);
+			$out =~ s/<\/body>/\t$js_link\n<\/body>/g;
+		}
+		
+		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?>/)
+		{
+			my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?>((?:\n|.)+?)<\/script>/g;
+			$out =~ s/<script(?:\s+type="text\/javascript")?>(?:\n|.)+?<\/script>//g;
+			my $block = join("\n\n/********************/\n\n", @scripts);
+			
+			if($AppCore::Config::ENABLE_JS_REORDER_YUI &&
+			   $AppCore::Config::USE_YUI_COMPRESS)
+			{
+				my $tmp_file = "/tmp/yuic-".md5_hex($block).".js";
+				if(-f $tmp_file)
+				{
+					$block = AppCore::Common->read_file($tmp_file);
+				}
+				else
+				{
+					my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+					if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
+					{
+						print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+					}
+					else
+					{
+						print STDERR "Compressing in-page scripts to cache $tmp_file with YUI Compress...\n";
+						my $tmp_file_pre = "/tmp/yuic.$$.js";
+						AppCore::Common->write_file($tmp_file_pre, $block);
+						
+						my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+						my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
+						print STDERR "YUI Compress command: '$cmd'\n";
+						system($cmd);
+						unlink($tmp_file_pre);
+						
+						$block = AppCore::Common->read_file($tmp_file);
+					}
+				}
+			}
+			
+			$out =~ s/<\/body>/<script>$block<\/script>\n<\/body>/g;
 		}
 		
 		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
@@ -200,6 +298,11 @@ package AppCore::Web::Result;
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='"._cdn_url($1)."'"/segi;
+		}
+		
+		if($AppCore::Config::ENABLE_CDN_MACRO && _can_cdn_for_fqdn())
+		{
+			$out =~ s/\${CDN(?:\:([^\}]+))?}/_cdn_url($1)/segi;
 		}
 		
 		$self->content_type($ctype);
@@ -301,6 +404,121 @@ package AppCore::Web::Result;
 		
 		return 1;
 	}
+
+	sub _read_source_js
+	{
+		my ($tmpl,$src) = @_;
+		my $text = read_file($src);
+		$text =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi;
+		
+		if($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
+		{
+			$text =~ s/url\(['"](\/[^\"\)]+)["']?\)/'"'._cdn_url($1).'"'/segi;
+		}
+		
+		return $text;
+	}
+	
+	sub _process_multi_js
+	{
+		my $self = shift;
+		my $tmpl = shift;
+		my $just_filename = shift || 0;
+		
+		my @files = @_;
+		
+		#my $mobile = AppCore::Common->context->x('IsMobile');
+		
+		my $md5 = md5_hex(join '', @files) . '.js'; # ($mobile ? '-m' : ''). '.css';
+		my $jsx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
+		my $jsx_file = $AppCore::Config::WWW_DOC_ROOT . $jsx_url;
+		
+		#my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		
+		my $need_rebuild = 0;
+		if(!-f $jsx_file)
+		{
+			$need_rebuild = 1;
+		}
+		else
+		{
+			my $cache_mod = (stat($jsx_file))[9];
+			foreach my $file (@files)
+			{
+				next if $file =~ /^http:/;
+				my $disk_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				if((stat($disk_file))[9] > $cache_mod)
+				{
+					$need_rebuild = 1;
+					last;
+				}
+			}
+		}
+		
+		if($need_rebuild)
+		{
+			my @js_buffer;
+			foreach my $file (@files)
+			{
+				next if $file =~ /^http:/;
+				
+				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				print STDERR "Recompiling JS File $orig_file -> $jsx_file\n";
+				my $text = _read_source_js($tmpl,$orig_file);
+				
+				push @js_buffer, $text;
+			}
+				
+			open(CSSX,">$jsx_file") || die "Cannot open $jsx_file for writing: $!";
+			print CSSX "/* Built from the following JS files: ".join(', ', @files)." */\n\n";
+			print CSSX join "\n", @js_buffer;
+			close(CSSX);
+			
+# 			if($AppCore::Config::USE_CSS_TIDY && 
+# 			-f $AppCore::Config::USE_CSS_TIDY)
+# 			{
+# 				my $tmp_file = "/tmp/csstidy.$$.css";
+# 				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+# 				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+# 				my $cmd = "$tidy $jsx_file $args $tmp_file";
+# 				print STDERR "Tidy command: '$cmd'\n";
+# 				system($cmd);
+# 				system("mv -f $tmp_file $jsx_file");
+# 			}
+# 			
+			if($AppCore::Config::USE_YUI_COMPRESS)
+			{
+				my $tmp_file = "/tmp/yuic.$$.js";
+				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
+				{
+					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+				}
+				else
+				{
+					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $cmd = "$comp $jsx_file $args -o $tmp_file";
+					print STDERR "YUI Compress command: '$cmd'\n";
+					system($cmd);
+					system("mv -f $tmp_file $jsx_file");
+				}
+			}
+		}
+		
+		return $jsx_url if $just_filename;
+		
+		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
+		{
+			$jsx_url = _cdn_url($jsx_url);
+		}
+		
+		my @non_local = grep { /^http:/ } @files;
+		my @result = map { "<script src='$_'></script>" } @non_local;
+		push @result, "<script src='$jsx_url'></script> <!-- Combined from original JS files: ". join(', ', grep { !/^http:/ } @files). "-->";
+		return join("\n", @result);
+	}
+	
+	
 
 	sub _read_source_css
 	{

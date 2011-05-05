@@ -207,7 +207,7 @@
 	<script id="post-tmpl" type="text/x-jquery-tmpl">
 		<tr href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='post' id='post${postid}'> <!-- onclick='document.location.href=this.getAttribute("href")'>-->
 			<td valign='top' align='center' class='photo'>
-				<img class='user_photo' src='http://www.gravatar.com/avatar/${poster_email_md5}?d=http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg&s=50'>
+				<img class='user_photo' src='http://www.gravatar.com/avatar/${poster_email_md5}?d=${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}&s=50'>
 			</td>
 			<td valign='top' class='data'>
 				<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='title_link'>
@@ -377,7 +377,7 @@
 		<tbody>
 			<tr class='post post-placeholder' id='post-placeholder'>
 				<td valign='top' align='center' class='photo'>
-					<img class='user_photo' src="http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg">
+					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
 				</td>
 				<td valign='top' class='data'>
 					<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
@@ -387,7 +387,7 @@
 		<tmpl_loop posts>
 			<tr href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='post' id='post%%postid%%'> <!-- onclick='document.location.href=this.getAttribute("href")'>-->
 				<td valign='top' align='center' class='photo'>
-					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=http://beta.mypleasanthillchurch.org/appcore/mods/User/images/male-fb-sq-50px.jpg&s=50">
+					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}&s=50">
 				</td>
 				<td valign='top' class='data'>
 					<a href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='title_link'>
@@ -427,15 +427,16 @@
 
 
 <script type="text/javascript">
-	setTimeout(function(){
-		$(document).ready (function() {
-			$('textarea.expandText').autogrow();
-		});
-	
-	}, 1500);
+// 	$(document).ready (function() {
+// 		$('textarea.expandText').autogrow();
+// 	});
 
-// $(function() {
-//           $('textarea').autogrow();
-//         });
+$(function() {
+          $('textarea').autogrow();
+});
 
 </script>
+
+<script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.min.js" index="50"></script>

@@ -14,33 +14,49 @@ BEGIN
 	# /appcore/mods/$THEME_MODULE/$USE_THEME_FAVICON
 	$USE_THEME_FAVICON = 'favicon-trans.ico';
 	
+	# Path in the server's file system to the document root of the websrver
 	$WWW_DOC_ROOT = '/opt/httpd-2.2.17/htdocs';
+	# Path in the webserver's URL space (and relative to WWW_DOC_ROOT) where
+	# the appcore distribution lives
 	$WWW_ROOT     = '/appcore';
 	
+	# The absolute path in the server's file system where appcore lives
 	$APPCORE_ROOT = $WWW_DOC_ROOT . $WWW_ROOT;
 	
+	# Database configuration
 	$DB_HOST = '127.0.0.1';
 	$DB_USER = 'root';
 	$DB_PASS = 'testsys';
 	$DB_NAME = 'appcore';
 	
+	# Users's database config
 	$USERS_DBNAME = $DB_NAME;
 	$USERS_DBTABLE = 'users';
 	
+	# TODO is this even needed now that User is a top-level module?
 	$LOGIN_URL = '/user/login';
 	
+	# TODO is this redundant to WEBSITE_SERVER?
 	$DOMAIN = 'example.com';
 	
+	# TODO is this redudant to ADMIN_EMAILS?
+	# This is displayed in error() messages
 	$WEBMASTER_EMAIL = 'josiahbryan@gmail.com';
 	
+	# Prefunctory at best...does what it says...
 	$MOBILE_REDIR = 1;
 	$MOBILE_URL = '/m';
 	
+	# Names use for user correspondance and other system-generated user-facing pages/content
 	$WEBSITE_NAME = 'PHC Beta Site';
 	$WEBSITE_NOUN = 'PHC Beta';
 	
+	# When neededing a globally-absolute URL, what server should we prefix?
+	# Normally, URLs created are local URLs, absolute to the server, but not including the server.
+	# The globally absolute URLs are normally only used for things such as emails, etc
 	$WEBSITE_SERVER = 'http://beta.mypleasanthillchurch.org';
 	
+	# Emails to send new user notifications to, etc
 	@ADMIN_EMAILS = qw/
 		josiahbryan@gmail.com
 	/;
@@ -51,21 +67,30 @@ BEGIN
 	# If there is some path prefix to where the appcore starts, then put that in here.  
 	$DISPATCHER_URL_PREFIX = '';
 	
+	# Your facebook AppID for login integration
 	$FB_APP_ID     = '192357267468389';
 	
+	# Read your App Secret from a local file that is NOT stored in a public source control repo
 	my $fb_secret_file = $WWW_DOC_ROOT . $WWW_ROOT . '/fb_app_secret.txt';
-	$FB_APP_SECRET = `cat $fb_secret_file` if -f $fb_secret_file; # read from file so its not saved in subversion!
+	$FB_APP_SECRET = `cat $fb_secret_file` if -f $fb_secret_file;
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
-	$ENABLE_CSSX_MOBILE_IMAGE_URI = 1;
-	$ENABLE_CSSX_IMAGE_URI = 0;
-	$ENABLE_CSSX_IMPORT    = 1;
-	$ENABLE_CSSX_COMBINE   = 1;
-	$ENABLE_NON_CSSX_COMBINE = 1;
+	$ENABLE_CSSX_IMAGE_URI = 0;	# Replace url()'s to images with data: URI's (not recommended as IE doesnt support yet)
+	$ENABLE_CSSX_MOBILE_IMAGE_URI = 1; # If its a mobile browser, go ahead and replace url()s in CSS with data: URI's, even if $ENABLE_CSSX_IMAGE_URI is 0  
+	$ENABLE_CSSX_IMPORT    = 1;	# Process @import statements that refer to local files by creating a new CSS file that has both the original CSS and the imported CSS 
+	$ENABLE_CSSX_COMBINE   = 1;	# Combine multiple local CSS includes into a single file (optionally compress with YUI, below)
+	$ENABLE_NON_CSSX_COMBINE = 1;	# Not implemented yet ...
 	
+	$ENABLE_JS_COMBINE   = 1;	# Combine local <script src='...'> includes (e.g. that start with "/") into a single file (and process %%variable%% and url() constructs)
+	$ENABLE_JS_REORDER   = 1;	# Reorder <script> blocks based on index atribute to below <script> includes
+	$ENABLE_JS_REORDER_YUI = 1;	# Run the combined block of scripts in that page thru YUI before inclusion
+	
+	
+	# Process CSSX (above) thru csstidy if path given and the file in $USE_CSS_TIDY exists (-f) 
 	$USE_CSS_TIDY = '/opt/httpd-2.2.17/htdocs/appcore/csstidy/release/csstidy/csstidy';
 	$CSS_TIDY_SETTINGS = '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
 	
+	# Compress CSSX with YUI compressor if the .jar in $USE_YUI_COMPRESS exists  
 	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
 	$YUI_COMPRESS_SETTINGS = '';
 
@@ -90,6 +115,7 @@ BEGIN
 	$ENABLE_CDN_CSS  = 1;		# Controls replacement of the href attrib of <link> tags for CSS inclusion
 	$ENABLE_CDN_IMG  = 1;		# Controls replacement of the src attrib of <img> tags
 	$ENABLE_CDN_JS   = 1;		# Controls replacement of the src attrib of <script> tags
+	$ENABLE_CDN_MACRO = 1;		# Enable ${CDN} or ${CDN:...} replacement - the latter keeps the CDN server the same for the url in the '...' - the first (${CDN}) just gives a random host from below
 	
 	# Quoting from: http://yuiblog.com/blog/2007/04/11/performance-research-part-4/
 	# Our rule of thumb is to increase the number of parallel downloads by using at least two, but no more than four hostnames.
