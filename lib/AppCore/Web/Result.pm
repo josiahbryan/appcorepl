@@ -179,46 +179,9 @@ package AppCore::Web::Result;
 				my $full_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				my $css = read_file($full_file);
 				
-				my @css = $out =~ /<style(?:\s*type="text\/css")?>((?:\n|.)+?)<\/style>/g;
-				$out =~ s/<style(?:\s*type="text\/css")?>(?:\n|.)+?<\/style>//g;
-				
-				if($AppCore::Config::USE_YUI_COMPRESS)
+				if($AppCore::Config::ENABLE_INPAGE_CSS_COMBINE)
 				{
-					my $block = join '', @css;
-					my $tmp_file = "/tmp/yuic-".md5_hex($block).".css";
-					if(-f $tmp_file)
-					{
-						$block = AppCore::Common->read_file($tmp_file);
-					}
-					else
-					{
-						my $comp = $AppCore::Config::USE_YUI_COMPRESS;
-						if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
-						{
-							print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
-						}
-						else
-						{
-							print STDERR "Compressing in-page CSS to cache $tmp_file with YUI Compress...\n";
-							my $tmp_file_pre = "/tmp/yuic.$$.css";
-							AppCore::Common->write_file($tmp_file_pre, $block);
-							
-							my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
-							my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
-							print STDERR "YUI Compress command: '$cmd'\n";
-							system($cmd);
-							unlink($tmp_file_pre);
-							
-							$block = AppCore::Common->read_file($tmp_file);
-						}
-					}
-					
-					$css .= $block;
-				}
-				else
-				{
-					unshift @css, $css;
-					$css = join '', @css;
+					$css .= _combine_inpage_css(\$out);
 				}
 				
 				$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
@@ -287,22 +250,22 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
 		{
-			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='"._cdn_url($1)."'"/segi;
+			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='".cdn_url($1)."'"/segi;
 		}
 		
 		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
 		{
-			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='"._cdn_url($1)."'"/segi;
+			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='".cdn_url($1)."'"/segi;
 		}
 		
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
-			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='"._cdn_url($1)."'"/segi;
+			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
 		}
 		
 		if($AppCore::Config::ENABLE_CDN_MACRO && _can_cdn_for_fqdn())
 		{
-			$out =~ s/\${CDN(?:\:([^\}]+))?}/_cdn_url($1)/segi;
+			$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi;
 		}
 		
 		$self->content_type($ctype);
@@ -311,8 +274,54 @@ package AppCore::Web::Result;
 		return $self;
 	}
 	
+	sub _combine_inpage_css
+	{
+		my $out = shift;
+		my @css = $$out =~ /<style(?:\s*type="text\/css")?>((?:\n|.)+?)<\/style>/g;
+		$$out =~ s/<style(?:\s*type="text\/css")?>(?:\n|.)+?<\/style>//g;
+		
+		if($AppCore::Config::USE_YUI_COMPRESS)
+		{
+			my $block = join '', @css;
+			my $tmp_file = "/tmp/yuic-".md5_hex($block).".css";
+			if(-f $tmp_file)
+			{
+				$block = AppCore::Common->read_file($tmp_file);
+			}
+			else
+			{
+				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
+				{
+					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+				}
+				else
+				{
+					print STDERR "Compressing in-page CSS to cache $tmp_file with YUI Compress...\n";
+					my $tmp_file_pre = "/tmp/yuic.$$.css";
+					AppCore::Common->write_file($tmp_file_pre, $block);
+					
+					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
+					print STDERR "YUI Compress command: '$cmd'\n";
+					system($cmd);
+					unlink($tmp_file_pre);
+					
+					$block = AppCore::Common->read_file($tmp_file);
+				}
+			}
+			
+			return $block;
+		}
+		else
+		{
+			return join '', @css;
+		}
+	}
+	
 	sub data_url
 	{  
+		shift if $_[0] eq __PACKAGE__;
 		my $file = shift;
 		my ($ext) = $file =~ /\.(\w+)$/;
 		my $mime = $ext eq 'png' ? 'image/png' :
@@ -326,20 +335,21 @@ package AppCore::Web::Result;
 	}
 	
 	our $CDNIndex = @AppCore::Config::CDN_HOSTS;
-	sub _cdn_url
+	sub cdn_url
 	{
+		shift if $_[0] eq __PACKAGE__;
 		my $url_part = shift;
 		my $url_wrap = shift || 0;
 		#return "url(\"$url_part\")" if !@AppCore::Config::CDN_HOSTS && $url_wrap;
 		return $url_part if !@AppCore::Config::CDN_HOSTS;
 		
 		my $cdn_mode = $AppCore::Config::CDN_MODE || 'hash';
-		#print STDERR "_cdn_url($url_part): \$cdn_mode: $cdn_mode [$AppCore::Config::CDN_MODE]\n";
+		#print STDERR "cdn_url($url_part): \$cdn_mode: $cdn_mode [$AppCore::Config::CDN_MODE]\n";
 		if($cdn_mode eq 'rr')
 		{
 			$CDNIndex ++;
 			$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
-			#print STDERR "_cdn_url($url_part): [rr] Round-robin index: $CDNIndex\n";
+			#print STDERR "cdn_url($url_part): [rr] Round-robin index: $CDNIndex\n";
 		}
 		elsif($cdn_mode eq 'mod')
 		{
@@ -357,7 +367,7 @@ package AppCore::Web::Result;
 			$sum+=hex($part4);
 			
 			$CDNIndex = $sum % scalar(@AppCore::Config::CDN_HOSTS);
-			#print STDERR "_cdn_url($url_part): [mod] Modula-derived index: $CDNIndex\n";
+			#print STDERR "cdn_url($url_part): [mod] Modula-derived index: $CDNIndex\n";
 		}
 		elsif($cdn_mode eq 'hash')
 		{
@@ -368,21 +378,21 @@ package AppCore::Web::Result;
 			{
 				$CDNIndex ++;
 				$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
-				#print STDERR "_cdn_url($url_part): [hash] NO CACHED INDEX, USING $CDNIndex\n";
+				#print STDERR "cdn_url($url_part): [hash] NO CACHED INDEX, USING $CDNIndex\n";
 			}
 			else
 			{
 				$CDNIndex = $idx;
-				#print STDERR "_cdn_url($url_part): [hash] Got cached index: $CDNIndex\n";
+				#print STDERR "cdn_url($url_part): [hash] Got cached index: $CDNIndex\n";
 			}
 			
 			$hash->{$url_part} = $CDNIndex;
-			#print STDERR "_cdn_url($url_part): [hash] Hash file: '$AppCore::Config::CDN_HASH_FILE'\n";
+			#print STDERR "cdn_url($url_part): [hash] Hash file: '$AppCore::Config::CDN_HASH_FILE'\n";
 			Storable::lock_store($hash, $AppCore::Config::CDN_HASH_FILE);
 		}
 
 		my $server = $AppCore::Config::CDN_HOSTS[$CDNIndex];
-		#print STDERR "_cdn_url($url_part): Decided on server $server, #$CDNIndex\n";
+		#print STDERR "cdn_url($url_part): Decided on server $server, #$CDNIndex\n";
 		
 		my $final_url = join('', 'http://', $server, $url_part);
 		
@@ -413,7 +423,7 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
 		{
-			$text =~ s/url\(['"](\/[^\"\)]+)["']?\)/'"'._cdn_url($1).'"'/segi;
+			$text =~ s/url\(['"](\/[^\"\)]+)["']?\)/'"'.cdn_url($1).'"'/segi;
 		}
 		
 		return $text;
@@ -509,7 +519,7 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
 		{
-			$jsx_url = _cdn_url($jsx_url);
+			$jsx_url = cdn_url($jsx_url);
 		}
 		
 		my @non_local = grep { /^http:/ } @files;
@@ -534,7 +544,7 @@ package AppCore::Web::Result;
 		}
 		elsif($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
 		{
-			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/_cdn_url($1,1)/segi;
+			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/cdn_url($1,1)/segi;
 		}
 		
 		return $text;
@@ -633,7 +643,7 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
-			$cssx_url = _cdn_url($cssx_url);
+			$cssx_url = cdn_url($cssx_url);
 		}
 		
 		return qq{<link href="$cssx_url" rel="stylesheet" type="text/css" /> <!-- Combined from original CSS files: }. join(', ', @files). '-->';
@@ -701,7 +711,7 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
-			$cssx_url = _cdn_url($cssx_url);
+			$cssx_url = cdn_url($cssx_url);
 		}
 		
 		#return $cssx_url if $just_filename;

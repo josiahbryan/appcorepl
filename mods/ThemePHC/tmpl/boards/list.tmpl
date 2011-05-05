@@ -159,7 +159,8 @@
 			comment: formElm.text.value,
 			poster_name: formElm.poster_name.value,
 			poster_email: formElm.poster_email.value,
-			output_fmt: "json"
+			output_fmt: "json",
+			plain_text: 1,
 		};
 		
 		$("#post-placeholder").show();
@@ -194,6 +195,7 @@
 					$("#post-tmpl").tmpl(data).insertAfter("#post-placeholder");
 					$("#post-placeholder").hide();
 					formElm.text.value = "";
+					formElm.text.updateAutogrow();
 				}	
 			},
 			error: errorFunc,
@@ -220,11 +222,12 @@
 				
 				<div class='post_text'>
 					<div id='short_text_${postid}' class='short_text'>
-						${short_text}
-						<span class='more'>(<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='more_link' onclick='return show_more_post(${postid})'>More...</a>)</span>
+						${short_text_html}
+						<span class='more'>(<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='more_link' onclick='return show_more_post(${postid},this)'>More...</a>)</span>
 					</div>
 					<div id='text_${postid}' class='long_text'>
-						${text}
+						<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(${postid})'>&laquo; Less</a>)</div>
+						<div id='long_text_${postid}'></div>
 						<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(${postid})'>&laquo; Less</a>)</div>
 					</div>
 				</div>
@@ -270,7 +273,7 @@
 	{
 		/*border: 1px solid #364a90;*/
 		/*padding: 2 4;*/
-		cursor: pointer; 
+		/*cursor: pointer;*/ 
 		background: #e9eeff;
 		border-bottom: 1px solid #c7cddf;
 		border-top: 1px solid white;
@@ -285,6 +288,11 @@
 	.postlist td img
 	{
 		cursor: default;
+	}
+	
+	.postlist td a img
+	{
+		cursor: pointer;
 	}
 	
 	.postlist td.data
@@ -346,16 +354,96 @@
 		display: none;
 	}
 	
+	img.loading, 
 	#post-placeholder { display: none; }
+	
+	.postlist td a.youtube-play-link 
+	{
+		display: block;
+		position: relative;
+		width: 120px;
+		height: 90px;
+		overflow: hidden;
+	}
+	
+	.postlist td a.youtube-play-link img
+	{
+		display: block;
+		position: absolute;
+		z-index: 1;
+		border: 1px solid black;
+		/*border: 1px solid #364a90;*/
+	}
+	
+	.postlist td a.youtube-play-link span 
+	{
+		display: block;
+		position: absolute;
+		background: url(%%modpath%%/images/play-icon-48px.png) no-repeat center;
+		z-index: 2;
+		width: 120px;
+		height: 90px;
+		opacity: .75;
+	}
+	
+	.postlist td a.youtube-play-link,
+	iframe.youtube-iframe
+	{
+		-moz-box-shadow: 0px 0px 9px #364a90;
+		box-shadow: 0px 0px 9px #364a90;
+		/*-moz-box-shadow: 0px 0px 3px #000;*/
+	}
+	
 	
 	</style>
 	<script>
-	function show_more_post(postid)
+	function show_more_post(postid,aElm)
 	{
+		var blockId = "#long_text_"+postid;
+		var loadingId = "#loading_"+postid;
 		var shortId = "#short_text_"+postid;
 		var longId = "#text_"+postid;
-		$(shortId).hide(300);
-		$(longId).show(300);
+		var postHref = aElm.href;
+		
+		$(loadingId).show();
+		
+		var errorFunc = function() 
+		{
+			// Error loading, just redirect to the page itself...
+			document.location.href = postHref; 
+		}
+		
+		$.ajax({
+			type: "GET",
+			url: postHref,
+			data:
+			{
+				output_fmt: "json",
+				no_comments: 1,
+			},
+			success: function(data)
+			{
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				if(typeof(data) == "string")
+				{
+					// something wierd on server - should be JSON!
+					errorFunc();
+				}
+				else
+				{
+					$(blockId).html(data.post_text);
+					$(shortId).hide(300);
+					$(longId).show(300);
+					$(loadingId).hide(300);
+					
+					//alert(data);
+					console.debug(data);
+				}	
+			},
+			error: errorFunc,
+			
+		});
+		
 		return false;
 	}
 	
@@ -400,13 +488,19 @@
 					
 					<div class='post_text'>
 						<div id='short_text_%%postid%%' class='short_text'>
-							%%short_text%%
-							<span class='more'>(<a href='%%binpath%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='more_link' onclick='return show_more_post(%%postid%%)'>More...</a>)</span>
+							%%short_text_html%%
+							<tmpl_if short_text_has_more>
+								<span class='more'>(<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='more_link' onclick='return show_more_post(%%postid%%,this)'>More...</a>)</span>
+								<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' class='loading' id='loading_%%postid%%'>
+							</tmpl_if>
 						</div>
-						<div id='text_%%postid%%' class='long_text'>
-							%%text%%
-							<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a>)</div>
-						</div>
+						<tmpl_if short_text_has_more>
+							<div id='text_%%postid%%' class='long_text'>
+								<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a>)</div>
+								<div id='long_text_%%postid%%'></div>
+								<div class='more'>(<a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a>)</div>
+							</div>
+						</tmpl_if>
 					</div>
 					
 					<div class='timestamp'>%%timestamp%%</div>
@@ -432,7 +526,38 @@
 // 	});
 
 $(function() {
-          $('textarea').autogrow();
+	$('textarea').autogrow();
+
+	//$('xx').each(
+	$('a.youtube-play-link').live("click", function() {
+		var th = $(this),
+		    pn = $(this.parentNode),
+		    // Grab video ID
+		    videoId = ,
+		    // Create player using video Id
+		    player = $('<div></div>')
+		    	.html('<iframe title="YouTube video player" width="320" height="240" '+
+		    	      'src="http://www.youtube.com/embed/' + th.attr('videoid') +'?autoplay=1" '+
+		    	      'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>'),
+		    loading = $('<img/>')
+		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif');
+		
+		// Show loading img  ...
+		pn.append(loading);
+		
+		// Create player ...
+		//player.hide();
+		
+		// Add player to parent and show player / hide link...
+		th.hide();
+		pn.append(player);
+		//player.show();
+		
+		// Hide loading img...
+		loading.hide();
+	
+		return false;
+	});
 });
 
 </script>
@@ -440,3 +565,4 @@ $(function() {
 <script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.min.js" index="50"></script>
+

@@ -23,6 +23,8 @@ package Boards;
 	our $SUBJECT_LENGTH    = 30;
 	our $MAX_FOLDER_LENGTH = 225;
 	our $SPAM_OVERRIDE     = 0;
+	our $SHORT_TEXT_LENGTH = 60;
+	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
 	
 	# Setup our admin package
 	# TODO #
@@ -430,32 +432,10 @@ package Boards;
 			if($req->output_fmt eq 'json')
 			{
 				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
-				my $short_len = 60;
-				#my $last_post_subject_len = 20;
-				
-				my $b = {};
-				# Force stringification...
-				$b->{$_} = $post->get($_). "" foreach $post->columns;
-				$b->{bin}         = $bin;
-				$b->{appcore}     = $AppCore::Config::WWW_ROOT;
-				$b->{board_folder_name} = $folder_name;
-				$b->{can_admin}   = $can_admin;
-				$b->{short_text}  = AppCore::Web::Common->html2text($b->{text});
-				$b->{short_text}  = substr($b->{short_text},0,$short_len) . (length($b->{short_text}) > $short_len ? '...' : '');
-				$b->{poster_email_md5} = md5_hex($b->{poster_email});
-				
-# 				my $lc = $b->last_commentid;
-# 				if($lc && $lc->id && !$lc->deleted)
-# 				{
-# 					$b->{'post_'.$_} = $lc->get($_) foreach $lc->columns;
-# 					$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
-# 					$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
-# 					$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
-# 				}
 				
 				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
 				
-				$controller->forum_list_hook($b);
+				my $b = $controller->load_post_for_list($post,$can_admin);
 				
 				#use Data::Dumper;
 				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
@@ -547,39 +527,16 @@ package Boards;
 			my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
 			@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
 			
-			my $appcore = $AppCore::Config::WWW_ROOT;
-			
-			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});my $short_len = 60;
-			my $last_post_subject_len = 20;
+			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
+			my @list;
 			foreach my $b (@posts)
 			{
-				$b->{$_} = $b->get($_) foreach $b->columns;
-				$b->{bin}         = $bin;
-				$b->{appcore}     = $appcore;
-				$b->{board_folder_name} = $folder_name;
-				$b->{can_admin}   = $can_admin;
-				$b->{short_text}  = AppCore::Web::Common->html2text($b->{text});
-				$b->{short_text}  = substr($b->{short_text},0,$short_len) . (length($b->{short_text}) > $short_len ? '...' : '');
-				$b->{folder_name} = $b->folder_name;
-				$b->{poster_email_md5} = md5_hex($b->{poster_email});
-				
-				my $lc = $b->last_commentid;
-				if($lc && $lc->id && !$lc->deleted)
-				{
-					$b->{'post_'.$_} = $lc->get($_) foreach $lc->columns;
-					$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
-					$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
-					$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
-				}
-				
-				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
-				
-				$controller->forum_list_hook($b);
+				push @list, $controller->load_post_for_list($b,$can_admin);
 			}
 			
 			#die Dumper \@posts;
 			
-			$tmpl->param(posts=>\@posts);
+			$tmpl->param(posts=>\@list);
 			
 			$controller->forum_page_hook($tmpl,$board);
 			
@@ -588,6 +545,78 @@ package Boards;
 		}
 	}
 	
+	sub load_post_for_list
+	{
+		my $self = shift;
+		my $post = shift;
+		my $can_admin = shift || 0;
+		
+		my $short_len             = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
+		my $last_post_subject_len = $AppCore::Config::BOARDS_LAST_POST_SUBJ_LENGTH || $LAST_POST_SUBJ_LENGTH;
+		
+		my $folder_name = $post->boardid->folder_name;
+		my $bin = $self->binpath;
+		
+		my $b = {};
+		# Force stringification...
+		$b->{$_} = $post->get($_). "" foreach $post->columns;
+		$b->{bin}         = $bin;
+		$b->{appcore}     = $AppCore::Config::WWW_ROOT;
+		$b->{board_folder_name} = $folder_name;
+		$b->{can_admin}   = $can_admin;
+		my $short = AppCore::Web::Common->html2text($b->{text});
+		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
+		$b->{short_text_has_more} = length($short) > $short_len;
+		$b->{short_text_html} = $b->{short_text};
+		
+		$b->{short_text_html} =~ s/\n+/\n/sg;
+		$b->{short_text_html} =~ s/\n/<br>\n/g;
+		$b->{short_text_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		
+		$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
+		my ($url) = $b->{short_text_html} =~ /(http:\/\/www.youtube.com\/watch[^\s\<\.]+)/;
+		if($url)
+		{
+			my ($code) = $url =~ /v=([^\&]+)/;
+			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
+			$b->{short_text_html} .= qq{
+				<hr size=1>
+				<a href='$url' class='youtube-play-link' videoid='$code'>
+				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
+				<span class='overlay'></span>
+				</a>
+			};
+		}
+		
+		
+		$b->{poster_email_md5} = md5_hex($b->{poster_email});
+		
+# 		$b->{$_} = $b->get($_) foreach $b->columns;
+# 		$b->{bin}         = $bin;
+# 		$b->{appcore}     = $appcore;
+# 		$b->{board_folder_name} = $folder_name;
+# 		$b->{can_admin}   = $can_admin;
+# 		my $short = AppCore::Web::Common->html2text($b->{text});
+# 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
+# 		$b->{short_text_has_more} = length($short) > $short_len;
+# 		$b->{short_text_html} = $b->{short_text};
+# 		$b->{short_text_html} =~ s/\n/<br>\n/g;
+# 		$b->{folder_name} = $b->folder_name;
+# 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
+		
+		my $lc = $post->last_commentid;
+		if($lc && $lc->id && !$lc->deleted)
+		{
+			$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
+			$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
+			$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
+			$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
+		}
+		
+		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
+		
+		return $b;
+	}
 	
 	# This allows subclasses to hook into the list prep above without subclassing the entire list action
 	sub forum_list_hook#($post)
@@ -607,6 +636,8 @@ package Boards;
 		my $req  = shift;
 		my $dont_count_view = shift || 0;
 		my $more_local_ctx  = shift || undef;
+		my $dont_incl_comments = shift || 0;
+		
 		
 		my $folder_name = $post->folder_name;
  		my $board_folder_name 
@@ -619,51 +650,55 @@ package Boards;
 			$post->update;
 		}
 		
-		my $rs;
+		my $rs = {};
 		
 		my $board = $post->boardid;
-		$rs->{'post_'.$_}  = $post->get($_)  foreach $post->columns;
-		$rs->{'board_'.$_} = $board->get($_) foreach $board->columns;
+		# Force stringification in order to convert to JSON if needed
+		$rs->{'post_'.$_}  = $post->get($_).""  foreach $post->columns;
+		$rs->{'board_'.$_} = $board->get($_)."" foreach $board->columns;
 		
 		$rs->{post_text} = AppCore::Web::Common->clean_html($rs->{post_text});
 		
 		#$rs->{post_text} = PHC::VerseLookup->tag_verses($rs->{post_text});
 		
 		my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-		my $delete_base = "$bin/$board_folder_name/$folder_name/delete";
+		my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
 		
 		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
 		$rs->{can_admin} = $can_admin;
 		
 		$rs->{can_edit} = $self->can_user_edit($post);
 		
-		my $list = [];
-		
-		my $local_ctx = 
+		unless($dont_incl_comments)
 		{
-			post		=> $post,
-			bin		=> $bin,
-			appcore		=> $AppCore::Config::WWW_ROOT,
-			board_folder	=> $board_folder_name,
-			folder_name	=> $folder_name,
-			reply_to_url	=> $reply_to_url,
-			can_admin	=> $can_admin,
-			delete_base	=> $delete_base,
-		};
-		
-		if($more_local_ctx && ref($more_local_ctx) eq 'HASH')
-		{
-			$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
+			my $list = [];
+			
+			my $local_ctx = 
+			{
+				post		=> $post,
+				bin		=> $bin,
+				appcore		=> $AppCore::Config::WWW_ROOT,
+				board_folder	=> $board_folder_name,
+				folder_name	=> $folder_name,
+				reply_to_url	=> $reply_to_url,
+				can_admin	=> $can_admin,
+				delete_base	=> $delete_base,
+			};
+			
+			if($more_local_ctx && ref($more_local_ctx) eq 'HASH')
+			{
+				$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
+			}
+			
+			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
+			foreach my $b (@replies)
+			{
+				_post_prep_ref($local_ctx,$list,$b);
+				_post_add_kids($local_ctx,$list,$b);
+			}
+			
+			$rs->{replies} = $list;
 		}
-		
-		my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
-		foreach my $b (@replies)
-		{
-			_post_prep_ref($local_ctx,$list,$b);
-			_post_add_kids($local_ctx,$list,$b);
-		}
-		
-		$rs->{replies} = $list;
 		
 		return $rs;
 	}
@@ -685,7 +720,8 @@ package Boards;
 		my $local_ctx = shift;
 		my $list = shift;
 		my $b = shift;
-		$b->{$_} = $b->get($_)      foreach $b->columns;
+		# Force stringify for JSON
+		$b->{$_} = $b->get($_).""   foreach $b->columns;
 		$b->{$_} = $local_ctx->{$_} foreach keys %$local_ctx;
 		$b->{indent}		= $local_ctx->{indent}->{$b->parent_commentid};
 		$b->{indent_css} 	= $b->{indent} * 2;
@@ -959,8 +995,6 @@ Cheers!};
 		}
 		else
 		{
-			my $tmpl = $self->get_template($self->config->{post_tmpl} || 'post.tmpl');
-			$tmpl->param(board_nav => $self->macro_board_nav());
 			
 			## TODO ## Handle this redirect in a more generic way - not sure exactly what/why this is here, but I know its needed....come back later and figure it out...20110429
 # 			if($board_folder_name eq 'ask_pastor') #|| $board_folder_name eq 'pastors_blog')
@@ -976,11 +1010,25 @@ Cheers!};
 			}
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
-			my $post_resultset = $self->load_post($post,$req);
-			$tmpl->param( $_ => $post_resultset->{$_}) foreach keys %$post_resultset;
+			my $dont_inc_comments = $req->no_comments == 1;
+			my $post_resultset = $self->load_post($post,$req,0,undef,$dont_inc_comments);
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
-			return $r;
+			if($req->output_fmt eq 'json')
+			{
+				my $json = encode_json($post_resultset);
+				#return $r->output_data("application/json", $json);
+				return $r->output_data("application/json", $json);
+			}
+			else
+			{
+				
+				my $tmpl = $self->get_template($self->config->{post_tmpl} || 'post.tmpl');
+				$tmpl->param(board_nav => $self->macro_board_nav());
+				$tmpl->param( $_ => $post_resultset->{$_}) foreach keys %$post_resultset;
+				
+				my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+				return $r;
+			}
 		}
 	}
 	

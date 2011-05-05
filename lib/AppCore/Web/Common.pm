@@ -509,6 +509,7 @@ package AppCore::Web::Common;
 		$html =~ s/<!--(.|\n)*?-->//g;
 		$html =~ s/(<br>|<\/(p|div|blockquote)>)/\n/gi;
 		$html =~ s/<\/li><li>/, /g;
+		$html =~ s/<li>/ * /g;
 		$html =~ s/<[^\>]+>//g;
 		$html =~ s/&amp;/&/g;
 		$html =~ s/&nbsp;/ /g;

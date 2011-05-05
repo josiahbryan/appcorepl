@@ -44,6 +44,7 @@
 			}
 		
 			$(this).change(update).keyup(update).keydown(update);
+			this.updateAutogrow = update;
 			
 			update.apply(this);
 		
