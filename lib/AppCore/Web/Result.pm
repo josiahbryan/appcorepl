@@ -240,7 +240,14 @@ package AppCore::Web::Result;
 						system($cmd);
 						unlink($tmp_file_pre);
 						
-						$block = AppCore::Common->read_file($tmp_file);
+						if( -f $tmp_file )
+						{
+							$block = AppCore::Common->read_file($tmp_file);
+						}
+						else
+						{
+							print STDERR "Error running compressor - '$tmp_file' never created!\n";
+						}
 					}
 				}
 			}

@@ -48,6 +48,8 @@ package AppCore::Common;
 		delta_minutes
 		seconds_since
 		iso_date_to_seconds
+		pretty_timestamp
+		approx_time_ago
 		
 		read_file 
 		write_file
@@ -577,6 +579,61 @@ package AppCore::Common;
 		return $res->delta_seconds / 60;
 	}
 		
+	sub pretty_timestamp
+	{
+		my $time = shift;
+		my @x = $time =~ /(\d+)-(\d+)-(\d+) (\d+):(\d+):(\d+)/;
+		
+		my $h = $x[3];
+		my $a = 'am';
+		if($h >= 12)
+		{
+			$h -= 12;
+			$h = 12 if $h == 0;
+			$a = 'pm';
+		}
+		
+		my $yr = substr($x[0],2,2);
+		
+		return "$x[1]/$x[2]/$yr ".($h<10?($h+0):$h).":$x[4]$a";
+	}
+	
+	sub _unit_divide_if($$$$)
+	{ 
+		my ($new_unit,$val,$x,$unit) = @_; 
+		if($$x>$val)
+		{
+			#print STDERR "$$x>$val ...\n";
+			$$x /= $val;
+			$$unit = $new_unit;
+			#print STDERR "...down to $$x $$unit ---\n";
+		}
+		else
+		{
+			#print STDERR "$$x<$val $new_unit, still $$x $$unit /\n";
+		} 
+	}
+	
+	sub approx_time_ago
+	{
+		my $date = shift;
+		my $x = seconds_since($date);
+		#my $orig = $x;
+		my $unit = 'seconds';
+		_unit_divide_if('minutes',	60,		\$x, \$unit);
+		_unit_divide_if('hours',	60,		\$x, \$unit);
+		_unit_divide_if('days',		24,		\$x, \$unit);
+		_unit_divide_if('months',	365/12,		\$x, \$unit);
+		_unit_divide_if('years',	12,		\$x, \$unit);
+# 		_unit_divide_if('centuries',	100,		\$x, \$unit);
+# 		_unit_divide_if('millenia',	1000,		\$x, \$unit);
+# 		_unit_divide_if('eons',	100,		$x, $unit);
+		$x = int($x); # remove decimals
+		#print STDERR "[$orig] Done, returning $x $unit\n";
+		return wantarray ? ($x,$unit) : "$x $unit";
+		
+	}
+	
 	use POSIX;
 	sub seconds_since
 	{ 

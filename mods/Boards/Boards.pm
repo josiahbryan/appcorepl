@@ -526,6 +526,7 @@ package Boards;
 			
 			my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
 			@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
+			#@posts = shift @posts;
 			
 			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
 			my @list;
@@ -550,11 +551,14 @@ package Boards;
 		my $self = shift;
 		my $post = shift;
 		my $can_admin = shift || 0;
+		my $dont_incl_comments = shift || 0;
 		
 		my $short_len             = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
 		my $last_post_subject_len = $AppCore::Config::BOARDS_LAST_POST_SUBJ_LENGTH || $LAST_POST_SUBJ_LENGTH;
 		
-		my $folder_name = $post->boardid->folder_name;
+		my $board_folder_name = $post->boardid->folder_name;
+		my $folder_name = $post->folder_name;
+		my $user = $post->posted_by;
 		my $bin = $self->binpath;
 		
 		my $b = {};
@@ -562,13 +566,19 @@ package Boards;
 		$b->{$_} = $post->get($_). "" foreach $post->columns;
 		$b->{bin}         = $bin;
 		$b->{appcore}     = $AppCore::Config::WWW_ROOT;
-		$b->{board_folder_name} = $folder_name;
+		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
+		
+		if($user && $user->id)
+		{
+			$b->{'user_'.$_} = $user->get($_) foreach $user->columns;
+		}
+		
 		my $short = AppCore::Web::Common->html2text($b->{text});
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
-		$b->{short_text_html} = $b->{short_text};
 		
+		$b->{short_text_html} = $b->{short_text};
 		$b->{short_text_html} =~ s/\n+/\n/sg;
 		$b->{short_text_html} =~ s/\n/<br>\n/g;
 		$b->{short_text_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
@@ -580,7 +590,7 @@ package Boards;
 			my ($code) = $url =~ /v=([^\&]+)/;
 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
 			$b->{short_text_html} .= qq{
-				<hr size=1>
+				<hr size=1 class='post-attach-divider'>
 				<a href='$url' class='youtube-play-link' videoid='$code'>
 				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
 				<span class='overlay'></span>
@@ -590,6 +600,8 @@ package Boards;
 		
 		
 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
+		$b->{approx_time_ago} = approx_time_ago($b->{timestamp});
+		$b->{pretty_timestamp} = pretty_timestamp($b->{timestamp});
 		
 # 		$b->{$_} = $b->get($_) foreach $b->columns;
 # 		$b->{bin}         = $bin;
@@ -604,13 +616,49 @@ package Boards;
 # 		$b->{folder_name} = $b->folder_name;
 # 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
 		
-		my $lc = $post->last_commentid;
-		if($lc && $lc->id && !$lc->deleted)
+		if($dont_incl_comments)
 		{
-			$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
-			$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
-			$b->{post_url} = "$bin/$folder_name/$b->{folder_name}#c$lc";
-			$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
+			my $lc = $post->last_commentid;
+			if($lc && $lc->id && !$lc->deleted)
+			{
+				$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
+				$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
+				$b->{post_url} = "$bin/$board_folder_name/$folder_name#c$lc";
+				$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
+			}
+		}
+		else
+		{
+			my $list = [];
+			
+			my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
+			my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
+		
+			my $local_ctx = 
+			{
+				post		=> $post,
+				bin		=> $bin,
+				appcore		=> $AppCore::Config::WWW_ROOT,
+				board_folder	=> $board_folder_name,
+				folder_name	=> $folder_name,
+				reply_to_url	=> $reply_to_url,
+				can_admin	=> $can_admin,
+				delete_base	=> $delete_base,
+			};
+			
+# 			if($more_local_ctx && ref($more_local_ctx) eq 'HASH')
+# 			{
+# 				$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
+# 			}
+			
+			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
+			foreach my $b (@replies)
+			{
+				_post_prep_ref($local_ctx,$list,$b);
+				_post_add_kids($local_ctx,$list,$b);
+			}
+			
+			$b->{replies} = $list;
 		}
 		
 		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
@@ -720,15 +768,40 @@ package Boards;
 		my $local_ctx = shift;
 		my $list = shift;
 		my $b = shift;
+		my $user = $b->posted_by;
 		# Force stringify for JSON
 		$b->{$_} = $b->get($_).""   foreach $b->columns;
 		$b->{$_} = $local_ctx->{$_} foreach keys %$local_ctx;
 		$b->{indent}		= $local_ctx->{indent}->{$b->parent_commentid};
 		$b->{indent_css} 	= $b->{indent} * 2;
 		$b->{can_reply}		= defined $local_ctx->{can_reply} ? $local_ctx->{can_reply} : 1,
+		$b->{approx_time_ago}   = approx_time_ago($b->{timestamp});
+		$b->{pretty_timestamp}  = pretty_timestamp($b->{timestamp});
+		$b->{post_poster_email_md5} = md5_hex($b->{poster_email});
+		
+		$b->{user_photo}	= $user && ref $user && $user->id ? $user->photo : "";
+		#print STDERR "_post_prep_ref: \$user: $user, photo:".$b->{user_photo}.", ref:".ref($user).", ref eml:$b->{poster_email}\n";
+		
 		$b->{text} 		=~ s/(^\s+|\s+$)//g;
 		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
-		$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
+		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
+		$b->{clean_text} = $b->{text};
+		$b->{clean_text} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
+		my ($url) = $b->{clean_text} =~ /(http:\/\/www.youtube.com\/watch[^\s\<\.]+)/;
+		if($url)
+		{
+			my ($code) = $url =~ /v=([^\&]+)/;
+			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
+			$b->{clean_text} .= qq{
+				<hr size=1 class='post-attach-divider'>
+				<a href='$url' class='youtube-play-link' videoid='$code'>
+				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
+				<span class='overlay'></span>
+				</a>
+			};
+		}
+		
+		
 		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
 		$local_ctx->{indent}->{$b->id} = $b->{indent} + 1;
 		push @$list, $b;
