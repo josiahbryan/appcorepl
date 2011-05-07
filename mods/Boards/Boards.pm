@@ -801,6 +801,17 @@ package Boards;
 			};
 		}
 		
+		my ($code) = $b->{clean_text} =~ /vimeo\.com\/(\d+)/;
+		if($code)
+		{
+			$b->{clean_text} .= qq{
+				<hr size=1 class='post-attach-divider'>
+				<a href='http://www.vimeo.com/$code' isvimeo="1" class='vimeo-video youtube-play-link' videoid='$code'>
+				<img src="" id="vimeo-$code" border=0>
+				<span class='overlay'></span>
+				</a>
+			};
+		}
 		
 		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
 		$local_ctx->{indent}->{$b->id} = $b->{indent} + 1;

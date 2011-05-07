@@ -945,6 +945,14 @@
 
 <script type="text/javascript">
 
+function showThumb(data)
+{
+	var id_img = "#vimeo-" + data[0].id;
+	$(id_img).attr('src',data[0].thumbnail_small).animate({width:120,height:90},1);
+}
+
+
+
 $(function() {
 	$('textarea').autogrow();
 
@@ -959,6 +967,13 @@ $(function() {
 	//
 	// NOTE - The script below EXPECTS a 'videoid' attribute on the link to contain the youtube videoid.
 	// If not present, the script wont work - the link will just fall thru and redirect the user to whatever the href is.
+	$('a.vimeo-video').each(function() {
+		var th = $(this),
+		    id = th.attr("videoid"),
+		    url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
+		    id_img = "#vimeo-" + id;
+		    $(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
+	});
 	
 	$('a.youtube-play-link').live("click", function() {
 
@@ -978,14 +993,22 @@ $(function() {
 		// Animate expanding the link (assuming its CSS is display:block) to the size of the player.
 		// When done, insert an iframe into the block that auto-plays the video from youtube.
 		//width="480" height="390" 
-		var w=375,h=312;
+		var v=th.attr("isvimeo") == 1;
+		var w=v?320:375,h=v?240:312;
 		th.animate({width:w, height:h}, 300, "swing", function()
 		{
 			// Note that we re-use the 'th' ref from the start of this function to
 			// grab the 'videoid' attribute instead of parsing the HREF
-			th.html('<iframe title="YouTube video player" width="'+w+'" height="'+h+'" '+
-				'src="http://www.youtube.com/embed/' + th.attr('videoid') +'?autoplay=1" '+
-				'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>');
+			if(v == "1")
+			{
+				th.html('<iframe src="http://player.vimeo.com/video/'+th.attr('videoid') + '?portrait=0&amp;autoplay=1" width="320" height="240" frameborder="0"></iframe>');
+			}
+			else
+			{
+				th.html('<iframe title="YouTube video player" width="'+w+'" height="'+h+'" '+
+					'src="http://www.youtube.com/embed/' + th.attr('videoid') +'?autoplay=1" '+
+					'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>');
+			}
 		});
 		return false;
 	});
