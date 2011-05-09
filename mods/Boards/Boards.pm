@@ -583,11 +583,12 @@ package Boards;
 		$b->{short_text_html} =~ s/\n/<br>\n/g;
 		$b->{short_text_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
 		
-		$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
-		my ($url) = $b->{short_text_html} =~ /(http:\/\/www.youtube.com\/watch[^\s\<\.]+)/;
+		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
+		$b->{short_text_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+		my ($url) = $b->{short_text_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
 		if($url)
 		{
-			my ($code) = $url =~ /v=([^\&]+)/;
+			my ($code) = $url =~ /v=(.+?)\b/;
 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
 			$b->{short_text_html} .= qq{
 				<hr size=1 class='post-attach-divider'>
@@ -602,6 +603,13 @@ package Boards;
 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
 		$b->{approx_time_ago} = approx_time_ago($b->{timestamp});
 		$b->{pretty_timestamp} = pretty_timestamp($b->{timestamp});
+		
+		my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
+		my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
+		$b->{reply_to_url} = $reply_to_url;
+		$b->{delete_base} = $delete_base;
+			
+			
 		
 # 		$b->{$_} = $b->get($_) foreach $b->columns;
 # 		$b->{bin}         = $bin;
@@ -631,9 +639,6 @@ package Boards;
 		{
 			my $list = [];
 			
-			my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-			my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
-		
 			my $local_ctx = 
 			{
 				post		=> $post,
@@ -786,11 +791,11 @@ package Boards;
 		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
 		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
 		$b->{clean_text} = $b->{text};
-		$b->{clean_text} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
-		my ($url) = $b->{clean_text} =~ /(http:\/\/www.youtube.com\/watch[^\s\<\.]+)/;
+		$b->{clean_text} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+		my ($url) = $b->{clean_text} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
 		if($url)
 		{
-			my ($code) = $url =~ /v=([^\&]+)/;
+			my ($code) = $url =~ /v=(.+?)\b/;
 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
 			$b->{clean_text} .= qq{
 				<hr size=1 class='post-attach-divider'>
