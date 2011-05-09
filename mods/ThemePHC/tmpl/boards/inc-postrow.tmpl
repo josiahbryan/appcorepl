@@ -1,0 +1,110 @@
+			<tr class='post' id='post%%postid%%'>
+				<td valign='top' align='center' class='photo'>
+					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50">
+				</td>
+				<td valign='top' class='data'>
+					<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
+						%%subject%%
+					</a>
+					
+					<div class='posted_by'>
+						<span class='by'>by</span> <span class='name'>%%poster_name%%</span>
+						<!--&middot;-->
+					</div>
+					<div class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%</div>
+					
+					<div class='post_text'>
+						<div id='short_text_%%postid%%' class='short_text'>
+							%%short_text_html%%
+							<tmpl_if short_text_has_more>
+								<!--<span class='more'><a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='more_link' onclick='return show_more_post(%%postid%%,this)'>More...</a></span>-->
+								<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' class='loading' id='loading_%%postid%%'>
+							</tmpl_if>
+						</div>
+						<tmpl_if short_text_has_more>
+							<div id='text_%%postid%%' class='long_text'>
+								<div class='more'><a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a></div>
+								<div id='long_text_%%postid%%'></div>
+								<div class='more'><a href='#' class='more_link' onclick='return show_less_post(%%postid%%)'>&laquo; Less</a></div>
+							</div>
+						</tmpl_if>
+					</div>
+					
+					<div class='actions' id='acts%%postid%%'>
+						<tmpl_if short_text_has_more>
+							<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='more_link' onclick='return show_more_post(%%postid%%,this)'>Read More</a>
+							&middot;
+						</tmpl_if>
+						
+						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%'>Add a Comment</a> &middot;
+						 
+						<span class='you_like' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
+							<b>You</b> (<a href='%%unlike_url%%' class='unlike_link' postid='%%postid%%'>Unlike</a>) and
+						</span>
+						
+						<span class='add_like' style='<tmpl_if you_like>display:none<tmpl_else>display:inline</tmpl_if>' id='addlike%%postid%%'>
+								<a href='%%like_url%%' class='like_link' postid='%%postid%%'>Like</a>
+								<tmpl_if others_like> &middot;</tmpl_if>
+						</span>
+						
+						<tmpl_if others_like>
+							<span class='others_like'><b>%%others_like%% others</b> like this</span>
+						</tmpl_if>
+					</div>
+					
+					<div class='reply_container' id='reply%%postid%%'></div>
+					
+					<div class='replies comments_block'>
+						<tmpl_if replies>
+							<hr size=1>
+						
+							<div class='replies_container'>
+								<tmpl_loop replies>
+									<!--<div class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>-->
+									<table class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>
+										<tr>
+											<td valign=top>
+												<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25" width=25 height=25>
+											</td>
+											<td valign=top>
+												
+												<!--<a name='c%%postid%%'><span class=timestamp>%%approx_time_ago%% ago on %%pretty_timestamp%%</span></a>: <br>-->
+												<div class='posted_by'>
+													<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
+													&middot;
+													<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%</span>
+												</div>
+												
+												<!--<tmpl_if can_admin>
+													<a class='admin_link' href='%%delete_url%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'>
+														<img src='%%appcore%%/images/silk/bullet_toggle_minus.png' title='Delete this comment' border=0 align=absmiddle>
+													</a> 
+												</tmpl_if>-->
+												<span class=text>%%clean_text%%</span>
+												<!--<span class='irl'>(<a href='%%reply_to_url%%/%%folder_name%%'>Reply <b>...</b></a>)</span>-->
+												<div class='actions' id='acts%%postid%%'>
+													<a href='%%reply_to_url%%/%%folder_name%%'>Reply</a> &middot; 
+													<span class='you_like' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>'>
+														<b>You</b> (<a href='%%unlike_url%%' class='unlike'>Unlike</a>) and
+													</span>
+													<span class='add_like' style='<tmpl_if you_like>display:none<tmpl_else>display:inline</tmpl_if>'>
+														 <a href='%%like_url%%'>Like</a>
+														 <tmpl_if others_like> &middot;</tmpl_if>
+													</span>
+													<tmpl_if others_like>
+														<b>%%others_like%% others</b> like this
+													</tmpl_if>
+												</div>
+												<div class='reply_container' id='reply%%postid%%'></div>
+											</td>
+										</tr>
+									</table>
+								</tmpl_loop>
+							</div>
+						<tmpl_else>
+							<!--<h3>Sorry, no replies yet to this post.</h3>-->
+						</tmpl_if>
+						
+					</div>
+				</td>
+			</tr>

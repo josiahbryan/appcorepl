@@ -606,6 +606,11 @@ package AppCore::Common;
 			#print STDERR "$$x>$val ...\n";
 			$$x /= $val;
 			$$unit = $new_unit;
+			
+			# De-plural if it will round out to "1"
+			$$unit =~ s/s$// if $$x < 2;
+			
+			
 			#print STDERR "...down to $$x $$unit ---\n";
 		}
 		else

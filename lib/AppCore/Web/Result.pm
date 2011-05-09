@@ -166,6 +166,14 @@ package AppCore::Web::Result;
 			$ctype = $1 if $1;
 		}
 		
+		# Put this inclusion macro up top before other modifications
+		# so that any content it includes is processed along with
+		# the rest of the content on the pagge
+		if($AppCore::Config::ENABLE_TMPL2JQ_MACRO)
+		{
+			$out =~ s/\${TMPL2JQ:([^\}]+)}/_tmpl2jq($1,$tmpl)/segi;
+		}
+		
 		if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
 		{	
 			if($AppCore::Config::ENABLE_CSSX_COMBINE)
@@ -270,15 +278,58 @@ package AppCore::Web::Result;
 			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
 		}
 		
-		if($AppCore::Config::ENABLE_CDN_MACRO && _can_cdn_for_fqdn())
+		if($AppCore::Config::ENABLE_CDN_MACRO)
 		{
-			$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi;
+			if(_can_cdn_for_fqdn())
+			{
+				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi;
+				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi;
+			}
+			else
+			{
+				$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/segi;
+				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/segi;
+			}
 		}
 		
 		$self->content_type($ctype);
 		$self->content_title($title);
 		$self->body($out);
 		return $self;
+	}
+	
+	sub _tmpl2jq
+	{
+		my $file = shift;
+		my $tmpl = shift;
+		my $block = AppCore::Web::Common->get_included_file($file);
+		#$block =~ s/<tmpl_if ([^>]+?)>/{{if $1}}/segi;
+		$block =~ s/<tmpl_if ([^>]+?)>/_tmpl_if2jq($1,$block)/segi;
+		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
+		$block =~ s/<tmpl_loop ([^>]+?)>/{{each $1}}/gi;
+		$block =~ s/<\/tmpl_loop>/{{\/each}}/gi;
+		$block =~ s/<tmpl_else>/{{else}}/gi;
+		$block =~ s/<tmpl_var ([^>]+)>/$tmpl->param($1)/segi if $tmpl;
+		$block =~ s/%%(.+?html)%%/{{html $1}}/g;
+		$block =~ s/%%([^\%]+)%%/\${$1}/g;
+
+		#print STDERR "Final block: $block\n";
+		
+		return $block;
+	}
+	
+	sub _tmpl_if2jq
+	{
+		my $var = shift;
+		my $block = shift;
+		if($block =~ /<tmpl_loop $var>/)
+		{
+			return "{{if $var.length}}";
+		}
+		else
+		{
+			return "{{if $var}}";
+		}
 	}
 	
 	sub _combine_inpage_css

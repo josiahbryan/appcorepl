@@ -134,6 +134,9 @@ BEGIN
 	$ENABLE_CDN_JS   = 1;		# Controls replacement of the src attrib of <script> tags
 	$ENABLE_CDN_MACRO = 1;		# Enable ${CDN} or ${CDN:...} replacement - the latter keeps the CDN server the same for the url in the '...' - the first (${CDN}) just gives a random host from below
 	
+	# ${tmpl2jq:<file>} reads the given <file> and changes any tmpl-style tags (%%var%%) to jquery tmpl style (${var}) and inserts the new text into the output 
+	$ENABLE_TMPL2JQ_MACRO = 1;
+	
 	# Quoting from: http://yuiblog.com/blog/2007/04/11/performance-research-part-4/
 	# Our rule of thumb is to increase the number of parallel downloads by using at least two, but no more than four hostnames.
 	
@@ -157,6 +160,8 @@ BEGIN
 	# Module-specific configuration
 	
 	$BOARDS_SHORT_TEXT_LENGTH = 300;
+	
+	
 };
 
 1;

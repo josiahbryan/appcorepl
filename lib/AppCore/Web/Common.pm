@@ -316,6 +316,9 @@ package AppCore::Web::Common;
 		my $textref = shift;
 		my $tmpl = shift;
 		
+		$$textref =~ s/\${inc:([^\}]+)}/get_included_file($1)/segi;
+		
+		
 		$$textref =~ s/\%\%(.*?)\%\%/<TMPL_VAR NAME="$1">/gi;
 		$$textref =~ s/\%(\/?)tmpl_(.*?)\%/<$1TMPL_$2>/gi;
 		#$$textref =~ s/\%([^\s](?:.|\n)*?)%/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
@@ -331,9 +334,37 @@ package AppCore::Web::Common;
 		$$textref =~ s/<perl>((?:.|\n)*?)<\/perl>/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
 		
 		#die Dumper $$textref;
+	}
+	
+	my %FileCache;
+	sub get_included_file
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $file = shift;
+		my $orig = $file;
+		return $FileCache{$orig} if $FileCache{$orig}; 
 		
+		$file =~ s/%%appcore%%/$AppCore::Config::WWW_ROOT/gi;
 		
+		if($file =~ /^\/appcore/)
+		{
+			$file = $AppCore::Config::WWW_DOC_ROOT . $file;
+		}
 		
+		my $data = undef;
+		if(-f $file)
+		{
+			$data = AppCore::Common->read_file($file);	
+		}
+		else
+		{
+			print STDERR __PACKAGE__."::get_included_file(): File does not exist: '$file'\n";
+			$data = "";
+		}
+		
+		$FileCache{$orig} = $data;
+		
+		return $data;
 	}
 	
 	# Context variables for perl eval 
