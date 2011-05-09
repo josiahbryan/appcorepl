@@ -7,6 +7,9 @@ package Content;
 	use Content::Page;
 	use Content::Admin;
 	
+	# To auto-redirect to a post...
+	use Boards::Data;
+	
 	use Admin::ModuleAdminEntry;
 	#Admin::ModuleAdminEntry->register(__PACKAGE__);
 	Admin::ModuleAdminEntry->register(__PACKAGE__, 'Pages', 'content', 'List all pages on this site, and create/update/delete pages.');
@@ -61,6 +64,20 @@ package Content;
 		if(!$self->process_page($req,$r))
 		{
 			my $url = AppCore::Web::Common->get_full_url();
+			
+			my $trim = $url;
+			$trim =~ s/^\///g;
+			if(index($trim, '/') < 0)
+			{
+				my $post = Boards::Post->by_field(folder_name => $trim);
+				if($post && $post->id)
+				{
+					my $url = Boards->module_url($post->boardid->folder_name . "/" . ($post->folder_name ? $post->folder_name : $post->id));
+					#print STDERR "Auto-redirecting fallthru to post $post, url: $url\n";
+					return $r->redirect($url);
+				}
+			}
+			
 			#return $r->error("Unknown Page Address","The page requested does not exist: <b>$url</b>");
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
