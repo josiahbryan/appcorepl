@@ -206,13 +206,22 @@ package AppCore::Web::Result;
 			my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
 			
 			my %hash = @files;
+			
+			use Data::Dumper;
 			# Sort scripts by their 'index' attribute
-			my @sorted_files = sort { $hash{$a} <=> $hash{$b} } keys %hash;
+			my @sorted_files = grep { defined $hash{$_} ? $hash{$_} != 0 : 1 } sort { $hash{$a} <=> $hash{$b} } keys %hash;
+			my @zeros = grep { defined $hash{$_} && $hash{$_} == 0 } keys %hash;
 			
-			$out =~ s/<script[^\>]+><\/script>//gi;
+			#die Dumper \%hash;
 			
-			my $js_link = _process_multi_js($self,$tmpl,0,@sorted_files);
-			$out =~ s/<\/body>/\t$js_link\n<\/body>/g;
+			$out =~ s/<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?><\/script>//gi;
+			
+			my $js_link;
+			$js_link = _process_multi_js($self,$tmpl,0,@sorted_files) if @sorted_files;
+			$js_link = join "\n", $js_link, map { "<script src='$_' index=0></script>" } @zeros;
+			my $tmp = "\t$js_link\n</body>";
+			$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+			
 		}
 		
 		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?>/)
@@ -260,7 +269,8 @@ package AppCore::Web::Result;
 				}
 			}
 			
-			$out =~ s/<\/body>/<script>$block<\/script>\n<\/body>/g;
+			my $tmp = "<script>$block</script>\n</body>";
+			$out.=$tmp if ! ($out =~ s/<\/body>/$tmp/gi);
 		}
 		
 		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
@@ -464,7 +474,7 @@ package AppCore::Web::Result;
 		{
 			$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
 			my $srv = $AppCore::Config::WEBSITE_SERVER;
-			$srv =~ s/^http:\/\///g;
+			$srv =~ s/^https?:\/\///g;
 			my $flag = $ENV{HTTP_HOST} eq $srv ? 1:0;
 			#print STDERR "_can_cdn_for_fqdn: srv: $srv, current: $ENV{HTTP_HOST}, flag: $flag\n";
 			return $flag; 
@@ -513,7 +523,7 @@ package AppCore::Web::Result;
 			my $cache_mod = (stat($jsx_file))[9];
 			foreach my $file (@files)
 			{
-				next if $file =~ /^http:/;
+				next if $file =~ /^https?:/;
 				my $disk_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				if((stat($disk_file))[9] > $cache_mod)
 				{
@@ -528,7 +538,7 @@ package AppCore::Web::Result;
 			my @js_buffer;
 			foreach my $file (@files)
 			{
-				next if $file =~ /^http:/;
+				next if $file =~ /^https?:/;
 				
 				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
 				print STDERR "Recompiling JS File $orig_file -> $jsx_file\n";
@@ -580,9 +590,9 @@ package AppCore::Web::Result;
 			$jsx_url = cdn_url($jsx_url);
 		}
 		
-		my @non_local = grep { /^http:/ } @files;
+		my @non_local = grep { /^https?:/ } @files;
 		my @result = map { "<script src='$_'></script>" } @non_local;
-		push @result, "<script src='$jsx_url'></script> <!-- Combined from original JS files: ". join(', ', grep { !/^http:/ } @files). "-->";
+		push @result, "<script src='$jsx_url'></script> <!-- Combined from original JS files: ". join(', ', grep { !/^https?:/ } @files). "-->";
 		return join("\n", @result);
 	}
 	

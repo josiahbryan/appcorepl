@@ -535,7 +535,7 @@ package Boards;
 				push @list, $controller->load_post_for_list($b,$can_admin);
 			}
 			
-			#die Dumper \@posts;
+			#die Dumper \@list;
 			
 			$tmpl->param(posts=>\@list);
 			
@@ -654,7 +654,7 @@ package Boards;
 			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
 			foreach my $b (@replies)
 			{
-				_post_prep_ref($local_ctx,$list,$b);
+				push @$list, _post_prep_ref($local_ctx,$b);
 				_post_add_kids($local_ctx,$list,$b);
 			}
 			
@@ -741,7 +741,7 @@ package Boards;
 			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
 			foreach my $b (@replies)
 			{
-				_post_prep_ref($local_ctx,$list,$b);
+				push @$list, _post_prep_ref($local_ctx,$list,$b);
 				_post_add_kids($local_ctx,$list,$b);
 			}
 			
@@ -766,13 +766,13 @@ package Boards;
 	sub _post_prep_ref
 	{
 		my $local_ctx = shift;
-		my $list = shift;
-		my $b = shift;
-		my $user = $b->posted_by;
+		my $comment = shift;
+		my $b = {};
+		my $user = $comment->posted_by;
 		# Force stringify for JSON
-		$b->{$_} = $b->get($_).""   foreach $b->columns;
-		$b->{$_} = $local_ctx->{$_} foreach keys %$local_ctx;
-		$b->{indent}		= $local_ctx->{indent}->{$b->parent_commentid};
+		$b->{$_} = $comment->get($_).""   foreach $comment->columns;
+		$b->{$_} = $local_ctx->{$_}."" foreach keys %$local_ctx;
+		$b->{indent}		= $local_ctx->{indent}->{$comment->parent_commentid};
 		$b->{indent_css} 	= $b->{indent} * 2;
 		$b->{can_reply}		= defined $local_ctx->{can_reply} ? $local_ctx->{can_reply} : 1,
 		$b->{approx_time_ago}   = approx_time_ago($b->{timestamp});
@@ -814,8 +814,9 @@ package Boards;
 		}
 		
 		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
-		$local_ctx->{indent}->{$b->id} = $b->{indent} + 1;
-		push @$list, $b;
+		$local_ctx->{indent}->{$comment->id} = $b->{indent} + 1;
+		#push @$list, $b;
+		return $b;
 	}
 	
 	sub _post_add_kids
@@ -826,7 +827,7 @@ package Boards;
 		my @kids = Boards::Post->search(deleted=>0,top_commentid=>$local_ctx->{post},parent_commentid=>$b);
 		foreach my $kid (@kids)
 		{
-			_post_prep_ref($local_ctx,$list,$kid);
+			push @$list, _post_prep_ref($local_ctx,$kid);
 			_post_add_kids($local_ctx,$list,$kid);
 		}
 	}
@@ -930,6 +931,9 @@ package Boards;
 	
 	sub email_new_post
 	{
+		print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
+		return;
+		
 		my $self = shift;
 		my $post = shift;
 		my $board_folder = $post->boardid->folder_name;
@@ -968,6 +972,7 @@ Cheers!};
 		#print STDERR "\$section_name=$section_name,\$folder_name=$folder_name,\$board_folder_name=$board_folder_name\n";
 		
 		my $post = Boards::Post->by_field(folder_name => $folder_name);
+		$post = Boards::Post->retrieve($folder_name) if !$post;
 		if(!$post || $post->deleted)
 		{
 			return $r->error("No Such Post","Sorry, the post folder name you gave did not match any existing Bulletin Board posts. Please check your URL or the link on the page that you clicked and try again.");
@@ -976,7 +981,7 @@ Cheers!};
 		my $board             = $post->boardid;
 		my $board_folder_name = $board->folder_name;
 		
-		my $sub_page = $req->next_path;
+		my $sub_page = $req->shift_path;
 		
 		#$tmpl->param(can_upload=>1) if ($_ = AppCore::Common->context->user) && $_->check_acl($UPLOAD_ACL);
 		
@@ -988,7 +993,38 @@ Cheers!};
 			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
 			
 			$self->email_new_post_comments($comment,$comment_url);
-					
+			
+			print STDERR __PACKAGE__."::post_page($post): Posted reply ID $comment to post ID $post\n";
+			
+			if($req->output_fmt eq 'json')
+			{
+				my $list = [];
+			
+				my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
+				my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
+			
+				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});;
+				
+				my $local_ctx = 
+				{
+					post		=> $post,
+					bin		=> $bin,
+					appcore		=> $AppCore::Config::WWW_ROOT,
+					board_folder	=> $board_folder_name,
+					folder_name	=> $folder_name,
+					reply_to_url	=> $reply_to_url,
+					can_admin	=> $can_admin,
+					delete_base	=> $delete_base,
+				};
+				
+				my $output = _post_prep_ref($local_ctx,$comment);
+				
+# 				use Data::Dumper;
+# 				print STDERR Dumper $output;
+				my $json = encode_json($output);
+				return $r->output_data("application/json", $json);
+			}
+			
 			$r->redirect($comment_url);
 		}
 		elsif($sub_page eq 'reply' || $sub_page eq 'reply_to')
@@ -1132,6 +1168,9 @@ Cheers!};
 	
 	sub email_new_post_comments
 	{
+		print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
+		return;
+		
 		my $self = shift;
 		my $comment = shift;
 		my $comment_url = shift;
@@ -1260,6 +1299,11 @@ Cheers!};
 		
 		#die "x";
 		
+		if(!$req->{subject})
+		{
+			my $text = AppCore::Web::Common->html2text($req->{comment});
+			$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});
 
@@ -1271,8 +1315,17 @@ Cheers!};
 		
 		#die Dumper($fake_it,$append_flag,$req);
 		
-		$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
-		$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
+		my $user = AppCore::Common->context->user;
+		if(!$user || !$user->id)
+		{
+			$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
+			$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
+		}
+		else
+		{
+			$req->{poster_name}  = $user->display       if !$req->{poster_name};
+			$req->{poster_email} = $user->email         if !$req->{poster_email};
+		}
 		
 		my $comment = Boards::Post->create({
 			boardid			=> $board,
@@ -1280,7 +1333,7 @@ Cheers!};
 			parent_commentid	=> $req->{parent_commentid},
 			poster_name		=> $req->{poster_name},
 			poster_email		=> $req->{poster_email},
-			posted_by		=> AppCore::Common->context->user,
+			posted_by		=> $user,
 			timestamp		=> date(),
 			subject			=> $req->{subject},
 			text			=> $req->{comment},

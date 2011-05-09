@@ -608,14 +608,16 @@ package AppCore::Common;
 			$$unit = $new_unit;
 			
 			# De-plural if it will round out to "1"
-			$$unit =~ s/s$// if $$x < 2;
+			$$unit =~ s/s$// if $$x > 0 && $$x < 2;
 			
 			
 			#print STDERR "...down to $$x $$unit ---\n";
+			return 0;
 		}
 		else
 		{
 			#print STDERR "$$x<$val $new_unit, still $$x $$unit /\n";
+			return 1;
 		} 
 	}
 	
@@ -623,16 +625,18 @@ package AppCore::Common;
 	{
 		my $date = shift;
 		my $x = seconds_since($date);
-		#my $orig = $x;
-		my $unit = 'seconds';
-		_unit_divide_if('minutes',	60,		\$x, \$unit);
-		_unit_divide_if('hours',	60,		\$x, \$unit);
-		_unit_divide_if('days',		24,		\$x, \$unit);
-		_unit_divide_if('months',	365/12,		\$x, \$unit);
-		_unit_divide_if('years',	12,		\$x, \$unit);
-# 		_unit_divide_if('centuries',	100,		\$x, \$unit);
-# 		_unit_divide_if('millenia',	1000,		\$x, \$unit);
-# 		_unit_divide_if('eons',	100,		$x, $unit);
+		my $orig = $x;
+		#print STDERR "[$orig] Start, x=$x\n";
+		my $unit = $x > 0 && $x < 2 ? 'second' : 'seconds';
+		goto _approx_time_ago_end if _unit_divide_if('minutes',	60,	\$x, \$unit);
+		goto _approx_time_ago_end if _unit_divide_if('hours',	60,	\$x, \$unit);
+		goto _approx_time_ago_end if _unit_divide_if('days',	24,	\$x, \$unit);
+		goto _approx_time_ago_end if _unit_divide_if('months',	365/12,	\$x, \$unit);
+		goto _approx_time_ago_end if _unit_divide_if('years',	12,	\$x, \$unit);
+# 		goto _approx_time_ago_end if _unit_divide_if('centuries',	100,		\$x, \$unit);
+# 		goto _approx_time_ago_end if _unit_divide_if('millenia',	1000,		\$x, \$unit);
+# 		goto _approx_time_ago_end if _unit_divide_if('eons',	100,		$x, $unit);
+		_approx_time_ago_end:
 		$x = int($x); # remove decimals
 		#print STDERR "[$orig] Done, returning $x $unit\n";
 		return wantarray ? ($x,$unit) : "$x $unit";

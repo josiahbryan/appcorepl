@@ -318,7 +318,6 @@ package AppCore::Web::Common;
 		
 		$$textref =~ s/\${inc:([^\}]+)}/get_included_file($1)/segi;
 		
-		
 		$$textref =~ s/\%\%(.*?)\%\%/<TMPL_VAR NAME="$1">/gi;
 		$$textref =~ s/\%(\/?)tmpl_(.*?)\%/<$1TMPL_$2>/gi;
 		#$$textref =~ s/\%([^\s](?:.|\n)*?)%/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
@@ -341,12 +340,13 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $file = shift;
+		my $level = shift || 0;
 		my $orig = $file;
-		return $FileCache{$orig} if $FileCache{$orig}; 
+		#return $FileCache{$orig} if $FileCache{$orig}; 
 		
 		$file =~ s/%%appcore%%/$AppCore::Config::WWW_ROOT/gi;
 		
-		if($file =~ /^\/appcore/)
+		if($file =~ /^\/appcore/i)
 		{
 			$file = $AppCore::Config::WWW_DOC_ROOT . $file;
 		}
@@ -354,7 +354,13 @@ package AppCore::Web::Common;
 		my $data = undef;
 		if(-f $file)
 		{
-			$data = AppCore::Common->read_file($file);	
+			$data = AppCore::Common->read_file($file);
+			
+			# Limit to 10 levels of includes
+			if($data =~ /\${inc:/i && ++ $level < 10)
+			{
+				$data =~ s/\${inc:([^\}]+)}/get_included_file($1,$level)/segi;
+			}	
 		}
 		else
 		{

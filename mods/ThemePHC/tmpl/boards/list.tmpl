@@ -488,42 +488,6 @@
 	}
 	</script>
 		
-	<script id="post-tmpl2" type="text/x-jquery-tmpl">
-		<tr href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='post' id='post${postid}'> <!-- onclick='document.location.href=this.getAttribute("href")'>-->
-			<td valign='top' align='center' class='photo'>
-				<img class='user_photo' src='http://www.gravatar.com/avatar/${poster_email_md5}?d=${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}&s=50'>
-			</td>
-			<td valign='top' class='data'>
-				<a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='title_link'>
-					${subject}
-				</a>
-				
-				<div class='posted_by'>
-					<span class='by'>by</span> <span class='name'>${poster_name}</span>
-				</div>
-				
-				<div class='timestamp'>${approx_time_ago} ago</div>
-				
-				<div class='post_text'>
-					<div id='short_text_${postid}' class='short_text'>
-						${short_text_html}
-						<span class='more'><a href='%%binpath%%/%%board_folder_name%%/${folder_name}' class='more_link' onclick='return show_more_post(${postid},this)'>More...</a></span>
-					</div>
-					<div id='text_${postid}' class='long_text'>
-						<div class='more'><a href='#' class='more_link' onclick='return show_less_post(${postid})'>&laquo; Less</a></div>
-						<div id='long_text_${postid}'></div>
-						<div class='more'><a href='#' class='more_link' onclick='return show_less_post(${postid})'>&laquo; Less</a></div>
-					</div>
-				</div>
-			</td>
-		</tr>
-	</script>
-	
-	<script id="post-tmpl" type="text/x-jquery-tmpl">
-		${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
-	</script>
-	
-
 	<table class='postlist' width='100%'>
 		<tbody>
 			<tr class='post post-placeholder' id='post-placeholder'>
@@ -535,16 +499,28 @@
 				</td>
 			</tr>
 				
-		<tmpl_loop posts>
-			${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
-		</tmpl_loop>
+			<tmpl_loop posts>
+				${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+			</tmpl_loop>
 		</tbody>
 	</table>
 	
+	<script id="post-tmpl" type="text/x-jquery-tmpl">
+		${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+	</script>
 	<script id="reply-tmpl" type="text/x-jquery-tmpl">
-		<form class='reply_form'  onsubmit='return ajax_post_reply(this)' id='reply_form_${postid}' postid='${postid}'>
+		${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply.tmpl}
+	</script>
+	
+	<script id="replyform-tmpl" type="text/x-jquery-tmpl">
+		<form class='reply_form' 
+			onsubmit='return ajax_post_reply(this)' 
+			id='reply_form_${postid}' 
+			postid='${postid}'
+			top_commentid='${top_commentid}'>
+			
 			<div class='wrap'>
-		
+				<input type='hidden' name='postid' value='${postid}'>
 				<div class='content'>
 					<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
 				</div>
@@ -552,34 +528,38 @@
 					<a href='#' class='cancel'>Cancel</a> 
 					<button type='submit' class='button'>Post</button>
 				</div>
+				<div class='form' id='postas_form_${postid}'>
+					<table>
+						<tr>
+							<td>Name:</td>
+							<td><input value='%%user_display%%' name='poster_name'></td>
+						</tr>
+						<tr>
+							<td>Email:</td>
+							<td><input value='%%user_email%%' name='poster_email'></td>
+						</tr>
+					</table>
+				</div>
+				<div class='ident' id='postas_display'>
+					Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+				</div>
+				
 				<div class='fc'></div>
 			</div>
 		</form>
 	</script>
-	<!--
-			<div class='form' id='postas_form'>
-				<table>
-					<tr>
-						<td>Name:</td>
-						<td><input value='%%user_display%%' name='poster_name'></td>
-					</tr>
-					<tr>
-						<td>Email:</td>
-						<td><input value='%%user_email%%' name='poster_email'></td>
-					</tr>
-				</table>
-			</div>
-			<div class='ident' id='postas_display'>
-				Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
-			</div>
-			-->
+	
 	<script>
 	//selector:
 	function x(e){return document.getElementById(e)}
 	$(".actions .reply_link").live("click",function(){
 		
+			
+		var	th = $(this),
+		
 			// Get ID of the post
-		var	postid = $(this).attr("postid"),
+			postid = th.attr("postid"),
+			topid  = th.attr("top_commentid"),
 			
 			// Create selector string for the placeholder
 			replyHolder = "#reply"+postid,
@@ -587,7 +567,7 @@
 			// Check to see if the form is already in the DOM
 			div = x("reply_form_"+postid),
 			
-			tmp,
+			tmp = undefined,
 			
 			cancelFunc = function() 
 			{
@@ -600,13 +580,16 @@
 		// Create reply form for this post if doesnt already exist
 		if(!div)
 		{
-			tmp = $("#reply-tmpl").tmpl({postid:postid});
+			tmp = $("#replyform-tmpl").tmpl({postid:postid,top_commentid:topid});
 			$(replyHolder).append(tmp);
 		}
 		else
 		{
 			tmp = $(replyHolder+" .reply_form")
 		}
+		
+		// Cache the reply type (reply to comment/reply to post) on the form element
+		tmp.attr("type", th.attr("type"));
 		
 		// Add "Cancel" link handler
 		$(replyHolder+' a.cancel').live("click",function(){
@@ -636,29 +619,35 @@
 		return false;
 		
 	});
-	/*
+	
 	function ajax_post_reply(formElm)
 	{
+		var postid = formElm.postid.value;
+		var isPost = formElm.getAttribute("type") != "comment";
+		var topid  = isPost ? postid : formElm.getAttribute("top_commentid");
+
 		var postData = {
 			comment: formElm.text.value,
 			poster_name: formElm.poster_name.value,
 			poster_email: formElm.poster_email.value,
+			parent_commentid: isPost ? 0 : formElm.postid.value,
 			output_fmt: "json",
 			plain_text: 1,
 		};
 		
-		$("#post-placeholder").show();
+		//$("#post-placeholder").show();
 		
 		var errorFunc = function() 
 		{
-			$("#post-placeholder").hide();
-			if(confirm("There was an error saving your post to the server - nothing was saved. Do you want to use the simple post page instead of this fancy page to make your post?"))
+			//$("#post-placeholder").hide();
+			if(confirm("There was an error saving your comment to the server - nothing was saved. Do you want to use the simple post page instead of this fancy page to make your post?"))
 			{
 				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
 			}
 		}
 		
-		var postUrl = "%%binpath%%/%%board_folder_name%%/post";
+		
+		var postUrl = "%%binpath%%/%%board_folder_name%%/" + topid + "/post";
 		//alert(postUrl);
 		$.ajax({
 			type: "POST",
@@ -666,6 +655,7 @@
 			data: postData,
 			success: function(data)
 			{
+				//console.debug("got post data: "+data+", typeof: "+typeof(data));
 				//alert("Got post data:"+data+", type:"+typeof(data));
 				if(typeof(data) == "string")
 				{
@@ -674,12 +664,34 @@
 				}
 				else
 				{
-					//alert(data);
+					// apply proper indent to child comments
+					data.indent_css = isPost ? 0 :
+								parseInt($("#comment"+postid).attr("indent_css")) + 2;
+					
 					//console.debug(data);
-					$("#post-tmpl").tmpl(data).insertAfter("#post-placeholder");
-					$("#post-placeholder").hide();
-					formElm.text.value = "";
-					formElm.text.updateAutogrow();
+					//console.debug("isPost:"+isPost);
+					
+					var output = $("#reply-tmpl").tmpl(data);
+					if(isPost)
+					{
+						var insertSelector = "#post"+postid+" .replies_container";
+						//console.debug("insertSelector:"+insertSelector);
+						// This needs to be appended to the selector
+						output.appendTo(insertSelector);
+					}
+					else
+					{
+						var insertSelector = "#comment" + postid;
+						// This needs to be inserted after the selector
+						output.insertAfter(insertSelector);
+					}
+					
+					//$("#post-placeholder").hide();
+					
+// 					formElm.text.value = "";
+// 					formElm.text.updateAutogrow();
+					
+					formElm.parentNode.removeChild(formElm);
 				}	
 			},
 			error: errorFunc,
@@ -687,7 +699,7 @@
 		});
 		
 		return false;
-	}*/
+	}
 	/*
 	$(".actions .you_like a").live("click",function(){
 		// NOTE This is the UNLIKE link
