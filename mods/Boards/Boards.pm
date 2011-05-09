@@ -746,7 +746,7 @@ package Boards;
 			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
 			foreach my $b (@replies)
 			{
-				push @$list, _post_prep_ref($local_ctx,$list,$b);
+				push @$list, _post_prep_ref($local_ctx,$b);
 				_post_add_kids($local_ctx,$list,$b);
 			}
 			
