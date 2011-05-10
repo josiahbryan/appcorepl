@@ -335,7 +335,8 @@
 	
 	.reply_form .form { display: none; }
 	
-	.add_like a
+	.add_like a,
+	.you_like
 	{
 		background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -33px;
 		padding-left: 16px;
@@ -394,6 +395,11 @@
 	.comment_text div.text
 	{
 		margin-top: 4px;
+	}
+	
+	.like-loading-img 
+	{
+		padding-left: 4px;
 	}
 	
 	</style>
@@ -502,7 +508,7 @@
 			</div>
 			</tmpl_if>
 			<!--<tmpl_unless user_display>
-			<script>setTimeout(show_postas_form,500)</script>
+			<_script>setTimeout(show_postas_form,500)</script>
 			</tmpl_unless>-->
 		</form>
 	</div>
@@ -785,8 +791,80 @@
 		
 		return false;
 	}
+	
+	$(".actions .add_like a").live("click",function(){
+		//alert("Not done yet");
+		
+		var th = $(this),
+		    // Create a loading indicator
+		    loading = $('<img/>')
+		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('align','absmiddle')
+		    	.attr('class','like-loading-img');
+		
+		loading.insertAfter(th);
+		
+		var postid = th.attr('postid');
+		
+		var postUrl = th.attr('like_url');
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			//data: postData,
+			success: function(data)
+			{
+				//console.debug("got post data: "+data+", typeof: "+typeof(data));
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				loading.remove();
+				
+				$("#addlike"+postid).hide();
+				$("#youlike"+postid).show();
+				$("#unlike" +postid).show();
+			}
+		});
+				
+		
+		return false;
+	});
+	
+	$(".actions .unlike a").live("click",function(){
+		//alert("Not done yet");
+		
+		var th = $(this),
+		    // Create a loading indicator
+		    loading = $('<img/>')
+		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('align','absmiddle')
+		    	.attr('class','like-loading-img');
+		
+		loading.insertAfter(th);
+		
+		var postid = th.attr('postid');
+		
+		var postUrl = th.attr('unlike_url');
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			//data: postData,
+			success: function(data)
+			{
+				//console.debug("got post data: "+data+", typeof: "+typeof(data));
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				loading.remove();
+				
+				$("#addlike"+postid).show();
+				$("#youlike"+postid).hide();
+				$("#unlike" +postid).hide();
+			}
+		});
+		
+		
+		return false;
+	});
+		
 	/*
-	$(".actions .you_like a").live("click",function(){
 		// NOTE This is the UNLIKE link
 		// 1. send url to server
 		// 2. on reply, hide the span with the proper postid  #youlike${postid}

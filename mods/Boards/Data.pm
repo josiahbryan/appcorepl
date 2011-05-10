@@ -33,6 +33,7 @@ package Boards::DbSetup;
 			Boards::Group
 			Boards::Post::Tag
 			Boards::Post::Tag::Pair
+			Boards::Post::Like
 			Boards::Post
 			Boards::Board
 		};
@@ -110,6 +111,65 @@ package Boards::Post::Tag::Pair;
 	sub stringify_fmt { ('#tagid', ' - ','#postid') }
 }
 
+package Boards::Post::Like;
+{
+	use base 'AppCore::DBI';
+	
+	my $table = $AppCore::Config::BOARDS_DBTBL_POSTLIKES || 'board_post_likes';
+	__PACKAGE__->meta(
+	{
+		@Boards::DbSetup::DbConfig,
+		table	=> $table,
+		
+		schema	=> 
+		[
+			{ field => 'lineid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
+			{ field	=> 'postid',			type => 'int', linked => 'Boards::Post',  default => 0 },
+			{ field	=> 'userid',			type => 'int', linked => 'AppCore::User', default => 0 },
+			{ field => 'name',			type => 'varchar(255)'},
+			{ field => 'email',			type => 'varchar(255)'},
+			{ field => 'photo',			type => 'varchar(255)'},
+			{ field	=> 'timestamp',			type => 'timestamp' },
+		],	
+	});
+	
+	my $dbh = __PACKAGE__->db_Main;
+	my $q_cmt_likes 	= $dbh->prepare('select count(lineid) as count from '.$table.' where postid=? and (userid!=? or userid is null or userid=0)');
+	my $q_youlike_cmt 	= $dbh->prepare('select count(lineid) as count from '.$table.' where postid=? and userid=?');
+	my $q_cmt_other_names	= $dbh->prepare('select distinct display from '.$table.' p,'.AppCore::User->table.' e where p.userid=e.userid and p.userid is not null and p.postid=? and p.userid!=? order by display');
+	
+	sub like_data_for_post
+	{
+		my $self = shift;
+		my $postid = shift;
+		my $ref = shift || {};
+		my $user = AppCore::Common->context->user;
+		my $userid = $user && $user->id ? $user->id : 0;
+		
+		$q_cmt_likes->execute($postid,$userid);
+		$q_youlike_cmt->execute($postid,$userid) if $userid;
+				
+		$ref->{others_like} = $q_cmt_likes->fetchrow_hashref->{count};
+		$ref->{you_like}    = $userid ? $q_youlike_cmt->fetchrow_hashref->{count} : 0;
+		
+		$q_cmt_other_names->execute($postid,$userid);
+		
+		my @list;
+		push @list, $_->{display} while $_ = $q_cmt_other_names->fetchrow_hashref;
+		my $diff = $ref->{others_like} - scalar(@list);
+		push @list, "$diff others" if $diff > 0;
+		$ref->{others_like_names} = join(", ",@list);
+		$ref->{others_like_names_list} = join("\n", @list);
+		
+		#print STDERR "Post: $postid, Dump:".Dumper($ref);
+		
+		#print STDERR "like_data_for_post: post: $postid, userid: $userid, u: $ref->{you_like}, o:$ref->{others_like}, n:$ref->{others_like_names}\n";
+	
+		
+		return $ref;
+	}
+			
+};
 
 package Boards::Post;
 {
@@ -125,6 +185,7 @@ package Boards::Post;
 			{ field	=> 'boardid',			type => 'int', linked => 'Boards::Board', default => 0 },
 			{ field => 'poster_name',		type => 'varchar(255)'},
 			{ field => 'poster_email',		type => 'varchar(255)'},
+			{ field => 'poster_photo',		type => 'varchar(255)'},  # not used yet.......
 			{ field	=> 'posted_by',			type => 'int',	linked => 'AppCore::User', default => 0 },
 			#{ field => 'posted_at',			type => 'datetime' }, # not used for legacy reasons for now
 			{ field	=> 'timestamp',			type => 'datetime' }, # leave as datetime for legacy reasons for now
@@ -147,7 +208,7 @@ package Boards::Post;
 			
 		],	
 		
-		has_many	=> ['Boards::Post::Tag::Pair'],
+		has_many	=> ['Boards::Post::Tag::Pair', 'Boards::Post::Like'],
 	});
 	
 	sub tags

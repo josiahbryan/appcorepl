@@ -531,7 +531,8 @@ package Boards;
 			$tmpl->param(board_nav => $controller->macro_board_nav());
 			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
 			
-			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
+			my $user = AppCore::Common->context->user;
+			my $can_admin = 1 if $user && $user->check_acl($controller->config->{admin_acl});
 			$tmpl->param(can_admin=>$can_admin);
 			
 			#my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
@@ -539,7 +540,8 @@ package Boards;
 			#my @posts = Boards::Post->retrieve_from_sql("deleted=0 and boardid=$boardid and top_commentid=0 order by timestamp desc");
 			#@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
 			#@posts = shift @posts;
-			my $list = $BoardDataCache{$board->id};
+			my $cache_key = $user ? $board->id . $user->id : $board->id;
+			my $list = $BoardDataCache{$cache_key};
 			if(!$list)
 			{
 				my $sth = Boards::Post->db_Main->prepare(q{
@@ -592,8 +594,8 @@ package Boards;
 				@list = reverse @list;
 				
 				$list = \@list;
-				$BoardDataCache{$board->id} = $list;
-				print STDERR "[-] BoardDataCache Cache Miss for board $board\n"; 
+				$BoardDataCache{$cache_key} = $list;
+				print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
 				
 				#die Dumper \@list;
 			}
@@ -688,13 +690,22 @@ package Boards;
 		
 		
 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
-		$b->{approx_time_ago} = approx_time_ago($b->{timestamp});
+		$b->{approx_time_ago}  = approx_time_ago($b->{timestamp});
 		$b->{pretty_timestamp} = pretty_timestamp($b->{timestamp});
 		
-		my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-		my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
+		my $reply_to_url   = "$bin/$board_folder_name/$folder_name/reply_to";
+		my $delete_base    = "$bin/$board_folder_name/$folder_name/delete";
+		my $like_url       = "$bin/$board_folder_name/$folder_name/like";
+		my $unlike_url     = "$bin/$board_folder_name/$folder_name/unlike";
+		
 		$b->{reply_to_url} = $reply_to_url;
-		$b->{delete_base} = $delete_base;
+		$b->{delete_base}  = $delete_base;
+		$b->{like_url}     = $like_url;
+		$b->{unlike_url}   = $unlike_url;
+		
+		Boards::Post::Like->like_data_for_post($b->{postid}, $b);
+		#use Data::Dumper;
+		#die Dumper $b if $b->{you_like};
 			
 		
 # 		$b->{$_} = $b->get($_) foreach $b->columns;
@@ -1156,6 +1167,42 @@ Cheers!};
 				return $r->redirect("$bin/$board_folder_name");
 			}
 		}
+		elsif($sub_page eq 'like')
+		{
+			my $type = $self->post_like($post,$req);
+			
+			if($req->output_fmt eq 'json')
+			{
+				return $r->output_data("application/json", "{like:1}");
+			}
+			
+			if($type eq 'comment')
+			{
+				return $r->redirect("$bin/$board_folder_name/$folder_name");
+			}
+			else
+			{
+				return $r->redirect("$bin/$board_folder_name");
+			}
+		}
+		elsif($sub_page eq 'unlike')
+		{
+			my $type = $self->post_unlike($post,$req);
+			
+			if($req->output_fmt eq 'json')
+			{
+				return $r->output_data("application/json", "{unlike:1}");
+			}
+			
+			if($type eq 'comment')
+			{
+				return $r->redirect("$bin/$board_folder_name/$folder_name");
+			}
+			else
+			{
+				return $r->redirect("$bin/$board_folder_name");
+			}
+		}
 		elsif($sub_page eq 'edit')
 		{
 			if(!$self->can_user_edit($post))
@@ -1509,6 +1556,47 @@ Cheers!};
 			return 'post';
 		}
 		
+	}
+	
+	sub post_like
+	{
+		my $self = shift;
+		my $post = shift;
+		my $req = shift;
+		
+		my $user = AppCore::Common->context->user;
+		$user = 0 if !$user || !$user->id;
+		my $ref = Boards::Post::Like->insert({
+			postid	=> $post->id,
+			userid	=> $user,
+			name	=> $user ? $user->display : '',
+			email	=> $user ? $user->email : '',
+			photo	=> $user ? $user->photo : '',
+		});
+		
+		#print STDERR "post_like(): New like lineid $ref\n";
+			 
+		return $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
+	}
+	
+	sub post_unlike
+	{
+		my $self = shift;
+		my $post = shift;
+		my $req = shift;
+		
+		my $user = AppCore::Common->context->user;
+		$user = 0 if !$user || !$user->id;
+		return 'post' if !$user;
+		
+		Boards::Post::Like->search(  
+			postid	=> $post->id,
+			userid	=> $user
+		)->delete_all;
+		
+		#print STDERR "post_like(): Unliked post $post\n";
+		
+		return $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 	}
 	
 	sub load_post_edit_form

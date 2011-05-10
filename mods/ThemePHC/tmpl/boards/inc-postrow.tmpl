@@ -38,18 +38,7 @@
 				
 				<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%'>Add a Comment</a> &middot;
 					
-				<span class='you_like' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
-					<b>You</b> (<a href='%%unlike_url%%' class='unlike_link' postid='%%postid%%'>Unlike</a>) and
-				</span>
-				
-				<span class='add_like' style='<tmpl_if you_like>display:none<tmpl_else>display:inline</tmpl_if>' id='addlike%%postid%%'>
-						<a href='%%like_url%%' class='like_link' postid='%%postid%%'>Like</a>
-						<tmpl_if others_like> &middot;</tmpl_if>
-				</span>
-				
-				<tmpl_if others_like>
-					<span class='others_like'><b>%%others_like%% others</b> like this</span>
-				</tmpl_if>
+				<tmpl_include inc-likes.tmpl>
 			</div>
 			
 			<div class='reply_container' id='reply%%postid%%'></div>

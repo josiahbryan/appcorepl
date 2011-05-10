@@ -1,0 +1,19 @@
+				<span class='you_like' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
+					<b>You</b><tmpl_unless others_like> like this</tmpl_unless><tmpl_if others_like> and </tmpl_if>
+				</span>
+				
+				<span class='add_like' style='<tmpl_if you_like>display:none<tmpl_else>display:inline</tmpl_if>' id='addlike%%postid%%'>
+					<a href='#' like_url='%%like_url%%' class='like_link' postid='%%postid%%'>Like</a>
+					<tmpl_if others_like> &middot;</tmpl_if>
+				</span>
+				
+				<tmpl_if others_like>
+					<span class='others_like'>
+						<a class=others_like href='#' onclick='alert(this.getAttribute("name_list"));return false;' name_list="<tmpl_var others_like_names_list>" title="<tmpl_var others_like_names>"><b><tmpl_var others_like> others</b>
+						</a> others</b> like this
+					</span>
+				</tmpl_if>
+				
+				<span class='unlike' id='unlike%%postid%%'>
+					(<a href='#' unlike_url='%%unlike_url%%' class='unlike_link' postid='%%postid%%'>Unlike</a>)
+				</span>

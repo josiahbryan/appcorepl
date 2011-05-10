@@ -1,0 +1,34 @@
+	<!--<div class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>-->
+	<div class='comment_text_wrap'>
+		<table class=comment_text  id='comment%%postid%%' indent_css="%%indent_css%%" width='100%'>
+			<tr>
+				<td valign=top style='padding-left:%%indent_css%%em' width='1%'>
+					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25" width=25 height=25>
+				</td>
+				<td valign=top align='left'>
+					<div class='posted_by'>
+						<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
+						&middot;
+						<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%</span>
+					</div>
+					
+					<!--<tmpl_if can_admin>
+						<a class='admin_link' href='%%delete_url%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'>
+							<img src='%%appcore%%/images/silk/bullet_toggle_minus.png' title='Delete this comment' border=0 align=absmiddle>
+						</a> 
+					</tmpl_if>-->
+					
+					<div class=text>
+						%%clean_html%%
+					</div>
+					
+					<div class='actions' id='acts%%postid%%'>
+						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%' type='comment' top_commentid='%%top_commentid%%'>Reply</a> &middot; 
+						<tmpl_include inc-likes.tmpl>
+					</div>
+					
+					<div class='reply_container' id='reply%%postid%%'></div>
+				</td>
+			</tr>
+		</table>
+	</div>
