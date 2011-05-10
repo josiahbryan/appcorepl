@@ -69,6 +69,8 @@ package AppCore::Common;
 		SYS_PATH_MODULES
 		SYS_PACKAGE_BASE
 		
+		timemark
+		
 		/;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
@@ -284,10 +286,16 @@ package AppCore::Common;
 	}
 	sub called_from
 	{
-	
+		shift if $_[0] eq __PACKAGE__;
+		my $short = shift || 0;
 		my ($package, $filename,$line) = caller(1);
 		#my (undef,undef,$line) = caller(1);
 		my (undef,undef,undef,$subroutine) = caller(2);
+		
+		if($short)
+		{
+			$filename =~ s/^.*\/([^\/]+)/$1/;
+		}
 	
 		"$filename:$line / $subroutine()";
 	}
@@ -799,6 +807,27 @@ package AppCore::Common;
 		open(FILE,">$file") || die "Cannot open $file for writing: $!";
 		print FILE join '', @_;
 		close(FILE);
+	}
+	
+	use Time::HiRes qw/time/;
+	our $LastTime;
+	our $TimeSum;
+	sub timemark
+	{
+		my $title = shift;
+		if(!$LastTime)
+		{
+			#print STDERR "[TIME MARK] START\n";
+			$TimeSum = 0;
+		}
+		else
+		{
+			my $diff = time - $LastTime;
+			$TimeSum += $diff;
+			print STDERR "[TIME MARK] ".sprintf('%04d',int($diff * 1000))."ms (".sprintf('%04d',int($TimeSum* 1000))."ms total) ".($title?" - $title":"")." at ".called_from(1)."\n";
+		}
+		
+		$LastTime = time;
 	}
 	
 	

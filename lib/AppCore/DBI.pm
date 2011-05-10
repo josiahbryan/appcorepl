@@ -215,6 +215,8 @@ package AppCore::DBI;
 				# Setup Class::DBI column group 'All'
 				my @columns = map { $_->{field} } @s;
 				$class->columns(All => @columns) if @columns;
+				$class->columns(Essential => @columns) if @columns;
+				
 				
 				# Create CDBI relationships using meta 'linked' field
 				foreach my $line (@{$meta->{schema}})

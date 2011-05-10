@@ -124,7 +124,12 @@ BEGIN
 					# 'rr' does a round-robin (rotating index) server name each time a server is requested
 					# 'hash' checks to see if the file has been used on the CDN before - if so, uses same server. If not, does 'rr' and stores the result
 	
-	$CDN_HASH_FILE = '/tmp/appcore-cdn.storable'; # Uses Storable freeze/thaw to write hash 
+	$CDN_HASH_FILE = '/tmp/appcore-cdn.storable'; # Uses Storable freeze/thaw to write hash
+	$CDN_HASH_FORCEWRITE_COUNT = 0; # If >0, every X calls to cdn_url() will write out the hash file to disk if $CDN_MODE is 'hash'.
+					# cdn_url() automatically writes the hash file on cache miss (e.g. if the url requested was not already in the hash)
+					# cdn_url() checks the mod time of the hash prior to each call and reloads the hash from disk of modified outside of the current process.
+					# This allows for multiple server instances to share the same hash file (along with proper locking) so that the same URL gets the same
+					# CDN server regardless of the server instance processing the URL. 
 	
 	$ENABLE_CDN_FQDN_ONLY = 1;	# Only do CDN replacements if requested from $WEBSITE_SERVER 
 					# This helps when testing from a development server (e.g. localhost, etc.) by not doing CDN replacements if they won't work on the current server.
@@ -132,7 +137,7 @@ BEGIN
 	$ENABLE_CDN_CSS  = 1;		# Controls replacement of the href attrib of <link> tags for CSS inclusion
 	$ENABLE_CDN_IMG  = 1;		# Controls replacement of the src attrib of <img> tags
 	$ENABLE_CDN_JS   = 1;		# Controls replacement of the src attrib of <script> tags
-	$ENABLE_CDN_MACRO = 1;		# Enable ${CDN} or ${CDN:...} replacement - the latter keeps the CDN server the same for the url in the '...' - the first (${CDN}) just gives a random host from below
+	$ENABLE_CDN_MACRO = 1;		# Enable ${CDN} or ${CDN:...} replacement (or $(CDN:...)) - the latter keeps the CDN server the same for the url in the '...' - the first (${CDN}) just gives a random host from below
 	
 	# ${tmpl2jq:<file>} reads the given <file> and changes any tmpl-style tags (%%var%%) to jquery tmpl style (${var}) and inserts the new text into the output 
 	$ENABLE_TMPL2JQ_MACRO = 1;

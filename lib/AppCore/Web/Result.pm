@@ -11,6 +11,8 @@ package AppCore::Web::Result;
 {
 	use vars qw/$AUTOLOAD/;
 	
+	use AppCore::Common;
+	
 	# For CSSX functionality and CDN 'mod' url replacement
 	use Digest::MD5 qw/md5_hex/;
 	
@@ -140,7 +142,11 @@ package AppCore::Web::Result;
 		
 		#print STDERR __PACKAGE__."->output($tmpl)\n";
 		
+		#timemark("start");
+		
 		my $out = ref $tmpl ? $tmpl->output : $tmpl;
+		
+		#timemark("output");
 		
 		#print STDERR "out: $out\n";
 		
@@ -166,6 +172,13 @@ package AppCore::Web::Result;
 			$ctype = $1 if $1;
 		}
 		
+# 		$self->content_type($ctype);
+# 		$self->content_title($title);
+# 		$self->body($out);
+# 		return $self;
+		
+		#timemark("preproc");
+		
 		# Put this inclusion macro up top before other modifications
 		# so that any content it includes is processed along with
 		# the rest of the content on the pagge
@@ -173,6 +186,8 @@ package AppCore::Web::Result;
 		{
 			$out =~ s/\${TMPL2JQ:([^\}]+)}/_tmpl2jq($1,$tmpl)/segi;
 		}
+		
+		#timemark("tmpl2jq");
 		
 		if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
 		{	
@@ -201,6 +216,8 @@ package AppCore::Web::Result;
 			}
 		}
 		
+		#timemark("cssx combine");
+		
 		if($AppCore::Config::ENABLE_JS_COMBINE && $out =~ /<script.*?src=['"][^'"]+['"]/i)
 		{	
 			my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
@@ -223,6 +240,8 @@ package AppCore::Web::Result;
 			$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
 			
 		}
+		
+		#timemark("js combine");
 		
 		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?>/)
 		{
@@ -273,27 +292,35 @@ package AppCore::Web::Result;
 			$out.=$tmp if ! ($out =~ s/<\/body>/$tmp/gi);
 		}
 		
+		#timemark("js reorder");
+		
 		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='".cdn_url($1)."'"/segi;
 		}
+		
+		#timemark("cdn - img");
 		
 		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='".cdn_url($1)."'"/segi;
 		}
 		
+		#timemark("cdn - js");
+		
 		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
 		}
 		
+		#timemark("cdn - css");
+		
 		if($AppCore::Config::ENABLE_CDN_MACRO)
 		{
 			if(_can_cdn_for_fqdn())
 			{
-				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi;
-				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi;
+				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi; #egi;
+				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi; #egi;
 			}
 			else
 			{
@@ -301,6 +328,8 @@ package AppCore::Web::Result;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/segi;
 			}
 		}
+		
+		#timemark("cdn - macro");
 		
 		$self->content_type($ctype);
 		$self->content_title($title);
@@ -403,6 +432,7 @@ package AppCore::Web::Result;
 	}
 	
 	our $CDNIndex = @AppCore::Config::CDN_HOSTS;
+	my $CdnDataCache;
 	sub cdn_url
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -439,14 +469,21 @@ package AppCore::Web::Result;
 		}
 		elsif($cdn_mode eq 'hash')
 		{
-			#Storable
-			my $hash = -f $AppCore::Config::CDN_HASH_FILE ? Storable::lock_retrieve($AppCore::Config::CDN_HASH_FILE) : {};
+			my $hash = $CdnDataCache;
+			my $mtime = (stat($AppCore::Config::CDN_HASH_FILE))[9];
+			if(!$hash || $mtime > $hash->{mtime})
+			{
+				$hash = $CdnDataCache = -f $AppCore::Config::CDN_HASH_FILE ? Storable::lock_retrieve($AppCore::Config::CDN_HASH_FILE) : {};
+				$hash->{mtime} = $mtime;
+			}
+			my $cache_miss = 0;
 			my $idx = defined $hash->{$url_part} ? $hash->{$url_part} : -1;
 			if($idx < 0)
 			{
 				$CDNIndex ++;
 				$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
 				#print STDERR "cdn_url($url_part): [hash] NO CACHED INDEX, USING $CDNIndex\n";
+				$cache_miss = 1;
 			}
 			else
 			{
@@ -456,7 +493,15 @@ package AppCore::Web::Result;
 			
 			$hash->{$url_part} = $CDNIndex;
 			#print STDERR "cdn_url($url_part): [hash] Hash file: '$AppCore::Config::CDN_HASH_FILE'\n";
-			Storable::lock_store($hash, $AppCore::Config::CDN_HASH_FILE);
+			if($cache_miss || 
+				($AppCore::Config::CDN_HASH_FORCEWRITE_COUNT > 0 && 
+					(++ $CdnDataCache->{use_count} % $AppCore::Config::CDN_HASH_FORCEWRITE_COUNT) == 0
+				)
+			  )
+			{
+				Storable::lock_store($hash, $AppCore::Config::CDN_HASH_FILE);
+				$hash->{mtime} = (stat($AppCore::Config::CDN_HASH_FILE))[9];
+			}
 		}
 
 		my $server = $AppCore::Config::CDN_HOSTS[$CDNIndex];

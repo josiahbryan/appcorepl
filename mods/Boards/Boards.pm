@@ -2,6 +2,7 @@ use strict;
 package Boards;
 {
 	use AppCore::Web::Common;
+	use AppCore::Common;
 	
 	# Inherit both a Web Module and Page Controller.
 	# We use the Page::Controller to register a custom
@@ -388,6 +389,15 @@ package Boards;
 		}
 	}
 	
+	our %BoardDataCache;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
+		%BoardDataCache = ();
+	}	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
+	
 	sub board_page
 	{
 		my $self = shift;
@@ -435,7 +445,7 @@ package Boards;
 				
 				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
 				
-				my $b = $controller->load_post_for_list($post,$can_admin);
+				my $b = $controller->load_post_for_list($post,$board->folder_name,$can_admin);
 				
 				#use Data::Dumper;
 				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
@@ -524,20 +534,75 @@ package Boards;
 			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
 			$tmpl->param(can_admin=>$can_admin);
 			
-			my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
-			@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
+			#my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
+			#my $boardid = $board->id + 0;
+			#my @posts = Boards::Post->retrieve_from_sql("deleted=0 and boardid=$boardid and top_commentid=0 order by timestamp desc");
+			#@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
 			#@posts = shift @posts;
-			
-			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
-			my @list;
-			foreach my $b (@posts)
+			my $list = $BoardDataCache{$board->id};
+			if(!$list)
 			{
-				push @list, $controller->load_post_for_list($b,$can_admin);
+				my $sth = Boards::Post->db_Main->prepare(q{
+					select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
+				});
+				$sth->execute($board->id);
+				my $board_folder_name = $board->folder_name;
+				my @tmp_list;
+				my %crossref;
+				while(my $b = $sth->fetchrow_hashref)
+				{
+					$crossref{$b->{postid}} = $b;
+					$b->{reply_count} = 0;
+					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+				}
+				
+				my @list;
+				my %indents;
+				foreach my $data (@tmp_list)
+				{
+					if($data->{top_commentid} == 0)
+					{
+						push @list, $data;
+					}
+					else
+					{
+						my $parent_comment = $data->{parent_commentid};
+						my $indent = $indents{$parent_comment} || 0;
+						my $id     = $data->{postid};
+						
+						$data->{indent}		= $indent;
+						$data->{indent_css}	= $indent * 2;
+						
+						my $top_data = $crossref{$data->{top_commentid}};
+						if(!$top_data)
+						{
+							print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref!";
+						}
+						else
+						{
+							push @{$top_data->{replies}}, $data;
+						}
+			
+						$top_data->{reply_count} ++;
+						$indents{$id} = $indent + 1; 
+					}	
+				}
+	
+				# Put newest at top of list
+				@list = reverse @list;
+				
+				$list = \@list;
+				$BoardDataCache{$board->id} = $list;
+				print STDERR "[-] BoardDataCache Cache Miss for board $board\n"; 
+				
+				#die Dumper \@list;
+			}
+			else
+			{
+				#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
 			}
 			
-			#die Dumper \@list;
-			
-			$tmpl->param(posts=>\@list);
+			$tmpl->param(posts=>$list);
 			
 			$controller->forum_page_hook($tmpl,$board);
 			
@@ -550,30 +615,51 @@ package Boards;
 	{
 		my $self = shift;
 		my $post = shift;
+		my $board_folder_name = shift;
 		my $can_admin = shift || 0;
 		my $dont_incl_comments = shift || 0;
 		
 		my $short_len             = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
 		my $last_post_subject_len = $AppCore::Config::BOARDS_LAST_POST_SUBJ_LENGTH || $LAST_POST_SUBJ_LENGTH;
 		
-		my $board_folder_name = $post->boardid->folder_name;
-		my $folder_name = $post->folder_name;
-		my $user = $post->posted_by;
+		my $ref_name = ref $post;
+		#print STDERR "Refname of post is '$ref_name', value '$post'\n";
+		if($ref_name eq 'Boards::Post')
+		{
+			my $hash = {};
+			$hash->{$_} = $post->{$_}."" foreach $post->columns;
+			my $user = $post->posted_by;
+			$hash->{user_photo} = $user->photo if $user && $user->id;
+			
+			$post = $hash;
+		}
+		
+		#my $board_folder_name = $board->{folder_name};
+		my $folder_name = $post->{folder_name};
+		#my $user = $post->{posted_by};
 		my $bin = $self->binpath;
 		
-		my $b = {};
+		
+		#my $b = {};
+		
+		my $b = $post;
 		# Force stringification...
-		$b->{$_} = $post->get($_). "" foreach $post->columns;
+		## NOTE Assuming SQL Query already stringified everything. Assuming NOT from CDBI!!
+# 		my @cols = $post->columns;
+# 		$b->{$_} = $post->get($_). "" foreach @cols; #$post->columns;
 		$b->{bin}         = $bin;
 		$b->{appcore}     = $AppCore::Config::WWW_ROOT;
 		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
 		
-		if($user && $user->id)
-		{
-			$b->{'user_'.$_} = $user->get($_) foreach $user->columns;
-		}
-		
+		## NOTE Assuming SQL query already provided all user columns as user_*
+# 		if($user && $user->id)
+# 		{
+# 			@cols = $user->columns;
+# 			$b->{'user_'.$_} = $user->get($_) foreach @cols; #$user->columns;
+# 		}
+	
+		#timemark();
 		my $short = AppCore::Web::Common->html2text($b->{text});
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
@@ -598,6 +684,7 @@ package Boards;
 				</a>
 			};
 		}
+		#timemark("html processing");
 		
 		
 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
@@ -608,7 +695,6 @@ package Boards;
 		my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
 		$b->{reply_to_url} = $reply_to_url;
 		$b->{delete_base} = $delete_base;
-			
 			
 		
 # 		$b->{$_} = $b->get($_) foreach $b->columns;
@@ -624,21 +710,22 @@ package Boards;
 # 		$b->{folder_name} = $b->folder_name;
 # 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
 		
-		if($dont_incl_comments)
-		{
-			my $lc = $post->last_commentid;
-			if($lc && $lc->id && !$lc->deleted)
-			{
-				$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
-				$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
-				$b->{post_url} = "$bin/$board_folder_name/$folder_name#c$lc";
-				$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
-			}
-		}
-		else
+# 		if($dont_incl_comments)
+# 		{
+# 			my $lc = $post->last_commentid;
+# 			if($lc && $lc->id && !$lc->deleted)
+# 			{
+# 				$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
+# 				$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
+# 				$b->{post_url} = "$bin/$board_folder_name/$folder_name#c$lc";
+# 				$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
+# 			}
+# 		}
+# 		else
 		{
 			my $list = [];
 			
+			# TODO Process comments
 			my $local_ctx = 
 			{
 				post		=> $post,
@@ -656,12 +743,12 @@ package Boards;
 # 				$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
 # 			}
 			
-			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
-			foreach my $b (@replies)
-			{
-				push @$list, _post_prep_ref($local_ctx,$b);
-				_post_add_kids($local_ctx,$list,$b);
-			}
+# 			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
+# 			foreach my $b (@replies)
+# 			{
+# 				push @$list, _post_prep_ref($local_ctx,$b);
+# 				_post_add_kids($local_ctx,$list,$b);
+# 			}
 			
 			$b->{replies} = $list;
 		}
