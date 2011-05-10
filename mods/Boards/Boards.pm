@@ -544,7 +544,9 @@ package Boards;
 			my $list = $BoardDataCache{$cache_key};
 			if(!$list)
 			{
-				my $sth = Boards::Post->db_Main->prepare(q{
+				my $dbh = Boards::Post->db_Main;
+				my $del_sth = $dbh->prepare('update board_posts set deleted=1 where postid=?');
+				my $sth = $dbh->prepare(q{
 					select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
 				});
 				$sth->execute($board->id);
@@ -578,7 +580,8 @@ package Boards;
 						my $top_data = $crossref{$data->{top_commentid}};
 						if(!$top_data)
 						{
-							print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref!";
+							print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref - marking deleted.\n";
+							$del_sth->execute($data->{postid});
 						}
 						else
 						{
@@ -653,6 +656,9 @@ package Boards;
 		$b->{appcore}     = $AppCore::Config::WWW_ROOT;
 		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
+		
+		my $cur_user = AppCore::Common->context->user;
+		$b->{can_edit} = $can_admin || ($cur_user && $cur_user->id == $b->{posted_by});
 		
 		## NOTE Assuming SQL query already provided all user columns as user_*
 # 		if($user && $user->id)

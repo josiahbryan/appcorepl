@@ -1,13 +1,13 @@
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<!--<link href="/css/boards.css" rel="stylesheet" type="text/css" />-->
 
 <title>%tmpl_if post_subject%Edit &quot;%%post_subject%%&quot;%tmpl_else%New Post in %%board_title%%%/tmpl_if% - %%long_noun%%</title>
 <h1>%tmpl_if post_subject%Edit &quot;%%post_subject%%&quot;%tmpl_else%New Post in %%board_title%%%/tmpl_if%</h1>
 
 
-%macro::sub_nav()%
+<!--%macro::sub_nav()%-->
 <tmpl_var board_nav>
 
-<script type="text/javascript" src="/fckeditor/fckeditor.js"></script>
+<script src='%%appcore%%/ckeditor/ckeditor.js' index="0"></script>
 
 <form action='<tmpl_var post_url>' method=POST style='display:inline;border:0;padding:0;margin:0' name=comment>
 	<input type=hidden name=postid value="<tmpl_var post_postid>">
@@ -21,7 +21,7 @@
 <!--					<input type=text name=poster_name onfocus='select()' <tmpl_if user_display>readonly style='background:rgb(220,220,220)'</tmpl_if> value='<tmpl_var user_display escape=html>' size=30>-->
 					<input type=text name=poster_name onfocus='select()' value='<tmpl_var user_display escape=html>' size=30>
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					<!--<script>var e= $x('name');if(e)e.focus()</script>-->
+					<!--<_script>var e= $x('name');if(e)e.focus()</script>-->
 				</td>
 			</tr>
 			<tr class='email'>
@@ -37,14 +37,29 @@
 
 				</td>
 			</tr>
-			<tr class='zip' style='display:none'>
+			<!--<tr class='zip' style='display:none'>
 				<td colspan=2><textarea rows=8 cols=85 id=comment name=comment></textarea>
 				</td>
 
-			</tr>
+			</tr>-->
 			<tr class='age'>
 				<td colspan=2><textarea rows=8 cols=85 id=age name=age><tmpl_var post_text></textarea>
-				<script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>
+				<!--<_script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>-->
+				<script>
+				//CKEDITOR.basePath = '%%appcore%%/ckeditor/'; 
+				CKEDITOR.replace( 'age', {
+					//baseHref: '%%appcore%%/ckeditor/',
+					extraPlugins : 'autogrow',
+					width: '96%',
+					//skin: 'office2003'
+					skin: 'kama',
+					disableNativeSpellChecker: false,
+					removePlugins: 'elementspath,scayt,contextmenu',
+			
+					//skin: 'v2'
+				});
+				
+				</script>
 				</td>
 
 			</tr>
@@ -65,17 +80,17 @@
 
 </form>
 <script>
-function win_onload()
-{
-
-	var oFCKeditor = new FCKeditor('age') ;
-	oFCKeditor.BasePath = '/fckeditor/' ;
-	oFCKeditor.ToolbarSet = 'JBlog';
-	oFCKeditor.Height = "300px" ;
-
-	oFCKeditor.ReplaceTextarea();
-}
+// function win_onload()
+// {
+// 
+// 	var oFCKeditor = new FCKeditor('age') ;
+// 	oFCKeditor.BasePath = '/fckeditor/' ;
+// 	oFCKeditor.ToolbarSet = 'JBlog';
+// 	oFCKeditor.Height = "300px" ;
+// 
+// 	oFCKeditor.ReplaceTextarea();
+// }
 
 //setTimeout(win_onload,50);
-global.onload(win_onload);
+// global.onload(win_onload);
 </script>

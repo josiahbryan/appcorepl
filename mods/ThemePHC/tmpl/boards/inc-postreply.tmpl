@@ -1,11 +1,11 @@
 	<!--<div class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>-->
-	<div class='comment_text_wrap'>
+	<div class='comment_text_wrap indent%%indent%%' id="wrap%%postid%%">
 		<table class=comment_text  id='comment%%postid%%' indent_css="%%indent_css%%" width='100%'>
 			<tr>
-				<td valign=top style='padding-left:%%indent_css%%em' width='1%'>
+				<td valign=top style='padding-left:%%indent_css%%em' width='1%' class='indent%%indent%%'>
 					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25" width=25 height=25>
 				</td>
-				<td valign=top align='left'>
+				<td valign=top align='left' class='indent%%indent%%'>
 					<div class='posted_by'>
 						<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
 						&middot;
@@ -23,8 +23,16 @@
 					</div>
 					
 					<div class='actions' id='acts%%postid%%'>
-						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%' type='comment' top_commentid='%%top_commentid%%'>Reply</a> &middot; 
-						<tmpl_include inc-likes.tmpl>
+						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%' type='comment' top_commentid='%%top_commentid%%'>Reply</a> &middot;
+						<tmpl_if can_edit>
+							<!--style='margin-right:3px' -->
+							<!--<img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0> -->
+							<!--<img src='%%appcore%%/images/silk/page_delete.png' align=absmiddle border=0> -->
+							<!--onclick='return confirm("Are you sure you want to delete this post?")' -->
+							<a class='edit_post_link' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/edit'>Edit</a> &middot;
+							<a class='delete_post_link' postid='%%postid%%' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/delete'>Delete</a> &middot;
+						</tmpl_if> 
+						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-likes.tmpl}
 					</div>
 					
 					<div class='reply_container' id='reply%%postid%%'></div>

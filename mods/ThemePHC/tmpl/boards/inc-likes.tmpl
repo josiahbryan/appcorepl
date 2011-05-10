@@ -14,6 +14,6 @@
 					</span>
 				</tmpl_if>
 				
-				<span class='unlike' id='unlike%%postid%%'>
+				<span class='unlike' id='unlike%%postid%%' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
 					(<a href='#' unlike_url='%%unlike_url%%' class='unlike_link' postid='%%postid%%'>Unlike</a>)
 				</span>

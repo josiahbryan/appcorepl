@@ -32,18 +32,27 @@
 	.newpost
 	{
 		cursor: default; 
+		/*width: 50em;*/
 		background: #e9eeff;
-		border-bottom: 1px solid #c7cddf;
-		border-top: 1px solid white;
-		padding: 10px;
+		/*border-bottom: 1px solid #c7cddf;
+		border-top: 1px solid white;*/
+		/*padding: 10 10 20 10;*/
 		
-		padding-bottom: 30px;
+		/*padding-bottom: 30px;*/
 	}
 	
+	.newpost td
+	{
+		border-bottom: 1px solid #c7cddf;
+		border-top: 1px solid white;
+		
+		/*padding-bottom: 30px;*/
+	}
+		
 	.newpost .wrap
 	{
-		width: 30em;
-		margin: 0 auto;
+		width: 47.5em;
+		/*margin: 0 auto;*/
 	}
 	
 	.reply_form .wrap
@@ -159,7 +168,7 @@
 	
 	table.postlist th 
 	{
-		background: #364a90;
+		/*background: #364a90;*/
 		color: white;
 		text-shadow: rgb(8,8,8) 1px 1px 1px;
 		font-weight: bold;
@@ -180,9 +189,10 @@
 		/*border: 1px solid #364a90;*/
 		/*padding: 2 4;*/
 		/*cursor: pointer;*/ 
-		background: #e9eeff;
-		border-bottom: 1px solid #c7cddf;
-		border-top: 1px solid white;
+		/*background: #e9eeff;*/
+		font-size: .85em;
+		/*border-bottom: 1px solid #c7cddf;
+		border-top: 1px solid white;*/
 	}
 	
 	.postlist td.photo
@@ -392,6 +402,11 @@
 		margin-top: 4px;
 	}
 	
+	.comment_text img.user_photo
+	{
+		margin-left: 10px;
+	}
+	
 	.comment_text div.text
 	{
 		margin-top: 4px;
@@ -400,6 +415,17 @@
 	.like-loading-img 
 	{
 		padding-left: 4px;
+	}
+	
+	.indent0, .indent2, .indent4, .indent6, .indent8, .indent10, .indent12, .indent14, .indent16, .indent18, .indent20
+	{
+		background: #e2e7f7 !important;
+	}
+	
+	.indent1, .indent3, .indent5, .indent7, .indent9, .indent11, .indent13, .indent15, .indent17, .indent19, .indent21
+	{
+		background: #dce1f1 !important;
+		/*background: #e9eeff !important;*/
 	}
 	
 	</style>
@@ -470,48 +496,10 @@
 	</script>
 	
 	<!--max-height: 70px;-->
-	<div class='newpost'>
 	<!--action='%%binpath%%/post' method='POST'-->
-		<form class='wrap'  onsubmit='return ajax_post_new(this)'>
-			<!--<input type='hidden' name='poster_name' value='%%user_display%%'>
-			<input type='hidden' name='poster_email' value='%%user_email%%'>-->
-			<h2>Add a new post</h2>
-			
-			<div class='content'>
-				<textarea class='expandText' style="width: 41.25em; height:5em" class="expandText" name="text"></textarea>
-			</div>
-			<div class='controls'>
-				<button type='submit' class='button'>Post</button>
-			</div>
-			<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
-				<table>
-					<tr>
-						<td>Name:</td>
-						<td><input value='%%user_display%%' name='poster_name'></td>
-					</tr>
-					<tr>
-						<td>Email:</td>
-						<td><input value='%%user_email%%' name='poster_email'></td>
-					</tr>
-				</table>
-			</div>
-			<tmpl_if user_display>
-			<div class='ident' id='postas_display'>
-				<script>
-				function show_postas_form()
-				{
-					$("#postas_form").show(200);
-					$("#postas_display").hide(200);
-				}
-				</script>
-				Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
-			</div>
-			</tmpl_if>
-			<!--<tmpl_unless user_display>
-			<_script>setTimeout(show_postas_form,500)</script>
-			</tmpl_unless>-->
-		</form>
-	</div>
+	<!--<div class='newpost'>
+		
+	</div>-->
 	
 	<script>
 	
@@ -570,6 +558,52 @@
 		
 	<table class='postlist' width='100%'>
 		<tbody>
+			<tr class='post newpost'>
+				<td valign='top' align='center' class='photo'>
+					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
+				</td>
+				<td valign='top' class='data'>
+					<form class='wrap'  onsubmit='return ajax_post_new(this)'>
+						<!--<input type='hidden' name='poster_name' value='%%user_display%%'>
+						<input type='hidden' name='poster_email' value='%%user_email%%'>-->
+						<!--<h2>Add a new post</h2>-->
+						
+						<div class='content'>
+							<textarea class='expandText' style="width: 54em; height:5em" class="expandText" name="text"></textarea>
+						</div>
+						<div class='controls'>
+							<button type='submit' class='button'>Post</button>
+						</div>
+						<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
+							<table>
+								<tr>
+									<td>Name:</td>
+									<td><input value='%%user_display%%' name='poster_name'></td>
+								</tr>
+								<tr>
+									<td>Email:</td>
+									<td><input value='%%user_email%%' name='poster_email'></td>
+								</tr>
+							</table>
+						</div>
+						<tmpl_if user_display>
+						<div class='ident' id='postas_display'>
+							<script>
+							function show_postas_form()
+							{
+								$("#postas_form").show(200);
+								$("#postas_display").hide(200);
+							}
+							</script>
+							Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+						</div>
+						</tmpl_if>
+						<!--<tmpl_unless user_display>
+						<_script>setTimeout(show_postas_form,500)</script>
+						</tmpl_unless>-->
+					</form>
+				</td>
+			</tr>
 			<tr class='post post-placeholder' id='post-placeholder'>
 				<td valign='top' align='center' class='photo'>
 					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
@@ -658,9 +692,11 @@
 			
 			cancelFunc = function() 
 			{
-				var div = x('reply_form_'+postid);
-				if(div)
-					div.parentNode.removeChild(div);
+				var div = $('#reply_form_'+postid);
+				div.hide(300, function(){
+					//div.parentNode.removeChild(div);
+					div.remove();
+				});
 			};
 			
 			
@@ -863,6 +899,72 @@
 		
 		return false;
 	});
+	
+	$(".comment_text .delete_post_link").live("click",function(){
+		
+		if(!confirm("Are you sure you want to delete this?"))
+			return false;
+			
+			
+		var th = $(this),
+		    // Create a loading indicator
+		    loading = $('<img/>')
+		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('align','absmiddle')
+		    	.attr('class','like-loading-img');
+		
+		loading.insertAfter(th);
+		
+		var postid = th.attr('postid');
+		
+		var postUrl = th.attr('href');
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			success: function(data)
+			{
+				loading.remove();
+				
+				$("#wrap"+postid).remove();
+			}
+		});
+	
+		return false;
+	});
+	
+	
+	$("tr.post .delete_post_link").live("click",function(){
+		
+		if(!confirm("Are you sure you want to delete this?"))
+			return false;
+			
+		var th = $(this),
+		    // Create a loading indicator
+		    loading = $('<img/>')
+		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('align','absmiddle')
+		    	.attr('class','like-loading-img');
+		
+		loading.insertAfter(th);
+		
+		var postid = th.attr('postid');
+		
+		var postUrl = th.attr('href');
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			success: function(data)
+			{
+				loading.remove();
+				
+				$("#post"+postid).remove();
+			}
+		});
+	
+		return false;
+	});
 		
 	/*
 		// NOTE This is the UNLIKE link
@@ -1010,19 +1112,21 @@
 	{
 		padding: 8px 0;
 		border-bottom: 1px solid #c7cddf;
-		border-top: 1px solid #c7cddf;
+		/*border-top: 1px solid #c7cddf;*/
+		border-top: 1px solid white;
 		/*width: 100%;*/
 		
 	}
 	
-	.comment_text_wrap + .comment_text_wrap
+	/*.comment_text_wrap + .comment_text_wrap
 	{
 		border-top: 1px solid white;
-	}
+	}*/
 	
 	.replies_container 
 	{
-		margin-bottom: -11px;
+		margin-bottom: 10px;
+		/*margin-bottom: -11px;*/
 		/*-moz-box-shadow: -1px 0px 2px #000;*/
 	}
 	
