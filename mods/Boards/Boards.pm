@@ -664,19 +664,19 @@ package Boards;
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
 		
-		$b->{short_text_html} = $b->{short_text};
-		$b->{short_text_html} =~ s/\n+/\n/sg;
-		$b->{short_text_html} =~ s/\n/<br>\n/g;
-		$b->{short_text_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		$b->{clean_html} = $b->{short_text};
+		$b->{clean_html} =~ s/\n+/\n/sg;
+		$b->{clean_html} =~ s/\n/<br>\n/g;
+		$b->{clean_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
-		$b->{short_text_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-		my ($url) = $b->{short_text_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
+		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
 		if($url)
 		{
 			my ($code) = $url =~ /v=(.+?)\b/;
 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-			$b->{short_text_html} .= qq{
+			$b->{clean_html} .= qq{
 				<hr size=1 class='post-attach-divider'>
 				<a href='$url' class='youtube-play-link' videoid='$code'>
 				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
@@ -877,14 +877,14 @@ package Boards;
 		$b->{text} 		=~ s/(^\s+|\s+$)//g;
 		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
 		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
-		$b->{clean_text} = $b->{text};
-		$b->{clean_text} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-		my ($url) = $b->{clean_text} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
+		$b->{clean_html} = $b->{text};
+		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
 		if($url)
 		{
 			my ($code) = $url =~ /v=(.+?)\b/;
 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-			$b->{clean_text} .= qq{
+			$b->{clean_html} .= qq{
 				<hr size=1 class='post-attach-divider'>
 				<a href='$url' class='youtube-play-link' videoid='$code'>
 				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
@@ -893,10 +893,10 @@ package Boards;
 			};
 		}
 		
-		my ($code) = $b->{clean_text} =~ /vimeo\.com\/(\d+)/;
+		my ($code) = $b->{clean_html} =~ /vimeo\.com\/(\d+)/;
 		if($code)
 		{
-			$b->{clean_text} .= qq{
+			$b->{clean_html} .= qq{
 				<hr size=1 class='post-attach-divider'>
 				<a href='http://www.vimeo.com/$code' isvimeo="1" class='vimeo-video youtube-play-link' videoid='$code'>
 				<img src="" id="vimeo-$code" border=0>

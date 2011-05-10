@@ -89,6 +89,13 @@
 		font-size: .75em;
 	}
 	
+	.reply_form .controls a.cancel
+	{
+		font-size: .7em;
+		float: left;
+		margin-right: 5px;
+	}
+	
 	#postas_form table
 	{
 		border-collapse: collapse; 
@@ -132,6 +139,8 @@
 	{
 		margin-top: 2px;
 	}
+	
+	.reply_form table td { border: 0  !important }
 	
 	</style>
 	
@@ -324,6 +333,69 @@
 		margin-bottom: 10px;
 	}
 	
+	.reply_form .form { display: none; }
+	
+	.add_like a
+	{
+		background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -33px;
+		padding-left: 16px;
+	}
+	
+	.actions a.reply_link
+	{
+		background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -141px;
+		padding-left: 16px;
+	}
+	
+	.actions a.reply_link:hover,
+	.add_like a:hover
+	{
+		color: #292929 !important;
+	}
+	
+	.add_like a:hover
+	{
+		background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -3px;
+		padding-left: 16px;
+	}
+	
+	.actions a.reply_link:hover
+	{
+		background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat 0px -170px;
+		padding-left: 16px;
+	}
+	
+	.actions
+	{
+		margin-top: 4px;
+	}
+	
+	.post .actions
+	{
+		margin-bottom: 10px;	
+	}
+	
+	.post .reply_form
+	{
+		margin-top: -8px;
+	}
+	
+	.replies_container .actions,
+	.replies_container .reply_form
+	{
+		margin-bottom: 0;
+	}
+	
+	.replies_container .reply_form
+	{
+		margin-top: 4px;
+	}
+	
+	.comment_text div.text
+	{
+		margin-top: 4px;
+	}
+	
 	</style>
 	<script>
 	function show_more_post(postid,aElm)
@@ -405,7 +477,7 @@
 			<div class='controls'>
 				<button type='submit' class='button'>Post</button>
 			</div>
-			<div class='form' id='postas_form'>
+			<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
 				<table>
 					<tr>
 						<td>Name:</td>
@@ -417,6 +489,7 @@
 					</tr>
 				</table>
 			</div>
+			<tmpl_if user_display>
 			<div class='ident' id='postas_display'>
 				<script>
 				function show_postas_form()
@@ -427,9 +500,10 @@
 				</script>
 				Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
 			</div>
-			<tmpl_unless user_display>
+			</tmpl_if>
+			<!--<tmpl_unless user_display>
 			<script>setTimeout(show_postas_form,500)</script>
-			</tmpl_unless>
+			</tmpl_unless>-->
 		</form>
 	</div>
 	
@@ -525,10 +599,10 @@
 					<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
 				</div>
 				<div class='controls'>
+					<button type='submit' class='button' id='button_${postid}'>Post</button>
 					<a href='#' class='cancel'>Cancel</a> 
-					<button type='submit' class='button'>Post</button>
 				</div>
-				<div class='form' id='postas_form_${postid}'>
+				<div class='form' id='postas_form_${postid}'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
 					<table>
 						<tr>
 							<td>Name:</td>
@@ -540,20 +614,27 @@
 						</tr>
 					</table>
 				</div>
-				<div class='ident' id='postas_display'>
-					Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+				<tmpl_if user_display>
+				<div class='ident' id='postas_display_${postid}'>
+					Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form_tmpl(${postid}));'>Change</a>
 				</div>
-				
+				</tmpl_if>
 				<div class='fc'></div>
 			</div>
 		</form>
 	</script>
 	
 	<script>
-	//selector:
+	function show_postas_form_tmpl(postid)
+	{
+		$("#postas_form_"+postid).show(200);
+		$("#postas_display_"+postid).hide(200);
+	}
+	</script>
+	
+	<script>
 	function x(e){return document.getElementById(e)}
 	$(".actions .reply_link").live("click",function(){
-		
 			
 		var	th = $(this),
 		
@@ -635,6 +716,10 @@
 			plain_text: 1,
 		};
 		
+		
+		var btn = $("#button_"+postid);
+		btn.html("<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>");
+		btn.attr("disabled","true");
 		//$("#post-placeholder").show();
 		
 		var errorFunc = function() 
@@ -843,23 +928,25 @@
 	
 	.comments_block .nocomments {}
 	
-	.comment_text
+	.comment_text_wrap
 	{
-		margin: 5px 0;
-			
+		padding: 8px 0;
+		border-bottom: 1px solid #c7cddf;
+		border-top: 1px solid #c7cddf;
+		/*width: 100%;*/
 		
 	}
 	
-	/*.comment_text  blockquote { margin:0;padding:0;margin-left:3em; }*/
+	.comment_text_wrap + .comment_text_wrap
+	{
+		border-top: 1px solid white;
+	}
 	
-	/*.comment_text + .comment_text  { border-top: 1px dotted #838183; margin-top: .2em; padding-top: .2em }*/
-	
-	/*.comment_text blockquote        { margin-left: 2em !important; border-color: #c9ac93 }*/
-	/*.comments_block .new_reply_link { margin-bottom: -.5em !important; margin-top: 2em }*/
-	/*.comments_block .comments_title { border-bottom: 2px solid #c9ac93 ; color: #553b20; margin-bottom: .2em }*/
-	/*.comment_text + .comment_text   { border-color: #c9ac93 }*/
-	/*.comment_text .text             { font-size: 1em }
-	.comment_text .admin_link	{ float: left;margin-left:5px }*/
+	.replies_container 
+	{
+		margin-bottom: -11px;
+		/*-moz-box-shadow: -1px 0px 2px #000;*/
+	}
 	
 	.postlist .actions,
 	.postlist .actions a 
@@ -872,6 +959,8 @@
 	{
 		font-size: .75em;
 	}
+	
+	
 	</style>
 
 
