@@ -118,3 +118,9 @@ body
 {
 	color: white; 
 }
+
+
+/*img, a, div, input, span
+{
+	behavior: url("%%appcore%%/ie/iepngfix/iepngfix.htc"); 
+}*/

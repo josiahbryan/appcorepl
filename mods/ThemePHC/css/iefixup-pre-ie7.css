@@ -1,10 +1,23 @@
 
 /* Throw in a PNG filter fix for IE 6 ... */
-img, a, div, input, span
+/*img, a, div, input, span*/
+
+#header #header-shadow,
+#footer,
+#mainlogo-wrap img,
+.search,
+.postlist td a.youtube-play-link span 
 {
-	behavior: url("%%appcore%%/ie/iepngfix/iepngfix.htc");
+	behavior: url("/appcore/ie/iepngfix/iepngfix.htc");
 	 
 	/* Can't have more than one behavior...bummer! */
 	/*behavior: url("%%appcore%%/ie/pie/PIE.htc");*/
 	
+}
+
+/* IE 6 doesnt display the background shadow over top of the header blue stripes,
+   so this just adds a minor delineator betweent he body and the header */
+.bodywrap
+{
+	border-top: 1px solid black;
 }
