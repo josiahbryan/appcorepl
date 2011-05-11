@@ -164,8 +164,9 @@ BEGIN
 	###########################################
 	# Module-specific configuration
 	
-	$BOARDS_SHORT_TEXT_LENGTH = 300;
-	$BOARDS_POST_PAGE_LENGTH  = 5;
+	$BOARDS_SHORT_TEXT_LENGTH    = 300;  # characters
+	$BOARDS_POST_PAGE_LENGTH     = 10;   # posts
+	$BOARDS_POST_PAGE_MAX_LENGTH = 100;  # posts
 	
 	
 };

@@ -345,6 +345,8 @@ package AppCore::Web::Result;
 		#$block =~ s/<tmpl_if ([^>]+?)>/{{if $1}}/segi;
 		$block =~ s/<tmpl_if ([^>]+?)>/_tmpl_if2jq($1,$block)/segi;
 		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
+		$block =~ s/<tmpl_unless ([^>]+?)>/_tmpl_if2jq($1,$block,1)/segi;
+		$block =~ s/<\/tmpl_unless>/{{\/if}}/gi;
 		$block =~ s/<tmpl_loop ([^>]+?)>/{{each $1}}/gi;
 		$block =~ s/<\/tmpl_loop>/{{\/each}}/gi;
 		$block =~ s/<tmpl_else>/{{else}}/gi;
@@ -361,13 +363,16 @@ package AppCore::Web::Result;
 	{
 		my $var = shift;
 		my $block = shift;
+		my $unless = shift || 0;
 		if($block =~ /<tmpl_loop $var>/)
 		{
-			return "{{if $var.length}}";
+			#return "{{if ".($unless?"!":"")."($var.length)}}";
+			return $unless ? "{{if $var.length<=0}}" : "{{if $var.length}}";
 		}
 		else
 		{
-			return "{{if $var}}";
+			#return "{{if ".($unless?"!":"")."($var>0)}}";
+			return $unless ? "{{if $var<=0}}" : "{{if $var>0}}";
 		}
 	}
 	

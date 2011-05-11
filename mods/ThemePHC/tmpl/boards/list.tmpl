@@ -5,6 +5,10 @@
 	<!-- Board Title -->
 	<h1><tmpl_var board_title></h1>
 	
+	<script>
+	loaderGif = '%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif';
+	</script>
+	
 	<!-- Board Tagline -->
 	<!--<p class='board-tagline'><tmpl_var board_tagline></p>-->
 	
@@ -67,6 +71,12 @@
 		text-decoration: none;
 	}
 	
+	.loadmore td img
+	{
+		display: block;
+		margin-bottom: 1em;
+	}
+	
 	.current_nums div
 	{
 		color: #364a90;
@@ -79,7 +89,7 @@
 	}
 	
 	.current_nums div a,
-	.current_nums div span
+	.current_nums div span.link
 	{
 		color: #364a90;
 		font-weight: normal;
@@ -472,6 +482,11 @@
 		/*background: #e9eeff !important;*/
 	}
 	
+	a.not-a-link
+	{
+		cursor: default;
+	}
+	
 	</style>
 	<script>
 	function show_more_post(postid,aElm)
@@ -651,9 +666,9 @@
 			<tmpl_if len>
 				<tr class='post current_nums'>
 					<td colspan=2>
-						<div>Showing posts %%idx1%% - %%idx2%%
+						<div><span id='current_text'>Showing posts %%idx1%% - <span id='idx2'>%%idx2%%</span></span>
 							<tmpl_if next_idx>
-								<span>(<a href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%'>Load more posts ...</a>)</span>
+								<span class=link>(<a class='loadmore_link' href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%'>Load more posts ...</a>)</span>
 							</tmpl_if>
 						<div>
 					</td>
@@ -675,12 +690,123 @@
 			<tmpl_if next_idx>
 				<tr class='loadmore'>
 					<td colspan=2 align=center>
-						<a href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%'>Load more posts ...</a>
+						<a href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%' id="load_more_bottom">Load more posts ...</a>
 					</td>
 				</tr>
 			</tmpl_if>
 		</tbody>
 	</table>
+	
+	<script>
+	window.PagingNextIndex = %%next_idx%%;
+	//loadmore_link
+	
+	var pagingFunc = function(){
+		
+		if(!window.PagingNextIndex)
+			return false;
+			
+		$("body").css("cursor", "progress");
+			
+		var th = $(this),
+		    linkHref = th.attr("href"),
+		    loadMoreUrl = '%%binpath%%/%%board_folder_name%%',
+		    loading = $('<img/>')
+		    	.attr('src',loaderGif)
+		    	.attr('align','absmiddle');
+		
+		th.css("cursor", "progress");
+		loading.insertAfter(th);
+		
+		$.ajax({
+			type: "GET",
+			url: loadMoreUrl,
+			data: 
+			{
+				idx: window.PagingNextIndex,
+				len: %%len%%,
+				output_fmt: 'json'
+			},
+			success: function(data)
+			{
+				//console.debug("got post data: "+data+", typeof: "+typeof(data));
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				if(typeof(data) == "string")
+				{
+					// something wierd on server - should be JSON!
+					document.location.href = linkHref;
+					//alert("Got data as string");
+				}
+				else
+				{
+					// Iterate over the list of posts and reate the posts from the template
+					var posts = data.posts;
+					for(var i=0;i<posts.length;i++)
+					{
+						var postData = posts[i];
+					
+						$("#post-tmpl").tmpl(postData).insertBefore("tr.loadmore");
+					}
+					
+					loading.remove();
+					
+					// Store the next index for the next time they request more posts
+					window.PagingNextIndex = data.next_idx;
+					
+					// Update the number at the top of the page
+					$("#idx2").html(data.idx2);
+					
+					// If we've reached the end, update the DOM
+					if(!data.next_idx)
+					{
+						$("tr.loadmore a").html("(No more posts)");
+						$("tr.loadmore a").addClass("not-a-link");
+						$(".current_nums span.link").remove();
+						$("#current_text").html("Showing all "+data.max_idx+" posts");
+					}
+					
+					// Remove busy cursor
+					$("body").css("cursor", "auto");
+					th.css("cursor", "pointer");
+				}	
+			},
+			error: function() 
+			{ 
+				//alert("Error");
+				document.location.href = linkHref; 
+			}
+			
+		});
+		
+		return false;
+	}
+	
+	$(".loadmore a").live("click",pagingFunc);
+	$("a.loadmore_link").live("click",pagingFunc);
+	
+	// Add a "load on scroll" method. 
+	// This listens for the "onscroll" event and checks to see if the
+	// bottom "Load more" link is visible at the bottom of the window.
+	// As soon as the link gets close (see 'fudge'), then the 
+	// paging function (above) is triggered just as if the user
+	// had clicked the link
+	$(window).bind('scroll', function(){
+		
+		var rowRef = $("tr.loadmore");
+		var scrollBottom = $(window).scrollTop() + $(window).height();
+		var fudge = 100; // amount by which to fudge the detection
+		var rowTop = rowRef.offset().top - fudge; 
+		if(rowTop < scrollBottom)
+		{
+			var domElm = document.getElementById("load_more_bottom");
+			domElm.doPaging = pagingFunc;
+			domElm.doPaging();
+		}
+	});
+	
+	
+	
+	</script>
 	
 	<script id="post-tmpl" type="text/x-jquery-tmpl">
 		${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
@@ -767,6 +893,7 @@
 		if(!div)
 		{
 			tmp = $("#replyform-tmpl").tmpl({postid:postid,top_commentid:topid});
+			tmp.hide();
 			$(replyHolder).append(tmp);
 		}
 		else
@@ -787,7 +914,6 @@
 		// Focus on text area
 		var ta = $(replyHolder+' .expandText');
 		ta.autogrow();
-		ta.focus();
 		
 		// Close the reply form if user presses Escape
 		ta.keyup(function(e){
@@ -800,7 +926,10 @@
 		
 		
 		// Make sure form visible
-		tmp.show(300);
+		//tmp.show(300, function() { ta.focus(); });
+		tmp.show();
+		ta.focus();
+		
 		
 		return false;
 		
@@ -823,7 +952,7 @@
 		
 		
 		var btn = $("#button_"+postid);
-		btn.html("<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>");
+		btn.html("<img src='"+loaderGif+"'>");
 		btn.attr("disabled","true");
 		//$("#post-placeholder").show();
 		
@@ -897,7 +1026,7 @@
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
-		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('src',loaderGif)
 		    	.attr('align','absmiddle')
 		    	.attr('class','like-loading-img');
 		
@@ -933,7 +1062,7 @@
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
-		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('src',loaderGif)
 		    	.attr('align','absmiddle')
 		    	.attr('class','like-loading-img');
 		
@@ -972,7 +1101,7 @@
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
-		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('src',loaderGif)
 		    	.attr('align','absmiddle')
 		    	.attr('class','like-loading-img');
 		
@@ -1005,7 +1134,7 @@
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
-		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif')
+		    	.attr('src',loaderGif)
 		    	.attr('align','absmiddle')
 		    	.attr('class','like-loading-img');
 		
@@ -1245,7 +1374,7 @@ $(function() {
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
-		    	.attr('src','%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif');
+		    	.attr('src',loaderGif);
 
 		// No videoid - we dont do parsing here. Just fall thru and allow the link to work as links would normally work.
 		if(!th.attr('videoid'))

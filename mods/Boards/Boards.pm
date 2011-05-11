@@ -526,55 +526,59 @@ package Boards;
 		}
 		else
 		{
+			my $dbh = Boards::Post->db_Main;
 			
 			my $user = AppCore::Common->context->user;
 			my $can_admin = 1 if $user && $user->check_acl($controller->config->{admin_acl});
+			my $board_folder_name = $board->folder_name;
 			
-			#my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
-			#my $boardid = $board->id + 0;
-			#my @posts = Boards::Post->retrieve_from_sql("deleted=0 and boardid=$boardid and top_commentid=0 order by timestamp desc");
-			#@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
-			#@posts = shift @posts;
+			# Get the current pating location
 			my $idx = $req->idx || 0;
-			#my $len = $req->len || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
-			my $len = $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
+			my $len = $req->len || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
+			$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
 			
-			my $dbh = Boards::Post->db_Main;
-			
+			# Find the total number of posts in this board
 			my $find_max_index_sth = $dbh->prepare_cached('select count(b.postid) as count from board_posts b where boardid=? and top_commentid=0 and deleted=0');
 			$find_max_index_sth->execute($board->id);
 			my $max_idx = $find_max_index_sth->rows ? $find_max_index_sth->fetchrow : 0;
 			
-			$find_max_index_sth->finish;
+			$find_max_index_sth->finish; # prevent warnings from DBI for the prepare_cached() stmt...
 			
-			my $next_idx = $idx + $len;
-			$next_idx = $next_idx >= $max_idx ? 0 : $next_idx;
-			$next_idx = 0 if !$len;
+			my $next_idx = $idx + $len; 
+			$next_idx = $next_idx >= $max_idx ? 0 : $next_idx; # If next idx past end, set to 0 to indicate to tmpl that there are no more posts ...
+			$next_idx = 0 if !$len; # If paging disabled, there is no next idx...
 			
-			
+			# Create a cache key for this set of posts based on the board id, user (if logged in), and the current page (idx/len) 
 			my $cache_key = $user ? $board->id . $user->id : $board->id;
 			$cache_key .= $idx if $idx;
 			$cache_key .= $len if $len;
 			
+			# Try to load data from in-memory cache - if cache miss, well, rebuild!
 			my $list = $BoardDataCache{$cache_key};
 			if(!$list)
 			{
+				# Used to clean up orphaned comments if the parent is deleted
 				my $del_sth = $dbh->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
+				
 				my $sth;
-				 
+				
 				if(!$len)
 				{
+					# If paging disabled, just use a single query to load everything
 					$sth = $dbh->prepare_cached(q{
 						select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
 					});
 				}
 				else
 				{
+					# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
+					# that should be included because the post is included
 					my $find_posts_sth = $dbh->prepare_cached('select b.postid from board_posts b where boardid=? and top_commentid=0 and deleted=0 order by timestamp desc limit ?,?');
 					$find_posts_sth->execute($board->id, $idx, $len);
 					my @posts;
 					push @posts, $_ while $_ = $find_posts_sth->fetchrow;
 					
+					# Keep user from getting a "dirty" error by giving a simple error
 					if(!@posts)
 					{
 						return $r->error("No posts at index ".($idx+0));
@@ -582,8 +586,7 @@ package Boards;
 					
 					my $list = join ',',  @posts;
 					
-					#print STDERR "Posts: $list\n";
-					
+					# Now do the actual query that loads both posts and comments in one gos
 					$sth = $dbh->prepare_cached('select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) '.
 						'where boardid=? and deleted=0 and '.
 						'(postid in ('.$list.') or top_commentid in ('.$list.')) '.
@@ -591,7 +594,9 @@ package Boards;
 				}
 				
 				$sth->execute($board->id);
-				my $board_folder_name = $board->folder_name;
+				
+				# First, prepare all the post results (posts and comments) at the same time
+				# Create a crossref of posts to data objects for the next block which puts the comments with the parents
 				my @tmp_list;
 				my %crossref;
 				while(my $b = $sth->fetchrow_hashref)
@@ -601,16 +606,21 @@ package Boards;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
 				}
 				
+				# Now we put all the comments with the parent posts
 				my @list;
 				my %indents;
 				foreach my $data (@tmp_list)
 				{
+					# This is a parent post, just add it to the master list
 					if($data->{top_commentid} == 0)
 					{
 						push @list, $data;
 					}
 					else
 					{
+						# This is a comment, so we need to calculate an "indent" value 
+						# for the template to use to indet the comment
+						
 						my $parent_comment = $data->{parent_commentid};
 						my $indent = $indents{$parent_comment} || 0;
 						my $id     = $data->{postid};
@@ -618,6 +628,8 @@ package Boards;
 						$data->{indent}		= $indent;
 						$data->{indent_css}	= $indent * 2;
 						
+						# Lookup the top-most post for this comment
+						# If its orphaned, we just delete the comment
 						my $top_data = $crossref{$data->{top_commentid}};
 						if(!$top_data)
 						{
@@ -626,6 +638,7 @@ package Boards;
 						}
 						else
 						{
+							# Add the comment to the post
 							push @{$top_data->{replies}}, $data;
 						}
 			
@@ -635,6 +648,7 @@ package Boards;
 				}
 	
 				# Put newest at top of list
+				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
 				@list = reverse @list;
 				
 				$list = \@list;
@@ -648,44 +662,36 @@ package Boards;
 				#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
 			}
 			
+			my $board_ref = {};
+			$board_ref->{$_} = $board->get($_)."" foreach $board->columns;
+			
+			my $output = 
+			{
+				board	=> $board_ref,
+				posts	=> $list,
+				idx	=> $idx,
+				idx1	=> $idx + 1,
+				len	=> $len,
+				idx2	=> $idx + $len,
+				next_idx=> $next_idx,
+				max_idx => $max_idx,
+				can_admin=> $can_admin,
+			};
+			
+			$controller->forum_page_hook($output,$board);
+			
 			if($req->output_fmt eq 'json')
 			{
-				my $board_ref = {};
-				$board_ref->{$_} = $board->get($_)."" foreach $board->columns;
-				
-				my $output = 
-				{
-					board	=> $board_ref,
-					posts	=> $list,
-					idx	=> $idx,
-					idx1	=> $idx + 1,
-					len	=> $len,
-					idx2	=> $idx + $len,
-					next_idx=> $idx + $AppCore::Config::BOARDS_POST_PAGE_LENGTH,
-					max_idx => $max_idx,
-					can_admin=> $can_admin,
-				};
-				
 				my $json = encode_json($output);
-				#return $r->output_data("application/json", $json);
-				return $r->output_data("text/plain", $json);
+				return $r->output_data("application/json", $json);
+				#return $r->output_data("text/plain", $json);
 			}
 			
 			my $tmpl = $self->get_template($controller->config->{list_tmpl} || 'list.tmpl');
 			$tmpl->param(board_nav => $controller->macro_board_nav());
 			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
-			$tmpl->param(can_admin=>$can_admin);
 			
-			$tmpl->param(posts=>$list);
-			
-			$tmpl->param(idx => $idx);
-			$tmpl->param(len => $len);
-			$tmpl->param(idx1=> $idx + 1);
-			$tmpl->param(idx2=> $idx + $len);
-			$tmpl->param(next_idx => $next_idx);
-			$tmpl->param(max_idx => $max_idx);
-			
-			$controller->forum_page_hook($tmpl,$board);
+			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
@@ -854,7 +860,7 @@ package Boards;
 	# This allows subclasses to hook into the list prep above without subclassing the entire list action
 	sub forum_list_hook#($post)
 	{}
-	sub forum_page_hook#($tmpl,$board)
+	sub forum_page_hook#($output_hashref,$board)
 	{}
 	
 	sub new_post_hook#($tmpl,$board)
