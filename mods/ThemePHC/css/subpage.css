@@ -72,6 +72,9 @@ body
 	
 	min-height: 200px;
 	
+	/* Need this for IE */
+	/*margin-top: -29px; */
+	
 	
 	
 }

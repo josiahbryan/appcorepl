@@ -26,7 +26,7 @@
 					fontFamily: $this.css('fontFamily'),
 					lineHeight: $this.css('lineHeight'),
 					resize: 'none',
-					textIndent: 0,
+					textIndent: 0
 				}).appendTo(document.body),
 				
 				update = function() {

@@ -105,7 +105,7 @@
 		
 	.newpost .wrap
 	{
-		width: 47.5em;
+		/*width: 47.5em;*/
 		/*margin: 0 auto;*/
 	}
 	
@@ -144,6 +144,11 @@
 	.newpost .controls
 	{
 		float: right;
+	}
+	
+	.newpost .controls
+	{
+		padding-right: 10px;
 	}
 	
 	.reply_form .controls a,
@@ -252,7 +257,7 @@
 	.postlist td.photo
 	{
 		width: 60px;
-		padding: 10px;
+		padding: 20px 10 10 10;
 	}
 	
 	.postlist td img
@@ -267,7 +272,7 @@
 	
 	.postlist td.data
 	{
-		padding: 10px 0;
+		padding: 18px 0 0 0;
 	}
 	
 	table.postlist tr:hover td
@@ -511,7 +516,7 @@
 			data:
 			{
 				output_fmt: "json",
-				no_comments: 1,
+				no_comments: 1
 			},
 			success: function(data)
 			{
@@ -532,7 +537,7 @@
 					//console.debug(data);
 				}	
 			},
-			error: errorFunc,
+			error: errorFunc
 			
 		});
 		
@@ -569,7 +574,7 @@
 			poster_name: formElm.poster_name.value,
 			poster_email: formElm.poster_email.value,
 			output_fmt: "json",
-			plain_text: 1,
+			plain_text: 1
 		};
 		
 		$("#post-placeholder").show();
@@ -607,7 +612,7 @@
 					formElm.text.updateAutogrow();
 				}	
 			},
-			error: errorFunc,
+			error: errorFunc
 			
 		});
 		
@@ -615,7 +620,7 @@
 	}
 	</script>
 		
-	<table class='postlist' width='100%'>
+	<table class='postlist' width='750' align=center cellspacing=0>
 		<tbody>
 			<tr class='post newpost'>
 				<td valign='top' align='center' class='photo'>
@@ -628,7 +633,7 @@
 						<!--<h2>Add a new post</h2>-->
 						
 						<div class='content'>
-							<textarea class='expandText' style="width: 54em; height:5em" class="expandText" name="text"></textarea>
+							<textarea class='expandText' style="width:99%;height:5em" class="expandText" name="text"></textarea>
 						</div>
 						<div class='controls'>
 							<button type='submit' class='button'>Post</button>
@@ -657,16 +662,13 @@
 							Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
 						</div>
 						</tmpl_if>
-						<!--<tmpl_unless user_display>
-						<_script>setTimeout(show_postas_form,500)</script>
-						</tmpl_unless>-->
 					</form>
 				</td>
 			</tr>
 			<tmpl_if len>
 				<tr class='post current_nums'>
 					<td colspan=2>
-						<div><span id='current_text'>Showing posts %%idx1%% - <span id='idx2'>%%idx2%%</span></span>
+						<div><span id='current_text'>Showing posts %%idx1%% - <span id='idx2'>%%idx2%%</span> of %%max_idx%% posts</span>
 							<tmpl_if next_idx>
 								<span class=link>(<a class='loadmore_link' href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%'>Load more posts ...</a>)</span>
 							</tmpl_if>
@@ -947,7 +949,7 @@
 			poster_email: formElm.poster_email.value,
 			parent_commentid: isPost ? 0 : formElm.postid.value,
 			output_fmt: "json",
-			plain_text: 1,
+			plain_text: 1
 		};
 		
 		
@@ -963,7 +965,7 @@
 			{
 				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
 			}
-		}
+		};
 		
 		
 		var postUrl = "%%binpath%%/%%board_folder_name%%/" + topid + "/post";
@@ -1013,7 +1015,7 @@
 					formElm.parentNode.removeChild(formElm);
 				}	
 			},
-			error: errorFunc,
+			error: errorFunc
 			
 		});
 		
@@ -1157,64 +1159,8 @@
 	
 		return false;
 	});
-		
-	/*
-		// NOTE This is the UNLIKE link
-		// 1. send url to server
-		// 2. on reply, hide the span with the proper postid  #youlike${postid}
-		//    and show the span #addlike${postid}
-		
-		var	blockId   = "#long_text_"+postid,
-			loadingRef = $("#loading_"+postid),
-			shortId   = "#short_text_"+postid,
-			longId    = "#text_"+postid,
-			postHref  = aElm.href;
-		
-		loadingRef.show();
-		
-		var errorFunc = function() 
-		{
-			// Error loading, just redirect to the page itself...
-			document.location.href = postHref; 
-		};
-		
-		$.ajax({
-			type: "GET",
-			url: postHref,
-			data:
-			{
-				output_fmt: "json",
-				no_comments: 1,
-			},
-			success: function(data)
-			{
-				//alert("Got post data:"+data+", type:"+typeof(data));
-				if(typeof(data) == "string")
-				{
-					// something wierd on server - should be JSON!
-					errorFunc();
-				}
-				else
-				{
-					$(blockId).html(data.post_text);
-					$(shortId).hide(300);
-					$(longId).show(300);
-					loadingRef.hide(300);
-					
-					//alert(data);
-					//console.debug(data);
-				}	
-			},
-			error: errorFunc,
-			
-		});
-	});
-	
-	
-	*/
 	</script>
-					
-					
+	
 	<style>
 	
 	.comment_text
@@ -1266,6 +1212,8 @@
 		padding-top:.95em;*/
 		
 		font-size: .85em;
+		
+		width: 600px;
 		
 		
 	}
@@ -1323,7 +1271,7 @@
 	}
 	
 	.postlist .actions,
-	.postlist .actions a 
+	.postlist /*.actions */a 
 	{
 		color: #364a90;
 		text-decoration: none;
@@ -1415,4 +1363,10 @@ $(function() {
 <script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.min.js" index="50"></script>
+
+<!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
+     when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially
+     visible then hiding it as soon as its loaded, we force the browser to preload the image inorder to reduce
+     or prevent such visual artifcats. -->
+<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' onload='this.style.display="none"'>
 

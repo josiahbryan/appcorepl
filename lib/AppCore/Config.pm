@@ -107,7 +107,7 @@ BEGIN
 	# We can also grab all the <script></script> blocks in the page into a single (optionally compressed and cached) block at the end of the page.. 
 	$ENABLE_JS_COMBINE     = 1;	# Combine local <script src='...'> includes (e.g. that start with "/") into a single file (and process %%variable%% and url() constructs)
 	$ENABLE_JS_REORDER     = 1;	# Reorder <script> blocks based on index atribute to below <script> includes
-	$ENABLE_JS_REORDER_YUI = 1;	# Run the combined block of scripts in that page thru YUI before inclusion
+	$ENABLE_JS_REORDER_YUI = 0;	# Run the combined block of scripts in that page thru YUI before inclusion
 	
 	# Compress CSSX with YUI compressor if the .jar in $USE_YUI_COMPRESS exists  
 	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
