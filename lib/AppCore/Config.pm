@@ -165,6 +165,7 @@ BEGIN
 	# Module-specific configuration
 	
 	$BOARDS_SHORT_TEXT_LENGTH = 300;
+	$BOARDS_POST_PAGE_LENGTH  = 5;
 	
 	
 };

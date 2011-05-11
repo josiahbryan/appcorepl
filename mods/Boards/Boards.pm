@@ -527,28 +527,69 @@ package Boards;
 		else
 		{
 			
-			my $tmpl = $self->get_template($controller->config->{list_tmpl} || 'list.tmpl');
-			$tmpl->param(board_nav => $controller->macro_board_nav());
-			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
-			
 			my $user = AppCore::Common->context->user;
 			my $can_admin = 1 if $user && $user->check_acl($controller->config->{admin_acl});
-			$tmpl->param(can_admin=>$can_admin);
 			
 			#my @posts = Boards::Post->search(deleted=>0,boardid=>$board,top_commentid=>0);
 			#my $boardid = $board->id + 0;
 			#my @posts = Boards::Post->retrieve_from_sql("deleted=0 and boardid=$boardid and top_commentid=0 order by timestamp desc");
 			#@posts = sort {$b->timestamp cmp $a->timestamp} @posts;
 			#@posts = shift @posts;
+			my $idx = $req->idx || 0;
+			#my $len = $req->len || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
+			my $len = $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
+			
+			my $dbh = Boards::Post->db_Main;
+			
+			my $find_max_index_sth = $dbh->prepare_cached('select count(b.postid) as count from board_posts b where boardid=? and top_commentid=0 and deleted=0');
+			$find_max_index_sth->execute($board->id);
+			my $max_idx = $find_max_index_sth->rows ? $find_max_index_sth->fetchrow : 0;
+			
+			$find_max_index_sth->finish;
+			
+			my $next_idx = $idx + $len;
+			$next_idx = $next_idx >= $max_idx ? 0 : $next_idx;
+			$next_idx = 0 if !$len;
+			
+			
 			my $cache_key = $user ? $board->id . $user->id : $board->id;
+			$cache_key .= $idx if $idx;
+			$cache_key .= $len if $len;
+			
 			my $list = $BoardDataCache{$cache_key};
 			if(!$list)
 			{
-				my $dbh = Boards::Post->db_Main;
-				my $del_sth = $dbh->prepare('update board_posts set deleted=1 where postid=?');
-				my $sth = $dbh->prepare(q{
-					select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
-				});
+				my $del_sth = $dbh->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
+				my $sth;
+				 
+				if(!$len)
+				{
+					$sth = $dbh->prepare_cached(q{
+						select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
+					});
+				}
+				else
+				{
+					my $find_posts_sth = $dbh->prepare_cached('select b.postid from board_posts b where boardid=? and top_commentid=0 and deleted=0 order by timestamp desc limit ?,?');
+					$find_posts_sth->execute($board->id, $idx, $len);
+					my @posts;
+					push @posts, $_ while $_ = $find_posts_sth->fetchrow;
+					
+					if(!@posts)
+					{
+						return $r->error("No posts at index ".($idx+0));
+					}
+					
+					my $list = join ',',  @posts;
+					
+					#print STDERR "Posts: $list\n";
+					
+					$sth = $dbh->prepare_cached('select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) '.
+						'where boardid=? and deleted=0 and '.
+						'(postid in ('.$list.') or top_commentid in ('.$list.')) '.
+						'order by timestamp');
+				}
+				
 				$sth->execute($board->id);
 				my $board_folder_name = $board->folder_name;
 				my @tmp_list;
@@ -607,7 +648,42 @@ package Boards;
 				#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
 			}
 			
+			if($req->output_fmt eq 'json')
+			{
+				my $board_ref = {};
+				$board_ref->{$_} = $board->get($_)."" foreach $board->columns;
+				
+				my $output = 
+				{
+					board	=> $board_ref,
+					posts	=> $list,
+					idx	=> $idx,
+					idx1	=> $idx + 1,
+					len	=> $len,
+					idx2	=> $idx + $len,
+					next_idx=> $idx + $AppCore::Config::BOARDS_POST_PAGE_LENGTH,
+					max_idx => $max_idx,
+					can_admin=> $can_admin,
+				};
+				
+				my $json = encode_json($output);
+				#return $r->output_data("application/json", $json);
+				return $r->output_data("text/plain", $json);
+			}
+			
+			my $tmpl = $self->get_template($controller->config->{list_tmpl} || 'list.tmpl');
+			$tmpl->param(board_nav => $controller->macro_board_nav());
+			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
+			$tmpl->param(can_admin=>$can_admin);
+			
 			$tmpl->param(posts=>$list);
+			
+			$tmpl->param(idx => $idx);
+			$tmpl->param(len => $len);
+			$tmpl->param(idx1=> $idx + 1);
+			$tmpl->param(idx2=> $idx + $len);
+			$tmpl->param(next_idx => $next_idx);
+			$tmpl->param(max_idx => $max_idx);
 			
 			$controller->forum_page_hook($tmpl,$board);
 			

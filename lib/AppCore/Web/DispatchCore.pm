@@ -91,8 +91,8 @@ package AppCore::Web::DispatchCore;
 		
 		$SIG{__WARN__} = sub 
 		{
-			my $ctx_ref = AppCore::Common->context;
-			print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->compref->user."@" : $ctx_ref->user."@").$ENV{REMOTE_ADDR}."] [WARN] ".join(' ',@_)."\n";
+			my $user = AppCore::Common->context->user;
+			print STDERR "(PID $$) [".($user ? $user->user."@" : "").$ENV{REMOTE_ADDR}."] [WARN] ".join(' ',@_)."\n";
 		};
 		
 		$SIG{__DIE__} = sub 
@@ -319,7 +319,9 @@ package AppCore::Web::DispatchCore;
 		
 		my $time_end = time;
 		my $diff = $time_end - $time_start;
-		#print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url;
+		#my $show_time = 1;
+		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/;
+		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time; 
 		#################
 	}
 

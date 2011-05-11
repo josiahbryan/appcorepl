@@ -157,8 +157,13 @@ package Boards::Post::Like;
 		my @list;
 		push @list, $_->{display} while $_ = $q_cmt_other_names->fetchrow_hashref;
 		my $diff = $ref->{others_like} - scalar(@list);
-		push @list, "$diff others" if $diff > 0;
-		$ref->{others_like_names} = join(", ",@list);
+		push @list, "$diff anonymous" if $diff > 0;
+		if(@list >= 2)
+		{
+			my $last = pop @list;
+			push @list, "and $last";
+		}
+		$ref->{others_like_names} = @list == 2 ? join(" ", @list) : join(", ",@list);
 		$ref->{others_like_names_list} = join("\n", @list);
 		
 		#print STDERR "Post: $postid, Dump:".Dumper($ref);

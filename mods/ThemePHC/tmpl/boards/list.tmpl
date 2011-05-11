@@ -41,13 +41,57 @@
 		/*padding-bottom: 30px;*/
 	}
 	
-	.newpost td
+	.newpost td,
+	.loadmore td,
+	.current_nums td
 	{
 		border-bottom: 1px solid #c7cddf;
 		border-top: 1px solid white;
 		
 		/*padding-bottom: 30px;*/
 	}
+	
+	.loadmore td,
+	.current_nums td
+	{
+		background: #e9eeff;
+	}
+	
+	.loadmore td a
+	{
+		color: #364a90;
+		font-weight: bold;
+		font-size: .85em;
+		display: block;
+		padding: 1em;
+		text-decoration: none;
+	}
+	
+	.current_nums div
+	{
+		color: #364a90;
+		font-weight: bold;
+		font-size: .85em;
+		display: block;
+		/*padding: 1em;*/
+		margin: 1em 13px;
+		text-decoration: none;
+	}
+	
+	.current_nums div a,
+	.current_nums div span
+	{
+		color: #364a90;
+		font-weight: normal;
+	}
+	
+	
+	.loadmore td a:active,
+	.loadmore td a:focus
+	{
+		outline: 0;
+	}
+	
 		
 	.newpost .wrap
 	{
@@ -149,7 +193,7 @@
 		margin-top: 2px;
 	}
 	
-	.reply_form table td { border: 0  !important }
+	.reply_form table td, .newpost table td { border: 0  !important }
 	
 	</style>
 	
@@ -604,6 +648,17 @@
 					</form>
 				</td>
 			</tr>
+			<tmpl_if len>
+				<tr class='post current_nums'>
+					<td colspan=2>
+						<div>Showing posts %%idx1%% - %%idx2%%
+							<tmpl_if next_idx>
+								<span>(<a href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%'>Load more posts ...</a>)</span>
+							</tmpl_if>
+						<div>
+					</td>
+				</tr>
+			</tmpl_if>
 			<tr class='post post-placeholder' id='post-placeholder'>
 				<td valign='top' align='center' class='photo'>
 					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
@@ -616,6 +671,14 @@
 			<tmpl_loop posts>
 				${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
 			</tmpl_loop>
+			
+			<tmpl_if next_idx>
+				<tr class='loadmore'>
+					<td colspan=2 align=center>
+						<a href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%'>Load more posts ...</a>
+					</td>
+				</tr>
+			</tmpl_if>
 		</tbody>
 	</table>
 	
