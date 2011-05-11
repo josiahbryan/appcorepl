@@ -1094,7 +1094,7 @@
 		return false;
 	});
 	
-	$(".comment_text .delete_post_link").live("click",function(){
+	$(".comment_text .delete_comment_link").live("click",function(){
 		
 		if(!confirm("Are you sure you want to delete this?"))
 			return false;
@@ -1120,7 +1120,8 @@
 			{
 				loading.remove();
 				
-				$("#wrap"+postid).remove();
+				var ref = $("#wrap"+postid);
+				ref.hide(300, function() { ref.remove() });
 			}
 		});
 	
@@ -1153,7 +1154,8 @@
 			{
 				loading.remove();
 				
-				$("#post"+postid).remove();
+				var ref = $("#post"+postid); 
+				ref.hide(300, function() { ref.remove() });
 			}
 		});
 	
@@ -1362,7 +1364,7 @@ $(function() {
 
 <script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
-<script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.min.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/js/tmp/jquery-jquery-tmpl-f5deba5/jquery.tmpl.js" index="50"></script>
 
 <!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
      when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially

@@ -653,7 +653,7 @@ package Boards;
 				
 				$list = \@list;
 				$BoardDataCache{$cache_key} = $list;
-				print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
+				#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
 				
 				#die Dumper \@list;
 			}
@@ -740,7 +740,7 @@ package Boards;
 		$b->{can_admin}   = $can_admin;
 		
 		my $cur_user = AppCore::Common->context->user;
-		$b->{can_edit} = $can_admin || ($cur_user && $cur_user->id == $b->{posted_by});
+		$b->{can_edit} = ($can_admin || ($cur_user && $cur_user->id == $b->{posted_by}) ? 1:0);
 		
 		## NOTE Assuming SQL query already provided all user columns as user_*
 # 		if($user && $user->id)
@@ -1189,26 +1189,28 @@ Cheers!};
 			
 			if($req->output_fmt eq 'json')
 			{
-				my $list = [];
+#				my $list = [];
 			
-				my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-				my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
+# 				my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
+# 				my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
 			
 				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});;
 				
-				my $local_ctx = 
-				{
-					post		=> $post,
-					bin		=> $bin,
-					appcore		=> $AppCore::Config::WWW_ROOT,
-					board_folder	=> $board_folder_name,
-					folder_name	=> $folder_name,
-					reply_to_url	=> $reply_to_url,
-					can_admin	=> $can_admin,
-					delete_base	=> $delete_base,
-				};
+# 				my $local_ctx = 
+# 				{
+# 					post		=> $post,
+# 					bin		=> $bin,
+# 					appcore		=> $AppCore::Config::WWW_ROOT,
+# 					board_folder	=> $board_folder_name,
+# 					folder_name	=> $folder_name,
+# 					reply_to_url	=> $reply_to_url,
+# 					can_admin	=> $can_admin,
+# 					delete_base	=> $delete_base,
+# 				};
+# 				
+# 				my $output = _post_prep_ref($local_ctx,$comment);
 				
-				my $output = _post_prep_ref($local_ctx,$comment);
+				my $output = $self->load_post_for_list($comment,$board->folder_name,$can_admin);
 				
 # 				use Data::Dumper;
 # 				print STDERR Dumper $output;
@@ -1469,10 +1471,11 @@ Cheers!};
 # 		# Now copy the data over to the proper field so I dont have to patch all the code below
 # 		$req->{comment} = $req->{age} if !$req->{_internal_};
 
+			
 		## TODO ## Add empty text filtering
 		if(!$req->{comment} || length($req->{comment}) < 5)
 		{
-			return PHC::Web::Skin->instance->error("Empty Comment!","You must enter *something* to comment! [1]");
+			AppCore::Web::Common::error("Empty Comment!","You must enter *something* to comment! [1]");
 		}
 
 		
