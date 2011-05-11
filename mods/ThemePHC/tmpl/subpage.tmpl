@@ -2,8 +2,21 @@
 <head>
 	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>Pleasant Hill Church</title>
 	<!--<link href="%%modpath%%/css/subpage.css" rel="stylesheet" type="text/css" />-->
-	<a:cssx src="%%modpath%%/css/subpage.css"/>
 	<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico">
+	
+	<!-- This stylesheet applies to all browsers -->
+	<a:cssx src="%%modpath%%/css/subpage.css"/>
+	
+	<!-- Now for fun with Internet Explorer -->
+	<!--[if lt ie 7.0]>
+	<link href="%%modpath%%/css/iefixup-pre-ie7.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
+	<!--[if gte ie 7.0]>
+	<link href="%%modpath%%/css/iefixup-post-ie7.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
+	<!--[if ie]>
+	<link href="%%modpath%%/css/iefixup-all-ie.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
 </head>
 
 <body>

@@ -1,0 +1,10 @@
+
+/* Throw in a PNG filter fix for IE 6 ... */
+img, a, div, input, span
+{
+	behavior: url("%%appcore%%/ie/iepngfix/iepngfix.htc");
+	 
+	/* Can't have more than one behavior...bummer! */
+	/*behavior: url("%%appcore%%/ie/pie/PIE.htc");*/
+	
+}

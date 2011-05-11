@@ -1,0 +1,37 @@
+/* Applies to all versions of IE (<6 and >= 7) */
+
+/* Main logo doesnt get proper Z Index in IE, so we have to move it into a new position to make it fully visible */
+#mainlogo
+{
+	margin-top: -47px !important;
+	margin-left: -25px  !important;
+	margin-bottom: -3px;
+}
+
+/* With main logo moved, the header shadow was out of place now */
+#header #header-shadow
+{
+	background-position: 0 11 !important;
+}
+
+/* Mobile link top-left was way out of size - this fixes it */
+h2#mobile-link a
+{
+	font-size: 13px !important;
+	margin-top: -6px;
+}
+
+/* Fix search box size in IE to match BG */
+.search 
+{
+    background-repeat: no-repeat !important;
+    height: 11px !important;
+    padding: 2px 0 0px 4px !important;
+    width: 142px !important;
+}
+
+/* Search box is too tall for its background without this */
+#top-searchbox 
+{
+    font-size: 11px !important;
+}
