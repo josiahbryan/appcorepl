@@ -9,6 +9,8 @@
 .postlist td a.youtube-play-link span 
 {
 	behavior: url("/appcore/ie/iepngfix/iepngfix.htc");
+	/*behavior: url(/iepngfix/iepngfix.htc);*/
+
 	 
 	/* Can't have more than one behavior...bummer! */
 	/*behavior: url("%%appcore%%/ie/pie/PIE.htc");*/
