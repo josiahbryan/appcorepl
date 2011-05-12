@@ -204,7 +204,7 @@
 					<td colspan=2>
 						<div><span id='current_text'>Showing posts %%idx1%% - <span id='idx2'>%%idx2%%</span> of %%max_idx%% posts</span>
 							<tmpl_if next_idx>
-								<span class=link>(<a class='loadmore_link' href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%'>Load more posts ...</a>)</span>
+								<span class=link>(<a class='loadmore_link' href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%'>Load more posts ...</a><i class='loaded'></i>)</span>
 							</tmpl_if>
 						<div>
 					</td>
@@ -259,6 +259,9 @@
 		th.css("cursor", "progress");
 		loading.insertAfter(th);
 		
+		// Hide just incase it's stil currently visible
+		$('.current_nums i.loaded').hide();
+		
 		$.ajax({
 			type: "GET",
 			url: loadMoreUrl,
@@ -290,6 +293,11 @@
 					}
 					
 					loading.remove();
+					
+					var loaded = $('.current_nums i.loaded');
+					loaded.show();
+					//loaded.get()[0].innerHTML = "Loaded!";
+					setTimeout(function() { loaded.hide(300) }, 3500);
 					
 					// Store the next index for the next time they request more posts
 					window.PagingNextIndex = data.next_idx;
@@ -341,7 +349,7 @@
 		var rowTop = rowRef.offset().top - fudge; 
 		if(rowTop < scrollBottom)
 		{
-			var domElm = document.getElementById("load_more_bottom");
+			var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
 			domElm.doPaging = pagingFunc;
 			domElm.doPaging();
 		}

@@ -309,3 +309,9 @@ table.comment_text td {
 }
 
 
+.current_nums i.loaded
+{
+	background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat 0px -155px;
+	padding-left: 16px;
+	display: none;
+}
