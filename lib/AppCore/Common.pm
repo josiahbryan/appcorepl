@@ -645,6 +645,7 @@ package AppCore::Common;
 # 		goto _approx_time_ago_end if _unit_divide_if('millenia',	1000,		\$x, \$unit);
 # 		goto _approx_time_ago_end if _unit_divide_if('eons',	100,		$x, $unit);
 		_approx_time_ago_end:
+		$x += 0.5 if $x - int($x) >= 0.5; 
 		$x = int($x); # remove decimals
 		#print STDERR "[$orig] Done, returning $x $unit\n";
 		return wantarray ? ($x,$unit) : "$x $unit";

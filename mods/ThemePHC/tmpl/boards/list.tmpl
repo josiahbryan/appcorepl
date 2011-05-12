@@ -236,8 +236,13 @@
 	<script>
 	window.PagingNextIndex = %%next_idx%%;
 	//loadmore_link
-	
+	var pagingLock = false;
 	var pagingFunc = function(){
+		
+		if(pagingLock)
+			return;
+			
+		pagingLock = true;
 		
 		if(!window.PagingNextIndex)
 			return false;
@@ -304,6 +309,8 @@
 					// Remove busy cursor
 					$("body").css("cursor", "auto");
 					th.css("cursor", "pointer");
+					
+					pagingLock = false;
 				}	
 			},
 			error: function() 
@@ -327,7 +334,7 @@
 	// paging function (above) is triggered just as if the user
 	// had clicked the link
 	$(window).bind('scroll', function(){
-		
+			
 		var rowRef = $("tr.loadmore");
 		var scrollBottom = $(window).scrollTop() + $(window).height();
 		var fudge = 100; // amount by which to fudge the detection

@@ -389,11 +389,13 @@ package Boards;
 		}
 	}
 	
+	our %PostDataCache;
 	our %BoardDataCache;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
 		%BoardDataCache = ();
+		%PostDataCache = ();
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
@@ -441,11 +443,7 @@ package Boards;
 			
 			if($req->output_fmt eq 'json')
 			{
-				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($controller->config->{admin_acl});
-				
-				#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
-				
-				my $b = $controller->load_post_for_list($post,$board->folder_name,$can_admin);
+				my $b = $controller->load_post_for_list($post,$board->folder_name);
 				
 				#use Data::Dumper;
 				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
@@ -529,7 +527,7 @@ package Boards;
 			my $dbh = Boards::Post->db_Main;
 			
 			my $user = AppCore::Common->context->user;
-			my $can_admin = 1 if $user && $user->check_acl($controller->config->{admin_acl});
+			my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
 			my $board_folder_name = $board->folder_name;
 			
 			# Get the current pating location
@@ -703,8 +701,14 @@ package Boards;
 		my $self = shift;
 		my $post = shift;
 		my $board_folder_name = shift;
-		my $can_admin = shift || 0;
+		my $can_admin = shift;
 		my $dont_incl_comments = shift || 0;
+		
+		if(!defined $can_admin)
+		{
+			$can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
+		}
+		
 		
 		my $short_len             = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
 		my $last_post_subject_len = $AppCore::Config::BOARDS_LAST_POST_SUBJ_LENGTH || $LAST_POST_SUBJ_LENGTH;
@@ -792,65 +796,6 @@ package Boards;
 		$b->{unlike_url}   = $unlike_url;
 		
 		Boards::Post::Like->like_data_for_post($b->{postid}, $b);
-		#use Data::Dumper;
-		#die Dumper $b if $b->{you_like};
-			
-		
-# 		$b->{$_} = $b->get($_) foreach $b->columns;
-# 		$b->{bin}         = $bin;
-# 		$b->{appcore}     = $appcore;
-# 		$b->{board_folder_name} = $folder_name;
-# 		$b->{can_admin}   = $can_admin;
-# 		my $short = AppCore::Web::Common->html2text($b->{text});
-# 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
-# 		$b->{short_text_has_more} = length($short) > $short_len;
-# 		$b->{short_text_html} = $b->{short_text};
-# 		$b->{short_text_html} =~ s/\n/<br>\n/g;
-# 		$b->{folder_name} = $b->folder_name;
-# 		$b->{poster_email_md5} = md5_hex($b->{poster_email});
-		
-# 		if($dont_incl_comments)
-# 		{
-# 			my $lc = $post->last_commentid;
-# 			if($lc && $lc->id && !$lc->deleted)
-# 			{
-# 				$b->{'post_'.$_} = $lc->get($_)."" foreach $lc->columns;
-# 				$b->{post_subject} = substr($b->{post_subject},0,$last_post_subject_len) . (length($b->{post_subject}) > $last_post_subject_len ? '...' : '');
-# 				$b->{post_url} = "$bin/$board_folder_name/$folder_name#c$lc";
-# 				$b->{post_poster_email_md5} = md5_hex($lc->poster_email);
-# 			}
-# 		}
-# 		else
-		{
-			my $list = [];
-			
-			# TODO Process comments
-			my $local_ctx = 
-			{
-				post		=> $post,
-				bin		=> $bin,
-				appcore		=> $AppCore::Config::WWW_ROOT,
-				board_folder	=> $board_folder_name,
-				folder_name	=> $folder_name,
-				reply_to_url	=> $reply_to_url,
-				can_admin	=> $can_admin,
-				delete_base	=> $delete_base,
-			};
-			
-# 			if($more_local_ctx && ref($more_local_ctx) eq 'HASH')
-# 			{
-# 				$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
-# 			}
-			
-# 			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
-# 			foreach my $b (@replies)
-# 			{
-# 				push @$list, _post_prep_ref($local_ctx,$b);
-# 				_post_add_kids($local_ctx,$list,$b);
-# 			}
-			
-			$b->{replies} = $list;
-		}
 		
 		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
 		
@@ -889,57 +834,64 @@ package Boards;
 			$post->update;
 		}
 		
-		my $rs = {};
+		# Create a cache key for this set of posts based on the board id, user (if logged in), and the current page (idx/len) 
+		my $user = AppCore::Common->context->user;
+		my $cache_key = $user ? $post->id . $user->id : $post->id;
 		
-		my $board = $post->boardid;
-		# Force stringification in order to convert to JSON if needed
-		$rs->{'post_'.$_}  = $post->get($_).""  foreach $post->columns;
-		$rs->{'board_'.$_} = $board->get($_)."" foreach $board->columns;
+		# Try to load data from in-memory cache - if cache miss, well, rebuild!
+		my $post_ref = $PostDataCache{$cache_key};
 		
-		$rs->{post_text} = AppCore::Web::Common->clean_html($rs->{post_text});
-		
-		#$rs->{post_text} = PHC::VerseLookup->tag_verses($rs->{post_text});
-		
-		my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-		my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
-		
-		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
-		$rs->{can_admin} = $can_admin;
-		
-		$rs->{can_edit} = $self->can_user_edit($post);
-		
-		unless($dont_incl_comments)
+		if(!$post_ref)
 		{
-			my $list = [];
+			my $can_admin = $user && $user->check_acl($self->config->{admin_acl}) ? 1:0;
 			
-			my $local_ctx = 
-			{
-				post		=> $post,
-				bin		=> $bin,
-				appcore		=> $AppCore::Config::WWW_ROOT,
-				board_folder	=> $board_folder_name,
-				folder_name	=> $folder_name,
-				reply_to_url	=> $reply_to_url,
-				can_admin	=> $can_admin,
-				delete_base	=> $delete_base,
-			};
+			# Do the actual query that loads all and comments in one gos
+			my $sth = Boards::Post->db_Main->prepare_cached('select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) '.
+				'where deleted=0 and '.
+				'top_commentid=? '.
+				'order by timestamp');
+		
+			$sth->execute($post->id);
 			
-			if($more_local_ctx && ref($more_local_ctx) eq 'HASH')
+			# First, prepare all the post results (posts and comments) at the same time
+			my @tmp_list;
+			while(my $b = $sth->fetchrow_hashref)
 			{
-				$local_ctx->{$_} = $more_local_ctx->{$_} foreach keys %$more_local_ctx;
+				push @tmp_list, $self->load_post_for_list($b,$board_folder_name,$can_admin);
 			}
 			
-			my @replies = Boards::Post->search(deleted=>0,top_commentid=>$post,parent_commentid=>0);
-			foreach my $b (@replies)
-			{
-				push @$list, _post_prep_ref($local_ctx,$b);
-				_post_add_kids($local_ctx,$list,$b);
-			}
+			my $board = $post->boardid;
+			$post_ref = $self->load_post_for_list($post,$board->folder_name,$can_admin);
+			$post_ref->{'board_'.$_}  = $board->get($_)."" foreach $board->columns;
+			$post_ref->{'post_' . $_} =  $post->get($_)."" foreach $post->columns;
+			$post_ref->{reply_count}  = 0;
 			
-			$rs->{replies} = $list;
+			# Now we put all the comments with the parent posts
+			my @list;
+			my %indents;
+			foreach my $data (@tmp_list)
+			{
+				# This is a comment, so we need to calculate an "indent" value 
+				# for the template to use to indet the comment
+				
+				my $parent_comment = $data->{parent_commentid};
+				my $indent = $indents{$parent_comment} || 0;
+				my $id     = $data->{postid};
+				
+				$data->{indent}		= $indent;
+				$data->{indent_css}	= $indent * 2;
+				
+				# Add the comment to the post
+				push @{$post_ref->{replies}}, $data;
+				
+				$post_ref->{reply_count} ++;
+				$indents{$id} = $indent + 1; 
+			}
+	
+			$PostDataCache{$cache_key} = $post_ref;
 		}
 		
-		return $rs;
+		return $post_ref;
 	}
 	
 	sub can_user_edit
@@ -954,74 +906,60 @@ package Boards;
 			
 	}
 	
-	sub _post_prep_ref
-	{
-		my $local_ctx = shift;
-		my $comment = shift;
-		my $b = {};
-		my $user = $comment->posted_by;
-		# Force stringify for JSON
-		$b->{$_} = $comment->get($_).""   foreach $comment->columns;
-		$b->{$_} = $local_ctx->{$_}."" foreach keys %$local_ctx;
-		$b->{indent}		= $local_ctx->{indent}->{$comment->parent_commentid};
-		$b->{indent_css} 	= $b->{indent} * 2;
-		$b->{can_reply}		= defined $local_ctx->{can_reply} ? $local_ctx->{can_reply} : 1,
-		$b->{approx_time_ago}   = approx_time_ago($b->{timestamp});
-		$b->{pretty_timestamp}  = pretty_timestamp($b->{timestamp});
-		$b->{post_poster_email_md5} = md5_hex($b->{poster_email});
-		
-		$b->{user_photo}	= $user && ref $user && $user->id ? $user->photo : "";
-		#print STDERR "_post_prep_ref: \$user: $user, photo:".$b->{user_photo}.", ref:".ref($user).", ref eml:$b->{poster_email}\n";
-		
-		$b->{text} 		=~ s/(^\s+|\s+$)//g;
-		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
-		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
-		$b->{clean_html} = $b->{text};
-		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
-		if($url)
-		{
-			my ($code) = $url =~ /v=(.+?)\b/;
-			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-			$b->{clean_html} .= qq{
-				<hr size=1 class='post-attach-divider'>
-				<a href='$url' class='youtube-play-link' videoid='$code'>
-				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
-				<span class='overlay'></span>
-				</a>
-			};
-		}
-		
-		my ($code) = $b->{clean_html} =~ /vimeo\.com\/(\d+)/;
-		if($code)
-		{
-			$b->{clean_html} .= qq{
-				<hr size=1 class='post-attach-divider'>
-				<a href='http://www.vimeo.com/$code' isvimeo="1" class='vimeo-video youtube-play-link' videoid='$code'>
-				<img src="" id="vimeo-$code" border=0>
-				<span class='overlay'></span>
-				</a>
-			};
-		}
-		
-		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
-		$local_ctx->{indent}->{$comment->id} = $b->{indent} + 1;
-		#push @$list, $b;
-		return $b;
-	}
-	
-	sub _post_add_kids
-	{
-		my $local_ctx = shift;
-		my $list = shift;
-		my $b = shift;
-		my @kids = Boards::Post->search(deleted=>0,top_commentid=>$local_ctx->{post},parent_commentid=>$b);
-		foreach my $kid (@kids)
-		{
-			push @$list, _post_prep_ref($local_ctx,$kid);
-			_post_add_kids($local_ctx,$list,$kid);
-		}
-	}
+# 	sub _post_prep_ref
+# 	{
+# 		my $local_ctx = shift;
+# 		my $comment = shift;
+# 		my $b = {};
+# 		my $user = $comment->posted_by;
+# 		# Force stringify for JSON
+# 		$b->{$_} = $comment->get($_).""   foreach $comment->columns;
+# 		$b->{$_} = $local_ctx->{$_}."" foreach keys %$local_ctx;
+# 		$b->{indent}		= $local_ctx->{indent}->{$comment->parent_commentid};
+# 		$b->{indent_css} 	= $b->{indent} * 2;
+# 		$b->{can_reply}		= defined $local_ctx->{can_reply} ? $local_ctx->{can_reply} : 1,
+# 		$b->{approx_time_ago}   = approx_time_ago($b->{timestamp});
+# 		$b->{pretty_timestamp}  = pretty_timestamp($b->{timestamp});
+# 		$b->{post_poster_email_md5} = md5_hex($b->{poster_email});
+# 		
+# 		$b->{user_photo}	= $user && ref $user && $user->id ? $user->photo : "";
+# 		
+# 		$b->{text} 		=~ s/(^\s+|\s+$)//g;
+# 		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
+# 		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
+# 		$b->{clean_html} = $b->{text};
+# 		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+# 		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
+# 		if($url)
+# 		{
+# 			my ($code) = $url =~ /v=(.+?)\b/;
+# 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
+# 			$b->{clean_html} .= qq{
+# 				<hr size=1 class='post-attach-divider'>
+# 				<a href='$url' class='youtube-play-link' videoid='$code'>
+# 				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
+# 				<span class='overlay'></span>
+# 				</a>
+# 			};
+# 		}
+# 		
+# 		my ($code) = $b->{clean_html} =~ /vimeo\.com\/(\d+)/;
+# 		if($code)
+# 		{
+# 			$b->{clean_html} .= qq{
+# 				<hr size=1 class='post-attach-divider'>
+# 				<a href='http://www.vimeo.com/$code' isvimeo="1" class='vimeo-video youtube-play-link' videoid='$code'>
+# 				<img src="" id="vimeo-$code" border=0>
+# 				<span class='overlay'></span>
+# 				</a>
+# 			};
+# 		}
+# 		
+# 		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
+# 		$local_ctx->{indent}->{$comment->id} = $b->{indent} + 1;
+# 		#push @$list, $b;
+# 		return $b;
+# 	}
 	
 	sub create_new_thread
 	{
@@ -1189,31 +1127,12 @@ Cheers!};
 			
 			if($req->output_fmt eq 'json')
 			{
-#				my $list = [];
-			
-# 				my $reply_to_url = "$bin/$board_folder_name/$folder_name/reply_to";
-# 				my $delete_base  = "$bin/$board_folder_name/$folder_name/delete";
-			
-				my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});;
+				# NOTE: $self in this case WILL be the 'controller' for $board,
+				# because post_page() is called as $controller->post_page(...)  -
+				# Therefore, we dont need to call it by $board->controller ourself 
+				# - $self is already set correctly.
+				my $output = $self->load_post_for_list($comment,$board->folder_name);
 				
-# 				my $local_ctx = 
-# 				{
-# 					post		=> $post,
-# 					bin		=> $bin,
-# 					appcore		=> $AppCore::Config::WWW_ROOT,
-# 					board_folder	=> $board_folder_name,
-# 					folder_name	=> $folder_name,
-# 					reply_to_url	=> $reply_to_url,
-# 					can_admin	=> $can_admin,
-# 					delete_base	=> $delete_base,
-# 				};
-# 				
-# 				my $output = _post_prep_ref($local_ctx,$comment);
-				
-				my $output = $self->load_post_for_list($comment,$board->folder_name,$can_admin);
-				
-# 				use Data::Dumper;
-# 				print STDERR Dumper $output;
 				my $json = encode_json($output);
 				return $r->output_data("application/json", $json);
 			}
