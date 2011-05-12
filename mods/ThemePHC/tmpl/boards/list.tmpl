@@ -27,6 +27,7 @@
 	<!-- "Add a post" link -->
 	<!--<a class='new_link' href='%%bin%%/<tmpl_var board_folder_name>/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new post to this forum!</a>-->
 	
+	<span>Basic text</span>
 	
 	<script>
 	function show_more_post(postid,aElm)
@@ -186,16 +187,16 @@
 							</table>
 						</div>
 						<tmpl_if user_display>
-						<div class='ident' id='postas_display'>
-							<script>
-							function show_postas_form()
-							{
-								$("#postas_form").show(200);
-								$("#postas_display").hide(200);
-							}
-							</script>
-							Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
-						</div>
+							<div class='ident' id='postas_display'>
+								<script>
+								function show_postas_form()
+								{
+									$("#postas_form").show(200);
+									$("#postas_display").hide(200);
+								}
+								</script>
+								Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+							</div>
 						</tmpl_if>
 					</form>
 				</td>

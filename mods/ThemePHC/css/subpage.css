@@ -5,18 +5,27 @@
 /* Edit form style */
 @import url("%%modpath%%/css/editform.css");
 
-body/*, td*/
-{
-	font-family: Calibri, Verdana, Sans-Serif;
-	font-size: 11px;
-	
+html {
+	margin:0;
+	padding:0;
 }
 
 body
 {
+	/*font-family: Calibri, Verdana, Sans-Serif;*/
+	font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+	/*font-size: 11px;*/
+	/*font-size: 62.5%;*/
+	font-size: 68.75%;
+	
 	margin: 0;
 	padding: 0;
 	background: rgb(100,100,100);
+}
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
 }
 
 #header
@@ -89,7 +98,7 @@ body
 {
 	width: 965px;
 	margin: 0 auto;
-	font-size: 1.5em;
+	/*font-size: 1.5em;*/
 	
 	padding-top: 40px;
 	padding-bottom: 40px;
