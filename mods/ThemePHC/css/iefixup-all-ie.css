@@ -36,3 +36,8 @@ h2#mobile-link a
     font-size: 11px !important;
 }
 
+/*
+.postlist td a.youtube-play-link span {
+	zoom: 1;
+	filter: alpha(opacity = 75);
+}*/

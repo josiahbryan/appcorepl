@@ -181,6 +181,11 @@ package AppCore::Web::DispatchCore;
 			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $file),{expire_days=>31});
 		}
 		
+		if($path eq 'iepngfix.htc')
+		{
+			return $self->send_iepngfix();
+		}
+		
 		my $orig_path = $path;
 		
 		$path = $AppCore::Config::DEFAULT_MODULE if !$path;
@@ -382,6 +387,15 @@ package AppCore::Web::DispatchCore;
 			$ipad=1;
 		}
 		return $ipad;
+	}
+	
+	sub send_iepngfix
+	{
+		my $fix_file = 'ie/iepngfix/iepngfix.htc';
+		
+		print "Content-Type: text/x-component\r\n";
+		print "\r\n";
+		print AppCore::Common->read_file($fix_file);
 	}
 
 };

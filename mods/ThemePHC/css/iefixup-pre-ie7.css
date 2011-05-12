@@ -4,11 +4,11 @@
 
 #header #header-shadow,
 #footer,
-#mainlogo-wrap img,
+#mainlogo,
 .search,
 .postlist td a.youtube-play-link span 
 {
-	behavior: url("/appcore/ie/iepngfix/iepngfix.htc");
+	behavior: url("/iepngfix.htc");
 	/*behavior: url(/iepngfix/iepngfix.htc);*/
 
 	 
