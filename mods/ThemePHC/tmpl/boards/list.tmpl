@@ -28,69 +28,80 @@
 	<!--<a class='new_link' href='%%bin%%/<tmpl_var board_folder_name>/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new post to this forum!</a>-->
 	
 	<script>
-	function show_more_post(postid,aElm)
-	{
-		var	blockId   = "#long_text_"+postid,
-			loadingRef = $("#loading_"+postid),
-			shortId   = "#short_text_"+postid,
-			longId    = "#text_"+postid,
-			postHref  = aElm.href;
+	$("a.readmore_link").live("click",function() {
 		
-		loadingRef.show();
+		var	th     = $(this),
+			postid = th.attr('postid');
+			state  = th.attr('state');
 		
-		var errorFunc = function() 
+		if(state == 'loaded')
 		{
-			// Error loading, just redirect to the page itself...
-			document.location.href = postHref; 
-		};
-		
-		$.ajax({
-			type: "GET",
-			url: postHref,
-			data:
-			{
-				output_fmt: "json",
-				no_comments: 1
-			},
-			success: function(data)
-			{
-				//alert("Got post data:"+data+", type:"+typeof(data));
-				if(typeof(data) == "string")
-				{
-					// something wierd on server - should be JSON!
-					errorFunc();
-				}
-				else
-				{
-					$(blockId).html(data.post_text);
-					$(shortId).hide(300);
-					$(longId).show(300);
-					loadingRef.hide(300);
-					
-					//alert(data);
-					//console.debug(data);
-				}	
-			},
-			error: errorFunc
+			var	shortId = "#short_text_"+postid,
+				blockId = "#long_text_"+postid,
+				rowRef = $("tr.#post"+postid); 
+			$(shortId).show(300);
+			$(blockId).hide(300);
+			// only scroll doc if top of the post is above the window top.
+			// That way we dont "confuse" the user with unnecessary changes
+			if(rowRef.offset().top < document.body.scrollTop)
+				$.scrollTo(rowRef,300);
+				
+			th.attr('state', 'unloaded');
+			th.html('Read More &raquo;');
+		}
+		else
+		{
+			th.attr('state', 'loaded');
+			th.html('&laquo; Less');
 			
-		});
+			var	blockId   = "#long_text_"+postid,
+				loadingRef = $("#loading_"+postid),
+				shortId   = "#short_text_"+postid,
+				postHref  = th.attr('href');
+			
+			loadingRef.show();
+			
+			var errorFunc = function() 
+			{
+				// Error loading, just redirect to the page itself...
+				document.location.href = postHref; 
+			};
+			
+			$.ajax({
+				type: "GET",
+				url: postHref,
+				data:
+				{
+					output_fmt: "json",
+					no_comments: 1
+				},
+				success: function(data)
+				{
+					//alert("Got post data:"+data+", type:"+typeof(data));
+					if(typeof(data) == "string")
+					{
+						// something wierd on server - should be JSON!
+						errorFunc();
+					}
+					else
+					{
+						$(blockId).html(data.post_text);
+						$(shortId).hide();
+						$(blockId).show(300);
+						loadingRef.hide(300);
+						
+						//alert(data);
+						//console.debug(data);
+					}	
+				},
+				error: errorFunc
+				
+			});
+		}
 		
 		return false;
-	}
+	});
 	
-	function show_less_post(postid)
-	{
-		var	shortId = "#short_text_"+postid,
-			longId = "#text_"+postid,
-			rowRef = $("tr.#post"+postid); 
-		$(shortId).show(300);
-		$(longId).hide(300);
-		// only scroll doc if top of the post is above the window top.
-		// That way we dont "confuse" the user with unnecessary changes
-		if(rowRef.offset().top < document.body.scrollTop)
-			$.scrollTo(rowRef,300);
-		return false;
-	}
 	</script>
 	
 	<!--max-height: 70px;-->
@@ -206,7 +217,7 @@
 							<tmpl_if next_idx>
 								<span class=link>(<a class='loadmore_link' href='%%binpath%%/%%board_folder_name%%?idx=%%next_idx%%&len=%%len%%'>Load more posts ...</a><i class='loaded'></i>)</span>
 							</tmpl_if>
-						<div>
+						</div>
 					</td>
 				</tr>
 			</tmpl_if>

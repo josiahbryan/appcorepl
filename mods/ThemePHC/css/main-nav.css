@@ -67,7 +67,8 @@ ul#mainnav li a
 	outline: 0;
 }
 
-ul#mainnav li a:hover
+ul#mainnav li a:hover,
+h2#mobile-link a:hover
 {
 	/*color: #f3ff99;*/
 	/*color: #c14934;*/
