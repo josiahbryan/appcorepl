@@ -6,7 +6,7 @@
 #footer,
 #mainlogo,
 .search,
-.postlist td a.youtube-play-link span 
+.postlist td a.video-play-link span 
 {
 	behavior: url("/iepngfix.htc");
 	/*behavior: url(/iepngfix/iepngfix.htc);*/
