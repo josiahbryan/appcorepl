@@ -724,40 +724,38 @@
 	</script>
 	
 	
-
+<tmpl_loop video_provider_list>
+	<script id="%%provider_class%%-tmpl" type="text/x-jquery-tmpl">
+		%%iframe_tmpl%%
+	</script>
+	<tmpl_if extra_js>
+		<script>
+			%%extra_js%%
+		</script>
+	</tmpl_if>
+</tmpl_loop>
 
 <script type="text/javascript">
 
-function showThumb(data)
-{
-	$("#vimeo-" + data[0].id)
-		.attr('src',data[0].thumbnail_small)
-		.animate({width:120,height:90},1);
-}
 
 $(function() {
+	var providerList = %%video_provider_list_json%%;
+	
 	$('textarea').autogrow();
 
-	// Add in-page youtube player to links marked 'youtube-play-link'. They should be something like:
-	// 	<a href='$url' class='youtube-play-link' videoid='$code'>
+	// Add in-page video player to links marked 'video-play-link'. They should be something like:
+	// 	<a href='$url' class='video-play-link' videoid='$code'>
 	// 		<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
 	// 		<span class='overlay'></span>
 	// 	</a>
 	// Appropriate CSS (above) adds a play icon via the span.overlay element.
-	// Note that the HTML example shown will render a perfectly valid image link to the youtube site even if this
+	// Note that the HTML example shown will render a perfectly valid image link to the video site even if this
 	// javascript doesn't work for some reason, so no underlying functionality is lost if JS is disabled.
 	//
-	// NOTE - The script below EXPECTS a 'videoid' attribute on the link to contain the youtube videoid.
+	// NOTE - The script below EXPECTS a 'videoid' attribute on the link to contain the videoid.
 	// If not present, the script wont work - the link will just fall thru and redirect the user to whatever the href is.
-	$('a.vimeo-video').each(function() {
-		var th = $(this),
-		    id = th.attr("videoid"),
-		    url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
-		    id_img = "#vimeo-" + id;
-		    $(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
-	});
 	
-	$('a.youtube-play-link').live("click", function() {
+	$('a.video-play-link').live("click", function() {
 
 		var th = $(this),
 		    // Create a loading indicator
@@ -770,30 +768,37 @@ $(function() {
 		
 		// Fade out the icon for the video
 		th.children('img').animate({opacity:0},300);
+		
 		// Add in the loading image
 		th.append(loading);
+		
 		// Animate expanding the link (assuming its CSS is display:block) to the size of the player.
-		// When done, insert an iframe into the block that auto-plays the video from youtube.
-		//width="480" height="390" 
-		var v=th.attr("isvimeo") == 1;
-		var w=v?320:375,h=v?240:312;
-		th.animate({width:w, height:h}, 300, "swing", function()
+		// When done, insert an iframe into the block that auto-plays the video.
+		for(var i=0;i<providerList.length;i++)
 		{
-			// Note that we re-use the 'th' ref from the start of this function to
-			// grab the 'videoid' attribute instead of parsing the HREF
-			if(v == "1")
+			var ref = providerList[i];
+			if(th.hasClass(ref.provider_class))
 			{
-				th.html('<iframe src="http://player.vimeo.com/video/'
-					+ th.attr('videoid') 
-					+ '?portrait=0&amp;autoplay=1" width="320" height="240" frameborder="0"></iframe>');
+				var w = ref.iframe_size[0], 
+				    h = ref.iframe_size[1];
+				th.animate({width:w, height:h}, 300, "swing", function()
+				{
+					var data = 
+					{
+						width: w,
+						height: h,
+						videoid: th.attr('videoid'),
+					};
+					
+					// In one fell swoop, read the template, apply the data hash (above),
+					// and read back the resulting html and insert it into the link block
+					th.html($("#"+ref.provider_class+"-tmpl").tmpl(data).get(0));
+				});
+				
+				// Found our provider, no neeed to check for others
+				return false;
 			}
-			else
-			{
-				th.html('<iframe title="YouTube video player" width="'+w+'" height="'+h+'" '+
-					'src="http://www.youtube.com/embed/' + th.attr('videoid') +'?autoplay=1" '+
-					'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>');
-			}
-		});
+		};
 		return false;
 	});
 });

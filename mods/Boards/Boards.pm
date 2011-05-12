@@ -27,6 +27,56 @@ package Boards;
 	our $SHORT_TEXT_LENGTH = 60;
 	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
 	
+	our @VIDEO_PROVIDERS = 
+	(
+		{
+			name		=> "YouTube",
+			provider_class	=> "video-youtube",
+			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=.+?\b)/,
+			process_url	=> sub {
+				my $url = shift;
+				my ($code) = $url =~ /v=(.+?)\b/;
+				return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
+			},
+			iframe_size	=> [375,312],
+			iframe_tmpl	=> '<iframe title="YouTube video player" width="375" height="312" '.
+						'src="http://www.youtube.com/embed/${videoid}?autoplay=1" '.
+						'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>'
+		},
+		
+		{
+			name		=> "Vimeo",
+			provider_class	=> "video-vimeo",
+			url_regex	=> qr/vimeo\.com\/(\d+)/,
+			process_url	=> sub {
+				my $code = shift;
+				my $url = "http://www.vimeo.com/$code";
+				return ($url, "", $code);
+			},
+			
+			iframe_size	=> [320,240],
+			iframe_tmpl	=> '<iframe src="http://player.vimeo.com/video/${videoid}'.
+						'?portrait=0&amp;autoplay=1" width="320" height="240" frameborder="0"></iframe>',
+			extra_js	=> q|
+				function showThumb(data)
+				{
+					$("#video-vimeo-" + data[0].id)
+						.attr('src',data[0].thumbnail_small)
+						.animate({width:120,height:90},1);
+				}
+				$('a.video-vimeo').each(function() {
+					var th = $(this),
+					id = th.attr("videoid"),
+					url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
+					id_img = "#video-vimeo-" + id;
+					//alert("loading img from url "+url+" for video img id "+id_img);
+					$(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
+				});
+			|
+		},
+		
+	);
+	
 	# Setup our admin package
 	# TODO #
 	#use Admin::ModuleAdminEntry;
@@ -691,6 +741,16 @@ package Boards;
 			
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
+			my @provider_copy = ();
+			foreach my $ref (@VIDEO_PROVIDERS)
+			{
+				my %copy;
+				$copy{$_} = $ref->{$_} foreach qw/provider_class iframe_size/;
+				push @provider_copy, \%copy;
+			}
+			$tmpl->param(video_provider_list_json => encode_json(\@provider_copy));
+			$tmpl->param(video_provider_list => \@VIDEO_PROVIDERS);
+			
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
 		}
@@ -754,9 +814,12 @@ package Boards;
 # 		}
 	
 		#timemark();
+		#$b->{text} = AppCore::Web::Common->clean_html($b->{comment})
+		
 		my $short = AppCore::Web::Common->html2text($b->{text});
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
+		
 		
 		$b->{clean_html} = $b->{short_text};
 		$b->{clean_html} =~ s/\n+/\n/sg;
@@ -764,20 +827,8 @@ package Boards;
 		$b->{clean_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
-		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
-		if($url)
-		{
-			my ($code) = $url =~ /v=(.+?)\b/;
-			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-			$b->{clean_html} .= qq{
-				<hr size=1 class='post-attach-divider'>
-				<a href='$url' class='youtube-play-link' videoid='$code'>
-				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
-				<span class='overlay'></span>
-				</a>
-			};
-		}
+		$b->{clean_html} = $self->create_inline_links($b->{clean_html});
+		$b->{clean_html} = $self->create_video_links($b->{clean_html});
 		#timemark("html processing");
 		
 		
@@ -800,6 +851,44 @@ package Boards;
 		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
 		
 		return $b;
+	}
+	
+	sub create_inline_links
+	{
+		my $self = shift;
+		my $text = shift;
+		$text =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+		return $text;
+	}
+	
+	sub create_video_links
+	{
+		my $self = shift;
+		my $text = shift;
+		
+		foreach my $data (@VIDEO_PROVIDERS)
+		{
+			my $rx = $data->{url_regex};
+			my ($url) = $text =~ /$rx/;
+			if($url)
+			{
+				my ($link_url, $thumb_url, $videoid) = $data->{process_url}->($url);
+				
+				my $provider_class = $data->{provider_class};
+				
+				#my ($code) = $url =~ /v=(.+?)\b/;
+				#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
+				$text .= qq{
+					<hr size=1 class='post-attach-divider'>
+					<a href='$link_url' class='video-play-link $provider_class' videoid='$videoid'>
+					<img src="$thumb_url" border=0 id='$provider_class-$videoid'>
+					<span class='overlay'></span>
+					</a>
+				};
+			}
+		}
+		
+		return $text;
 	}
 	
 	# This allows subclasses to hook into the list prep above without subclassing the entire list action
