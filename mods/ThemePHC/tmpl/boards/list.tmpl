@@ -38,28 +38,41 @@
 		{
 			var	shortId = "#short_text_"+postid,
 				blockId = "#long_text_"+postid,
-				rowRef = $("tr.#post"+postid); 
+				rowRef = $("tr.#post"+postid),
+				off = rowRef.offset();
+			
+			// Probably a "comment" read more link, not a post readmore link, 
+			// so find the comment wrapper <div> offset
+			if(!off)
+				off = (rowRef = $("#wrap"+postid)).offset();
+			
 			$(shortId).show(300);
 			$(blockId).hide(300);
 			// only scroll doc if top of the post is above the window top.
 			// That way we dont "confuse" the user with unnecessary changes
-			if(rowRef.offset().top < document.body.scrollTop)
+			if(off && off.top < document.body.scrollTop)
 				$.scrollTo(rowRef,300);
 				
 			th.attr('state', 'unloaded');
 			th.html('Read More &raquo;');
+			
 		}
 		else
 		{
 			th.attr('state', 'loaded');
 			th.html('&laquo; Less');
 			
-			var	blockId   = "#long_text_"+postid,
-				loadingRef = $("#loading_"+postid),
-				shortId   = "#short_text_"+postid,
-				postHref  = th.attr('href');
+			var	blockId  = "#long_text_"+postid,
+				shortId  = "#short_text_"+postid,
+				postHref = th.attr('href'),
+				loading  = $('<img/>')
+					.attr('src',loaderGif)
+					.attr('align','absmiddle');
+				
+			$("body").css("cursor", "progress");
+			th.css("cursor", "progress");
 			
-			loadingRef.show();
+			loading.insertAfter(th);
 			
 			var errorFunc = function() 
 			{
@@ -88,7 +101,11 @@
 						$(blockId).html(data.post_text);
 						$(shortId).hide();
 						$(blockId).show(300);
-						loadingRef.hide(300);
+						loading.hide(300, function() { loading.remove() });
+						
+						// Remove busy cursor
+						$("body").css("cursor", "auto");
+						th.css("cursor", "pointer");
 						
 						//alert(data);
 						//console.debug(data);

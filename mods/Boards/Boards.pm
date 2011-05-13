@@ -1362,7 +1362,7 @@ Cheers!};
 # 			}
 
 			# If use requested the folder name of a comment post instead of the actual post (The top comment), then redirect accordingly
-			if($post->top_commentid && $post->top_commentid->id)
+			if($req->output_fmt ne 'json' && $post->top_commentid && $post->top_commentid->id)
 			{
 				$r->redirect("$bin/$board_folder_name/".$post->top_commentid->folder_name."#c".$post->id);
 			}
