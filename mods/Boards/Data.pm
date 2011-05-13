@@ -30,14 +30,164 @@ package Boards::DbSetup;
 	{
 		my $self = shift;
 		my @db_objects = qw{
+			Boards::SpamLog
 			Boards::Group
 			Boards::Post::Tag
 			Boards::Post::Tag::Pair
 			Boards::Post::Like
 			Boards::Post
 			Boards::Board
+			Boards::VideoProvider
+			Boards::TextFilter
 		};
 		AppCore::DBI->mysql_schema_update($_) foreach @db_objects;
+	}
+}
+
+package Boards::SpamLog;
+{
+	use base 'AppCore::DBI';
+	__PACKAGE__->meta(
+	{
+		@Boards::DbSetup::DbConfig,
+		table	=> $AppCore::Config::BOARDS_DBTBL_SPAMLOG || 'boards_spamlog',
+		
+		schema	=> 
+		[
+			{ field => 'lineid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
+			{ field	=> 'userid',			type => 'int',	linked => 'AppCore::User' },
+			{ field	=> 'subroutine',		type => 'varchar(255)' },
+			{ field	=> 'spam_method',		type => 'varchar(255)' },
+			{ field	=> 'text',			type => 'text' },
+			{ field => 'extra_info',		type => 'text'},
+		],	
+	});
+}
+
+
+package Boards::TextFilter;
+{
+	use base 'AppCore::DBI';
+	__PACKAGE__->meta(
+	{
+		@Boards::DbSetup::DbConfig,
+		table	=> $AppCore::Config::BOARDS_DBTBL_TEXTFILTERS || 'boards_textfilters',
+		
+		schema	=> 
+		[
+			{ field => 'filterid',		type	=> 'int', @Boards::DbSetup::PriKeyAttrs },
+			{ field	=> 'name',		type	=> 'varchar(255)' },
+			{ field	=> 'description',	type	=> 'varchar(255)' },
+			{ field	=> 'controller',	type	=> 'varchar(255)' },
+			{ field	=> 'is_enabled',	type	=> 'int(1)', null=>0, default => 1 },
+		],	
+	});
+	
+	sub register
+	{
+		my $filter_ref = undef;
+		undef $@;
+		eval
+		{
+			my $pkg = shift;
+			$pkg = ref $pkg if ref $pkg;
+			
+			my $name = shift;
+			my $diz = shift;
+			
+			my $self = $pkg->find_or_create({controller=>$pkg});
+			
+			$self->name($name) if $self->name ne $name;
+			$self->description($diz) if $self->description ne $diz;
+			$self->update if $self->is_changed;
+			
+			$filter_ref = $self;
+			
+		};
+		warn $@ if $@;
+		
+		return $filter_ref;
+	}
+	
+	sub filter_text
+	{
+		my $self = shift;
+		my $textref = shift;
+		
+		# Dummy: Do nothing here.
+		# Subclasses override filter_text() to do the fitlering 
+		
+		return 1;
+	}
+}
+
+package Boards::VideoProvider;
+{
+	use base 'AppCore::DBI';
+	__PACKAGE__->meta(
+	{
+		@Boards::DbSetup::DbConfig,
+		table	=> $AppCore::Config::BOARDS_DBTBL_VIDEOPROVIDERS || 'boards_videoproviders',
+		
+		schema	=> 
+		[
+			{ field => 'providerid',	type	=> 'int', @Boards::DbSetup::PriKeyAttrs },
+			{ field	=> 'name',		type	=> 'varchar(255)' },
+			#{ field	=> 'description',	type	=> 'varchar(255)' },
+			{ field	=> 'controller',	type	=> 'varchar(255)' },
+			{ field	=> 'is_enabled',	type	=> 'int(1)', null=>0, default => 1 },
+		],	
+	});
+	
+	our %PackageConfig;
+	sub config
+	{
+		my $self = shift;
+		my $pkg = ref $self ? ref $self : $self;
+		#use Data::Dumper;
+		#print STDERR __PACKAGE__."::config(): '$pkg', all config: ".Dumper(\%PackageConfig);
+		return $PackageConfig{$pkg}; 
+	}
+	
+	sub register
+	{
+		my $filter_ref = undef;
+		undef $@;
+		eval
+		{
+			my $pkg = shift;
+			$pkg = ref $pkg if ref $pkg;
+			
+			my $config = shift;
+			
+			my $self = $pkg->find_or_create({controller=>$pkg});
+			
+			$self->name($config->{name}) if $self->name ne $config->{name};
+			#$self->description($diz) if $self->description ne $diz;
+			$self->update if $self->is_changed;
+			
+			$PackageConfig{$pkg} = $config;
+			
+# 			use Data::Dumper;
+# 			print STDERR __PACKAGE__."::register(): '$pkg' config: ".Dumper($config);
+			
+			$filter_ref = $self;
+			
+		};
+		warn $@ if $@;
+		
+		return $filter_ref;
+	}
+	
+	sub process_url
+	{
+		my $self = shift;
+		my $url = shift;
+		
+		# Dummy: Do nothing here.
+		# Subclasses override process_url() to do the processing 
+		
+		return $url;
 	}
 }
 

@@ -1,13 +1,41 @@
 use strict;
 
+package Boards::TextFilter::TagVerses;
+{ 
+	use base 'Boards::TextFilter';
+	__PACKAGE__->register("Bible Verse Links","Hyperlink Bible verses in text");
+	
+	sub filter_text
+	{
+		my $self = shift;
+		my $textref = shift;
+		ThemePHC::VerseLookup->tag_verses($textref);
+	};
+	
+};
+	
+
 package ThemePHC;
 {
 	use Content::Page;
 	use base 'Content::Page::ThemeEngine';
 	use Scalar::Util 'blessed';
+	
+	use ThemePHC::VerseLookup;
 
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
-
+	
+	# Hook for our database objects
+	sub apply_mysql_schema
+	{
+		#ThemePHC::VerseLookup->apply_mysql_schema;
+		my $self = shift;
+		my @db_objects = qw{
+			ThemePHC::VerseLookup
+		};
+		AppCore::DBI->mysql_schema_update($_) foreach @db_objects;
+	}
+	
 	
 	# The output() routine is the core of the Theme - it's where the theme applies the
 	# data from the Content::Page object and any optional $parameters given

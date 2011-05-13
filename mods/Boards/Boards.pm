@@ -1,4 +1,107 @@
 use strict;
+
+
+package Boards::TextFilter::AutoLink;
+	{ 
+		use base 'Boards::TextFilter';
+		__PACKAGE__->register("Auto-Link","Adds hyperlinks to text.");
+		
+		# This actual filter can serve as a simple example:
+		# It just accepts a scalar ref and runs a regexp over the text (note the double $$ to deref)
+		sub filter_text
+		{
+			my $self = shift;
+			my $textref = shift;
+			#print STDERR "AutoLink: Before: ".$$textref."\n";
+			
+			$$textref =~ s/http:\/\/\%20http\/\//http:\/\//g; # cleanup an invalid link I've seen once or twice ...
+			
+			# Old regex:
+			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+			
+			# New regex:
+			$$textref =~ s/([^'"\/<>])((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1<a href="$2">$2<\/a>/gi;
+			
+			#print STDERR "AutoLink: After: ".$$textref."\n";
+		};
+		
+	};
+	
+package Boards::VideoProvider::YouTube;
+	{
+		use base 'Boards::VideoProvider';
+		__PACKAGE__->register({
+			name		=> "YouTube",						# Name isn't used currently
+			provider_class	=> "video-youtube",					# provider_class is used in page to match provider to iframe template, and construct template and image ID's
+			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=.+?\b)/,	# Used to find this provider's URL in content
+			
+			iframe_size	=> [375,312],						# The size of the iframe - used to animate the link block element size larger to accomidate the new iframe
+												# The iframe template is used by jQuery's template plugin to generate the iframe html
+			iframe_tmpl	=> '<iframe title="YouTube video player" width="375" height="312" '.
+						'src="http://www.youtube.com/embed/${videoid}?autoplay=1" '.
+						'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>'
+		});
+		
+		# Expected to return an array of (link URL, image URL, video ID) - videoId is set on the <a> tag in a custom 'videoid' attribute
+		sub process_url 
+		{
+			my $self = shift;
+			my $url = shift;
+			my ($code) = $url =~ /v=(.+?)\b/;
+			return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
+		};
+	};
+	
+package Boards::VideoProvider::Vimeo;
+	{
+		use base 'Boards::VideoProvider';
+		__PACKAGE__->register({	
+			name		=> "Vimeo",
+			provider_class	=> "video-vimeo",
+			url_regex	=> qr/vimeo\.com\/(\d+)/,
+			
+			iframe_size	=> [320,240],
+			iframe_tmpl	=> '<iframe src="http://player.vimeo.com/video/${videoid}'.
+						'?portrait=0&amp;autoplay=1" width="320" height="240" frameborder="0"></iframe>',
+						
+			# This 'extra_js' is just inserted into the page exactly as-is (in a <script></script> tag of course)
+			# Since Vimeo doesn't provide a consistent thumbnail URL like youtube, we must use javascript to request
+			# the video metadata from Vimeo then extract the thumbnail URL from that and update the image dynamically.
+			extra_js	=> q|
+				// Get all Viemo video links and create a script request to Vimeo for the thumbnail URL
+				$('a.video-vimeo').each(function() {
+					var th = $(this),
+					    id = th.attr("videoid"),
+					   url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
+					id_img = "#video-vimeo-" + id;
+					$(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
+				});
+				// This handles the thumbnail callback from vimeo - grabs the url, sets it on the image and resizes the image accordingly
+				function showThumb(data)
+				{
+					$("#video-vimeo-" + data[0].id)
+						.attr('src',data[0].thumbnail_small)
+						.animate({width:120,height:90},1);
+						// 120x90 is the size of the youtube thumb - its set in CSS, so we just match it toi look consistent
+				}
+			|
+		});
+		
+		sub process_url	
+		{
+			my $self = shift;
+			my $code = shift;
+			my $url = "http://www.vimeo.com/$code";
+			return ($url, $AppCore::Config::WWW_ROOT."/images/blank.gif", $code);
+			# Return a 'blank' image for the thumbnail here because we use javascript in-page to find the thumbnail 
+			# URL after the page is loaded. If one felt like it, you could instead call out to vimeo in this sub 
+			# and cache the resulting thumbnail URL for later. But for now, this implementation works fine with in-page
+			# javascript.
+		}
+			
+	};
+
+
 package Boards;
 {
 	use AppCore::Web::Common;
@@ -21,61 +124,15 @@ package Boards;
 	# Contains all the data packages we need, such as Boards::Post, etc
 	use Boards::Data;
 	
+	# The 'banned words' library which parses the Dan's Guardian words list
+	use Boards::BanWords;
+	
 	our $SUBJECT_LENGTH    = 30;
 	our $MAX_FOLDER_LENGTH = 225;
 	our $SPAM_OVERRIDE     = 0;
 	our $SHORT_TEXT_LENGTH = 60;
 	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
 	
-	our @VIDEO_PROVIDERS = 
-	(
-		{
-			name		=> "YouTube",
-			provider_class	=> "video-youtube",
-			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=.+?\b)/,
-			process_url	=> sub {
-				my $url = shift;
-				my ($code) = $url =~ /v=(.+?)\b/;
-				return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
-			},
-			iframe_size	=> [375,312],
-			iframe_tmpl	=> '<iframe title="YouTube video player" width="375" height="312" '.
-						'src="http://www.youtube.com/embed/${videoid}?autoplay=1" '.
-						'frameborder="0" class="youtube-iframe" allowfullscreen></iframe>'
-		},
-		
-		{
-			name		=> "Vimeo",
-			provider_class	=> "video-vimeo",
-			url_regex	=> qr/vimeo\.com\/(\d+)/,
-			process_url	=> sub {
-				my $code = shift;
-				my $url = "http://www.vimeo.com/$code";
-				return ($url, "", $code);
-			},
-			
-			iframe_size	=> [320,240],
-			iframe_tmpl	=> '<iframe src="http://player.vimeo.com/video/${videoid}'.
-						'?portrait=0&amp;autoplay=1" width="320" height="240" frameborder="0"></iframe>',
-			extra_js	=> q|
-				function showThumb(data)
-				{
-					$("#video-vimeo-" + data[0].id)
-						.attr('src',data[0].thumbnail_small)
-						.animate({width:120,height:90},1);
-				}
-				$('a.video-vimeo').each(function() {
-					var th = $(this),
-					id = th.attr("videoid"),
-					url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
-					id_img = "#video-vimeo-" + id;
-					//alert("loading img from url "+url+" for video img id "+id_img);
-					$(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
-				});
-			|
-		},
-		
-	);
 	
 	# Setup our admin package
 	# TODO #
@@ -441,11 +498,15 @@ package Boards;
 	
 	our %PostDataCache;
 	our %BoardDataCache;
+	our @TextFilters;
+	our @VideoProviders;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
 		%BoardDataCache = ();
 		%PostDataCache = ();
+		@TextFilters = ();
+		@VideoProviders = ();
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
@@ -742,14 +803,20 @@ package Boards;
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
 			my @provider_copy = ();
-			foreach my $ref (@VIDEO_PROVIDERS)
+			
+			$self->load_video_providers;
+			my @provider_configs;
+			# @VideoProviders is already loaded by now, even if cache cleared it...
+			foreach my $ref (@VideoProviders)
 			{
+				my $config = $ref->controller->config;
+				push @provider_configs, $config;
 				my %copy;
-				$copy{$_} = $ref->{$_} foreach qw/provider_class iframe_size/;
+				$copy{$_} = $config->{$_} foreach qw/provider_class iframe_size/;
 				push @provider_copy, \%copy;
 			}
 			$tmpl->param(video_provider_list_json => encode_json(\@provider_copy));
-			$tmpl->param(video_provider_list => \@VIDEO_PROVIDERS);
+			$tmpl->param(video_provider_list => \@provider_configs);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
@@ -820,15 +887,37 @@ package Boards;
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
 		
-		
-		$b->{clean_html} = $b->{short_text};
-		$b->{clean_html} =~ s/\n+/\n/sg;
-		$b->{clean_html} =~ s/\n/<br>\n/g;
-		$b->{clean_html} =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		my $clean_html = $b->{short_text};
+		$clean_html =~ s/\n+/\n/sg;
+		$clean_html =~ s/\n/<br>\n/g;
+		$clean_html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
-		$b->{clean_html} = $self->create_inline_links($b->{clean_html});
-		$b->{clean_html} = $self->create_video_links($b->{clean_html});
+		
+		# Moved to the TEXT_FILTERS list to use as an example
+		#$clean_html = $self->create_inline_links($clean_html);
+		
+		# Run all Boards::TextFilter on both the clean_html and the full text
+		if(!@TextFilters)
+		{
+			# only load the 'enabled' filters (all are enabled by default)
+			@TextFilters = Boards::TextFilter->search(is_enabled=>1);
+		}
+		
+		my $text_tmp = AppCore::Web::Common->clean_html($b->{text});
+		foreach my $filter (@TextFilters)
+		{
+			# Pass the text as a scalar ref
+			$filter->controller->filter_text(\$clean_html);
+			$filter->controller->filter_text(\$text_tmp);
+		}
+		#use Data::Dumper;
+		#die Dumper \@TEXT_FILTERS;
+		$b->{text}       = $self->create_video_links($text_tmp);
+		$b->{clean_html} = $self->create_video_links($clean_html);
+		
+		# just for jQuery's sake - the template converter in AppCore::Web::Result treats variables ending in _html special
+		$b->{text_html} = $b->{text}; 
 		#timemark("html processing");
 		
 		
@@ -853,12 +942,21 @@ package Boards;
 		return $b;
 	}
 	
-	sub create_inline_links
+	# Moved to the TEXT_FILTERS list to use as an example
+# 	sub create_inline_links
+# 	{
+# 		my $self = shift;
+# 		my $text = shift;
+# 		$text =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
+# 		return $text;
+# 	}
+
+	sub load_video_providers
 	{
-		my $self = shift;
-		my $text = shift;
-		$text =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-		return $text;
+		if(!@VideoProviders)
+		{
+			@VideoProviders = Boards::VideoProvider->search(is_enabled => 1);
+		}
 	}
 	
 	sub create_video_links
@@ -866,15 +964,19 @@ package Boards;
 		my $self = shift;
 		my $text = shift;
 		
-		foreach my $data (@VIDEO_PROVIDERS)
+		# Make sure it's loaded...
+		$self->load_video_providers;
+		
+		foreach my $provider (@VideoProviders)
 		{
-			my $rx = $data->{url_regex};
+			my $config = $provider->controller->config;
+			my $rx = $config->{url_regex};
 			my ($url) = $text =~ /$rx/;
 			if($url)
 			{
-				my ($link_url, $thumb_url, $videoid) = $data->{process_url}->($url);
+				my ($link_url, $thumb_url, $videoid) = $provider->controller->process_url($url);
 				
-				my $provider_class = $data->{provider_class};
+				my $provider_class = $config->{provider_class};
 				
 				#my ($code) = $url =~ /v=(.+?)\b/;
 				#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
@@ -951,8 +1053,8 @@ package Boards;
 			
 			my $board = $post->boardid;
 			$post_ref = $self->load_post_for_list($post,$board->folder_name,$can_admin);
-			$post_ref->{'board_'.$_}  = $board->get($_)."" foreach $board->columns;
-			$post_ref->{'post_' . $_} =  $post->get($_)."" foreach $post->columns;
+			$post_ref->{'board_'.$_} = $board->get($_)."" foreach $board->columns;
+			$post_ref->{'post_' .$_} = $post_ref->{$_}."" foreach $post->columns;
 			$post_ref->{reply_count}  = 0;
 			
 			# Now we put all the comments with the parent posts
@@ -995,61 +1097,6 @@ package Boards;
 			
 	}
 	
-# 	sub _post_prep_ref
-# 	{
-# 		my $local_ctx = shift;
-# 		my $comment = shift;
-# 		my $b = {};
-# 		my $user = $comment->posted_by;
-# 		# Force stringify for JSON
-# 		$b->{$_} = $comment->get($_).""   foreach $comment->columns;
-# 		$b->{$_} = $local_ctx->{$_}."" foreach keys %$local_ctx;
-# 		$b->{indent}		= $local_ctx->{indent}->{$comment->parent_commentid};
-# 		$b->{indent_css} 	= $b->{indent} * 2;
-# 		$b->{can_reply}		= defined $local_ctx->{can_reply} ? $local_ctx->{can_reply} : 1,
-# 		$b->{approx_time_ago}   = approx_time_ago($b->{timestamp});
-# 		$b->{pretty_timestamp}  = pretty_timestamp($b->{timestamp});
-# 		$b->{post_poster_email_md5} = md5_hex($b->{poster_email});
-# 		
-# 		$b->{user_photo}	= $user && ref $user && $user->id ? $user->photo : "";
-# 		
-# 		$b->{text} 		=~ s/(^\s+|\s+$)//g;
-# 		$b->{text} 		=~ s/(^<p>|<\/p>$)//g; #unless index(lc $b->{text},'<p>') > 0;
-# 		#$b->{text}		=~ s/((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$1">$1<\/a>/gi;
-# 		$b->{clean_html} = $b->{text};
-# 		$b->{clean_html} =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
-# 		my ($url) = $b->{clean_html} =~ /(http:\/\/www.youtube.com\/watch\?v=.+?\b)/;
-# 		if($url)
-# 		{
-# 			my ($code) = $url =~ /v=(.+?)\b/;
-# 			#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-# 			$b->{clean_html} .= qq{
-# 				<hr size=1 class='post-attach-divider'>
-# 				<a href='$url' class='youtube-play-link' videoid='$code'>
-# 				<img src="http://img.youtube.com/vi/$code/1.jpg" border=0>
-# 				<span class='overlay'></span>
-# 				</a>
-# 			};
-# 		}
-# 		
-# 		my ($code) = $b->{clean_html} =~ /vimeo\.com\/(\d+)/;
-# 		if($code)
-# 		{
-# 			$b->{clean_html} .= qq{
-# 				<hr size=1 class='post-attach-divider'>
-# 				<a href='http://www.vimeo.com/$code' isvimeo="1" class='vimeo-video youtube-play-link' videoid='$code'>
-# 				<img src="" id="vimeo-$code" border=0>
-# 				<span class='overlay'></span>
-# 				</a>
-# 			};
-# 		}
-# 		
-# 		#$b->{text}		= PHC::VerseLookup->tag_verses($b->{text});
-# 		$local_ctx->{indent}->{$comment->id} = $b->{indent} + 1;
-# 		#push @$list, $b;
-# 		return $b;
-# 	}
-	
 	sub create_new_thread
 	{
 		my $self = shift;
@@ -1057,56 +1104,10 @@ package Boards;
 		my $req = shift;
 
 		#print STDERR "create_new_thread: \$SPAM_OVERRIDE=$SPAM_OVERRIDE, args:".Dumper($req);
-		
-		## TODO ## Add bottrick hidden field filtering in generic fashion
-# 		# Comment is now hidden, 20090716 JB
-# 		# If it has data, then its probably spam. The visible comment field is named "age"
-# 		if($req->{comment} && !$req->{_internal_} && !$SPAM_OVERRIDE)
-# 		{
-# 			print STDERR "Debug: Ignoring apparent spammer, tried to set comment to '$req->{comment}' [$req->{age}], sending to Wikipedia/Spam_(electronic)\n";
-# 			PHC::Web::Skin->instance->redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
-# 		}
-		
-# 		#die Dumper $req;
-# 		# Now copy the data over to the proper field so I dont have to patch all the code below
-# 		$req->{comment} = $req->{age};# if !$req->{_internal_};
-
-		## TODO ## Add generic empty text filtering
-# 		if(!$req->{comment} || length($req->{comment}) < 5)
-# 		{
-# 			return PHC::Web::Skin->instance->error("No Text Given!","You must enter *something* in the text box! [3]");
-#            	}
-
-		## TODO ## Add generic banned word filtering
-# 		# Banned Words Filtering, Added 20090103 by JB
-# 		{
-# 			require 'ban_words_lib.pl';
-# 			# Add a space at the end to catch words at the end of the message. Replace all non-letter characters with a space
-# 			my $clean = $req->{comment};
-# 			$clean =~ s/<[^\>]*>//g; 
-# 			$clean = AppCore::Web::Common->html2text($clean);
-# 			$clean =~ s/[^\w]/ /g;
-# 			$clean .= ' ';
-# 			my ($weight,$matched) = PHC::BanWords::get_phrase_weight($clean);
-# 
-# 			my $user = AppCore::Common->context->user;
-# 
-# 
-# 			if($weight >= 5)
-# 			{
-# 				PHC::Chat->db_Main->do('insert into chat_rejected (posted_by,poster_name,message,value,list) values (?,?,?,?,?)',undef,
-# 					$user,
-# 					$user && $user->id ? $user->display : $req->{poster_name},
-# 					$req->{comment},
-# 					$weight,
-# 					join("\n ",@$matched)
-# 				);
-# 
-# 				print STDERR "===== BANNED ====\nPhrase: '$req->{comment}'\nWeight: $weight\nMatch: \n  ".join("\n  ",@$matched)."\n================\n";
-# 				die "Sorry, the following word or words are not allowed: \n".join("\n    ",@$matched)."\n Please check your message and try again.\nYour original comment:\n$req->{comment}";		
-# 			}
-# 		}
-
+		if($self->is_spam($req->comment, $req->bot_trap))
+		{
+			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+		}
 		
 		if(!$req->{subject})
 		{
@@ -1459,6 +1460,93 @@ Cheers!};
 		AppCore::Web::Common->reset_was_emailed;
 	}
 	
+	sub log_spam
+	{
+		my $self = shift;
+		my $text = shift;
+		my $method = shift;
+		my $notes = shift;
+		my (undef,undef,undef,$sub) = caller(2); # log the second-level caller (the one that called is_spam)
+		
+		my $user = AppCore::Common->context->user;
+		Boards::SpamLog->insert({
+			userid		=> $user,
+			subroutine	=> $sub,
+			spam_method	=> $method,
+			text		=> $text,
+			extra_info	=> $notes
+		});
+		
+		print STDERR "$sub: Trapped spam, method: '$method'\n";
+	}
+	
+	sub is_spam
+	{
+		my $self = shift;
+		my $text = shift;
+		my $bot_trap = shift;
+		
+		my $user = AppCore::Common->context->user;
+		
+		# Admins automatically bypass spam filtering methods
+		return 0 if $SPAM_OVERRIDE || ($user && $user->check_acl($self->config->{admin_acl}));
+		
+		### Method: 'Bot Trap' - hidden field, but it it has data, its probably a bot.
+		if($bot_trap)
+		{
+			#print STDERR "Debug: Ignoring apparent spammer, tried to set comment to '$req->{comment}' [$req->{age}], sending to Wikipedia/Spam_(electronic)\n";
+			$self->log_spam($text,'bot_trap');
+			#PHC::Web::Skin->instance->redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+			return 1;
+		}
+		
+		### Method: 'Empty Text' - Dont allow an empty or too-short text
+		## TODO Make length configurable
+		if(!$text || length($text) < 5)
+		{
+			$self->log_spam($text, 'empty');
+			$@ = "It looks like you didn't type in anything - either the you left the text blank or the text was too short. Sorry!";
+			return 1;
+		}
+
+		### Method: 'Banned Words' - Use word filtering lists from Dan's Guardian
+		# Banned Words Filtering, Added 20090103 by JB
+		{
+			# Add a space at the end to catch words at the end of the message. Replace all non-letter characters with a space
+			my $clean = $text;
+			$clean =~ s/<[^\>]*>//g; 
+			$clean = AppCore::Web::Common->html2text($clean);
+			$clean =~ s/[^\w]/ /g;
+			$clean .= ' ';
+			my ($weight,$matched) = Boards::BanWords::get_phrase_weight($clean);
+
+			## TODO Make this a configurable threshold
+			if($weight >= 5)
+			{
+				$self->log_spam($text,'ban_words',"Weight: $weight, Matched: ". join(", ",@$matched));
+				$@ = "Sorry, the following word or words are not allowed: \n".join("\n    ",@$matched)."\n Please check your message and try again.\nYour original comment:\n$text";
+				return 1;
+			}
+		}
+
+		### Method: 'No Links' - Ban including links if not a logged-in user
+		if(	
+			(!$user || !$user->id) &&
+		        (
+			$text =~ /(<a)/ig ||
+			$text =~ /url=/   ||
+			$text =~ /link=/))
+		{
+			#print STDERR "Debug Rejection: comment='$comment', commentor='$commentor'\n";
+			#die "Sorry, you sound like a spam bot - go away. ($req->{comment})" if !$SPAM_OVERRIDE;
+			$self->log_spam($text,'links');
+			$@ = "Links aren't allowed, sorry";
+			return 1;
+		}
+		
+		return 0;
+	}
+	
 	sub create_new_comment
 	{
 		my $self = shift;
@@ -1466,76 +1554,10 @@ Cheers!};
 		my $post  = shift;
 		my $req  = shift;
 		
-		
-		## TODO ## Add bottrick field filtering
-# 		# Comment is now hidden, 20090716 JB
-# 		# If it has data, then its probably spam. The visible comment field is named "age"
-# 		if($req->{comment} && !$req->{_internal_} && !$SPAM_OVERRIDE)
-# 		{
-# 			print STDERR "Debug: Ignoring apparent spammer, tried to set comment to '$req->{comment}' [$req->{age}], sending to Wikipedia/Spam_(electronic)\n";
-# 			PHC::Web::Skin->instance->redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
-# 		}
-# 		
-# 		# Now copy the data over to the proper field so I dont have to patch all the code below
-# 		$req->{comment} = $req->{age} if !$req->{_internal_};
-
-			
-		## TODO ## Add empty text filtering
-		if(!$req->{comment} || length($req->{comment}) < 5)
+		if($self->is_spam($req->comment, $req->bot_trap))
 		{
-			AppCore::Web::Common::error("Empty Comment!","You must enter *something* to comment! [1]");
+			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
-
-		
-		## TODO ## Add banned word filtering
-# 		# Banned Words Filtering, Added 20090103 by JB
-#                 {
-# 			require 'ban_words_lib.pl';
-# 			# Add a space at the end to catch words at the end of the message. Replace all non-letter characters with a space
-# 			my $clean = $req->{comment};
-# 			$clean =~ s/<[^\>]*>//g; $clean = AppCore::Web::Common->html2text($clean);
-# 			$clean =~ s/[^\w]/ /g;
-# 			$clean .= ' ';
-# 			my ($weight,$matched) = PHC::BanWords::get_phrase_weight($clean);
-# 
-# 			my $user = AppCore::Common->context->user;
-# 
-# 
-# 			if($weight >= 5)
-# 			{
-# 				PHC::Chat->db_Main->do('insert into chat_rejected (posted_by,poster_name,message,value,list) values (?,?,?,?,?)',undef,
-# 					$user,
-# 					$user && $user->id ? $user->display : $req->{poster_name},
-# 					$req->{comment},
-# 					$weight,
-# 					join("\n ",@$matched)
-# 				);
-# 
-# 				print STDERR "===== BANNED ====\nPhrase: '$req->{comment}'\nWeight: $weight\nMatch: \n  ".join("\n  ",@$matched)."\n======
-# ==========\n";
-# 				die "Sorry, the following word or words are not allowed: \n".join("\n    ",@$matched)."\n Please check your message and try
-# again.\nYour original comment:\n$req->{comment}";
-# 			}
-# 			
-# 			#die "CLEAN:".Dumper ($req,$weight,$matched,$clean);
-#                 }
-		
-		
-		## TODO Make link rejection configurable/disableable as needed
-		my @tag = $req->{comment} =~ /(<a)/ig;
-			
-		if(
-			$req->{poster_name} =~ /\d{2,}/ ||
-			$req->{comment} =~ /url=/ ||
-			$req->{comment} =~ /link=/ ||
-			@tag >= 1)
-		{
-			#print STDERR "Debug Rejection: comment='$comment', commentor='$commentor'\n";
-			die "Sorry, you sound like a spam bot - go away. ($req->{comment})" if !$SPAM_OVERRIDE;
-		}
-		
-		
-		#die "x";
 		
 		if(!$req->{subject})
 		{
@@ -1719,28 +1741,10 @@ Cheers!};
 		my $post = shift;
 		my $req = shift;
 		
-		# The new_post tmpl names the visible comment field 'age' inorder to confuse spammers. The field named 'comment' is hidden,
-		# the logic being that if something *is* in the comment field, then its spam. 
-		
-		## TODO ## Add bottrick field filtering
-# 		# Comment is now hidden, 20090716 JB
-# 		# If it has data, then its probably spam. The visible comment field is named "age"
-# 		if($req->{comment} && !$SPAM_OVERRIDE)
-# 		{
-# 			print STDERR "Debug: Ignoring apparent spammer, tried to set comment to '$req->{comment}', sending to Wikipedia/Spam_(electronic)\n";
-# 			PHC::Web::Skin->instance->redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
-# 		}
-# 		
-# 		# Now copy the data over to the proper field so I dont have to patch all the code below
-# 		$req->{comment} = $req->{age};
-
-		## TODO ## Add empty text filtering
-# 		if(!$req->{comment} || length($req->{comment}) < 5)
-# 		{
-# 			return PHC::Web::Skin->instance->error("Empty Comment!","You must enter *something* to comment! [2]");
-#		}
-
-		## TODO ## Add banned word filtering to post_edit_save()
+		if($self->is_spam($req->comment))
+		{
+			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});
 		if($fake_it ne $post->folder_name && Boards::Post->by_field(folder_name => $fake_it))
@@ -1757,6 +1761,6 @@ Cheers!};
 		
 		return $post;
 	}
-}
+};
 
 1;

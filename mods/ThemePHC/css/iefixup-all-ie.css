@@ -41,11 +41,3 @@ h2#mobile-link a
 	zoom: 1;
 	filter: alpha(opacity = 75);
 }*/
-
-.postlist td a.video-play-link {
-	border: 1px solid black !important;
-}
-
-.postlist td a.video-play-link img {
-	border: 0 !important;
-}

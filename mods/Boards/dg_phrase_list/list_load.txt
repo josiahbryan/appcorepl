@@ -1,0 +1,16 @@
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_general>
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_news>
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_general_danish>
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_general_dutch>
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_general_malay>
+.Include</etc/dansguardian/lists/phraselists/goodphrases/weighted_general_portuguese>
+.Include</etc/dansguardian/lists/phraselists/pornography/weighted>
+.Include</etc/dansguardian/lists/phraselists/pornography/weighted_french>
+.Include</etc/dansguardian/lists/phraselists/pornography/weighted_german>
+.Include</etc/dansguardian/lists/phraselists/pornography/weighted_italian>
+.Include</etc/dansguardian/lists/phraselists/pornography/weighted_portuguese>
+.Include</etc/dansguardian/lists/phraselists/nudism/weighted>
+.Include</etc/dansguardian/lists/phraselists/badwords/weighted_dutch> 
+.Include</etc/dansguardian/lists/phraselists/badwords/weighted_french>
+.Include</etc/dansguardian/lists/phraselists/proxies/weighted>
+.Include</etc/dansguardian/lists/phraselists/warezhacking/weighted>

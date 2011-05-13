@@ -1,0 +1,23 @@
+#
+# Banned Phrase List to block based on non-PICS self-rating and self labelling systems
+# Use EITHER the weighted phrase list OR the banned phrase list file - not both
+#
+# If you use this list please send feedback to phrasemaster@dansguardian.org
+# 
+#
+
+#listcategory:"SelfLabeling - 'Restricted To Adults' and 'SafeLabel'"
+
+# For more information see http://www.rtalabel.org/
+#
+
+<content="RTA-5042-1996-1400-1577-RTA">
+
+# For more information see http://www.safelabeling.org/ and http://www.html-reference.com/META_name_rating.htm
+#
+#<meta name="rating" content="Safe For Kids">
+#<meta name="Rating" content="General">
+<meta name="Rating" content="Mature">
+<meta name="Rating" content="14 Years">  
+<meta name="Rating" content="Restricted">
+

@@ -1,0 +1,8 @@
+Unexpected Results for Weighted Phraselists
+
+<keyword><0> - treated as a banned word
+<keyword> <50> - treated as a banned word
+<keyword> this is misc text <50> - treats <keyword> as a banned word
+<keyword> - treated as a banned word
+<keyword1>,<keyword2><keyword3><50> - treats <keyword1>,<keyword2> as a banned phrase, ignores <keyword3>
+

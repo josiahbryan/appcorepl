@@ -195,6 +195,7 @@ img.loading,
 	width: 120px;
 	height: 90px;
 	overflow: hidden !important;
+	border: 1px solid black;
 }
 
 /* Styling for the video thumnail image */
@@ -202,7 +203,6 @@ img.loading,
 	display: block;
 	position: absolute;
 	z-index: 1;
-	border: 1px solid black;
 }
 
 /* TODO: Adapt overlay for IE 6 */
@@ -367,17 +367,29 @@ table.comment_text td {
 	display: none;
 }
 
-/* Style post text and comment text */
-.post_text p { margin: 0 0 10 0 }
+/* Margin at bottom of post text and comment text paragraphs */
+.comment_text p, .post_text p { 
+	margin: 0 0 10 0;
+}
 
-.post_text blockquote { 
+/* Indent paragraphs (all but the first p) */
+.comment_text p + p, 
+.post_text    p + p {
+	text-indent: 2em;
+}
+
+/* Nice pretty border on left of block quotes */
+.post_text blockquote,
+.comment_text blockquote { 
 	margin-left: 3em;
 	border-left: 2px solid #c7cddf;
 	padding-left: 1em;
 	width: 75%; 
 }
 
-.post_text pre
+/* Fix <pre> font sizes.. */
+.post_text pre,
+.comment_text pre
 {
 	font-size: 11px;
 }
