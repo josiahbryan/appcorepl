@@ -101,7 +101,7 @@
 						$(blockId).html(data.post_text);
 						$(shortId).hide();
 						$(blockId).show(300);
-						loading.hide(300, function() { loading.remove() });
+						loading.remove();
 						
 						// Remove busy cursor
 						$("body").css("cursor", "auto");

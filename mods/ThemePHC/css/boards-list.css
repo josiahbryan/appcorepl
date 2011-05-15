@@ -168,18 +168,23 @@ table.postlist .util { color: #364a90; }
 	font-style: italic;
 	/*font-size: .85em;*/
 } 
-.postlist .data .posted_by .name { font-weight: bold; }
 .postlist .data .posted_by,
 .postlist .data .timestamp {
-	color: #364a90;
+	/*color: #364a90;*/
+	color: #768ad3;
 	/*font-size: .85em;*/
+}
+
+.postlist .data .posted_by .name { 
+	font-weight: bold; 
+	color: #364a90;
 }
 
 /*.postlist .data .timestamp { font-size: .7225em; }*/
 /*.postlist .more { font-size: .7225em; }*/
 
 /* Add padding to top and bottom of the post text */
-.postlist .post_text { padding: 10px 0 5 0; }
+.postlist .post_text { padding: 5px 0 3 0; }
 
 /* Hide the long text place holder by default (filled via ajax)
 .long_text { display: none; }
@@ -276,7 +281,7 @@ iframe.video-iframe {
 }
 
 /* Set initial margin on the actions list */
-.post .actions { margin-top: 4px; }
+.post .actions { margin-top: 2px; }
 
 /* Move the reply form up a bit for the post */
 .post .reply_form { margin-top: -8px; }
@@ -348,11 +353,17 @@ table.comment_text td {
 }
 
 /* Style all links and actions list */
-.postlist .actions,
+.postlist .actions a,
 .postlist a {
 	color: #364a90;
 	text-decoration: none;
 }
+
+.postlist .actions,
+.postlist .actions a {
+	color: #768ad3;
+}
+
 
 /* Apply border to bottom of the post actions list, but not the comments inside the post */
 .postlist .post_actions {

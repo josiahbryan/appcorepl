@@ -59,9 +59,10 @@ ul#mainnav li
 ul#mainnav li a
 {
 	color: white;
-	font-size: 1.2em;
+	/*font-size: 1.2em;*/
+	font-size: 110%;
 	text-decoration: none;
-	padding: 10px 30px 5px 30px; 
+	padding: 10px 25px 5px 25px; 
 	text-shadow: rgb(8,8,8) 1px 1px 1px;
 	font-weight: bold;
 	outline: 0;
@@ -236,7 +237,7 @@ h2#mobile-link
 	
 	/*width: 7.5em;*/ 
 	height: 34px;
-	width: 80px;
+	width: 50px;
 	text-align: center;
 	padding: 8px 3px 0 3px;
 	/*background: url(%%modpath%%/images/mobile/full_link_background.jpg) repeat-x;*/ 
