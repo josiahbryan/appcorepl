@@ -16,7 +16,7 @@
 			<td nowrap>
 				<ul id='mainnav'>
 					<tmpl_loop mainnav>
-						<li><a href='%%url%%'>%%title%%</a>
+						<li class='nav-%%no_slash%%'><a href='%%url%%'><span class='icon'><tmpl_if icon><img src='%%icon%%' border=0 align=absmiddle></tmpl_if></span>%%title%%</a>
 							<tmpl_if kids>
 								<ul>
 									<tmpl_loop kids>

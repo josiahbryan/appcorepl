@@ -60,7 +60,7 @@ ul#mainnav li a
 {
 	color: white;
 	/*font-size: 1.2em;*/
-	font-size: 110%;
+	font-size: 100%;
 	text-decoration: none;
 	padding: 10px 25px 5px 25px; 
 	text-shadow: rgb(8,8,8) 1px 1px 1px;
@@ -94,7 +94,7 @@ ul#mainnav li ul
 	
 	top: 1.5em;
 	left: 19px;
-	width: 18em;
+	width: 15em;
 	
 	background-image: url("/appcore/mods/ThemePHC/images/header-bluebg.jpg");
 	/*background: rgb(80,80,80);*/
@@ -192,7 +192,8 @@ ul#mainnav li:hover ul li
 
 #header-content table td
 {
-	font-size: 11px;
+	font-size: 11.5px;
+	/*font-size: 104.545%;*/
 	/*
 	line-height: 17px;*/
 }
@@ -258,4 +259,16 @@ h2#mobile-link a
 	padding: 4px 0 0 0;
 	/*margin-bottom: -2px;*/
 	/*border-bottom: 1px solid black;*/
+}
+
+
+ul#mainnav li.nav-connect a
+{
+	/*color: yellow;*/
+}
+
+ul#mainnav li.nav-connect a span.icon
+{
+	background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -141px;
+	padding-left: 18px;
 }

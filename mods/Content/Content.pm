@@ -18,7 +18,8 @@ package Content;
 	
 	__PACKAGE__->WebMethods(qw/ 
 		main 
-		dump_request 
+		dump_request
+		sitemap 
 	/);
 	 
 	sub apply_mysql_schema
@@ -101,6 +102,19 @@ package Content;
 		return $r->output("<pre>".Dumper($req)."</pre>");
 	}
 	
+	sub sitemap
+	{
+		my $self = shift;
+		my $req = shift;
+		my $r = shift;
+		
+		my $tmpl = $self->get_template('sitemap.tmpl');
+		$tmpl->param(nav => Content::Page::ThemeEngine->load_nav);
+		
+		my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+		
+		return $r;
+	}
 	
 	our %LiveObjects;
 	sub clear_cached_dbobjects
@@ -193,6 +207,12 @@ package Content;
 					{
 						return $r->redirect($alt_page->url);
 					}
+				}
+				
+				# Honor the 'redirect' URL
+				if($page_obj->redirect_url)
+				{
+					return $r->redirect($page_obj->redirect_url);
 				}
 				
 				

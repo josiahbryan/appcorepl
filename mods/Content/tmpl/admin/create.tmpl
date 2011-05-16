@@ -43,7 +43,7 @@
 			<table class='editform' width='100%'>
 				<tr>
 					<td>Address:</td> <td>
-						%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40> 
+						%%server_name%%/<tmpl_if pageid><a href='%%page_url%%' id='edit_url'><b><span id='url_text'>%%page_url%%</span> <img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0></b></a></tmpl_if><input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40 <tmpl_if pageid>style='display:none'</tmpl_if>>
 						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
 					</td>
 				</tr>
@@ -52,6 +52,21 @@
 						<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
 						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
 						<script>var e= $x('title');if(e)e.focus()</script>
+					</td>
+				</tr>
+				
+				<tr>
+					<td valign='top'>Redirect To:</td> <td>
+						<!--%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if redirect_url><tmpl_var redirect_url escape=html></tmpl_if>' size=40>-->
+						<select name='redirect_url'>
+							<option value=''>(Use Content Below)</option>
+							
+							<tmpl_loop redir_list>
+								<option value='%%value%%'>%%value%% - %%text%%</option>
+							</tmpl_loop>
+						</select>
+						<br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>(If you specify a page here, the content below will not be shown at all.)</span>
 					</td>
 				</tr>
 				
@@ -191,3 +206,58 @@
 		<input type=reset value="Reset to Original Values">
 	</div>
 </form>
+
+<script>
+var editUrlLock = false;
+$(function()
+{
+	var loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
+	$("#edit_url").live("click", function()
+	{
+		if(editUrlLock)
+			return;
+		editUrlLock = true;
+		
+		var	th	= $(this),
+			url 	= th.attr('href'),
+			newUrl	= prompt("Use the field below to change the page address:", url),
+			doneFunc= function(data)
+			{
+				th.children('img').attr('src','${CDN:%%appcore%%/images/silk/page_edit.png}');
+				
+				// Remove busy cursor
+				$("body").css("cursor", "auto");
+				
+				th.attr('href',newUrl);
+				$("#url_text").html(newUrl);
+				
+				$("#url").attr('value',newUrl);
+			};
+		
+		if(newUrl)
+		{
+			$("body").css("cursor", "progress");
+			
+			th.children("img").attr('src',loaderGif);
+			
+			$.ajax({
+				type: "POST",
+				url: "%%binpath%%/change_url",
+				data:
+				{
+					output_fmt: "json",
+					pageid: <tmpl_if pageid>%%pageid%%<tmpl_else>-1</tmpl_if>,
+					url: newUrl,
+				},
+				success: doneFunc,
+				error: doneFunc,
+			});
+		}
+		
+		setTimeout(function(){editUrlLock = false},500);
+		
+		return false;
+	});
+});
+
+</script>

@@ -109,6 +109,22 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 	padding-right: 40px;
 }
 
+.bodycontent ul
+{
+	margin: 1em 0 2em; 
+}
+
+.bodycontent li
+{
+	margin-left: 1.5em;
+}
+
+.bodycontent ul li ul
+{
+	margin: 0em 0 1em 0; 
+}
+
+
 #footer
 {
 	background-image: url("%%modpath%%/images/footer-shadow2.png");

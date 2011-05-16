@@ -15,6 +15,7 @@
 		<th>URL</th>
 		<th>In Menus?</th>
 		<th>Title</th>
+		<th>Type</th>
 	</thead>
 	<tbody>
 		<tmpl_loop pages>
@@ -39,11 +40,35 @@
 			<td><div class='menu_switch'><a page_url='%%url%%' onclick='return update_sw(this)' class='<tmpl_if show_in_menus>sw1<tmpl_else>sw0</tmpl_if>' href='%%binpath%%/set_in_menus?url=%%url%%&amp;flag=<tmpl_if show_in_menus>0<tmpl_else>1</tmpl_if>'><span>%%in_menus%%</span></a></div></td>
 			<td>
 				<img src='%%modpath%%/images/ajax-loader-balls-xparent.gif' class='loader' id='loader%%pageid%%'>
-				<input class='page_title' type='text' tabindex='%%tab_idx%%' pageid='%%pageid%%' value='%%title%%' orig_value='%%title%%' onblur='save_title(this)' onkeypress='check_enter(event,this)'></td>
+				<input class='page_title' type='text' tabindex='%%tab_idx%%' pageid='%%pageid%%' value='<tmpl_var title escape=html>' orig_value='%%title%%' onblur='save_title(this)' onkeypress='check_enter(event,this)'></td>
+			<td class='page-type page-type-%%page_type_class%%'><tmpl_if page_type_name>%%page_type_name%%<tmpl_else>Static Page</tmpl_if></td>
 		</tr>
 		</tmpl_loop>
 	</tbody>
 </table>
+
+<style>
+
+.page-type  { text-align:center }
+.page-type-content_page_controller
+{
+	color: rgb(80,80,80);
+	font-size: 10px;
+}
+
+.page-type-boards
+{
+	color: #364a90;
+	/*font-size: 10px;*/
+}
+
+.page-type-content_page_controller
+{
+	color: rgb(80,80,80);
+	font-size: 10px;
+}
+
+</style>
 
 <!--<img id='switch_img' style='display:none'/>-->
 

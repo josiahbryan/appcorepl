@@ -160,5 +160,19 @@
 <script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
 <script src='%%appcore%%/js/jquery-scrollto.js'></script>
 <script src='%%modpath%%/js/frontpage.js'></script>
+<script>
+// Load the subpage logo inorder to get it into the user's cache before they actually click a subpage
+window.onload = function() {
+	setTimeout(function()
+	{
+		var img = $('<img/>');
+		img.attr('src','${CDN:%%modpath%%/images/mainlogo-300px-bcrop-sm.png}');
+		img.get(0).onload = function() { img.css('display','none'); };
+		img.appendTo($(document.body));
+		
+	}, 1000);
+};
+</script>
 </body>
 </frontpage>
+

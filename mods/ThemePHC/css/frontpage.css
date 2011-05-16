@@ -363,3 +363,8 @@ body
 	text-decoration: none;
 	/*border-bottom: 1px solid blue;*/
 }
+
+#graphic-wrap .block-item h1
+{
+	margin: 1em 0 .75em;
+}

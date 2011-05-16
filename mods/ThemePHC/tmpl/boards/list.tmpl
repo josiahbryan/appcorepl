@@ -1,5 +1,10 @@
 	<!--<a_cssx src="%%modpath%%/css/boards.css"/>-->
+	
+	<tmpl_if is_mobile>
+	<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list-mobile.css"/>
+	<tmpl_else>
 	<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+	</tmpl_if>
 	<!--<a_cssx src="%%appcore%%/js/jquery.qtip.min.css"/>-->
 	
 	<title><tmpl_var board_title> - Bulletin Boards</title>
@@ -174,7 +179,7 @@
 	}
 	</script>
 		
-	<table class='postlist' width='750' align=center cellspacing=0>
+	<table class='postlist' <tmpl_unless is_mobile>width='750'</tmpl_unless> align=center cellspacing=0>
 		<tbody>
 			<tr class='post newpost'>
 				<td valign='top' align='center' class='photo'>
@@ -184,7 +189,7 @@
 				<td valign='top' class='data'>
 					<form class='wrap'  onsubmit='return ajax_post_new(this)'>
 						<div class='content'>
-							<textarea class='expandText' style="width:99%;height:5em" class="expandText" name="text"></textarea>
+							<textarea class='expandText' style="height:5em" class="expandText" name="text"></textarea>
 						</div>
 						<div class='controls'>
 							<button type='submit' class='button'>Post</button>
@@ -393,7 +398,7 @@
 			<div class='wrap'>
 				<input type='hidden' name='postid' value='${postid}'>
 				<div class='content'>
-					<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
+					<textarea class='expandText' style="<tmpl_unless is_mobile>width: 450px; </tmpl_unless>height:5em" class="expandText" name="text"></textarea>
 				</div>
 				<div class='controls'>
 					<button type='submit' class='button' id='button_${postid}'>Post</button>

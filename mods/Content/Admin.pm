@@ -18,6 +18,7 @@ package Content::Admin;
 		set_in_menus
 		change_idx
 		save_title
+		change_url
 	/);
 
 
@@ -79,6 +80,17 @@ package Content::Admin;
 			$row->{menu_index_pre} = $pre;
 			$row->{menu_index_cur} = $cur+0;
 			
+			if($page->typeid && $page->typeid->id)
+			{
+				$row->{page_type_name} = $page->typeid->name;
+				
+				my $cls = lc $page->typeid->controller;
+				$cls =~ s/::/_/g;
+				$row->{page_type_class} = $cls;
+			} 
+			
+			$row->{page_type_class} = 'content_page_controller' if !$row->{page_type_class};
+			
 			#die Dumper $row;
 			push @list, $row;
 		}
@@ -114,6 +126,7 @@ package Content::Admin;
 		$tmpl->param(page_title => AppCore::Common::guess_title($url));
 		$tmpl->param(page_content => '');
 		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
+		$tmpl->param(redir_list	=> $self->_redir_select_list());
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
 		$tmpl->param(themes     => Content::Page::ThemeEngine->tmpl_select_list($cur_theme));
@@ -129,6 +142,27 @@ package Content::Admin;
 	
 		#return $r;
 		
+	}
+	
+	sub _redir_select_list
+	{
+		my $self = shift;
+		my $cur = shift;
+		my $curid = Content::Page->by_field(url => $cur);
+		$curid = Content::Page->retrieve($cur) if !$curid;
+		$curid = $curid->id if $curid;
+		
+		my @all = Content::Page->retrieve_from_sql('1 order by menu_index');
+		my @list;
+		foreach my $item (@all)
+		{
+			push @list, {
+				value	=> $item->url,
+				text	=> $item->title,
+				selected => $item->id == $curid,
+			}
+		}
+		return \@list;
 	}
 	
 	sub edit
@@ -162,6 +196,8 @@ package Content::Admin;
 		$tmpl->param(page_mobile_content => $page_obj->mobile_content);
 		$tmpl->param(page_mobile_alt_url => $page_obj->mobile_alt_url);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
+		
+		$tmpl->param(redir_list	=> $self->_redir_select_list($page_obj->redirect_url));
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
 		$tmpl->param(themes     => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
@@ -291,6 +327,48 @@ package Content::Admin;
 			$child->menu_index($child_idx);
 			$child->update;
 		}
+	}
+	
+	sub change_url
+	{
+		AppCore::AuthUtil->require_auth(['ADMIN']);
+		
+		my ($self,$req,$r) = @_;
+		
+		my $id = $req->pageid;
+		
+		my $page_obj = Content::Page->retrieve($id);
+		if(!$page_obj)
+		{
+			return $r->error("No such page","No such page: <b>$id</b>");
+		}
+		my $url = $page_obj->url;
+		my $new_url = $req->url;
+		$new_url = '/'.$new_url if $new_url !~ /^\//;
+		
+		my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ? order by menu_index');	
+		$sth->execute("${url}%");
+	
+		while(my $id = $sth->fetchrow)
+		{
+			my $pg = Content::Page->retrieve($id);
+		
+			my $pg_url = $pg->url;
+			$pg_url =~ s/^$url/$new_url/;
+			
+			print STDERR "Changing URL: PageID $pg: ".$pg->url." -> $pg_url\n";
+			
+			$pg->url($pg_url);
+			$pg->update;
+		}
+		
+		if($req->output_fmt eq 'json')
+		{
+			return $r->output_data("application/json", "{status:'ok'}");
+		}
+		
+		return $r->redirect($self->module_url().($req->st ? '?st='.$req->st : ''));
+	
 	}
 	
 	sub change_idx
@@ -531,9 +609,6 @@ package Content::Admin;
 		my $title   = $req->title;
 		my $url     = '/' . $req->url;
 		my $content = $req->content;
-		my $mobile_content = $req->mobile_content;
-		my $mobile_alt_url = $req->mobile_alt_url;
-		
 		
 		my $page_obj = $pageid ? Content::Page->retrieve($pageid) : undef;
 		
@@ -583,6 +658,7 @@ package Content::Admin;
 		$page_obj->typeid($req->typeid);
 		$page_obj->mobile_alt_url($req->mobile_alt_url);
 		$page_obj->mobile_content($req->mobile_content);
+		$page_obj->redirect_url($req->redirect_url);
 		$page_obj->update;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";

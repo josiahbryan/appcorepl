@@ -32,6 +32,7 @@ package Content::Page;
 			# The next page up in the nav structure
 			{	field	=> 'parentid',		type	=> 'int(11)',	linked => 'Content::Page' },
 			{	field	=> 'url',		type	=> 'varchar(255)' },
+			{	field	=> 'redirect_url',	type	=> 'varchar(255)' },
 			{	field	=> 'title',		type	=> 'varchar(255)' },
 			{	field	=> 'nav_title',		type	=> 'varchar(255)' },
 			{	field	=> 'description',	type	=> 'varchar(255)' },
@@ -619,10 +620,13 @@ package Content::Page::ThemeEngine;
 				}
 				else
 				{
+					my $no_slash = $page->url;
+					$no_slash =~ s/^\///g;
 					$hash{$root} = 
 					{
 						title	=> $page->title,
 						url	=> $page->url,
+						no_slash=> $no_slash,
 						kid_map	=> {},
 						kids	=> []
 					};
