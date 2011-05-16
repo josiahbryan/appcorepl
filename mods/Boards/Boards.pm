@@ -799,6 +799,7 @@ package Boards;
 			my $tmpl = $self->get_template($controller->config->{list_tmpl} || 'list.tmpl');
 			$tmpl->param(board_nav => $controller->macro_board_nav());
 			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
+			$tmpl->param(user_email_md5 => md5_hex($user->email)) if $user && $user->id;
 			
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			

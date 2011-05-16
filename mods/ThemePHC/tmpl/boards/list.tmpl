@@ -1,5 +1,6 @@
-	<a_cssx src="%%modpath%%/css/boards.css"/>
+	<!--<a_cssx src="%%modpath%%/css/boards.css"/>-->
 	<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+	<!--<a_cssx src="%%appcore%%/js/jquery.qtip.min.css"/>-->
 	
 	<title><tmpl_var board_title> - Bulletin Boards</title>
 	
@@ -7,7 +8,8 @@
 	<h1><tmpl_var board_title></h1>
 	
 	<script>
-	loaderGif = '%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif';
+	// Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
+	loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
 	</script>
 	
 	<!-- Board Tagline -->
@@ -119,16 +121,6 @@
 		return false;
 	});
 	
-	</script>
-	
-	<!--max-height: 70px;-->
-	<!--action='%%binpath%%/post' method='POST'-->
-	<!--<div class='newpost'>
-		
-	</div>-->
-	
-	<script>
-	
 	function ajax_post_new(formElm)
 	{
 		var postData = {
@@ -186,14 +178,11 @@
 		<tbody>
 			<tr class='post newpost'>
 				<td valign='top' align='center' class='photo'>
-					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
+					<!--<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">-->
+					<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%'>
 				</td>
 				<td valign='top' class='data'>
 					<form class='wrap'  onsubmit='return ajax_post_new(this)'>
-						<!--<input type='hidden' name='poster_name' value='%%user_display%%'>
-						<input type='hidden' name='poster_email' value='%%user_email%%'>-->
-						<!--<h2>Add a new post</h2>-->
-						
 						<div class='content'>
 							<textarea class='expandText' style="width:99%;height:5em" class="expandText" name="text"></textarea>
 						</div>
@@ -240,7 +229,7 @@
 			</tmpl_if>
 			<tr class='post post-placeholder' id='post-placeholder'>
 				<td valign='top' align='center' class='photo'>
-					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">
+					<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}" userid='%%user_uiserid%%'>
 				</td>
 				<td valign='top' class='data'>
 					<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
@@ -820,11 +809,18 @@ $(function() {
 	});
 });
 
+$(function() {
+// 	$('a[title]').qtip();
+// 	$('img[alt]').qtip();
+});
+
 </script>
+
 
 <script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
+<!--<_script type="text/javascript" src="%%appcore%%/js/jquery.qtip.min.js" index="0"></script>-->
 
 <!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
      when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially

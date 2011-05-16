@@ -1,6 +1,6 @@
 	<tr class='post' id='post%%postid%%'>
 		<td valign='top' align='center' class='photo'>
-			<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50">
+			<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%posted_by%%'>
 		</td>
 		<td valign='top' class='data'>
 			<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
@@ -10,7 +10,6 @@
 			<div class='posted_by'>
 				<span class='by'>by</span> <span class='name'>%%poster_name%%</span>
 				&middot;
-			
 				<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%% <a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a></span>
 			</div>
 			

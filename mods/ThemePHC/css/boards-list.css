@@ -21,7 +21,7 @@ td { font-size: 68.75% }
 
 /* Style the load more posts link at bottom */
 .loadmore td a {
-	color: #364a90;
+	/*color: #364a90;*/
 	font-weight: bold;
 	/*font-size: .85em;*/
 	display: block;
@@ -47,7 +47,7 @@ td { font-size: 68.75% }
 
 .current_nums div a,
 .current_nums div span.link {
-	color: #364a90;
+	/*color: #364a90;*/
 	font-weight: normal;
 }
 
@@ -157,9 +157,6 @@ table.postlist { border-spacing: 0 }
 /* Add padding to the top of posts */
 .postlist td.data { padding: 18px 0 0 0; }
 
-/* TODO: I dont think this is neede ... (/
-table.postlist .util { color: #364a90; }
-
 /* Hide the subject field by default */
 .postlist .data .title_link { display: none; }
 
@@ -168,13 +165,6 @@ table.postlist .util { color: #364a90; }
 	font-style: italic;
 	/*font-size: .85em;*/
 } 
-.postlist .data .posted_by,
-.postlist .data .timestamp {
-	/*color: #364a90;*/
-	color: #768ad3;
-	/*font-size: .85em;*/
-}
-
 .postlist .data .posted_by .name { 
 	font-weight: bold; 
 	color: #364a90;
@@ -353,15 +343,29 @@ table.comment_text td {
 }
 
 /* Style all links and actions list */
-.postlist .actions a,
+/*.postlist .actions a,*/
 .postlist a {
 	color: #364a90;
 	text-decoration: none;
 }
 
+.postlist a:hover {
+	text-decoration: underline;
+}
+
+
+.postlist .posted_by .by,
+.postlist .posted_by .timestamp,
 .postlist .actions,
 .postlist .actions a {
 	color: #768ad3;
+}
+
+.postlist .comment_text .posted_by .by,
+.postlist .comment_text .posted_by .timestamp,
+.postlist .comment_text .actions,
+.postlist .comment_text .actions a {
+	color: #6272ac;
 }
 
 
