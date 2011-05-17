@@ -324,7 +324,7 @@ package AppCore::Web::DispatchCore;
 		
 		my $time_end = time;
 		my $diff = $time_end - $time_start;
-		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/;
+		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/ || $ENV{HTTP_REFERER} =~ /dispatch_time_debug/;
 		#my $show_time = 1;
 		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time; 
 		#################

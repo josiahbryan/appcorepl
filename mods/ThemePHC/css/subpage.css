@@ -109,6 +109,13 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 	padding-right: 40px;
 }
 
+
+.bodycontent h1, .bodycontent h2, .bodycontent h3, .bodycontent h4, .bodycontent h5, .bodycontent h6, .bodycontent h7, .bodycontent p, .bodycontent form, .bodycontent ul, .bodycontent ol, .bodycontent li, .bodycontent blockquote { 
+/* resets most browser styles to enhance cross-browser compatibility */
+	margin: default;
+	padding: default;
+}
+
 .bodycontent ul
 {
 	margin: 1em 0 2em; 
@@ -117,12 +124,44 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 .bodycontent li
 {
 	margin-left: 1.5em;
+	margin-bottom: .75em;
 }
 
 .bodycontent ul li ul
 {
 	margin: 0em 0 1em 0; 
 }
+
+.bodycontent p,
+.bodycontent li
+{
+	font-size: 110%;
+}
+
+.bodycontent p
+{
+	margin: .5em 0 .75em 0;
+}
+
+.bodycontent p + p {
+	text-indent: 2em;
+}
+
+/* Nice pretty border on left of block quotes */
+.bodycontent blockquote { 
+	margin-left: 3em;
+	border-left: 2px solid #c7cddf;
+	padding-left: 1em;
+	width: 75%; 
+}
+
+/* Fix <pre> font sizes.. */
+.bodycontent pre {
+	font-size: 11px;
+}
+
+
+span.year, span.date { font-weight: bold }
 
 
 #footer
@@ -152,3 +191,68 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 {
 	behavior: url("%%appcore%%/ie/iepngfix/iepngfix.htc"); 
 }*/
+
+td.nav-sibs-cell
+{
+	width:15em;
+}
+
+.nav-sibs
+{
+	background: rgb(220,220,220);
+	-moz-border-radius: 4px;
+	padding: .75em 1em;
+	float: left;
+		
+	color: rgb(100,100,100);
+	background: rgb(230,230,230);
+	text-shadow: #fff 1px 1px 1px;
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	
+	margin: .25em 1em 1em 0;
+	
+	width: 15em;
+}
+
+.nav-sibs ul, 
+.nav-sibs li
+{
+	list-style: none;
+	margin: 0;
+	font-size: 110%;
+	padding: .25em 0 .25em 0;
+}
+
+
+
+.nav-sibs a 
+{
+	color: rgb(100,100,100);
+}
+
+.nav-sibs a:hover
+{
+	color: #364a90;
+}
+
+.nav-sibs .current
+{
+	font-weight: bold;
+}
+
+.pagebody { 
+	padding-right: 15em;
+	font-size: 110%;
+}
+
+.pagebody h3
+{
+	margin: 1em 0 .25em 0;
+	/*font-family: Georgia, Serif;
+	text-transform: uppercase;*/
+	font-size: 120%;
+	border-bottom: 1px solid #c7cddf; 
+}
+
+div.fc { clear:both }

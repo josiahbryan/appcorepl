@@ -672,28 +672,79 @@ package Content::Page::ThemeEngine;
 		
 	}
 	
+	
+	our %PageDataCache;
+	our %SubnavCache;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing data...\n";
+		%SubnavCache = ();
+		%PageDataCache = ();
+	}	
+	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
 	sub apply_page_obj
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
-			my $user = AppCore::Common->context->user;
+			my $pageid = $page_obj->id;
+			my $pgdat = $PageDataCache{$pageid};
+			if(!$pgdat)
+			{
+				my $user = AppCore::Common->context->user;
+				
+				# Substitute alternative content in case of mobile content
+				my $content = AppCore::Common->context->mobile_flag && $page_obj->mobile_content ?
+					$page_obj->mobile_content :
+					$page_obj->content;
+				
+				$content = AppCore::Web::Common::load_template($content)->output if $content =~ /%%/;
+				
+				$pgdat->{'page_'.$_}	= $page_obj->get($_) foreach $page_obj->columns;
+				$pgdat->{page_content}	= $content;
+				$pgdat->{page_title}	= AppCore::Web::Common::load_template($page_obj->title)->output if $page_obj->title   =~ /%%/;
+				$pgdat->{content_url}	= AppCore::Common->context->current_request->page_path;
+				$pgdat->{can_edit}	= $user && $user->check_acl(['ADMIN']);
+				
+				my $subnav = $self->load_subnav($page_obj);
+				$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
+				
+				my $page_tmpl = $self->load_template('page.tmpl');
+				if($page_tmpl)
+				{
+					$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+					$pgdat->{page_content} = $page_tmpl->output;
+				}
+				
+				$PageDataCache{$pageid} = $pgdat;
+			}
 			
-			# Substitute alternative content in case of mobile content
-			my $content = AppCore::Common->context->mobile_flag && $page_obj->mobile_content ?
-				$page_obj->mobile_content :
-				$page_obj->content;
+			$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
 			
-			$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
-			$tmpl->param(page_content => $content =~ /%%/ ? AppCore::Web::Common::load_template($content)->output : $content);
-			$tmpl->param(page_title   => AppCore::Web::Common::load_template($page_obj->title  )->output) if $page_obj->title   =~ /%%/;
-			$tmpl->param(content_url  => AppCore::Common->context->current_request->page_path);
-			$tmpl->param(can_edit     => $user && $user->check_acl(['ADMIN']));
+			return 1;
+		}
+		
+		return 0;
+	}
+	
+	sub load_subnav
+	{
+		my $self = shift;
+		my $page_obj = shift;
+		my $url = $page_obj->url;
+		
+		my $subnav = $SubnavCache{$url};
+		if(!$subnav)
+		{
+			$subnav = {};
 			
-			my $url = $page_obj->url;
 			my @parts = split /\//, $url;
 			#shift @parts; # remove start
-			if(@parts == 1)
+			my $len = scalar @parts;
+			#print STDERR "load_subnav(): len:$len, parts:".join('|',@parts)."\n";
+			if(@parts < 2)
 			{
 				# no subnav
 			}
@@ -706,7 +757,7 @@ package Content::Page::ThemeEngine;
 				my $url_base = join('/', @url_base);
 				
 				my $sth = Content::Page->db_Main->prepare('select pageid from pages where url like ? and show_in_menus=1 order by menu_index');
-				 
+					
 				my @sibs;
 				$sth->execute($url_base . '/%');
 				push @sibs, Content::Page->retrieve($_) while $_ = $sth->fetchrow;
@@ -728,6 +779,7 @@ package Content::Page::ThemeEngine;
 					{
 						title => $sib->title,
 						url   => $sib->url,
+						current => $sib->url eq $page_obj->url,
 					};
 				}
 				$tmpl_sibs[$#tmpl_sibs]->{last} = 1 if @tmpl_sibs;
@@ -751,8 +803,8 @@ package Content::Page::ThemeEngine;
 				
 				#die Dumper $url_base, \@tmpl_sibs, \@tmpl_kids;
 				
-				$tmpl->param(nav_sibs => \@tmpl_sibs);
-				$tmpl->param(nav_kids => \@tmpl_kids);
+				$subnav->{nav_sibs} = @tmpl_kids ? \@tmpl_kids : \@tmpl_sibs;
+				$subnav->{nav_kids} = \@tmpl_kids;
 				
 				my @url_build;
 				my @nav_path;
@@ -787,13 +839,13 @@ package Content::Page::ThemeEngine;
 					}
 				}
 				
-				$tmpl->param(nav_path => \@nav_path);
+				$subnav->{nav_path} = \@nav_path;
 			}
 			
-			return 1;
+			$SubnavCache{$url} = $subnav;
 		}
 		
-		return 0;
+		return $subnav;
 	}
 
 	sub output
@@ -819,6 +871,11 @@ package Content::Page::ThemeEngine;
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		
+# 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
+# 		{
+# 			my $tmpl = $self->load_template('page.tmpl');
+# 			$self->apply_page_obj($tmpl,$page_obj);
+# 		}
 		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
 			$self->apply_basic_data($tmpl,$page_obj);
@@ -850,6 +907,19 @@ package Content::Page::ThemeEngine;
 		if($pkg ne 'Content::Page::ThemeEngine')
 		{
 			my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+			if($file !~ /^\// && -f $tmp_file_name)
+			{
+				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			}
+			else
+			{
+				print STDERR "Template file didnt exist: $tmp_file_name\n";
+			}
+		}
+		
+		if(!$tmpl)
+		{
+			my $tmp_file_name = 'mods/Content/tmpl/'.$file;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
