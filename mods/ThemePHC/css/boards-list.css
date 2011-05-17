@@ -146,8 +146,12 @@ table.postlist { border-spacing: 0 }
 
 /* Style the user photo - set width and padding */ 
 .postlist td.photo {
-	width: 60px;
-	padding: 20px 10 10 10;
+	width: 52px;
+	padding: 20px 5 10 0;
+}
+
+tr.newpost td.photo {
+	padding-left: 7px;
 }
 
 /* Set default styling on images and image-links  */

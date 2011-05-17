@@ -317,6 +317,10 @@ package AppCore::Web::Common;
 		my $tmpl = shift;
 		
 		$$textref =~ s/\${inc:([^\}]+)}/get_included_file($1)/segi;
+		#$$textref =~ s/\${if:([^\}]+)}/_rewrite_if_macro($1)/segi;
+		#$$textref =~ s/\${(end|\/)if}/<\/tmpl_if>/gi;
+		
+		$$textref =~ s/<tmpl_if ([^>]+)>/_rewrite_if_macro($1)/segi;
 		
 		$$textref =~ s/\%\%(.*?)\%\%/<TMPL_VAR NAME="$1">/gi;
 		$$textref =~ s/\%(\/?)tmpl_(.*?)\%/<$1TMPL_$2>/gi;
@@ -334,6 +338,14 @@ package AppCore::Web::Common;
 		
 		#die Dumper $$textref;
 	}
+	
+	sub _rewrite_if_macro
+	{
+		my $data = shift;
+		my ($var,$typecast) = $data =~ /^([^:]+)(?:\:(.*))?/;
+		return "<tmpl_if $var>";
+	}
+	
 	
 	my %FileCache;
 	sub get_included_file
