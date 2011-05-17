@@ -1,0 +1,21 @@
+	<tmpl_if can_edit><div></tmpl_if>
+		<span class='you_like' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
+			<b>You</b><tmpl_unless others_like> like this</tmpl_unless><tmpl_if others_like> and </tmpl_if>
+		</span>
+		
+		<span class='add_like' style='<tmpl_if you_like>display:none<tmpl_else>display:inline</tmpl_if>' id='addlike%%postid%%'>
+			<a href='#' like_url='%%like_url%%' class='like_link like-icon' postid='%%postid%%'>Like</a>
+			<!--<tmpl_if others_like> &middot;</tmpl_if>-->
+		</span>
+		
+		<tmpl_if others_like>
+			<span class='others_like'>
+				<a class='like-icon others_like' href='#' onclick='alert(this.getAttribute("name_list"));return false;' name_list="%%others_like_names_list%%" title="%%others_like_names%%"><b>%%others_like%%</b>
+				</a><!--&nbsp; others--></b><!-- like this-->
+			</span>
+		</tmpl_if>
+		
+		<span class='unlike' id='unlike%%postid%%' style='<tmpl_if you_like>display:inline<tmpl_else>display:none</tmpl_if>' id='youlike%%postid%%'>
+			&nbsp;<a href='#' unlike_url='%%unlike_url%%' class='unlike_link' postid='%%postid%%'>Unlike</a>
+		</span>
+	<tmpl_if can_edit></div></tmpl_if>

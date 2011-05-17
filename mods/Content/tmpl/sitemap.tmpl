@@ -1,0 +1,15 @@
+
+<h1>List of Pages</h1>
+<ul id='links'>
+	<tmpl_loop nav>
+		<li><a href='%%url%%'>%%title%%</a>
+			<tmpl_if kids>
+				<ul>
+					<tmpl_loop kids>
+						<li><a href='%%url%%'>%%title%%</a></li>
+					</tmpl_loop>
+				</ul>
+			</tmpl_if>
+		</li>
+	</tmpl_loop>
+</ul>

@@ -1,0 +1,40 @@
+	<!--<div class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>-->
+	<div class='comment_text_wrap indent%%indent%%' id="wrap%%postid%%">
+		<table class=comment_text  id='comment%%postid%%' indent_css="%%indent_css%%" width='100%'>
+			<tr>
+				<td valign=top style='padding-left:%%indent_css%%em' width='1%' class='indent%%indent%%'>
+					<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25" width=25 height=25 userid='%%posted_by%%'>
+				</td>
+				<td valign=top align='left' class='indent%%indent%%'>
+					<div class='posted_by'>
+						<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
+						&middot;
+						<span class='timestamp'>%%approx_time_ago%% ago<!-- on %%pretty_timestamp%%--></span>
+					</div>
+					
+					<div class="comment_text text">
+						<div id='short_text_%%postid%%' class='short_text'>
+							%%clean_html%%
+						</div>
+						<tmpl_if short_text_has_more>
+							<div id='long_text_%%postid%%' class='long_text'></div>
+						</tmpl_if>
+					</div>
+					
+					<div class='actions' id='acts%%postid%%'>
+						<tmpl_if short_text_has_more>
+							<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>
+						</tmpl_if>
+						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%' type='comment' top_commentid='%%top_commentid%%'>Reply</a>
+						<tmpl_if can_edit>
+							<a class='edit_post_link' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/edit'>Edit</a>
+							<a class='delete_comment_link' postid='%%postid%%' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/delete'>Delete</a>
+						</tmpl_if> 
+						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-likes-mobile.tmpl}
+					</div>
+					
+					<div class='reply_container' id='reply%%postid%%'></div>
+				</td>
+			</tr>
+		</table>
+	</div>

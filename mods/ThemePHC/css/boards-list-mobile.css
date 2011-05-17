@@ -8,12 +8,18 @@ td { font-size: 100% }
 }
 
 /* Add a border to the bottom "load more" link, top number display, and new post form */
-.newpost td, 
+/*.newpost td,*/ 
 .loadmore td,
 .current_nums td {
 	border-bottom: 1px solid #c7cddf;
 	border-top: 1px solid white;
+	padding: 3px;
 }
+/*
+.newpost tr.input td
+{
+	padding: 0;
+}*/
 
 /* Add a nice background for the current post numbers at the top and load link at bottom */
 .loadmore td,
@@ -57,7 +63,7 @@ td { font-size: 100% }
 
 /* Width and clearfix for the new comment form */
 /*.reply_form .wrap { width: 450px; }*/
-.reply_form .wrap .fc { clear: both; }
+div.fc { clear: both; }
 
 /* Styling for user ID in the new post and comment form */
 .reply_form .ident,
@@ -140,24 +146,24 @@ table.postlist { border-spacing: 0 }
 	-moz-box-shadow: 0px 0px 3px #000;
 	-webkit-box-shadow: 0px 0px 3px #000;
 	box-shadow: 0px 0px 3px #000;
+	margin: 5 5 2 0;
 }
 
 /*table.postlist td { font-size: .85em; }*/
-
-/* Style the user photo - set width and padding */ 
-.postlist td.photo {
-	/*width: 60px;*/
-	padding: 20px 3 10 3;
-	/*margin-left: -10px;*/
-	display: block;
-}
 
 /* Set default styling on images and image-links  */
 .postlist td img { cursor: default; }
 .postlist td a img { cursor: pointer; }	
 
 /* Add padding to the top of posts */
-.postlist td.data { padding: 18px 0 0 0; }
+.postlist td.data { 
+	padding: 3; 
+	border-bottom: 1px solid #c7cddf;
+	border-top: 1px solid white;
+	background: #e9eeff;
+	color: black;
+
+}
 
 /* Hide the subject field by default */
 .postlist .data .title_link { display: none; }
@@ -193,6 +199,7 @@ img.loading,
 	height: 90px;
 	overflow: hidden !important;
 	border: 1px solid black;
+	margin: 0 auto;
 }
 
 /* Styling for the video thumnail image */
@@ -208,7 +215,7 @@ img.loading,
 	position: absolute;
 	background: url(%%modpath%%/images/play-icon-48px.png) no-repeat center;
 	z-index: 2;
-	/*width: 120px;*/
+	width: 120px;
 	height: 90px;
 	opacity: .75;
 }
@@ -221,10 +228,6 @@ iframe.video-iframe {
 	box-shadow: 0px 0px 9px #364a90;
 }
 
-/* Add margin to the video play links */
-.postlist td a.video-play-link {
-	margin: 10 0;
-}
 
 /* Make sure the iframe doesnt overflow the borders */
 .postlist td a.video-play-link iframe { z-index: -1; }
@@ -238,6 +241,7 @@ iframe.video-iframe {
 	/*margin-top: 10px;*/
 	/*margin-bottom: 4px;*/
 	border-color: #b9c0da;
+	margin: 8 10px;
 }
 
 /*.postlist td hr.post-attach-divider { margin-bottom: 10px; }*/
@@ -245,9 +249,18 @@ iframe.video-iframe {
 /* Hide the "post as" form by default */
 .reply_form .form { display: none; }
 
+a.like-icon {
+	background: #e2e7f7 url(%%appcore%%/mods/ThemePHC/images/like.png) no-repeat 3px center !important;
+	padding-left: 19px !important;
+}
+
+.actions a.reply_link {
+	background: #e2e7f7 url(%%appcore%%/mods/ThemePHC/images/comment-icon.png) no-repeat 3px center !important;
+	padding-left: 19px !important;
+}
 
 /* "Like" link styling */
-.add_like a,
+/*.add_like a,
 .you_like {
 	background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -33px;
 	padding-left: 16px;
@@ -256,10 +269,10 @@ iframe.video-iframe {
 .actions a.reply_link {
 	background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat -1px -141px;
 	padding-left: 16px;
-}
+}*/
 
 /* "Like" link hover styling */
-.actions a.reply_link:hover,
+/*.actions a.reply_link:hover,
 .add_like a:hover { color: #292929 !important; }
 
 .add_like a:hover {
@@ -270,7 +283,7 @@ iframe.video-iframe {
 .actions a.reply_link:hover {
 	background: url(%%appcore%%/mods/ThemePHC/images/icon-list.png) no-repeat 0px -170px;
 	padding-left: 16px;
-}
+}*/
 
 /* Set initial margin on the actions list */
 /*.post .actions { margin-top: 2px; }*/
@@ -337,6 +350,9 @@ table.comment_text td {
 	border-bottom: 1px solid #c7cddf;
 	border-top: 1px solid white;
 	/*padding-right: 10px;*/
+	margin-left: 27px;
+	border-left: 1px solid #c7cddf;
+	margin-right: -3px;
 }
 
 /* Add a small spacing to bottom of comments list */
@@ -347,7 +363,7 @@ table.comment_text td {
 /* Style all links and actions list */
 /*.postlist .actions a,*/
 .postlist a {
-	color: #364a90;
+	color: #364a90 !important;
 	text-decoration: none;
 }
 
@@ -370,21 +386,49 @@ table.comment_text td {
 	color: #6272ac;
 }
 
+.postlist .actions
+{
+	text-align: center;
+	/*border-top: 1px solid #c7cddf;*/
+	/*border-top: 1px solid white;*/
+	margin-top: 4;
+}
 
-.postlist .actions a {
-	display: block;
-	border: 1px solid #6272ac;
+.postlist .actions a, .postlist input[type='button'], button {
+	/*display: block;*/
+	border: 1px solid #768ad3;
 	background-color: #e2e7f7;
 	line-height: 30px;
-	color: #364a90;
-	padding: 0 4;
+	color: #768ad3 !important;
+	padding: 10 10;
+	line-height: 4;
 	background-image: none;
-	margin-right: 4;
+	/*margin-right: 4;*/
+	text-decoration: none !important;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	-webkit-border-radius: 3px;
+	box-shadow: 0px 0px 3px #000;
+	/*text-shadow: black 0px 0px 3px;*/
+	font-weight: bold;
+	text-align: center;
+}
+
+.postlist .comment_text .actions
+{
+	text-align: right;
+	padding-right: 4;
+}
+
+.postlist input[type='button'], button
+{
+	padding: 0 10;
+	line-height: default;
 }
 
 .postlist .actions a +  a 
 {
-	margin-top: -10px;
+	/*margin-top: -10px;*/
 }
 
 /* Apply border to bottom of the post actions list, but not the comments inside the post */
