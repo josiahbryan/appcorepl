@@ -141,10 +141,12 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 .bodycontent p
 {
 	margin: .5em 0 .75em 0;
+	text-indent: 2em;
 }
 
 .bodycontent p + p {
-	text-indent: 2em;
+	/*text-indent: 0em;*/
+	/*text-indent: 2em;*/
 }
 
 /* Nice pretty border on left of block quotes */
@@ -199,7 +201,7 @@ td.nav-sibs-cell
 
 .nav-sibs
 {
-	background: rgb(220,220,220);
+	/*background: rgb(220,220,220);*/
 	-moz-border-radius: 4px;
 	padding: .75em 1em;
 	float: left;
@@ -244,6 +246,23 @@ td.nav-sibs-cell
 .pagebody { 
 	padding-right: 15em;
 	font-size: 110%;
+}
+
+.pagebody h1
+{
+	/*margin: .25em 0 .25em 0;*/
+	/*font-family: Georgia, Serif;
+	text-transform: uppercase;*/
+	/*font-size: 120%;*/
+	/*background: #c7cddf;*/
+	background: rgb(230,230,230);
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	margin: .15em 0 .25em 0;
+	padding: .25em 0 .25em .25em;
+	/*text-shadow: white 0px 0px 8px;*/
+	/*text-align: center;*/
+	
 }
 
 .pagebody h3

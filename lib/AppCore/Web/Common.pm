@@ -569,7 +569,10 @@ package AppCore::Web::Common;
 		$html =~ s/\%\%(.*?)\%\%//gi;
 		$html =~ s/\%(\/?)tmpl_(.*?)\%//gi;
 		$html =~ s/\%([^\d\s\'](?:.|\n)*?)%//gi;
-		
+		$html =~ s/—/ - /g;
+		$html =~ s/’/'/g;
+		$html =~ s/“/"/g;
+		$html =~ s/”/"/g;
 		
 		return $html;
 	}
@@ -579,6 +582,10 @@ package AppCore::Web::Common;
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
 		$html =~ s/<(style|!--)[^\>]*>(.|\n)*<\/(style|--)>//gi;
+		$html =~ s/—/ - /g;
+		$html =~ s/’/'/g;
+		$html =~ s/“/"/g;
+		$html =~ s/”/"/g;
 		
 		return $html;
 	
