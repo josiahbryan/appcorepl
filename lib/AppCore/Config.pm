@@ -164,11 +164,58 @@ BEGIN
 	###########################################
 	# Module-specific configuration
 	
-	$BOARDS_SHORT_TEXT_LENGTH    = 300;  # characters
-	$BOARDS_POST_PAGE_LENGTH     = 10;   # posts
-	$BOARDS_POST_PAGE_MAX_LENGTH = 100;  # posts
+	$BOARDS_SHORT_TEXT_LENGTH	= 300;  # characters
+	$BOARDS_POST_PAGE_LENGTH	= 10;   # posts
+	$BOARDS_POST_PAGE_MAX_LENGTH	= 100;  # posts
 	
+	$BOARDS_ENABLE_FB_NOTIFY	= 1;
+	$BOARDS_FB_FEED_ID		= 'pleasanthillchurch';
+	$BOARDS_FB_ACCESS_TOKEN		= undef; # Will read from 'boards_fb_access_token.txt' in appcore root 
 	
+	## NOTE How to get the Access Token for a given feed:
+=head1
+	1. Get a 'code' - go to:
+	
+		https://www.facebook.com/dialog/oauth?client_id=${appid}&redirect_uri=${my_landing_url}&scope=email,read_stream,publish_stream,manage_pages,create_event,offline_access,read_stream
+	
+	Where: 
+		- 'appid' is the 'App ID' you get from registering a new application with https://www.facebook.com/developers
+		- 'my_landing_url' is an arbitrary URL on the website - but it must be consistant thru the next steps
+		
+	Assuming you click 'Allow', then FB will redirect you to the 'my_landing_url' you gave with a '?code=' param on the end
+	
+	2. Next you have to get *your* access token by going here:
+	
+		https://graph.facebook.com/oauth/access_token?client_id=${appid}&redirect_uri=${my_landing_url}&client_secret=${app_secret}&code=${code}
+	
+	Where:
+		- 'appid' - same as above
+		- 'my_landing_url' - same as above
+		- 'app_secret' - get from the same place you got your 'App ID' (called an 'App Secret') from Facebook
+		- 'code' - the '?code=' parameter received in the redirect
+	 
+	You'll be redirected to the 'my_landing_url' with an '?access_token=' parameter.
+	
+	* If you are posting to 'your' feed, then the 'BOARDS_FB_FEED_ID' will be 'me' - and just use this access token for BOARDS_FB_ACCESS_TOKEN 
+	
+	* However, if you are posting to the feed of a page you manage, you must get the access token for the page itself. Go on to step 3
+	
+	3. Get the access token for your page. Go to:
+		
+		https://graph.facebook.com/me/accounts?access_token=${access_token}
+		
+	Where:
+		- 'access_token' is the access token that you got above at the end of step 2
+		 
+	You will be given a JSON result set with a list of pages you manage with access tokens for each page. Find the page you want to use in that list and copy that access token.
+	
+	Now you have (or should know):
+		- The ID of your page - either your pages username (if you have +25 likes) or a page ID number (from the URL of your page)
+			- This is the 'BOARDS_FB_FEED_ID' to use above
+		- The access token that you just got from the list at the above URL
+			- This is the 'BOARDS_FB_ACCESS_TOKEN' 
+			- I recommend putting it in $APPCORE_HOME/boards_fb_access_token.txt so it doesnt get put in subversion or whatever source onctorl you use
+=cut
 };
 
 1;

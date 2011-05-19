@@ -321,7 +321,7 @@ package AppCore::Web::Module;
 		my $url = join('/', $pkg->binpath, $suffix);
 		if($include_server)
 		{
-			return $AppCore::Config::WEBSITE_SERVER . '/' . $url;
+			return $AppCore::Config::WEBSITE_SERVER . $url;
 		}
 		
 		return $url;

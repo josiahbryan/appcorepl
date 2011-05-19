@@ -196,6 +196,10 @@ package Boards;
 				main_tmpl	=> 'main.tmpl',
 				
 				admin_acl	=> ['Admin-WebBoards'],
+				
+				# must define inorder to post notifications to a Facebook feed
+				fb_feed_id	=> undef, # feed to notify
+				fb_access_token	=> undef, # access token for given feed
 			});
 		}
 		
@@ -550,7 +554,7 @@ package Boards;
 		{
 			my $post = $controller->create_new_thread($board,$req);
 			
-			$controller->email_new_post($post);
+			$controller->send_notifications('new_post',$post);
 			#$r->redirect(AppCore::Common->context->http_bin."/$section_name/$folder_name#c$post");
 			
 			if($req->output_fmt eq 'json')
@@ -1179,35 +1183,6 @@ package Boards;
 			
 	}
 	
-	sub email_new_post
-	{
-		print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
-		return;
-		
-		my $self = shift;
-		my $post = shift;
-		my $board_folder = $post->boardid->folder_name;
-		
-		my $folder_name = $post->folder_name;
-		my $board = $post->boardid;
-		
-		my $abs_url = $self->module_url("$board_folder/$folder_name");
-		
-		my $email_body = qq{A new post was added by }.$post->poster_name." in forum '".$board->title.qq{':
-
-    }.AppCore::Web::Common->html2text($post->text).qq{
-
-Here's a link to that page: 
-    $abs_url
-    
-Cheers!};
-			
-		my @list = @AppCore::Config::ADMIN_EMAILS ? 
-			   @AppCore::Config::ADMIN_EMAILS : 
-			  ($AppCore::Config::WEBMASTER_EMAIL);
-		AppCore::Web::Common->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body);
-	}
-	
 	sub post_page
 	{
 		my $self  = shift;
@@ -1242,7 +1217,7 @@ Cheers!};
 			my $comment     = $self->create_new_comment($board,$post,$req);
 			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
 			
-			$self->email_new_post_comments($comment,$comment_url);
+			$self->send_notifications('new_comment',$comment,$comment_url);
 			
 			print STDERR __PACKAGE__."::post_page($post): Posted reply ID $comment to post ID $post\n";
 			
@@ -1364,7 +1339,7 @@ Cheers!};
 			
 			my $folder = $post->folder_name;
 			
-			my $abs_url = $self->module_url("$board_folder_name/$folder");
+			my $abs_url = $self->module_url("$board_folder_name/$folder",1);
 			
 			my $email_body = $post->poster_name." edited post '".$post->subject."' in forum '".$board->title.qq{':
 
@@ -1441,16 +1416,165 @@ Cheers!};
 		
 	}
 	
-	sub email_new_post_comments
+	sub send_notifications
 	{
-		print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
-		return;
-		
 		my $self = shift;
-		my $comment = shift;
-		my $comment_url = shift;
+		my $action = shift;
 		
-		my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
+		# Actions:
+		# - new_post ($post_ref)
+		# - new_comment ($comment_ref, $comment_url)
+		# - new_like ($like_ref, $noun)
+		
+		foreach my $method (qw/notify_via_email notify_via_facebook/)
+		{
+			$self->$method($action, @_);
+		}
+	}
+	
+	sub notify_via_facebook
+	{
+		my $self = shift;
+		my $action = shift;
+		
+		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY;
+		
+		if($action eq 'new_post' ||
+		   $action eq 'new_comment')
+		{
+			my $post = shift;
+			require LWP::UserAgent;
+ 
+ 
+			my $fb_feed_id	    = $self->config->{fb_feed_id}      || $AppCore::Config::BOARDS_FB_FEED_ID; # feed to notify
+			my $fb_access_token = $self->config->{fb_access_token} || $AppCore::Config::BOARDS_FB_ACCESS_TOKEN; # access token for given feed
+			
+			# If not given in the config, attempt to read from the filesystem inorder to allow develoipers
+			# to keep the sensitive values out of source control.
+			if(!$fb_feed_id)
+			{
+				my $root = $AppCore::Config::WWW_DOC_ROOT . $AppCore::Config::WWW_ROOT;
+				my $file = $root . '/boards_fb_feed_id.txt';
+				$fb_feed_id = `cat $file` if -f $file;
+				$fb_feed_id =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
+			}
+			
+			if(!$fb_access_token)
+			{
+				my $root = $AppCore::Config::WWW_DOC_ROOT . $AppCore::Config::WWW_ROOT;
+				my $file = $root . '/boards_fb_access_token.txt';
+				$fb_access_token = `cat $file` if -f $file;
+				$fb_access_token =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
+			}
+			
+			if(!$fb_feed_id || !$fb_access_token)
+			{
+				print STDERR "Unable to post notification for post# $post to Facebook - Feed ID or Access Token not found..\n";
+				return;
+			}
+				
+			my $notify_url = "https://graph.facebook.com/${fb_feed_id}/feed";
+			print STDERR "Posting to Facebook URL $notify_url\n";
+			
+			my $ua = LWP::UserAgent->new;
+			#$ua->env_proxy;
+			
+			my $board_folder = $post->boardid->folder_name;
+			
+			my $folder_name = $post->folder_name;
+			my $board = $post->boardid;
+			
+			my $abs_url = $self->module_url("$board_folder/$folder_name" . ($action eq 'new_comment' ? "#c".$post->id:""),1);
+			
+			my $short_len = 160; #$AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
+			my $short = AppCore::Web::Common->html2text($post->text);
+			
+			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
+			
+			my $quote = "\"".
+				substr($short,0,$short_len) . "\"" . 
+				(length($short) > $short_len ? '...' : '');
+				
+			my $message = $action eq 'new_post' ?
+				"A new post was added by ".$post->poster_name." in ".$board->title." at ".$abs_url.": ".$quote :
+				$post->poster_name.
+				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+				" on \"".$post->top_commentid->subject."\" at ".$abs_url.": ".$quote;
+			
+			my $form = 
+			{
+				access_token	=> $fb_access_token,
+				message		=> $message,
+				link		=> $abs_url,
+				picture		=> $post->posted_by ? $AppCore::Config::WEBSITE_SERVER . $AppCore::Config::WWW_ROOT . $post->posted_by->photo : "",
+				name		=> $post->subject,
+				caption		=> "by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
+				description	=> $short_text,
+				actions		=> qq|{"name": "View on the PHC Website", "link": "$abs_url"}|,
+			};
+			
+			use Data::Dumper;
+			print STDERR "Facebook post data: ".Dumper($form);
+			
+			my $response = $ua->post($notify_url, $form);
+			
+			if ($response->is_success) 
+			{
+				my $rs = decode_json($response->decoded_content);
+				$post->fb_post_id($rs->{id});
+				$post->update;
+				
+				print STDERR "Facebook post successful, Facebook Post ID: ".$post->fb_post_id."\n";
+			}
+			else 
+			{
+				print STDERR "ERROR Posting to facebook, message: ".$response->status_line."\nAs String:".$response->as_string."\n";
+			}
+		}
+	}
+	
+	sub notify_via_email
+	{
+		my $self = shift;
+		my $action = shift;
+		
+		if($action eq 'new_post')
+		{
+			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
+			return;
+			
+			my $post = shift;
+			my $board_folder = $post->boardid->folder_name;
+			
+			my $folder_name = $post->folder_name;
+			my $board = $post->boardid;
+			
+			my $abs_url = $self->module_url("$board_folder/$folder_name",1);
+			
+			my $email_body = qq{A new post was added by }.$post->poster_name." in forum '".$board->title.qq{':
+
+    }.AppCore::Web::Common->html2text($post->text).qq{
+
+Here's a link to that page: 
+    $abs_url
+    
+Cheers!};
+			
+			my @list = @AppCore::Config::ADMIN_EMAILS ? 
+				@AppCore::Config::ADMIN_EMAILS : 
+				($AppCore::Config::WEBMASTER_EMAIL);
+			AppCore::Web::Common->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body);
+		}
+		elsif($action eq 'new_comment')
+		{
+			
+			print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
+			return;
+			
+			my $comment = shift;
+			my $comment_url = shift;
+			
+			my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
 
     }.AppCore::Web::Common->html2text($comment->text).qq{
 
@@ -1458,43 +1582,79 @@ Here's a link to that page:
     ${AppCore::Config::WEBSITE_SERVER}$comment_url
     
 Cheers!};
-		#
-		AppCore::Web::Common->reset_was_emailed;
-		
-		my $noun = $self->config->{long_noun} || 'Bulletin Boards';
-		
-		my @list = @AppCore::Config::ADMIN_EMAILS ? 
-			   @AppCore::Config::ADMIN_EMAILS : 
-			  ($AppCore::Config::WEBMASTER_EMAIL);
-		my $title = $AppCore::Config::WEBSITE_NAME; 
-		
-		
-		my $email_subject = "[$title $noun] New Comment Added to Thread '".$comment->top_commentid->subject."'";
-		AppCore::Web::Common->send_email([@list],$email_subject,$email_body);
-		
-		AppCore::Web::Common->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
-				if $comment->parent_commentid && 
-				   $comment->parent_commentid->id && 
-				   $comment->parent_commentid->poster_email && 
-				   !AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
-		
-		AppCore::Web::Common->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
-				if $comment->top_commentid && 
-				   $comment->top_commentid->id && 
-				   $comment->top_commentid->poster_email && 
-				   !AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
-		
-		my $board = $comment->boardid;
-		
-		AppCore::Web::Common->send_email([$board->managerid->email],$email_subject,$email_body)
-					if $board && 
-					   $board->id && 
-					   $board->managerid && 
-					   $board->managerid->id && 
-					   $board->managerid->email && 
-					   !AppCore::Web::Common->was_emailed($board->managerid->email);
-					
-		AppCore::Web::Common->reset_was_emailed;
+			#
+			AppCore::Web::Common->reset_was_emailed;
+			
+			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
+			my $title = $AppCore::Config::WEBSITE_NAME; 
+			
+			my @list = @AppCore::Config::ADMIN_EMAILS ? 
+				   @AppCore::Config::ADMIN_EMAILS : 
+				  ($AppCore::Config::WEBMASTER_EMAIL);
+			
+			my $email_subject = "[$title $noun] New Comment Added to Thread '".$comment->top_commentid->subject."'";
+			AppCore::Web::Common->send_email([@list],$email_subject,$email_body);
+			
+			AppCore::Web::Common->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
+					if $comment->parent_commentid && 
+					$comment->parent_commentid->id && 
+					$comment->parent_commentid->poster_email && 
+					!AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
+			
+			AppCore::Web::Common->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
+					if $comment->top_commentid && 
+					$comment->top_commentid->id && 
+					$comment->top_commentid->poster_email && 
+					!AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
+			
+			my $board = $comment->boardid;
+			
+			AppCore::Web::Common->send_email([$board->managerid->email],$email_subject,$email_body)
+						if $board && 
+						$board->id && 
+						$board->managerid && 
+						$board->managerid->id && 
+						$board->managerid->email && 
+						!AppCore::Web::Common->was_emailed($board->managerid->email);
+						
+			AppCore::Web::Common->reset_was_emailed;
+		}
+		elsif($action eq 'new_like')
+		{
+			my $like = shift;
+			my $noun = shift;
+			
+			my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
+			
+			#AppCore::Web::Common->reset_was_emailed;
+			
+			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
+			my $title = $AppCore::Config::WEBSITE_NAME; 
+			
+			# Notify User
+			my $email_subject = "[$title $noun] ".$like->name." likes your $noun '".$like->postid->subject."'";
+			my $email_body = $like->name." likes your $noun '".$like->postid->subject."\n\n\t".
+					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
+					"Here's a link to that page:\n".
+					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
+					"Cheers!";
+			
+			AppCore::Web::Common->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/;
+			
+			# Notify Webmaster
+			my @list = @AppCore::Config::ADMIN_EMAILS ? 
+				   @AppCore::Config::ADMIN_EMAILS : 
+				  ($AppCore::Config::WEBMASTER_EMAIL);
+			
+			$email_subject = "[$title $noun] ".$like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
+			$email_body = $like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."\n\n\t".
+					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
+					"Here's a link to that page:\n".
+					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
+					"Cheers!";
+			
+			AppCore::Web::Common->send_email([@list],$email_subject,$email_body);
+		}
 	}
 	
 	sub log_spam
@@ -1733,8 +1893,12 @@ Cheers!};
 		});
 		
 		#print STDERR "post_like(): New like lineid $ref\n";
-			 
-		return $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
+		
+		my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
+		
+		$self->send_notifications('new_like', $ref, $noun);
+		
+		return $noun;
 	}
 	
 	sub post_unlike

@@ -359,6 +359,7 @@ package Boards::Post;
 			{ field => 'ticker_priority',		type => 'int', default => 0},
 			{ field => 'ticker_class',		type => 'varchar(255)' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
+			{ field => 'fb_post_id',		type => 'varchar(255)', default => '' },
 			
 			
 		],	
