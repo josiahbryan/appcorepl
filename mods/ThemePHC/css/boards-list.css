@@ -389,12 +389,14 @@ table.comment_text td {
 /* Margin at bottom of post text and comment text paragraphs */
 .comment_text p, .post_text p { 
 	margin: 0 0 10 0;
+	font-size: inherit !important;
+	text-indent: 0em; 
 }
 
 /* Indent paragraphs (all but the first p) */
 .comment_text p + p, 
 .post_text    p + p {
-	text-indent: 2em;
+	text-indent: 0em;
 }
 
 /* Nice pretty border on left of block quotes */

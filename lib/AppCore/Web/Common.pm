@@ -25,7 +25,12 @@ package AppCore::Web::Common;
 		redirect getcookie setcookie 
 		load_template
 		error
-		encode_entities decode_entities/;
+		encode_entities decode_entities
+		clean_html
+		html2text
+		text2html
+		might_be_html
+		/;
 		
 	push @EXPORT, @AppCore::Common::EXPORT;
 	#push @EXPORT, @{ $CGI::EXPORT_TAGS{':cgi'} };
@@ -554,6 +559,7 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
+		
 		$html =~ s/<(script|style)[^\>]*?>(.|\n)*?<\/(script|style)>//g;
 		$html =~ s/<!--(.|\n)*?-->//g;
 		$html =~ s/(<br>|<\/(p|div|blockquote)>)/\n/gi;
@@ -581,6 +587,13 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
+		
+		# Try to guess if HTML is really just text
+		if(!might_be_html($html))
+		{
+			$html = text2html($html);
+		}
+		
 		$html =~ s/<(style|!--)[^\>]*>(.|\n)*<\/(style|--)>//gi;
 		$html =~ s/—/ - /g;
 		$html =~ s/’/'/g;
@@ -588,7 +601,29 @@ package AppCore::Web::Common;
 		$html =~ s/”/"/g;
 		
 		return $html;
+	}
 	
+	sub text2html
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $html = shift;
+		
+		# If plain text, convert paragraphs to <p>...</p>
+		$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
+		$html =~ s/\*([\w\s])\*/<b>$1<\/b>/g;
+		$html =~ s/\/([\w\s])\//<i>$1<\/i>/g;
+		$html =~ s/_([\w\s])_/<u>$1<\/u>/g;
+		$html =~ s/\n{2,}/\n\n/sg;
+		#$html =~ s/\n/<br>\n/g;
+		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		
+		return $html;
+	}
+	
+	sub might_be_html
+	{
+		shift if $_[0] eq __PACKAGE__;
+		return shift =~ /<[^\>]+>/;
 	}
 }
 

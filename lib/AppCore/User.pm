@@ -43,12 +43,21 @@ package AppCore::User;
 			{	field	=> 'notes',		type	=> 'text'	  },
 			{	field	=> 'is_fbuser',		type	=> 'int(1)',	  default =>  0 },
 			{	field	=> 'fb_user',		type	=> 'varchar(255)' },
+			{	field	=> 'fb_userid',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_token',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_token_expires',	type	=> 'datetime'     },
 			{	field	=> 'extra_data',	type	=> 'text'	  },
 			{ 	field	=> 'last_seen',		type	=> 'datetime'	  },
 			{	field	=> 'last_ip',		type	=> 'varchar(100)' },
 			{	field	=> 'hitcount',		type	=> 'int(11)',	  null => 0, default => 0 },
+			{	field	=> 'street',		type	=> 'varchar(255)' },
+			{	field	=> 'city',		type	=> 'varchar(255)' },
+			{	field	=> 'state',		type	=> 'varchar(100)' },
+			{	field	=> 'zip',		type	=> 'varchar(100)' },
+			{	field	=> 'country',		type	=> 'varchar(255)' },
+			{	field	=> 'latitude',		type	=> 'varchar(50)' },
+			{	field	=> 'longitude',		type	=> 'varchar(50)' },
+			{	field	=> 'phone',		type	=> 'varchar(50)' },
 		]		
 	
 	});

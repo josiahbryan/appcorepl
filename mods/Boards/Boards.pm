@@ -888,10 +888,7 @@ package Boards;
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
 		
-		my $clean_html = $b->{short_text};
-		$clean_html =~ s/\n+/\n/sg;
-		$clean_html =~ s/\n/<br>\n/g;
-		$clean_html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		my $clean_html = AppCore::Web::Common->text2html($b->{short_text});
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
 		
@@ -1113,7 +1110,10 @@ package Boards;
 		if(!$req->{subject})
 		{
 			my $text = AppCore::Web::Common->html2text($req->{comment});
-			$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+			#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+			my $idx = index($text,"\n");
+			my $len = $idx > -1 && $idx < $SUBJECT_LENGTH ? $idx : $SUBJECT_LENGTH;
+			$req->{subject} = substr($text,0,$len) . ($idx < 0 && length($text) > $len ? '...' : '');
 		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});
@@ -1126,6 +1126,13 @@ package Boards;
 		
 		$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
 		$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
+		
+		# Try to guess if HTML is really just text
+		if(might_be_html($req->{comment}) || $req->{plain_text})
+		{
+			$req->{comment} = text2html($req->{comment});
+		}
+		
 		
 		my $post = Boards::Post->create({
 			boardid			=> $board->id,
@@ -1400,7 +1407,13 @@ Cheers!};
 		$fake_it =~ s/[^\w]/_/g;
 		$fake_it =~ s/\_{2,}/_/g;
 		$fake_it =~ s/(^\_+|\_+$)//g;
-		$fake_it = substr($fake_it,0,$MAX_FOLDER_LENGTH) if length($fake_it) > $MAX_FOLDER_LENGTH && !$disable_trim;
+		
+		if(length($fake_it) > $MAX_FOLDER_LENGTH && !$disable_trim)
+		{
+			my $idx = index($fake_it,"\n");
+			my $len = $idx > -1 && $idx < $MAX_FOLDER_LENGTH ? $idx : $MAX_FOLDER_LENGTH;
+			$fake_it = substr($fake_it,0,$len); # . (length($fake_it) > $len ? '...' : '');
+		}
 		return $fake_it;
 		
 	}

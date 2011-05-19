@@ -49,6 +49,14 @@ package User;
 		return shift->module_url('login/facebook', 1); # 1 = incl server
 	}
 	
+	sub _set_if
+	{
+		my $obj = shift;
+		my $key = shift;
+		my $val = shift;
+		$obj->set($key,$val) if $obj->get($key) ne $val;
+	}
+	
 	sub connect_with_facebook
 	{
 		my ($self, $req, $r) = @_;
@@ -97,39 +105,40 @@ package User;
 					my $display = $user_data->{name};
 					my $first   = $user_data->{first_name};
 					my $last    = $user_data->{last_name};
-					my $fb_user = $user_data->{username};
+					my $phone   = $user_data->{phone};
 					my $local   = $user_data->{location}->{name};
 					my $tz_off  = $user_data->{timezone};
+					my $fb_user = $user_data->{username};
+					my $fb_userid = $user_data->{id};
 					
 					my $user_obj = AppCore::User->by_field(email => $email);
 					$user_obj = AppCore::User->by_field(display => $display) if !$user_obj;
+					$user_obj = AppCore::User->by_field(display => $first." ".$last) if !$user_obj;
 					
 					if(!$user_obj)
 					{
-						$user_obj = AppCore::User->insert({
-							user	=> $email,
-							email	=> $email,
-							display	=> $display,
-							pass 	=> $token,
-							first 	=> $first,
-							'last'	=> $last,
-							fb_user => $fb_user,
-							location=> $local,
-							tz_off  => $tz_off,
-						});
+						$user_obj = AppCore::User->insert({ user => $fb_user });
 						
 						print STDERR "Created new user from facebook data: $display - $email, userid $user_obj\n"; 
 					}
 					else
 					{
 						print STDERR "Matched facebook user to existing user: $display - $email, userid $user_obj\n";
-						
-						$user_obj->first($first) if !$user_obj->first;
-						$user_obj->last($last)   if !$user_obj->last;
-						$user_obj->location($local)  if !$user_obj->location;
-						$user_obj->fb_user($fb_user) if !$user_obj->fb_user;
-						$user_obj->tz_off($tz_off)   if !$user_obj->tz_off;
 					}
+					
+					$user_obj->user($fb_user)    if $user_obj->user =~ /\@/ && $user_obj->user ne $email;
+					$user_obj->email($email)     if $user_obj->email    ne $email;
+					$user_obj->first($first)     if $user_obj->first    ne $first;
+					$user_obj->last($last)       if $user_obj->last     ne $last;
+					$user_obj->display($display) if $user_obj->display  ne $display;
+					$user_obj->phone($phone)     if $user_obj->phone    ne $phone;
+					$user_obj->location($local)  if $user_obj->location ne $local;
+					$user_obj->tz_off($tz_off)   if $user_obj->tz_off   ne $tz_off;
+					$user_obj->fb_user($fb_user) if $user_obj->fb_user  ne $fb_user;
+					$user_obj->fb_userid($fb_userid) if $user_obj->fb_userid ne $fb_userid;
+					
+					_set_if($user_obj, $_, $user_data->{location}->{$_}) foreach qw/street city state country zip latitude longitude/;
+					
 					
 					my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
 					my $photo = LWP::Simple::get($photo_url);
@@ -146,7 +155,7 @@ package User;
 					}
 					else
 					{
-						print STDERR "Error opening $file_path for writing: $!";
+						print STDERR "Error saving photo to $file_path: $!";
 					}
 					
 					
