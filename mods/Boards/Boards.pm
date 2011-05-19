@@ -132,6 +132,7 @@ package Boards;
 	our $SPAM_OVERRIDE     = 0;
 	our $SHORT_TEXT_LENGTH = 60;
 	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
+	our $APPROX_TIME_REFERESH = 15; # seconds
 	
 	
 	# Setup our admin package
@@ -663,8 +664,8 @@ package Boards;
 			$cache_key .= $len if $len;
 			
 			# Try to load data from in-memory cache - if cache miss, well, rebuild!
-			my $list = $BoardDataCache{$cache_key};
-			if(!$list)
+			my $data = $BoardDataCache{$cache_key};
+			if(!$data)
 			{
 				# Used to clean up orphaned comments if the parent is deleted
 				my $del_sth = $dbh->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
@@ -760,8 +761,12 @@ package Boards;
 				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
 				@list = reverse @list;
 				
-				$list = \@list;
-				$BoardDataCache{$cache_key} = $list;
+				$data = 
+				{
+					list 		=> \@list,
+					timestamp	=> time,
+				};
+				$BoardDataCache{$cache_key} = $data;
 				#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
 				
 				#die Dumper \@list;
@@ -769,6 +774,24 @@ package Boards;
 			else
 			{
 				#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
+				
+				# Go thru and update approx_time_ago fields for posts and comments
+				if((time - $data->{timestamp}) > $APPROX_TIME_REFERESH)
+				{
+					# This loop takes approx 20-30ms on a few of my tests
+					# Therefore, we only run it if the data is more than $APPROX_TIME_REFERESH seconds old
+					
+					foreach my $ref (@{$data->{list} || []})
+					{
+						$ref->{approx_time_ago} = approx_time_ago($ref->{timestamp});
+						foreach my $reply (@{$ref->{replies} || []})
+						{
+							$reply->{approx_time_ago} = approx_time_ago($reply->{timestamp});
+						}
+					}
+					
+					$data->{timestamp} = time;
+				}
 			}
 			
 			my $board_ref = {};
@@ -777,7 +800,7 @@ package Boards;
 			my $output = 
 			{
 				board	=> $board_ref,
-				posts	=> $list,
+				posts	=> $data->{list},
 				idx	=> $idx,
 				idx1	=> $idx + 1,
 				len	=> $len,
