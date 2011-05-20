@@ -193,7 +193,7 @@
 							<table>
 								<tr>
 									<td>
-										<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%' align=left>
+										<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%' align=left>
 									</td>
 									<td colspan=2>
 										<div class='content'>
@@ -271,7 +271,7 @@
 				<tr class='post newpost'>
 					<td valign='top' align='center' class='photo'>
 						<!--<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">-->
-						<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%'>
+						<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%'>
 					</td>
 					<td valign='top' class='data'>
 						<form class='wrap'  onsubmit='return ajax_post_new(this)'>

@@ -74,6 +74,8 @@ package Boards::Admin;
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
 		
+		$req->{current_view}->breadcrumb_list->push('Create New Board',$self->module_url('create'),0);
+		
 		my $tmpl = $self->get_template('edit.tmpl');
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
@@ -101,6 +103,9 @@ package Boards::Admin;
 		{
 			return $r->redirect($self->module_url($CREATE_ACTION));
 		}
+		
+		$req->{current_view}->breadcrumb_list->push($obj->title,$self->module_url('edit?boardid='.$boardid),0);
+		
 		
 		my $tmpl = $self->get_template('edit.tmpl');
 		$tmpl->param($_ => $obj->get($_)) foreach $obj->columns;
@@ -180,6 +185,9 @@ package Boards::Admin;
 				{
 					my $board = Boards::Board->retrieve($boardid);
 					return $r->error("Facebook API Error","No boardid $boardid") if !$board;
+					
+					$req->{current_view}->breadcrumb_list->push($board->title,$self->module_url('edit?boardid='.$boardid),0);
+					$req->{current_view}->breadcrumb_list->push('Choose FB Account',$self->module_url('fb_connector/'.$boardid),0);
 			
 					my $tmpl = $self->get_template('fb_account_choices.tmpl');
 					$tmpl->param(page_list => $data->{data});

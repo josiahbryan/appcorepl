@@ -64,6 +64,8 @@ package Admin;
 			$view->breadcrumb_list->push("Admin Home",$self->binpath,0);
 			$view->breadcrumb_list->push($entry->title,$new_binpath,0);
 			
+			$req->{current_view} = $view;
+			
 			# Do the actual work...
 			my $mod_response = $self->dispatch($req, $r, $pkg);
 			

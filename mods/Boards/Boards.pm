@@ -1125,9 +1125,10 @@ package Boards;
 		my $self = shift;
 		my $board = shift;
 		my $req = shift;
-
+		my $user = shift;
+		
 		#print STDERR "create_new_thread: \$SPAM_OVERRIDE=$SPAM_OVERRIDE, args:".Dumper($req);
-		if($self->is_spam($req->comment, $req->bot_trap))
+		if($self->is_spam($req->{comment}, $req->{bot_trap}))
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
@@ -1153,17 +1154,25 @@ package Boards;
 		$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
 		
 		# Try to guess if HTML is really just text
-		if(might_be_html($req->{comment}) || $req->{plain_text})
+		if(!might_be_html($req->{comment}) || $req->{plain_text})
 		{
 			$req->{comment} = text2html($req->{comment});
 		}
 		
+		$user = AppCore::Common->context->user if !$user;
+		
+		my $photo = $req->{poster_photo};
+		if(!$photo && $user && $user->id)
+		{
+			$photo = $user->photo;
+		}
 		
 		my $post = Boards::Post->create({
 			boardid			=> $board->id,
 			poster_name		=> $req->{poster_name},
 			poster_email		=> $req->{poster_email},
-			posted_by		=> AppCore::Common->context->user,
+			poster_photo		=> $photo,
+			posted_by		=> $user,
 			timestamp		=> date(),
 			subject			=> $req->{subject},
 			text			=> $req->{comment},
@@ -1215,7 +1224,7 @@ package Boards;
 			my $comment     = $self->create_new_comment($board,$post,$req);
 			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
 			
-			$self->send_notifications('new_comment',$comment,$comment_url);
+			$self->send_notifications('new_comment',$comment,{comment_url => $comment_url});
 			
 			print STDERR __PACKAGE__."::post_page($post): Posted reply ID $comment to post ID $post\n";
 			
@@ -1418,6 +1427,8 @@ Cheers!};
 	{
 		my $self = shift;
 		my $action = shift;
+		my $object = shift;
+		my $args = shift;
 		
 		# Actions:
 		# - new_post ($post_ref)
@@ -1426,7 +1437,7 @@ Cheers!};
 		
 		foreach my $method (qw/notify_via_email notify_via_facebook/)
 		{
-			$self->$method($action, @_);
+			$self->$method($action, $object, $args);
 		}
 	}
 	
@@ -1434,36 +1445,32 @@ Cheers!};
 	{
 		my $self = shift;
 		my $action = shift;
+		my $post = shift;
+		my $args = shift;
 		
 		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY;
 		
 		if($action eq 'new_post' ||
 		   $action eq 'new_comment')
 		{
-			my $post = shift;
+			my $really_upload = $args->{really_upload} || 0;
+		
+			if(!$really_upload)
+			{
+				# Flag this post object for later processing by boards_fb_poller
+				$post->data->set('needs_uploaded',1);
+				$post->data->update;
+				return 1;
+			}
+			
+			
 			require LWP::UserAgent;
  			require LWP::Simple;
  
-			my $fb_feed_id	    = $self->config->{fb_feed_id}      || $AppCore::Config::BOARDS_FB_FEED_ID; # feed to notify
-			my $fb_access_token = $self->config->{fb_access_token} || $AppCore::Config::BOARDS_FB_ACCESS_TOKEN; # access token for given feed
+			my $board = $post->boardid;
 			
-			# If not given in the config, attempt to read from the filesystem inorder to allow develoipers
-			# to keep the sensitive values out of source control.
-			if(!$fb_feed_id)
-			{
-				my $root = $AppCore::Config::WWW_DOC_ROOT . $AppCore::Config::WWW_ROOT;
-				my $file = $root . '/boards_fb_feed_id.txt';
-				$fb_feed_id = `cat $file` if -f $file;
-				$fb_feed_id =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
-			}
-			
-			if(!$fb_access_token)
-			{
-				my $root = $AppCore::Config::WWW_DOC_ROOT . $AppCore::Config::WWW_ROOT;
-				my $file = $root . '/boards_fb_access_token.txt';
-				$fb_access_token = `cat $file` if -f $file;
-				$fb_access_token =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
-			}
+			my $fb_feed_id	    = $board->fb_feed_id;
+			my $fb_access_token = $board->fb_access_token;
 			
 			if(!$fb_feed_id || !$fb_access_token)
 			{
@@ -1494,18 +1501,29 @@ Cheers!};
 				 substr($short,0,$short_len) . "\"" .
 				(length($short) > $short_len ? '...' : '');
 				
+# 			my $message = $action eq 'new_post' ?
+# 				"A new post was added by ".$post->poster_name." in ".$board->title." at $short_abs_url: $quote" :
+# 				$post->poster_name.
+# 				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+# 				" on \"".$post->top_commentid->subject."\" at $short_abs_url: $quote";
+
 			my $message = $action eq 'new_post' ?
-				"A new post was added by ".$post->poster_name." in ".$board->title." at $short_abs_url: $quote" :
-				$post->poster_name.
+				$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
+				$post->poster_name.": $quote - ".
 				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
-				" on \"".$post->top_commentid->subject."\" at $short_abs_url: $quote";
+				" on \"".$post->top_commentid->subject."\" at $short_abs_url";
+			
+			
+			my $photo = $post->poster_photo ? $post->poster_photo :
+			            $post->posted_by ? $post->posted_by->photo : "";
+			$photo = $AppCore::Config::WEBSITE_SERVER . $photo if $photo =~ /\//;
 			
 			my $form = 
 			{
 				access_token	=> $fb_access_token,
 				message		=> $message,
 				link		=> $abs_url,
-				picture		=> $post->posted_by ? $AppCore::Config::WEBSITE_SERVER . $AppCore::Config::WWW_ROOT . $post->posted_by->photo : "",
+				picture		=> $photo,
 				name		=> $post->subject,
 				caption		=> $action eq 'new_post' ? 
 					"by ".$post->poster_name." in ".$board->title :
@@ -1538,13 +1556,14 @@ Cheers!};
 	{
 		my $self = shift;
 		my $action = shift;
+		my $post = shift;
+		my $args = shift;
 		
 		if($action eq 'new_post')
 		{
 			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
 			return;
 			
-			my $post = shift;
 			my $board_folder = $post->boardid->folder_name;
 			
 			my $folder_name = $post->folder_name;
@@ -1572,8 +1591,8 @@ Cheers!};
 			print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
 			return;
 			
-			my $comment = shift;
-			my $comment_url = shift;
+			my $comment = $post;
+			my $comment_url = $args->{comment_url};
 			
 			my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
 
@@ -1751,8 +1770,9 @@ Cheers!};
 		my $board = shift;
 		my $post  = shift;
 		my $req  = shift;
+		my $user = shift;
 		
-		if($self->is_spam($req->comment, $req->bot_trap))
+		if($self->is_spam($req->{comment}, $req->{bot_trap}))
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
@@ -1773,7 +1793,7 @@ Cheers!};
 		
 		#die Dumper($fake_it,$append_flag,$req);
 		
-		my $user = AppCore::Common->context->user;
+		$user = AppCore::Common->context->user if !$user || !$user->id;
 		if(!$user || !$user->id)
 		{
 			$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
@@ -1785,12 +1805,19 @@ Cheers!};
 			$req->{poster_email} = $user->email         if !$req->{poster_email};
 		}
 		
+		my $photo = $req->{poster_photo};
+		if(!$photo && $user && $user->id)
+		{
+			$photo = $user->photo;
+		}
+		
 		my $comment = Boards::Post->create({
 			boardid			=> $board,
-			top_commentid		=> $post,
+			top_commentid		=> $req->{top_commentid} || $post,
 			parent_commentid	=> $req->{parent_commentid},
 			poster_name		=> $req->{poster_name},
 			poster_email		=> $req->{poster_email},
+			poster_photo		=> $photo,
 			posted_by		=> $user,
 			timestamp		=> date(),
 			subject			=> $req->{subject},
@@ -1882,8 +1909,9 @@ Cheers!};
 		my $self = shift;
 		my $post = shift;
 		my $req = shift;
+		my $user = shift;
 		
-		my $user = AppCore::Common->context->user;
+		$user = AppCore::Common->context->user if !$user;
 		$user = 0 if !$user || !$user->id;
 		my $ref = Boards::Post::Like->insert({
 			postid	=> $post->id,
@@ -1897,7 +1925,7 @@ Cheers!};
 		
 		my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 		
-		$self->send_notifications('new_like', $ref, $noun);
+		$self->send_notifications('new_like', $ref, {noun => $noun});
 		
 		return $noun;
 	}

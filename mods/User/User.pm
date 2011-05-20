@@ -149,7 +149,7 @@ package User;
 						print PHOTO $photo;
 						close(PHOTO);
 						
-						$user_obj->photo($local_photo_url);
+						$user_obj->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
 						
 						print STDERR "Downloaded user photo to $file_path.\n";
 					}

@@ -287,6 +287,8 @@ package Boards::Post::Like;
 	my $q_cmt_likes 	= $dbh->prepare('select count(lineid) as count from '.$table.' where postid=? and (userid!=? or userid is null or userid=0)');
 	my $q_youlike_cmt 	= $dbh->prepare('select count(lineid) as count from '.$table.' where postid=? and userid=?');
 	my $q_cmt_other_names	= $dbh->prepare('select distinct display from '.$table.' p,'.AppCore::User->table.' e where p.userid=e.userid and p.userid is not null and p.postid=? and p.userid!=? order by display');
+	my $q_cmt_nonuser_names	= $dbh->prepare('select distinct name from '.$table.' p where p.postid=? and (p.userid!=? or p.userid is null) order by name');
+	
 	
 	sub like_data_for_post
 	{
@@ -303,9 +305,16 @@ package Boards::Post::Like;
 		$ref->{you_like}    = $userid ? $q_youlike_cmt->fetchrow_hashref->{count} : 0;
 		
 		$q_cmt_other_names->execute($postid,$userid);
+		$q_cmt_nonuser_names->execute($postid,$userid);
 		
 		my @list;
 		push @list, $_->{display} while $_ = $q_cmt_other_names->fetchrow_hashref;
+		push @list, $_->{name}    while $_ = $q_cmt_nonuser_names->fetchrow_hashref;
+		
+		# Make names unique (case insensitive)
+		my %tmp = map { lc $_ => $_ } @list;
+		@list = sort {$a cmp $b} grep { $_ ne '' } values %tmp;
+		
 		my $diff = $ref->{others_like} - scalar(@list);
 		push @list, "$diff anonymous" if $diff > 0;
 		if(@list >= 2)
@@ -319,11 +328,8 @@ package Boards::Post::Like;
 		#print STDERR "Post: $postid, Dump:".Dumper($ref);
 		
 		#print STDERR "like_data_for_post: post: $postid, userid: $userid, u: $ref->{you_like}, o:$ref->{others_like}, n:$ref->{others_like_names}\n";
-	
-		
 		return $ref;
 	}
-			
 };
 
 package Boards::Post;
@@ -344,6 +350,7 @@ package Boards::Post;
 			{ field	=> 'posted_by',			type => 'int',	linked => 'AppCore::User', default => 0 },
 			#{ field => 'posted_at',			type => 'datetime' }, # not used for legacy reasons for now
 			{ field	=> 'timestamp',			type => 'datetime' }, # leave as datetime for legacy reasons for now
+			{ field	=> 'updated_time',		type => 'timestamp' },
 			{ field	=> 'top_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
 			{ field	=> 'parent_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
 			{ field	=> 'last_commentid',		type => 'int', linked => 'Boards::Post', default => 0 },
