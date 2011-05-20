@@ -1560,6 +1560,9 @@ Cheers!};
 		my $post = shift;
 		my $args = shift;
 		
+		#print STDERR "notify_via_email stacktrace:\n"; 
+		#AppCore::Common::print_stack_trace();
+		
 		if($action eq 'new_post')
 		{
 			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
@@ -1642,8 +1645,8 @@ Cheers!};
 		}
 		elsif($action eq 'new_like')
 		{
-			my $like = shift;
-			my $noun = shift;
+			my $like = $post;
+			my $noun = $args->{noun};
 			
 			my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
 			

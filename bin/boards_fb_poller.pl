@@ -9,6 +9,8 @@ use JSON qw/decode_json/;
 use Boards::Data;
 use Boards;
 use AppCore::Web::Common;
+# For making MD5's of FB userids for storage photos
+use Digest::MD5 qw/md5_hex/;
 
 use strict;
 
@@ -100,7 +102,7 @@ sub update_board
 			# Attempt to locate a local user matching the Facebook user
 			my $user = AppCore::User->by_field(fb_userid => $poster_fb_id);
 			$user = AppCore::User->by_field(display => $fb_post->{from}->{name}) if !$user;
-			$poster_photo_url = download_user_photo($user, $poster_photo_url) if $user;
+			$poster_photo_url = download_user_photo($user, $poster_photo_url, $poster_fb_id);
 			
 			# Create a set of arguments for create_new_thread()
 			my $data = {
@@ -177,7 +179,7 @@ sub update_board
 				$diff -= @list;
 				
 				# Create anonymous likes
-				Boards::Post::Like->insert({postid => $post->id}) for 0 .. $diff - 1;
+				Boards::Post::Like->insert({postid => $post}) for 0 .. $diff - 1;
 				print "Post: Created ($diff) anonymous likes on post '".$post->subject."' - existing ".scalar(@count)." likes, ".scalar(@list)." named likes, total likes on FB $like_count\n" if $diff > 0;
 				
 				#die "terminating test\n";
@@ -204,10 +206,10 @@ sub update_board
 					if(!@result)
 					{
 						my $poster_photo_url = "https://graph.facebook.com/" . $named_like->{id} . "/picture";
-						$poster_photo_url = download_user_photo($user, $poster_photo_url) if $user;
+						$poster_photo_url = download_user_photo($user, $poster_photo_url, $named_like->{id});
 						
 						my $ref = Boards::Post::Like->insert({
-							postid	=> $post->id,
+							postid	=> $post,
 							userid	=> $user,
 							name	=> $named_like->{name},
 							email	=> $user ? $user->email : '',
@@ -216,7 +218,10 @@ sub update_board
 						
 						my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 						
-						$controller->send_notifications('new_like', $ref, $noun);
+						#use Data::Dumper;
+						#print STDERR "Debug: ref: $ref, post: $post, Dump:".Dumper($ref).", tmp:".$ref->postid."\n";
+						
+						$controller->send_notifications('new_like', $ref, {noun=>$noun});
 						
 						print "Post: Created named like from '$named_like->{name}' (user? $user) on post '".$post->subject."\n";
 					}
@@ -243,7 +248,7 @@ sub update_board
 				# Attempt to locate a local user matching the Facebook user
 				my $user = AppCore::User->by_field(fb_userid => $poster_fb_id);
 				$user = AppCore::User->by_field(display => $cmt_ref->{from}->{name}) if !$user;
-				$poster_photo_url = download_user_photo($user, $poster_photo_url) if $user;
+				$poster_photo_url = download_user_photo($user, $poster_photo_url, $poster_fb_id);
 				
 				my $has_top = $post->top_commentid && $post->top_commentid->id;
 				my $data = {
@@ -282,7 +287,7 @@ sub update_board
 					my $diff = $like_count - @count;
 					
 					# Create anonymous likes
-					Boards::Post::Like->insert({postid => $post->id}) for 0 .. $diff - 1;
+					Boards::Post::Like->insert({postid => $post}) for 0 .. $diff - 1;
 					print "Comment: Created ($diff) anonymous likes on comment '".$cmt->subject."' - existing ".scalar(@count)." likes, total likes on FB $like_count\n" if $diff > 0;
 				}
 			}
@@ -294,19 +299,23 @@ sub download_user_photo
 {
 	my $user = shift;
 	my $poster_photo_url = shift;
+	my $fb_id = shift;
 	
 	my $photo = LWP::Simple::get($poster_photo_url);
-	my $local_photo_url = "/mods/User/user_photos/user". $user->id .".jpg";
+	my $local_photo_url = "/mods/User/user_photos/". ($user && $user->id ? "user". $user->id : "fb".md5_hex($fb_id)).".jpg";
 	my $file_path = $AppCore::Config::APPCORE_ROOT . $local_photo_url;
 	if(open(PHOTO, '>' . $file_path))
 	{
 		print PHOTO $photo;
 		close(PHOTO);
 		
-		$user->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
-		$user->update;
+		if($user && $user->id)
+		{
+			$user->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
+			$user->update;
+		}
 		
-		#print "Downloaded user photo to $file_path.\n";
+		print "Downloaded user photo to $file_path.\n";
 		
 		$poster_photo_url = $AppCore::Config::WWW_ROOT . $local_photo_url;
 	}
@@ -314,8 +323,11 @@ sub download_user_photo
 	{
 		print STDERR "Error saving photo to $file_path: $!";
 		
-		$user->photo($poster_photo_url);
-		$user->update;
+		if($user && $user->id)
+		{
+			$user->photo($poster_photo_url);
+			$user->update;
+		}
 	}
 	
 	return $poster_photo_url;
