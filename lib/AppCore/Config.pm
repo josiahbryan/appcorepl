@@ -168,6 +168,8 @@ BEGIN
 	$BOARDS_POST_PAGE_LENGTH	= 10;   # posts
 	$BOARDS_POST_PAGE_MAX_LENGTH	= 100;  # posts
 	
+	$BOARDS_ENABLE_TINYURL_SHORTNER	= 1;
+	
 	$BOARDS_ENABLE_FB_NOTIFY	= 1;
 	$BOARDS_FB_FEED_ID		= 'pleasanthillchurch';
 	$BOARDS_FB_ACCESS_TOKEN		= undef; # Will read from 'boards_fb_access_token.txt' in appcore root 

@@ -1444,7 +1444,7 @@ Cheers!};
 		{
 			my $post = shift;
 			require LWP::UserAgent;
- 
+ 			require LWP::Simple;
  
 			my $fb_feed_id	    = $self->config->{fb_feed_id}      || $AppCore::Config::BOARDS_FB_FEED_ID; # feed to notify
 			my $fb_access_token = $self->config->{fb_access_token} || $AppCore::Config::BOARDS_FB_ACCESS_TOKEN; # access token for given feed
@@ -1485,6 +1485,7 @@ Cheers!};
 			my $board = $post->boardid;
 			
 			my $abs_url = $self->module_url("$board_folder/$folder_name" . ($action eq 'new_comment' ? "#c".$post->id:""),1);
+			my $short_abs_url = $AppCore::Config::BOARDS_ENABLE_TINYURL_SHORTNER ? LWP::Simple::get("http://tinyurl.com/api-create.php?url=${abs_url}") : $abs_url;
 			
 			my $short_len = 160; #$AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
 			my $short = AppCore::Web::Common->html2text($post->text);
@@ -1492,14 +1493,14 @@ Cheers!};
 			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 			
 			my $quote = "\"".
-				substr($short,0,$short_len) . "\"" . 
+				 substr($short,0,$short_len) . "\"" .
 				(length($short) > $short_len ? '...' : '');
 				
 			my $message = $action eq 'new_post' ?
-				"A new post was added by ".$post->poster_name." in ".$board->title." at ".$abs_url.": ".$quote :
+				"A new post was added by ".$post->poster_name." in ".$board->title." at $short_abs_url: $quote" :
 				$post->poster_name.
 				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
-				" on \"".$post->top_commentid->subject."\" at ".$abs_url.": ".$quote;
+				" on \"".$post->top_commentid->subject."\" at $short_abs_url: $quote";
 			
 			my $form = 
 			{
@@ -1508,7 +1509,9 @@ Cheers!};
 				link		=> $abs_url,
 				picture		=> $post->posted_by ? $AppCore::Config::WEBSITE_SERVER . $AppCore::Config::WWW_ROOT . $post->posted_by->photo : "",
 				name		=> $post->subject,
-				caption		=> "by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
+				caption		=> $action eq 'new_post' ? 
+					"by ".$post->poster_name." in ".$board->title :
+					"by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
 				description	=> $short_text,
 				actions		=> qq|{"name": "View on the PHC Website", "link": "$abs_url"}|,
 			};
