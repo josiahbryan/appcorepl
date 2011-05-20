@@ -69,7 +69,7 @@ package User;
 			print STDERR "Authenticated FB code $code, now requesting access_token\n";
 				
 			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
-				. 'client_id=192357267468389'
+				. 'client_id='     . $AppCore::Config::FB_APP_ID
 				.'&redirect_uri='  . $self->get_facebook_redir_url()
 				.'&client_secret=' . $AppCore::Config::FB_APP_SECRET
 				.'&code=' . $code;

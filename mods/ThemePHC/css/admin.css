@@ -20,6 +20,8 @@ body
 	background: rgb(100,100,100);
 }
 
+label { cursor: pointer }
+
 #header
 {
 	background-image: url("%%modpath%%/images/header-bluebg.jpg");

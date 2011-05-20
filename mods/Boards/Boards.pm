@@ -136,13 +136,11 @@ package Boards;
 	
 	
 	# Setup our admin package
-	# TODO #
-	#use Admin::ModuleAdminEntry;
-	#Admin::ModuleAdminEntry->register(__PACKAGE__, 'Boards', 'boards', 'List all boards on this site and manage the user-created content.');
-	# TODO #
+	use Admin::ModuleAdminEntry;
+	Admin::ModuleAdminEntry->register(__PACKAGE__, 'Boards', 'boards', 'List all boards on this site and manage boards settings.');
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('Board Page','Bulliten Board Front Page',1,0,  # 1 = uses page path,  0 = doesnt use content
+	__PACKAGE__->register_controller('Board Page','Bulletin Board Front Page',1,0,  # 1 = uses page path,  0 = doesnt use content
 		[
 			{ field => 'title',		type => 'string',	description => 'The title of the bulletin board' },
 			{ field => 'tagline',		type => 'string',	description => 'A short description of the board' },

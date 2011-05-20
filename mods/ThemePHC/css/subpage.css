@@ -31,6 +31,8 @@ h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most bro
 	padding: 0;
 }
 
+label { cursor: pointer }
+
 #header
 {
 	background-image: url("%%modpath%%/images/header-bluebg2.jpg");

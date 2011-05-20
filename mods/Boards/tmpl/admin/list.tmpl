@@ -1,0 +1,25 @@
+<title>Boards</title>
+
+<h1>Boards</h1>
+
+<a href='%%binpath%%/create'>Add a new board...</a>
+
+<table class='pretty'>
+	<thead>
+		<th>Actions</th>
+		<th>Title</th>
+		<th>FB Sync Enabled?</th>
+	</thead>
+	<tbody>
+		<tmpl_loop list>
+		<tr>
+			<td class='util'>
+				<a href='%%binpath%%/edit?boardid=%%boardid%%'>Edit</a> | 
+				<a href='%%binpath%%/delete?boardid=%%boardid%%' onclick="return confirm('Are you SURE you want to delete %%boardid%%? This can\'t be undone!')">Delete</a>
+			</td>
+			<td>%%title%%</td>
+			<td align=center><tmpl_if fb_sync_enabled>Yes<tmpl_else>No</tmpl_if></td>
+		</tr>
+		</tmpl_loop>
+	</tbody>
+</table>

@@ -77,6 +77,27 @@ package AppCore::User;
 	use AppCore::AuthUtil;
 	sub authenticate { AppCore::AuthUtil->authenticate(@_) }
 	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $curid = ref $cur ? $cur->id : $cur;
+		
+		my @all = $pkg->retrieve_from_sql('1 order by display'); #`last`, `first`');
+		my @list;
+		foreach my $item (@all)
+		{
+			push @list, {
+				value	=> $item->id,
+				text	=> $item->display, #$item->last.', '.$item->first,
+				#hint	=> $item->description,
+				selected => $item->id == $curid,
+			}
+		}
+		return \@list;
+	}
+	
+	
 	sub data#()
 	{
 		my $self = shift;

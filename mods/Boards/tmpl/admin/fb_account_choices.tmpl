@@ -1,0 +1,20 @@
+<title>FB Account Choices</title>
+
+<h1>FB Account Choices</h1>
+
+<p>Choose the account that you want to sync <b>%%title%%</b> with:</p> 
+
+<form action='%%post_url%%' method=POST>
+<ul style='list-style:none'>
+	<li>
+		<input type=radio name=chosen_feed value='My Wall!me!%%my_token%%' id='feed_me'><label for=feed_me>Sync to <b>my wall</b></label>
+	</li>
+	<tmpl_loop page_list>
+	<li>
+		<input type=radio name=chosen_feed value='<tmpl_var name escape=html>!%%id%%!%%access_token%%' id='feed_%%id%%'><label for=feed_%%id%%><b>%%name%%</b> (<i>%%category%%</i>)</label>
+	</li>
+	</tmpl_loop>
+</ul>
+
+<input type=submit value='Save Choice'>
+</form>

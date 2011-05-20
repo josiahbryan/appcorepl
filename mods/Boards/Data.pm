@@ -585,6 +585,11 @@ package Boards::Board;
 			{ field => 'date_created',		type => 'datetime' },
 			{ field => 'created_by',		type => 'int', linked => 'AppCore::User' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
+			{ field => 'enabled',			type => 'int(1)', null => 0, default => 1 },
+			{ field => 'fb_sync_enabled',		type => 'int(1)', null => 0, default => 1 },
+			{ field	=> 'fb_feed_id',		type => 'varchar(255)' },
+			{ field	=> 'fb_access_token',		type => 'varchar(255)' },
+			{ field	=> 'fb_feed_name',		type => 'varchar(255)' }, # only for display to the user - not "required" or really used
 		],	
 	});
 	
