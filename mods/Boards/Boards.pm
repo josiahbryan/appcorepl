@@ -71,10 +71,11 @@ package Boards::VideoProvider::Vimeo;
 				// Get all Viemo video links and create a script request to Vimeo for the thumbnail URL
 				$('a.video-vimeo').each(function() {
 					var th = $(this),
-					    id = th.attr("videoid"),
-					   url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
+					id = th.attr("videoid"),
+					url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
 					id_img = "#video-vimeo-" + id;
 					$(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
+					//console.debug("found Vimeo video ID "+id);
 				});
 				// This handles the thumbnail callback from vimeo - grabs the url, sets it on the image and resizes the image accordingly
 				function showThumb(data)
@@ -838,7 +839,7 @@ package Boards;
 				my $config = $ref->controller->config;
 				push @provider_configs, $config;
 				my %copy;
-				$copy{$_} = $config->{$_} foreach qw/provider_class iframe_size/;
+				$copy{$_} = $config->{$_} foreach qw/provider_class iframe_size extra_js/;
 				push @provider_copy, \%copy;
 			}
 			$tmpl->param(video_provider_list_json => encode_json(\@provider_copy));

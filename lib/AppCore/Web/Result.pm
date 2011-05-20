@@ -243,10 +243,10 @@ package AppCore::Web::Result;
 		
 		#timemark("js combine");
 		
-		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?>/)
+		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
 		{
-			my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?>((?:\n|.)+?)<\/script>/g;
-			$out =~ s/<script(?:\s+type="text\/javascript")?>(?:\n|.)+?<\/script>//g;
+			my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/g;
+			$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
 			my $block = join("\n\n/********************/\n\n", @scripts);
 			
 			if($AppCore::Config::ENABLE_JS_REORDER_YUI &&

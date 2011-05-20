@@ -405,6 +405,18 @@
 						$("#post-tmpl").tmpl(postData).insertBefore("tr.loadmore");
 					}
 					
+					
+					var list = window.VideoProviderList;
+					for(var i=0;i<list.length;i++)
+					{
+						if(list[i].extra_js)
+						{
+// 							console.debug("running:");
+// 							console.debug(list[i].extra_js);
+							eval(list[i].extra_js);
+						}
+					}
+					
 					loading.remove();
 					
 					var loaded = $('.current_nums i.loaded');
@@ -905,9 +917,9 @@
 
 <script type="text/javascript">
 
-
+window.VideoProviderList = %%video_provider_list_json%%;
+	
 $(function() {
-	var providerList = %%video_provider_list_json%%;
 	
 	$('textarea').autogrow();
 
@@ -942,9 +954,10 @@ $(function() {
 		
 		// Animate expanding the link (assuming its CSS is display:block) to the size of the player.
 		// When done, insert an iframe into the block that auto-plays the video.
-		for(var i=0;i<providerList.length;i++)
+		var list = window.VideoProviderList;
+		for(var i=0;i<list.length;i++)
 		{
-			var ref = providerList[i];
+			var ref = list[i];
 			if(th.hasClass(ref.provider_class))
 			{
 				var w = ref.iframe_size[0], 

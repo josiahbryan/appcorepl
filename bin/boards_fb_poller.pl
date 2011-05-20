@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
-use lib '../lib';
-use lib 'lib';
+use lib '/var/www/html/appcore/lib';
 use AppCore::DBI;
 use AppCore::User;
 use AppCore::Web::Module;
@@ -17,6 +16,9 @@ use strict;
 use Fcntl qw(:flock);
 flock(DATA, LOCK_EX|LOCK_NB) or die "Already running";
 
+system("date >> /tmp/boards_fb_poller.crontab");
+
+print date().": $0 Starting...\n";
 
 # Disable spam filtering for this script
 $Boards::SPAM_OVERRIDE = 1;
@@ -66,6 +68,13 @@ foreach my $board (@boards)
 	
 	update_board($board,$feed_url);
 }
+
+
+print date().": $0 Finished\n\n";
+
+
+###############################################################################################3
+
 
 sub update_board
 {
@@ -120,8 +129,8 @@ sub update_board
 			
 			$post_is_new = 1;
 			
-			my $url = "http://beta.mypleasanthillchurch.com/boards/".$board->folder_name."/".$post->folder_name;
-			print STDERR "Created post from facebook - # $post - '".$post->subject."' - $url\n";
+			my $url = $AppCore::Config::WEBSITE_SERVER . "/boards/".$board->folder_name."/".$post->folder_name;
+			print "Created post from facebook - # $post - '".$post->subject."' - $url\n";
 		}
 		
 		if($post->data->get('from_fb'))
@@ -146,8 +155,8 @@ sub update_board
 					$post->updated_time($fb_time);
 					$post->update;
 					
-					my $url = "http://beta.mypleasanthillchurch.com/boards/".$board->folder_name."/".$post->folder_name;
-					print STDERR "Updated post text from facebook - # $post - '".$post->subject."' - $url\n";
+					my $url = $AppCore::Config::WEBSITE_SERVER . "/boards/".$board->folder_name."/".$post->folder_name;
+					print "Updated post text from facebook - # $post - '".$post->subject."' - $url\n";
 				}
 			
 			}
@@ -169,7 +178,7 @@ sub update_board
 				
 				# Create anonymous likes
 				Boards::Post::Like->insert({postid => $post->id}) for 0 .. $diff - 1;
-				print STDERR "Post: Created ($diff) anonymous likes on post '".$post->subject."' - existing ".scalar(@count)." likes, ".scalar(@list)." named likes, total likes on FB $like_count\n" if $diff > 0;
+				print "Post: Created ($diff) anonymous likes on post '".$post->subject."' - existing ".scalar(@count)." likes, ".scalar(@list)." named likes, total likes on FB $like_count\n" if $diff > 0;
 				
 				#die "terminating test\n";
 				# Now create named likes
@@ -205,13 +214,11 @@ sub update_board
 							photo	=> $poster_photo_url,
 						});
 						
-						#print STDERR "post_like(): New like lineid $ref\n";
-						
 						my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 						
 						$controller->send_notifications('new_like', $ref, $noun);
 						
-						print STDERR "Post: Created named like from '$named_like->{name}' (user? $user) on post '".$post->subject."\n";
+						print "Post: Created named like from '$named_like->{name}' (user? $user) on post '".$post->subject."\n";
 					}
 				}
 			}
@@ -260,8 +267,8 @@ sub update_board
 				$cmt->data->update;
 				$cmt->update;
 				
-				my $url = "http://beta.mypleasanthillchurch.com/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";
-				print STDERR "Created comment# $cmt on post# '".$post->subject."' (top post: '".$cmt->top_commentid->subject."') - $url\n";
+				my $url = $AppCore::Config::WEBSITE_SERVER . "/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";
+				print "Created comment# $cmt on post# '".$post->subject."' (top post: '".$cmt->top_commentid->subject."') - $url\n";
 			}
 			
 			# Check for likes on this comment
@@ -276,7 +283,7 @@ sub update_board
 					
 					# Create anonymous likes
 					Boards::Post::Like->insert({postid => $post->id}) for 0 .. $diff - 1;
-					print STDERR "Comment: Created ($diff) anonymous likes on comment '".$cmt->subject."' - existing ".scalar(@count)." likes, total likes on FB $like_count\n" if $diff > 0;
+					print "Comment: Created ($diff) anonymous likes on comment '".$cmt->subject."' - existing ".scalar(@count)." likes, total likes on FB $like_count\n" if $diff > 0;
 				}
 			}
 		}
@@ -299,7 +306,7 @@ sub download_user_photo
 		$user->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
 		$user->update;
 		
-		print STDERR "Downloaded user photo to $file_path.\n";
+		#print "Downloaded user photo to $file_path.\n";
 		
 		$poster_photo_url = $AppCore::Config::WWW_ROOT . $local_photo_url;
 	}
