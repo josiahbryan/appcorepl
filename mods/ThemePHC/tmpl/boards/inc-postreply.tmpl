@@ -15,7 +15,9 @@
 					<div class='posted_by'>
 						<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
 						&middot;
-						<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%</span>
+						<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%
+						<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>
+						</span>
 					</div>
 					
 					<!--<tmpl_if can_admin>

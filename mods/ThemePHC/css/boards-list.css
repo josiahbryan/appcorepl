@@ -321,7 +321,7 @@ table.comment_text td {
 .comments_block {
 	float: none;
 	/*font-size: .85em;*/
-	width: 600px;
+	/*width: 600px;*/
 }
 
 /* TODO: IS this used anymore ? *(/
@@ -413,4 +413,8 @@ table.comment_text td {
 .comment_text pre
 {
 	font-size: 11px;
+}
+
+h1.page_title {
+	text-align: center;
 }

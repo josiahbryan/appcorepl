@@ -89,9 +89,9 @@ sub update_board
 
 	foreach my $fb_post (@$feed_list)
 	{
-		my $fb_post_id = $fb_post->{id};
+		my $external_id = $fb_post->{id};
 		
-		my $post = Boards::Post->by_field(fb_post_id => $fb_post_id);
+		my $post = Boards::Post->by_field(external_id => $external_id, deleted => 0);
 		
 		my $post_is_new = 0;
 		if(!$post)
@@ -123,10 +123,14 @@ sub update_board
 			$post->updated_time($update_time);
 			
 			# Flag it as from FB and store the FB Post ID for future reference
-			$post->fb_post_id($fb_post_id);
-			$post->data->set('from_fb',1);
-			$post->data->update;
-			
+			$post->external_id($external_id);
+			$post->external_source('Facebook');
+			#$post->external_url('https://www.facebook.com/pleasanthillchurch'); # TODO
+			my ($user,$post_num) = split /_/, $external_id;
+			if($user && $post_num)
+			{
+				$post->external_url('https://www.facebook.com/' . $user . '/posts/' . $post_num);
+			}
 			$post->update;
 			
 			$post_is_new = 1;
@@ -135,7 +139,7 @@ sub update_board
 			print "Created post from facebook - # $post - '".$post->subject."' - $url\n";
 		}
 		
-		if($post->data->get('from_fb'))
+		if($post->external_source eq 'Facebook')
 		{
 			# Since this post was created FROM facebook (and not by us creating a post then uploading it to FB),
 			# we will check the update timestamp and attempt to update our local copy of the message if the
@@ -239,7 +243,7 @@ sub update_board
 			# (until the FB api changes) because we upload comments as new top-level stories on FB.
 			# So this is only one way - create new comments on our posts based on comments from FB
 			my $fb_cmtid = $cmt_ref->{id};
-			my $cmt = Boards::Post->by_field(fb_post_id => $fb_cmtid);
+			my $cmt = Boards::Post->by_field(external_id => $fb_cmtid);
 			if(!$cmt)
 			{
 				my $poster_fb_id = $cmt_ref->{from}->{id};
@@ -267,9 +271,14 @@ sub update_board
 				$cmt->timestamp($create_time);
 				
 				# Flag it as from FB and store the FB Post ID for future reference
-				$cmt->fb_post_id($fb_cmtid);
-				$cmt->data->set('from_fb',1);
-				$cmt->data->update;
+				$cmt->external_id($fb_cmtid);
+				$cmt->external_source('Facebook');
+				
+				my ($user,$post_num,$cmt_num) = split /_/, $fb_cmtid;
+				if($user && $post_num && $cmt_num)
+				{
+					$cmt->external_url('https://www.facebook.com/' . $user . '/posts/' . $post_num);
+				}
 				$cmt->update;
 				
 				my $url = $AppCore::Config::WEBSITE_SERVER . "/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";

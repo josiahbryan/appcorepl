@@ -366,7 +366,10 @@ package Boards::Post;
 			{ field => 'ticker_priority',		type => 'int', default => 0},
 			{ field => 'ticker_class',		type => 'varchar(255)' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
-			{ field => 'fb_post_id',		type => 'varchar(255)', default => '' },
+			#{ field => 'fb_post_id',		type => 'varchar(255)', default => '' },
+			{ field => 'external_id',		type => 'varchar(255)', default => '' },
+			{ field => 'external_source',		type => 'varchar(255)', default => '' },
+			{ field => 'external_url',		type => 'varchar(255)', default => '' },
 			
 			
 		],	

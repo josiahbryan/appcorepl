@@ -1541,10 +1541,10 @@ Cheers!};
 			if ($response->is_success) 
 			{
 				my $rs = decode_json($response->decoded_content);
-				$post->fb_post_id($rs->{id});
+				$post->external_id($rs->{id});
 				$post->update;
 				
-				print STDERR "Facebook post successful, Facebook Post ID: ".$post->fb_post_id."\n";
+				print STDERR "Facebook post successful, Facebook Post ID: ".$post->external_id."\n";
 			}
 			else 
 			{

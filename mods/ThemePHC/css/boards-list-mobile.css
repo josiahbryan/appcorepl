@@ -299,6 +299,7 @@ a.like-icon {
 /* Add some margins to comments text and photo */
 .comment_text img.user_photo { margin-left: 3px; }
 .comment_text div.text { margin-top: 4px; }
+.comment_text { padding-left: 3px; }
 
 /* Put some spacing between the loading animation and the text */
 .like-loading-img  { padding-left: 4px; }

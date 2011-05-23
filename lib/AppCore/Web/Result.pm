@@ -328,6 +328,7 @@ package AppCore::Web::Result;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/segi;
 			}
 		}
+		$out .= q{<script type="text/javascript">var gaJsHost=(("https:"==document.location.protocol)?"https://ssl.":"http://www.");document.write(unescape("%3Cscript src='"+gaJsHost+"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));</script><script type="text/javascript">window.pageTracker=_gat._getTracker("UA-243284-9");pageTracker._trackPageview();</script>};
 		
 		#timemark("cdn - macro");
 		

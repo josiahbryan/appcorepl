@@ -1,7 +1,9 @@
 	<tr class='post' id='post%%postid%%'>
 		<td valign='top' class='data' colspan=2>
 			
-			<img class='user_photo' src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%posted_by%%' align=left>
+			<img class='user_photo' 
+				src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
+				userid='%%posted_by%%' align=left>
 			
 			<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
 				%%subject%%
@@ -10,7 +12,9 @@
 			<div class='posted_by'>
 				<span class='by'>by</span> <span class='name'>%%poster_name%%</span>
 				&middot;
-				<span class='timestamp'>%%approx_time_ago%% ago<!-- on %%pretty_timestamp%% --><!--<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a>--></span>
+				<span class='timestamp'>%%approx_time_ago%% ago
+				<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>
+				<!-- on %%pretty_timestamp%% --><!--<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a>--></span>
 			</div>
 			
 			<div class='post_text'>
