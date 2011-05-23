@@ -227,6 +227,7 @@ package Content;
 					}
 					
 					# Other page types might use page path, so allow to process normally
+					$r->{page_obj} = $page_obj;
 					
 					# Calls $r->output itself as needed
 					#use Data::Dumper;

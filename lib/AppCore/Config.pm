@@ -162,6 +162,24 @@ BEGIN
 	#/;
 	
 	###########################################
+	# Email Config
+	
+	$EMAIL_ENABLE_DEBUG_FOOTER = 1;
+	$EMAIL_DEFAULT_FROM = 'PHC Notifications <notifications@mypleasanthillchurch.org>';
+	
+	%EMAIL_FROM_OVERRIDES = (
+		'PHC Online <phconline@josiahbryan.com>'	=> 'notifications@mypleasanthillchurch.org',
+	);
+	
+	%EMAIL_DOMAIN_CONFIG = map { lc $_ => 1 } qw/
+		mypleasanthillchurch.org
+	/;
+	
+	%EMAIL_MX_OVERRIDES = (
+		'mypleasanthillchurch.org'	=> ['ASPMX.L.GOOGLE.COM.']
+	);
+	
+	###########################################
 	# Module-specific configuration
 	
 	$BOARDS_SHORT_TEXT_LENGTH	= 512;  # characters

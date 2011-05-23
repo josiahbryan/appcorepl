@@ -893,9 +893,28 @@ package Content::Page::ThemeEngine;
 		my @titles = $blob=~/<title>(.*?)<\/title>/g;
 		#$title = $1 if !$title;
 		@titles = grep { !/\$/ } @titles;
-		$tmpl->param(page_title	  => shift @titles);
-		$tmpl->param(page_content => $blob);
-		$tmpl->param(nav_path	  => $self->breadcrumb_list->list);
+		
+		my $pgdat = {};
+		$pgdat->{page_title}	= shift @titles;
+		$pgdat->{page_content}	= $blob;
+		$pgdat->{nav_path}	= $self->breadcrumb_list->list;
+		
+		my $r = $self->{response};
+		if($r && $r->{page_obj})
+		{
+			my $subnav = $self->load_subnav($r->{page_obj});
+			$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
+		}
+				
+		my $page_tmpl = $self->load_template('page.tmpl');
+		if($page_tmpl)
+		{
+			$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+			$pgdat->{page_content} = $page_tmpl->output;
+		}
+		
+		$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+		
 	}
 	
 	sub load_template

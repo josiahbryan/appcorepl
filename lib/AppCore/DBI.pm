@@ -45,6 +45,7 @@ package AppCore::DBI;
 	sub _croak
 	{
 		AppCore::Common::print_stack_trace(0);
+		print STDERR $_[1], "\n";
 		shift->SUPER::_croak(@_);
 	}
 	

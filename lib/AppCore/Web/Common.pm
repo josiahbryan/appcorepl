@@ -303,6 +303,8 @@ package AppCore::Web::Common;
 			$error = "<pre>".Dumper($error,@_)."</pre>";
 		}
 		
+		print STDERR "$title: ".html2text($error);
+		
 		#exit;
 		
 		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
@@ -616,6 +618,7 @@ package AppCore::Web::Common;
 		$html =~ s/\n{2,}/\n\n/sg;
 		#$html =~ s/\n/<br>\n/g;
 		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		$html =~ s/([^\n])\n([^\n])/$1<br>\n$2/g;
 		
 		return $html;
 	}

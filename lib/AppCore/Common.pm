@@ -8,7 +8,7 @@ package AppCore::Common;
 	use strict;
 	
 	use AppCore::RunContext;
-	
+	#use AppCore::EmailQueue;
 	
 	use Data::Dumper;
 	use DateTime;
@@ -438,122 +438,13 @@ package AppCore::Common;
 	
 	sub send_email
 	{
-		return 1;
+		#my ($list,$subject,$text,$high_import_flag,$from) = @_;
+		shift;
 		
-		eval 'use MIME::Lite';
-		if(@_ == 1)
-		{
-			my $args = shift;
-			my $q_ins = AppCore::DBI->dbh('pci')->prepare("insert into emailqueue (`from`,`to`,`msg`,`subject`) values (?,?,?,?)");
-			#$q_ins->execute($args->{from},$args->{to},$args->{data});	
-			
-			my $uuid = `uuidgen`;
-			$uuid =~ s/[\r\n-]//g;
-			my $file = EMAILQUEUE_SPOOL_DIR . '/'. $uuid . '.eml';
-			
-			#print STDERR "(case1) Debug: Attempting to save to $file...\n";
-			if(open(FILE,">$file"))
-			{
-				
-				print FILE $args->{data};
-				close(FILE);
-				
-				$args->{data} = "#file:$file";
-				
-				#print STDERR "(case1) Debug: Wrote file, new str: '$args->{data}'\n";
-			}
-			else
-			{
-				warn "(case1) Couldn't write to $file: $!, sending using raw database blob";
-			}
-		
-			eval
-			{
-				$q_ins->execute($args->{from},$args->{to},$args->{data},$args->{subject}||'');	
-			};
-			
-			return;
-		}
-	
-		my ($list,$subject,$text,$high_import_flag,$from) = @_;
-		
-		$list = [$list] if !ref $list;
-		
-		#print STDERR "send_email(): list=".join(',',@$list),", subject=$subject, high_import_flag=$high_import_flag, text=[$text]\n";
-		#print STDERR "send_email(): CATCH ALL: Sending to jbryan only.\n";
-		#$list = ['jbryan@productiveconcepts.com'];
-		my $host = `hostname`;
-		$host =~ s/[\r\n]//g;
-	
-		$text .= qq{
-		
-	--
-	$0($$)
-	Server: $host
-	}
-	.($ENV{REMOTE_ADDR} ? "IP: $ENV{REMOTE_ADDR}\n":"")
-	.($ENV{HTTP_REFERER} ? "Referer: $ENV{HTTP_REFERER}\n":"")
-		if ! AppCore::Common->context->x('disable_email_footer');
-		
-		$from ||= 'EAS <jbryan@productiveconcepts.com>';
-		#print "From:$from\nTo:$to\nSubj:$subject\nText:$text\n";
-		#print_stack_trace();
-	
-		use AppCore::DBI;
-		my $q_ins = AppCore::DBI->dbh('pci')->prepare("insert into emailqueue (`from`,`to`,`msg`,`subject`) values (?,?,?,?)");
-		
-		foreach my $to (@$list)
-		{
-			
-			my $msg = MIME::Lite->new(
-					From    =>$from,
-					To      =>$to,
-					Subject =>$subject,
-					Type    =>'multipart/mixed'
-					);
-		
-			### Add parts (each "attach" has same arguments as "new"):
-			$msg->attach(Type       =>'TEXT',
-				Data            =>$text);
-		
-			#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
-		
-			my $str = $msg->as_string;
-		
-			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g if $high_import_flag;
-			#die $str;
-			
-			my $uuid = `uuidgen`;
-			$uuid =~ s/[\r\n-]//g;
-			my $file = EMAILQUEUE_SPOOL_DIR . '/'. $uuid . '.eml';
-			
-			#print STDERR "(case2) Debug: Attempting to save to $file...\n";
-			if(open(FILE,">$file"))
-			{
-				
-				print FILE $str;
-				close(FILE);
-				
-				$str = "#file:$file";
-				
-				#print STDERR "(case2) Debug: Wrote file, new str: '$str'\n";
-			}
-			else
-			{
-				warn "(case2) Couldn't write to $file: $!, sending using raw database blob";
-			}
-		
-			eval
-			{
-				$q_ins->execute($from,$to,$str,$subject);
-			};
-			
-			#print STDERR "$str, $from, $to, LEN:".(length($str)/1024)."KB\n$@" if $@;
-		}
-	
-		#print STDERR "Sending\n:[From:$from,To:$to\nMsg:\n",$msg->as_string,"]\n";
-	
-		#print STDERR "Inserted from $from:\n".$msg->as_string()."\nDone.\n";
+		# Doesn't actually transmit - the transmit() method is called from bin/emailqueue.pl
+		eval 'use AppCore::EmailQueue'; 
+		AppCore::EmailQueue->send_email(@_);
+
 	}
 	
 	
@@ -830,7 +721,6 @@ package AppCore::Common;
 		
 		$LastTime = time;
 	}
-	
 	
 };
 

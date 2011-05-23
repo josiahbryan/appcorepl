@@ -107,6 +107,7 @@ package Boards;
 {
 	use AppCore::Web::Common;
 	use AppCore::Common;
+	use AppCore::EmailQueue;
 	
 	# Inherit both a Web Module and Page Controller.
 	# We use the Page::Controller to register a custom
@@ -1360,7 +1361,7 @@ Cheers!};
 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
 			           @AppCore::Config::ADMIN_EMAILS : 
 			          ($AppCore::Config::WEBMASTER_EMAIL);
-			AppCore::Web::Common->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
+			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
 		
 			$r->redirect("$bin/$board_folder_name/".$post->folder_name);
 				
@@ -1565,8 +1566,8 @@ Cheers!};
 		
 		if($action eq 'new_post')
 		{
-			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
-			return;
+# 			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
+# 			return;
 			
 			my $board_folder = $post->boardid->folder_name;
 			
@@ -1587,13 +1588,13 @@ Cheers!};
 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
 				@AppCore::Config::ADMIN_EMAILS : 
 				($AppCore::Config::WEBMASTER_EMAIL);
-			AppCore::Web::Common->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body);
+			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body);
 		}
 		elsif($action eq 'new_comment')
 		{
 			
-			print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
-			return;
+# 			print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
+# 			return;
 			
 			my $comment = $post;
 			my $comment_url = $args->{comment_url};
@@ -1607,7 +1608,7 @@ Here's a link to that page:
     
 Cheers!};
 			#
-			AppCore::Web::Common->reset_was_emailed;
+			AppCore::EmailQueue->reset_was_emailed;
 			
 			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
 			my $title = $AppCore::Config::WEBSITE_NAME; 
@@ -1617,31 +1618,31 @@ Cheers!};
 				  ($AppCore::Config::WEBMASTER_EMAIL);
 			
 			my $email_subject = "[$title $noun] New Comment Added to Thread '".$comment->top_commentid->subject."'";
-			AppCore::Web::Common->send_email([@list],$email_subject,$email_body);
+			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
 			
-			AppCore::Web::Common->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
+			AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
 					if $comment->parent_commentid && 
 					$comment->parent_commentid->id && 
 					$comment->parent_commentid->poster_email && 
-					!AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
+					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 			
-			AppCore::Web::Common->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
+			AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
 					if $comment->top_commentid && 
 					$comment->top_commentid->id && 
 					$comment->top_commentid->poster_email && 
-					!AppCore::Web::Common->was_emailed($comment->top_commentid->poster_email);
+					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 			
 			my $board = $comment->boardid;
 			
-			AppCore::Web::Common->send_email([$board->managerid->email],$email_subject,$email_body)
+			AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,$email_body)
 						if $board && 
 						$board->id && 
 						$board->managerid && 
 						$board->managerid->id && 
 						$board->managerid->email && 
-						!AppCore::Web::Common->was_emailed($board->managerid->email);
+						!AppCore::EmailQueue->was_emailed($board->managerid->email);
 						
-			AppCore::Web::Common->reset_was_emailed;
+			AppCore::EmailQueue->reset_was_emailed;
 		}
 		elsif($action eq 'new_like')
 		{
@@ -1650,7 +1651,7 @@ Cheers!};
 			
 			my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
 			
-			#AppCore::Web::Common->reset_was_emailed;
+			AppCore::EmailQueue->reset_was_emailed;
 			
 			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
 			my $title = $AppCore::Config::WEBSITE_NAME; 
@@ -1663,7 +1664,7 @@ Cheers!};
 					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
 					"Cheers!";
 			
-			AppCore::Web::Common->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/;
+			AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/;
 			
 			# Notify Webmaster
 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
@@ -1677,7 +1678,7 @@ Cheers!};
 					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
 					"Cheers!";
 			
-			AppCore::Web::Common->send_email([@list],$email_subject,$email_body);
+			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
 		}
 	}
 	

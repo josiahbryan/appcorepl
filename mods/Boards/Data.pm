@@ -357,6 +357,7 @@ package Boards::Post;
 			{ field => 'subject',			type => 'text'},
 			{ field => 'text',			type => 'longtext'},
 			{ field => 'extra_data',		type => 'longtext'},
+			{ field => 'post_class',		type => 'varchar(255)' }, # An arbitrary classification, such as 'video', 'photo', 'link', 'text', or just empty... # TODO Should this be a Foreign Key ... e.g. classid?
 			#{ field => 'attribute_data',		type => 'longtext'},  # Legacy name of extra_data
 			{ field => 'folder_name',		type => 'varchar(255)' },
 			#{ field => 'fake_folder_name',		type => 'varchar(255)' }, # Legacy name of folder_name
