@@ -245,8 +245,10 @@ td.nav-sibs-cell
 	font-weight: bold;
 }
 
-.pagebody { 
-	padding-right: 15em;
+.pagebody 
+{ 
+	/*padding-right: 15em;*/
+	width: 585px;
 	font-size: 110%;
 }
 

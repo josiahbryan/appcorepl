@@ -1,61 +1,40 @@
-<link href="/css/comments.css" rel="stylesheet" type="text/css" />
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
 
 <title><tmpl_var post_subject> - <tmpl_var board_title> - Bulletin Boards</title>
 <h1><tmpl_var post_subject></h1>
-<div class='post_page'>
-	<!--%macro::sub_nav()%-->
 
-	<tmpl_var board_nav>
-</div>
+<script>
+// Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
+loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
+</script>
 
+<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+<table class='postlist' width='100%' align=center cellspacing=0>
+	${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+</table>
 
-<tmpl_if can_edit>
-	<a class='edit_post_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_fake_folder_name>/edit'><img src='/eas_www/images/silk/page_edit.png' align=absmiddle border=0> Edit my post</a>
-	<a class='edit_post_link' style='margin-right:3px' onclick='return confirm("Are you sure you want to delete this page?")' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_fake_folder_name>/delete'><img src='/eas_www/images/silk/page_delete.png' align=absmiddle border=0> Delete Post</a>
-</tmpl_if>
+<tmpl_include inc-reply-scripts.tmpl>
+<tmpl_include inc-video-scripts.tmpl>	
 
-<div class='post_header'>
-	<div class='attribution'>
-		<span class='date'><tmpl_var post_timestamp></span> - Posted by: <span class='name'><tmpl_var post_poster_name></span>
-	</div>
-	<h3><tmpl_var post_subject></h3>
-	<div class='attribution-name'>By <span class='name'><tmpl_var post_poster_name></span></div>
-	
-</div>
+<script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/mods/ThemePHC/js/boards-postlist-actions.js" index="50"></script>
 
+<!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
+     when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially
+     visible then hiding it as soon as its loaded, we force the browser to preload the image inorder to reduce
+     or prevent such visual artifcats. -->
+<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' onload='this.style.display="none"'>
 
-<div class='post_text <tmpl_if replies>has_replies</tmpl_if>'>
-	<tmpl_var post_text>
+<style>
+/* Remove spacing at top of the post list since we're just showing a single post on this page */
+.postlist td.photo
+{
+	padding-top: 2px;
+}
 
-	<br>
-	<a href='javascript:void(window.history.go(-1))' class='new_link'>&laquo; Return to previous page</a>
-</div>
-
-
-<a class='new_reply_link <tmpl_if replies>top_reply_link</tmpl_if>' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_fake_folder_name>/reply'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Reply to this post</a>
-
-<div id='comments' class='comments_block'>
-	<tmpl_if replies>
-		<!--<h5>Comments:</h5>-->
-		<div class=comments_title>
-			Replies:
-		</div>
-		
-		<div class='replies_container'>
-			<tmpl_loop replies>
-				<div class=comment_text style='margin-left:<tmpl_var indent_css>em;margin-right:<tmpl_var indent_css>em;'>
-					<a name='c<tmpl_var postid>'><span class=timestamp><tmpl_var timestamp></span></a>: <br>
-					<tmpl_if can_admin><a class='admin_link' href='%%delete_url%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'><img src='/images/silk/bullet_toggle_minus.png' title='Delete this comment' border=0 align=absmiddle></a> </tmpl_if>
-					<blockquote><span class=text><tmpl_var text></span>
-					<span class=meta> <span class=person>-- <tmpl_var poster_name></span></span> <span class='irl'>(<a href='%%reply_to_url%%/%%fake_folder_name%%'>Reply <b>...</b></a>)</span></blockquote>
-				</div>
-			</tmpl_loop>
-		</div>
-		
-		<a class='new_reply_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_fake_folder_name>/reply'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Reply to this post</a>
-
-	<tmpl_else>
-		<!--<h3>Sorry, no replies yet to this post.</h3>-->
-	</tmpl_if>
-</div>
+.postlist td.data
+{
+	padding-top: 0;
+}
+</style>

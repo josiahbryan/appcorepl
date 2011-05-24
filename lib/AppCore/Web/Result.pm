@@ -328,8 +328,39 @@ package AppCore::Web::Result;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/segi;
 			}
 		}
-		$out .= q{<script type="text/javascript">var gaJsHost=(("https:"==document.location.protocol)?"https://ssl.":"http://www.");document.write(unescape("%3Cscript src='"+gaJsHost+"google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));</script><script type="text/javascript">window.pageTracker=_gat._getTracker("UA-243284-9");pageTracker._trackPageview();</script>};
+		 
 		
+		if($AppCore::Config::GA_INSERT_TRACKER && 
+		   $AppCore::Config::GA_ACCOUNT_ID)
+		{
+			my $ga = qq#
+		
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', '$AppCore::Config::GA_ACCOUNT_ID']);
+  _gaq.push(['_trackPageview']);
+#;
+			if($AppCore::Config::GA_SET_USER_VAR)
+			{
+				my $user = AppCore::Common->context->user;
+				my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
+				$ga .= qq{  _gaq.push(['_setVar','$uid']);};
+			}
+			
+  			$ga .= qq#
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+#;
+			my $tmp = "$ga\n</body>";
+			$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+		}
+		#
 		#timemark("cdn - macro");
 		
 		$self->content_type($ctype);

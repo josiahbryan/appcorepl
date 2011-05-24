@@ -367,7 +367,7 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 		# Assume more than one arg is (title,url,current) trifecta
 		if(@_)
 		{
-				$ref = 
+			$ref = 
 			{
 				title => $ref,
 				url   => shift,
@@ -443,6 +443,10 @@ package Content::Page::ThemeEngine;
 {
 	use Scalar::Util 'blessed';
 	use base 'AppCore::DBI';
+	
+	# For subnav modifications...
+	use Clone::More qw( clone );
+
 	
 	__PACKAGE__->meta({
 		class_noun	=> 'Theme Engine',
@@ -871,11 +875,6 @@ package Content::Page::ThemeEngine;
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		
-# 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
-# 		{
-# 			my $tmpl = $self->load_template('page.tmpl');
-# 			$self->apply_page_obj($tmpl,$page_obj);
-# 		}
 		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
 			$self->apply_basic_data($tmpl,$page_obj);
@@ -897,13 +896,29 @@ package Content::Page::ThemeEngine;
 		my $pgdat = {};
 		$pgdat->{page_title}	= shift @titles;
 		$pgdat->{page_content}	= $blob;
-		$pgdat->{nav_path}	= $self->breadcrumb_list->list;
 		
 		my $r = $self->{response};
 		if($r && $r->{page_obj})
 		{
 			my $subnav = $self->load_subnav($r->{page_obj});
+			
+			# Integrate any page-specified breadcrumbs onto the end of the list
+			my @list = @{ $self->breadcrumb_list->list || [] };
+			if(@list)
+			{
+				$subnav = clone( $subnav );
+				push @{$subnav->{nav_path}}, @list;
+				
+				my @tmp = @{$subnav->{nav_path}};
+				$_->{current} = 0 foreach @tmp;
+				$tmp[$#tmp]->{current} = 1 if @tmp;
+			}
+
 			$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
+		}
+		else
+		{
+			$pgdat->{nav_path} = $self->breadcrumb_list->list;
 		}
 				
 		my $page_tmpl = $self->load_template('page.tmpl');

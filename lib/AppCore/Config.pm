@@ -179,6 +179,14 @@ BEGIN
 		'mypleasanthillchurch.org'	=> ['ASPMX.L.GOOGLE.COM.']
 	);
 	
+	
+	###########################################
+	# Google Analytics options
+	
+	$GA_INSERT_TRACKER = 1; # If true, AppCore::Web::Result will insert Google Analytics tracking code at the end of each page (assuming $GA_ACCOUNT_ID is set)
+	$GA_ACCOUNT_ID     = 'UA-243284-9'; # The Google Analytics account ID to track
+	$GA_SET_USER_VAR   = 1; # If true, the GA '_setVar' method will be called with the name of the logged in user or the user's IP address if no user logged in 
+	
 	###########################################
 	# Module-specific configuration
 	

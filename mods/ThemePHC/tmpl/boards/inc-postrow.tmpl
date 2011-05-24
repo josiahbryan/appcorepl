@@ -18,19 +18,25 @@
 			</div>
 			
 			<div class='post_text'>
-				<div id='short_text_%%postid%%' class='short_text'>
-					%%clean_html%%
-				</div>
-				<tmpl_if short_text_has_more>
-					<div id='long_text_%%postid%%' class='long_text'></div>
+				<tmpl_if single_post_page>
+					%%post_text%%
+				<tmpl_else>
+					<div id='short_text_%%postid%%' class='short_text'>
+						%%clean_html%%
+					</div>
+					<tmpl_if short_text_has_more>
+						<div id='long_text_%%postid%%' class='long_text'></div>
+					</tmpl_if>
 				</tmpl_if>
 			</div>
 			
 			<div class='actions post_actions' id='acts%%postid%%'>
-				<tmpl_if short_text_has_more>
-					<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>
-					&middot;
-				</tmpl_if>
+				<tmpl_unless single_post_page>
+					<tmpl_if short_text_has_more>
+						<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>
+						&middot;
+					</tmpl_if>
+				</tmpl_unless>
 				
 				<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%'>Add a Comment</a> &middot;
 				

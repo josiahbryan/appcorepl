@@ -303,7 +303,8 @@ package AppCore::Web::Common;
 			$error = "<pre>".Dumper($error,@_)."</pre>";
 		}
 		
-		print STDERR "$title: ".html2text($error);
+		#print STDERR "$title: ".html2text($error);
+		print STDERR "[".(AppCore::Common->context->user ? AppCore::Common->context->user->user."@" : "").$ENV{REMOTE_ADDR}."] ".get_full_url()." $title: ".html2text($error)."\n";
 		
 		#exit;
 		
@@ -564,7 +565,8 @@ package AppCore::Web::Common;
 		
 		$html =~ s/<(script|style)[^\>]*?>(.|\n)*?<\/(script|style)>//g;
 		$html =~ s/<!--(.|\n)*?-->//g;
-		$html =~ s/(<br>|<\/(p|div|blockquote)>)/\n/gi;
+		$html =~ s/<br>([^\n])/<br>\n$1/gi;
+		$html =~ s/(<\/(p|div|blockquote)>)/\n/gi;
 		$html =~ s/<\/li><li>/, /g;
 		$html =~ s/<li>/ * /g;
 		$html =~ s/<[^\>]+>//g;

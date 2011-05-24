@@ -1,0 +1,273 @@
+<tmpl_if is_mobile>
+		<script id="reply-tmpl" type="text/x-jquery-tmpl">
+			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply-mobile.tmpl}
+		</script>	
+		
+		<script id="replyform-tmpl" type="text/x-jquery-tmpl">
+			<form class='reply_form' 
+				onsubmit='return ajax_post_reply(this)' 
+				id='reply_form_${postid}' 
+				postid='${postid}'
+				top_commentid='${top_commentid}'>
+				
+				<div class='wrap'>
+					<input type='hidden' name='postid' value='${postid}'>
+					
+					<table>
+						<tr>
+							<td>
+								<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%appcore%%%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25" width=25 height=25 userid='%%user_userid%%' align=left>
+							</td>
+							<td colspan=2>
+								<div class='content'>
+									<textarea class='expandText' style="height:5em" class="expandText" name="text"></textarea>
+								</div>
+							</td>
+						<tmpl_if user_display>
+						<tr>
+							<td colspan=3>
+								<div class='ident' id='postas_display'>
+									Posting as <b>%%user_display%%</b>
+								</div>
+								<div class='controls'>
+									<button type='submit' class='button' id='button_${postid}'>Post</button>
+									<a href='#' class='cancel'>Cancel</a>
+								</div>
+							</td>
+						</tr>
+						<tmpl_else>
+							<tr>
+								<td>Name:</td>
+								<td><input value='%%user_display%%' name='poster_name' size=15></td>
+							
+								<td rowspan=2>
+									<div class='controls'>
+										<button type='submit' class='button' id='button_${postid}'>Post</button>
+									<a href='#' class='cancel'>Cancel</a>
+									</div>
+								</td>
+							</tr>
+							<tr>
+								<td>Email:</td>
+								<td><input value='%%user_email%%' name='poster_email' size=15></td>
+							</tr>
+						</tmpl_if>
+					</table>
+				
+
+				</div>
+			</form>
+		</script>
+		
+	<tmpl_else>
+		<script id="reply-tmpl" type="text/x-jquery-tmpl">
+			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply.tmpl}
+		</script>
+		
+		<script id="replyform-tmpl" type="text/x-jquery-tmpl">
+			<form class='reply_form' 
+				onsubmit='return ajax_post_reply(this)' 
+				id='reply_form_${postid}' 
+				postid='${postid}'
+				top_commentid='${top_commentid}'>
+				
+				<div class='wrap'>
+					<input type='hidden' name='postid' value='${postid}'>
+					<div class='content'>
+						<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
+					</div>
+					<div class='controls'>
+						<button type='submit' class='button' id='button_${postid}'>Post</button>
+						<a href='#' class='cancel'>Cancel</a> 
+					</div>
+					<div class='form' id='postas_form_${postid}'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
+						<table>
+							<tr>
+								<td>Name:</td>
+								<td><input value='%%user_display%%' name='poster_name'></td>
+							</tr>
+							<tr>
+								<td>Email:</td>
+								<td><input value='%%user_email%%' name='poster_email'></td>
+							</tr>
+						</table>
+					</div>
+					<tmpl_if user_display>
+					<div class='ident' id='postas_display_${postid}'>
+						Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form_tmpl(${postid}));'>Change</a>
+					</div>
+					</tmpl_if>
+					<div class='fc'></div>
+				</div>
+			</form>
+		</script>
+	</tmpl_if>
+	
+	<script>
+	function show_postas_form_tmpl(postid)
+	{
+		$("#postas_form_"+postid).show(200);
+		$("#postas_display_"+postid).hide(200);
+	}
+	</script>
+	
+	<script>
+	function x(e){return document.getElementById(e)}
+	$(".actions .reply_link").live("click",function(){
+			
+		var	th = $(this),
+		
+			// Get ID of the post
+			postid = th.attr("postid"),
+			topid  = th.attr("top_commentid"),
+			
+			// Create selector string for the placeholder
+			replyHolder = "#reply"+postid,
+			
+			// Check to see if the form is already in the DOM
+			div = x("reply_form_"+postid),
+			
+			tmp = undefined,
+			
+			cancelFunc = function() 
+			{
+				var div = $('#reply_form_'+postid);
+				div.hide(300, function(){
+					//div.parentNode.removeChild(div);
+					div.remove();
+				});
+			};
+			
+			
+		// Create reply form for this post if doesnt already exist
+		if(!div)
+		{
+			tmp = $("#replyform-tmpl").tmpl({postid:postid,top_commentid:topid});
+			tmp.hide();
+			$(replyHolder).append(tmp);
+		}
+		else
+		{
+			tmp = $(replyHolder+" .reply_form")
+		}
+		
+		// Cache the reply type (reply to comment/reply to post) on the form element
+		tmp.attr("type", th.attr("type"));
+		
+		// Add "Cancel" link handler
+		$(replyHolder+' a.cancel').live("click",function(){
+			
+			cancelFunc();
+			return false;
+		});
+		
+		// Focus on text area
+		var ta = $(replyHolder+' .expandText');
+		ta.autogrow();
+		
+		// Close the reply form if user presses Escape
+		ta.keyup(function(e){
+			if (!e) var e = window.event;
+			if (e.keyCode)    e.code = e.keyCode;
+			else if (e.which) e.code = e.which;
+			if(e.code == 27)
+				cancelFunc();
+		});
+		
+		
+		// Make sure form visible
+		//tmp.show(300, function() { ta.focus(); });
+		tmp.show();
+		ta.focus();
+		
+		
+		return false;
+		
+	});
+	
+	function ajax_post_reply(formElm)
+	{
+		var postid = formElm.postid.value;
+		var isPost = formElm.getAttribute("type") != "comment";
+		var topid  = isPost ? postid : formElm.getAttribute("top_commentid");
+
+		var postData = {
+			comment: formElm.text.value,
+			poster_name: formElm.poster_name.value,
+			poster_email: formElm.poster_email.value,
+			parent_commentid: isPost ? 0 : formElm.postid.value,
+			output_fmt: "json",
+			plain_text: 1
+		};
+		
+		
+		var btn = $("#button_"+postid);
+		btn.html("<img src='"+loaderGif+"'>");
+		btn.attr("disabled","true");
+		//$("#post-placeholder").show();
+		
+		var errorFunc = function() 
+		{
+			//$("#post-placeholder").hide();
+			if(confirm("There was an error saving your comment to the server - nothing was saved. Do you want to use the simple post page instead of this fancy page to make your post?"))
+			{
+				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
+			}
+		};
+		
+		
+		var postUrl = "%%binpath%%/%%board_folder_name%%/" + topid + "/post";
+		//alert(postUrl);
+		$.ajax({
+			type: "POST",
+			url: postUrl,
+			data: postData,
+			success: function(data)
+			{
+				//console.debug("got post data: "+data+", typeof: "+typeof(data));
+				//alert("Got post data:"+data+", type:"+typeof(data));
+				if(typeof(data) == "string")
+				{
+					// something wierd on server - should be JSON!
+					errorFunc();
+				}
+				else
+				{
+					// apply proper indent to child comments
+					data.indent_css = isPost ? 0 :
+								parseInt($("#comment"+postid).attr("indent_css")) + 2;
+					
+					//console.debug(data);
+					//console.debug("isPost:"+isPost);
+					
+					var output = $("#reply-tmpl").tmpl(data);
+					if(isPost)
+					{
+						var insertSelector = "#post"+postid+" .replies_container";
+						//console.debug("insertSelector:"+insertSelector);
+						// This needs to be appended to the selector
+						output.appendTo(insertSelector);
+					}
+					else
+					{
+						var insertSelector = "#comment" + postid;
+						// This needs to be inserted after the selector
+						output.insertAfter(insertSelector);
+					}
+					
+					//$("#post-placeholder").hide();
+					
+// 					formElm.text.value = "";
+// 					formElm.text.updateAutogrow();
+					
+					formElm.parentNode.removeChild(formElm);
+				}	
+			},
+			error: errorFunc
+			
+		});
+		
+		return false;
+	}
+	
+	</script>

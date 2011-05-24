@@ -1,27 +1,151 @@
-	<table border=0 cellpadding=0 cellspacing=0 width='100%'>
-		<tr>
-			<tmpl_if nav_sibs>
-				<td valign=top class='nav-sibs-cell'>
-					<div class=nav-sibs>
+	<tmpl_if is_mobile>
+		<style>
+		.nav-subs-mobile
+		{
+			padding: 3px;
+		}
+		
+		.nav-subs-mobile a
+		{
+			text-align: left;/*
+			display: block;*/
+			border: 1px solid #768ad3;
+			background-color: #e2e7f7;
+			line-height: 30px;
+			color: #768ad3 !important;
+			padding: 4px;
+			margin: 3px;
+			/*line-height: 4;*/
+			background-image: none;
+			/*margin-right: 4;*/
+			text-decoration: none !important;
+			-moz-border-radius: 3px;
+			border-radius: 3px;
+			-webkit-border-radius: 3px;
+			box-shadow: 0px 0px 3px #000;
+			/*text-shadow: black 0px 0px 3px;*/
+			font-weight: bold;
+			text-align: center;
+			
+			width: auto;
+		}
+		
+		.nav-subs-mobile a.current
+		{
+			background-color: white;
+			border-color: black;
+			color: black !important;
+			/*border-width: 2px;*/
+			box-shadow: 0px 0px 5px #000;
+			-moz-box-shadow: 0px 0px 5px #000;
+			-webkit-shadow: 0px 0px 5px #000;
+		}
+		div.fc { clear:both }
+		
+		.current-wrap 
+		{
+			position: relative;
+			display: inline;
+		}
+		
+		.current-wrap .sub-menu
+		{
+			position: absolute;
+			top: 2em;
+			left: .25em;
+			text-align: left;
+			width: 10em;
+			padding: .5em;
+			
+			border: 1px solid black;
+			background-color: white;
+			/*-moz-border-radius: 3px;
+			border-radius: 3px;*/
+			margin-left: -4.5em;
+			
+			display: none;
+		}
+		
+		.current-wrap .sub-menu li
+		{
+			margin-bottom: .5em;
+		}
+		
+		.current-wrap .sub-menu ul
+		{
+			list-style: none;
+		}
+		
+		</style>
+		<div class=nav-subs-mobile>
+			<div class=wrap>
+				<center>
+				You are here:
+			
+				<tmpl_loop nav_sibs><tmpl_if current>
+						<a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a>
+				</tmpl_if></tmpl_loop>
+				
+				<div class=current-wrap>
+					
+					<a href='#' id='subnav-current' >More...</a>
+					
+					<div class=sub-menu id='subnav-menu'>
 						<ul>
 							<tmpl_loop nav_sibs>
-								<li>
-									<a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a>
-								</li>
+								<li><a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a></li>
 							</tmpl_loop>
 						</ul>
 					</div>
-				</td>
-			</tmpl_if>
-			<td valign=top>
-				<div class=pagebody>
-					<!--<tmpl_if page_title>
-						<h1>%%page_title%%</h1>
-					</tmpl_if>-->
-					
-					%%page_content%%
 				</div>
+
 				
-			</td>
-		</tr>
-	</table>
+				</center>
+			</div>
+		</div>
+		<div class=fc></div>
+		
+		<script>
+			$("#subnav-current").live("click", function() {
+				var menu = $("#subnav-menu");
+				if(menu.css("display") != "block")
+					menu.css("display", "block");
+				else
+					menu.css("display", "none");
+				return false;
+			});
+		</script>
+		
+		<div class=pagebody>
+			%%page_content%%
+		</div>
+	<tmpl_else>
+		<table border=0 cellpadding=0 cellspacing=0 width='100%'>
+			<tr>
+				<tmpl_if nav_sibs>
+					<td valign=top class='nav-sibs-cell'>
+						<div class=nav-sibs>
+							<ul>
+								<tmpl_loop nav_sibs>
+									<li>
+										<a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a>
+									</li>
+								</tmpl_loop>
+							</ul>
+						</div>
+					</td>
+				</tmpl_if>
+				<td valign=top>
+					<div class=pagebody>
+						<!--<tmpl_if page_title>
+							<h1>%%page_title%%</h1>
+						</tmpl_if>-->
+						
+						%%page_content%%
+					</div>
+					
+				</td>
+			</tr>
+		</table>
+		
+	</tmpl_if>

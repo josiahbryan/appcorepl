@@ -583,7 +583,9 @@ package Boards;
 			#die $controller;
 			$controller->new_post_hook($tmpl,$board);
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push('New Post',"$bin/$folder_name/new",0);
+			$view->output($tmpl);
 			return $r;
 		}
 		elsif($sub_page eq 'print_list')
@@ -830,25 +832,34 @@ package Boards;
 			
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
-			my @provider_copy = ();
-			
-			$self->load_video_providers;
-			my @provider_configs;
-			# @VideoProviders is already loaded by now, even if cache cleared it...
-			foreach my $ref (@VideoProviders)
-			{
-				my $config = $ref->controller->config;
-				push @provider_configs, $config;
-				my %copy;
-				$copy{$_} = $config->{$_} foreach qw/provider_class iframe_size extra_js/;
-				push @provider_copy, \%copy;
-			}
-			$tmpl->param(video_provider_list_json => encode_json(\@provider_copy));
-			$tmpl->param(video_provider_list => \@provider_configs);
+			$self->apply_video_providers($tmpl);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
 		}
+	}
+	
+	sub apply_video_providers
+	{
+		my $self = shift;
+		
+		my $tmpl = shift;
+		
+		my @provider_copy = ();
+			
+		$self->load_video_providers;
+		my @provider_configs;
+		# @VideoProviders is already loaded by now, even if cache cleared it...
+		foreach my $ref (@VideoProviders)
+		{
+			my $config = $ref->controller->config;
+			push @provider_configs, $config;
+			my %copy;
+			$copy{$_} = $config->{$_} foreach qw/provider_class iframe_size extra_js/;
+			push @provider_copy, \%copy;
+		}
+		$tmpl->param(video_provider_list_json => encode_json(\@provider_copy));
+		$tmpl->param(video_provider_list => \@provider_configs);
 	}
 	
 	sub load_post_for_list
@@ -898,6 +909,16 @@ package Boards;
 		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
 		
+		# NOTE: We set this here to PREVENT an error in the jQuery tmpl plugin when creating
+		# posts inline via a json response from the server. The jQuery tmpl craps out and throws
+		# an error when a variable is used in the template that is not defined in the parameters
+		# given to the template function. So we MUST define EVERY variable used in the template
+		# even if its not relevant to the current context - such as 'single_post_page'. But
+		# 'single_post_page' IS used when viewing a single post - other than that, the template
+		# should just default to undefined. HTML::Template handles it fine, but jQuery tmpl doesnt.
+		# Grrrr.
+		$b->{single_post_page}  = 0;
+		
 		my $cur_user = AppCore::Common->context->user;
 		$b->{can_edit} = ($can_admin || ($cur_user && $cur_user->id == $b->{posted_by}) ? 1:0);
 		
@@ -911,11 +932,21 @@ package Boards;
 		#timemark();
 		#$b->{text} = AppCore::Web::Common->clean_html($b->{comment})
 		
+		open(LOG,">/tmp/log.html");
+		
+		print LOG "Mark1: text: [".$b->{text}."]\n";
 		my $short = AppCore::Web::Common->html2text($b->{text});
+		
+		print LOG "Mark2: short [html2text]: [$short]\n";
+		
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
 		
+		print LOG "Mark3: short_text: [$b->{short_text}]\n";
+		
 		my $clean_html = AppCore::Web::Common->text2html($b->{short_text});
+		
+		print LOG "Mark4: clean_html [text2html]: [$clean_html]\n";
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
 		
@@ -940,6 +971,9 @@ package Boards;
 		#die Dumper \@TEXT_FILTERS;
 		$b->{text}       = $self->create_video_links($text_tmp);
 		$b->{clean_html} = $self->create_video_links($clean_html);
+		
+		print LOG "Mark5: final clean_html: [$clean_html]\n";
+		close(LOG);
 		
 		# just for jQuery's sake - the template converter in AppCore::Web::Result treats variables ending in _html special
 		$b->{text_html} = $b->{text}; 
@@ -1259,7 +1293,9 @@ package Boards;
 			
 			$tmpl->param(post_url => "$bin/$board_folder_name/$folder_name/post");
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push('Reply',"$bin/$folder_name/$sub_page",0);
+			$view->output($tmpl);
 			return $r;
 				
 		}
@@ -1334,7 +1370,9 @@ package Boards;
 			
 			$tmpl->param(post_url => "$bin/$board_folder_name/$folder_name/save");
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push('Edit Post',"$bin/$folder_name/edit",0);
+			$view->output($tmpl);
 			return $r;
 		}
 		elsif($sub_page eq 'save')
@@ -1394,12 +1432,15 @@ Cheers!};
 			}
 			else
 			{
-				
 				my $tmpl = $self->get_template($self->config->{post_tmpl} || 'post.tmpl');
 				$tmpl->param(board_nav => $self->macro_board_nav());
 				$tmpl->param( $_ => $post_resultset->{$_}) foreach keys %$post_resultset;
+				$self->apply_video_providers($tmpl);
+				$tmpl->param(single_post_page => 1); # set a flag to differentiate this template from the list.tmpl in case the post.tmpl includes the same template needed to render posts in list.tmpl
 				
-				my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+				my $view = Content::Page::Controller->get_view('sub',$r);
+				$view->breadcrumb_list->push($post->subject,"$bin/$folder_name/".$post->folder_name,0);
+				$view->output($tmpl);
 				return $r;
 			}
 		}

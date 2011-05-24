@@ -94,10 +94,11 @@ package ThemePHC;
  		my $abs_file = undef;
  		if($pkg eq 'Boards')
  		{
- 			if($file eq 'list.tmpl')
+ 			if($file eq 'list.tmpl' ||
+ 			   $file eq 'post.tmpl')
  			{
  				# Repmap the list.tmpl from Boards into our template folder 
- 				$abs_file = $class->get_template_path('boards/list.tmpl');
+ 				$abs_file = $class->get_template_path('boards/'.$file);
  			}
  		}
  		

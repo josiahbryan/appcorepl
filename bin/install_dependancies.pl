@@ -14,6 +14,8 @@ my @deps = qw/
 	LWP::Simple
 	FCGI
 	JSON::XS
+	MIME::Lite
+	Clone::Fast
 /;
 
 foreach my $dep (@deps)
