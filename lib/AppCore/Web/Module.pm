@@ -282,6 +282,7 @@ package AppCore::Web::Module;
 		
 		# Give the current theme an opportunity to remap the template into something different if desired
 		my $abs_file = Content::Page::Controller->theme->remap_template($pkg,$file);
+		#print STDERR "get_template: 0: $abs_file\n";
 		if(!$abs_file || !-f $abs_file)
 		{
 			#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
@@ -292,6 +293,20 @@ package AppCore::Web::Module;
 			push @parts, $file;
 			
 			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
+			#print STDERR "get_template: 1: $abs_file\n";
+		}
+		
+		if(!$abs_file || !-f $abs_file)
+		{
+			#($pkg) = $pkg =~ /^([^\:]+):/ if $pkg =~ /::/;
+			#$pkg =~ s/::/\//g;
+			my @parts = split /::/, $pkg;
+			my $first_pkg = shift @parts;
+			#@parts = lc $_ foreach @parts;
+			#push @parts, $file;
+			
+			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.$file;
+			#print STDERR "get_template: 2: $abs_file\n";
 		}
 		
 		if($file !~ /^\// && -f $abs_file)

@@ -1,4 +1,4 @@
-	<tr class='post<tmpl_if post_class> post-%%post_class%%</tmpl_if>' id='post%%postid%%'>
+	<tr class='post<tmpl_if post_class> post-%%post_class%%</tmpl_if> talktype-%%ticker_class%%' id='post%%postid%%'>
 		<td valign='top' align='center' class='photo'>
 			<img class='user_photo' 
 				src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
@@ -31,6 +31,7 @@
 			</div>
 			
 			<div class='actions post_actions' id='acts%%postid%%'>
+				<b>[%%ticker_class%%]</b>
 				<tmpl_unless single_post_page>
 					<tmpl_if short_text_has_more>
 						<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>

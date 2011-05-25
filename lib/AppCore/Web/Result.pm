@@ -182,10 +182,6 @@ package AppCore::Web::Result;
 		# Put this inclusion macro up top before other modifications
 		# so that any content it includes is processed along with
 		# the rest of the content on the pagge
-		if($AppCore::Config::ENABLE_TMPL2JQ_MACRO)
-		{
-			$out =~ s/\${TMPL2JQ:([^\}]+)}/_tmpl2jq($1,$tmpl)/segi;
-		}
 		
 		#timemark("tmpl2jq");
 		
@@ -367,53 +363,6 @@ package AppCore::Web::Result;
 		$self->content_title($title);
 		$self->body($out);
 		return $self;
-	}
-	
-	sub _tmpl2jq
-	{
-		my $file = shift;
-		my $tmpl = shift;
-		my $block = AppCore::Web::Common->get_included_file($file);
-		#$block =~ s/<tmpl_if ([^>]+?)>/{{if $1}}/segi;
-		$block =~ s/<tmpl_if ([^>]+?)>/_rewrite_if_macro($1,$block)/segi;
-		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
-		$block =~ s/<tmpl_unless ([^>]+?)>/_rewrite_if_macro($1,$block,1)/segi;
-		$block =~ s/<\/tmpl_unless>/{{\/if}}/gi;
-		$block =~ s/<tmpl_loop ([^>]+?)>/{{each $1}}/gi;
-		$block =~ s/<\/tmpl_loop>/{{\/each}}/gi;
-		$block =~ s/<tmpl_else>/{{else}}/gi;
-		$block =~ s/<tmpl_var ([^>]+)>/$tmpl->param($1)/segi if $tmpl;
-		$block =~ s/%%(.+?html)%%/{{html $1}}/g;
-		$block =~ s/%%([^\%]+)%%/\${$1}/g;
-
-		#print STDERR "Final block: $block\n";
-		
-		return $block;
-	}
-	
-	sub _rewrite_if_macro
-	{
-		my $data = shift;
-		my $block = shift;
-		my $unless = shift;
-		my ($var,$typecast) = $data =~ /^([^:]+)(?:\:(.*))?/;
-		
-		$typecast = lc $typecast;
-		$typecast = 'list' if $block =~ /<tmpl_loop $var>/;
-		
-		if(!$typecast || $typecast eq 'num')
-		{
-			return $unless ? "{{if $var<=0}}" : "{{if $var>0}}";
-		}
-		elsif($typecast eq 'str')
-		{
-			return $unless ? "{{if !$var}}" : "{{if !!$var}}";
-		}
-		elsif($typecast eq 'list')
-		{
-			#return "{{if ".($unless?"!":"")."($var.length)}}";
-			return $unless ? "{{if $var.length<=0}}" : "{{if $var.length}}";
-		}
 	}
 	
 	

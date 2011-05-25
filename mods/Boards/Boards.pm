@@ -214,6 +214,8 @@ package Boards;
 		my $self = shift;
 		if(!$self->{config})
 		{
+			$self->{config} = {};
+			
 			# Setup default board config - can be updated by subclasses
 			$self->apply_config(
 			{
@@ -243,7 +245,7 @@ package Boards;
 		my $config_ref = $self->{config};
 		$config_ref->{$_} = $config->{$_} foreach keys %$config;
 		
-		#print STDERR Dumper $self->config;
+		#print STDERR Dumper $self->{config};
 	}
 	
 	
@@ -566,10 +568,11 @@ package Boards;
 		#die $board->folder_name;
 		if($board->forum_controller)
 		{
-			eval 'use '.$board->forum_controller;
-			die $@ if $@ && $@ !~ /Can't locate/;
+			#eval 'use '.$board->forum_controller;
+			#die $@ if $@ && $@ !~ /Can't locate/;
 			
-			$controller = $board->forum_controller;
+			$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
+			$controller->binpath($self->binpath);
 		}
 
 		my $sub_page = $req->next_path;
@@ -627,12 +630,18 @@ package Boards;
 			$tmpl->param(short_noun => $controller->config->{short_noun} || 'Boards');
 			$tmpl->param(long_noun  => $controller->config->{long_noun}  || 'Bulletin Boards');
 			
+			my $tmpl_incs = $controller->config->{tmpl_incs} || {};
+			foreach my $key (keys %$tmpl_incs)
+			{
+				$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+			}
+			
 			my @id_list = split /,/, $req->{id_list};
 			
 			my @posts = map { Boards::Post->retrieve($_) } @id_list;
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
-			my @output_list = map { $self->load_post($_,$req,1) } @posts; # 1 = dont count this load as a 'view'
+			my @output_list = map { $controller->load_post($_,$req,1) } @posts; # 1 = dont count this load as a 'view'
 			foreach my $b (@output_list)
 			{
 				$b->{bin}         = $bin;
@@ -666,7 +675,7 @@ package Boards;
 		}
 		elsif($sub_page)
 		{
-			return $controller->post_page($req,$r);
+			return $self->post_page($req,$r,$controller);
 		}
 		else
 		{
@@ -750,6 +759,8 @@ package Boards;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
 				}
 				
+				my $tmpl_incs = $controller->config->{tmpl_incs} || {};
+						
 				# Now we put all the comments with the parent posts
 				my @list;
 				my %indents;
@@ -758,6 +769,11 @@ package Boards;
 					# This is a parent post, just add it to the master list
 					if($data->{top_commentid} == 0)
 					{
+						foreach my $key (keys %$tmpl_incs)
+						{
+							$data->{'tmpl_inc_'.$key} = $tmpl_incs->{$key};
+						}
+						
 						push @list, $data;
 					}
 					else
@@ -858,9 +874,17 @@ package Boards;
 			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
 			$tmpl->param(user_email_md5 => md5_hex($user->email)) if $user && $user->id;
 			
+			my $tmpl_incs = $controller->config->{tmpl_incs} || {};
+			#use Data::Dumper;
+			#die Dumper $tmpl_incs;
+			foreach my $key (keys %$tmpl_incs)
+			{
+				$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+			}
+			
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
-			$self->apply_video_providers($tmpl);
+			$controller->apply_video_providers($tmpl);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
@@ -949,6 +973,8 @@ package Boards;
 		
 		my $cur_user = AppCore::Common->context->user;
 		$b->{can_edit} = ($can_admin || ($cur_user && $cur_user->id == $b->{posted_by}) ? 1:0);
+		
+		$b->{ticker_class_title} = guess_title($b->{ticker_class}) if $b->{ticker_class};
 		
 		## NOTE Assuming SQL query already provided all user columns as user_*
 # 		if($user && $user->id)
@@ -1270,9 +1296,18 @@ package Boards;
 		
 		if($append_flag)
 		{
-			$fake_it = $fake_it.'_'.$post->id;
+			$fake_it = ($fake_it?$fake_it.'_':'').$post->id;
 			$post->folder_name($fake_it);
 			$post->update;
+		}
+		
+		if($req->{tag})
+		{
+			$post->add_tag($req->{tag});
+		}
+		elsif($req->{tags})
+		{
+			s/(^\s+|\s+$)//g && $post->add_tag($_) foreach split /,/, $req->{tags};
 		}
 		
 		return $post;
@@ -1284,6 +1319,7 @@ package Boards;
 		my $self  = shift;
 		my $req   = shift;
 		my $r     = shift;
+		my $controller = shift || $self;
 		
 		my $folder_name = $req->shift_path;
 		$req->push_page_path($folder_name);
@@ -1310,10 +1346,10 @@ package Boards;
 		
 		if($sub_page eq 'post')
 		{
-			my $comment     = $self->create_new_comment($board,$post,$req);
+			my $comment     = $controller->create_new_comment($board,$post,$req);
 			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
 			
-			$self->send_notifications('new_comment',$comment,{comment_url => $comment_url});
+			$controller->send_notifications('new_comment',$comment,{comment_url => $comment_url});
 			
 			print STDERR __PACKAGE__."::post_page($post): Posted reply ID $comment to post ID $post\n";
 			
@@ -1323,7 +1359,7 @@ package Boards;
 				# because post_page() is called as $controller->post_page(...)  -
 				# Therefore, we dont need to call it by $board->controller ourself 
 				# - $self is already set correctly.
-				my $output = $self->load_post_for_list($comment,$board->folder_name);
+				my $output = $controller->load_post_for_list($comment,$board->folder_name);
 				
 				my $json = encode_json($output);
 				return $r->output_data("application/json", $json);
@@ -1333,12 +1369,12 @@ package Boards;
 		}
 		elsif($sub_page eq 'reply' || $sub_page eq 'reply_to')
 		{
-			my $tmpl = $self->get_template($self->config->{post_reply_tmpl} || 'post_reply.tmpl');
-			$tmpl->param(board_nav => $self->macro_board_nav());
+			my $tmpl = $self->get_template($controller->config->{post_reply_tmpl} || 'post_reply.tmpl');
+			$tmpl->param(board_nav => $controller->macro_board_nav());
 			
 			eval
 			{
-				my $reply_form_resultset = $self->load_post_reply_form($post,$req->shift_path);
+				my $reply_form_resultset = $controller->load_post_reply_form($post,$req->shift_path);
 				$tmpl->param($_ => $reply_form_resultset->{$_}) foreach keys %$reply_form_resultset;
 			};
 			$r->error("Error Loading Form",$@) if $@;
@@ -1354,12 +1390,12 @@ package Boards;
 		}
 		elsif($sub_page eq 'delete')
 		{
-			if(!$self->can_user_edit($post))
+			if(!$controller->can_user_edit($post))
 			{
-				PHC::User::Auth->require_authentication($self->config->{admin_acl});
+				PHC::User::Auth->require_authentication($controller->config->{admin_acl});
 			}
 			
-			my $type = $self->post_delete($post,$req);
+			my $type = $controller->post_delete($post,$req);
 			
 			if($type eq 'comment')
 			{
@@ -1372,7 +1408,7 @@ package Boards;
 		}
 		elsif($sub_page eq 'like')
 		{
-			my $type = $self->post_like($post,$req);
+			my $type = $controller->post_like($post,$req);
 			
 			if($req->output_fmt eq 'json')
 			{
@@ -1390,7 +1426,7 @@ package Boards;
 		}
 		elsif($sub_page eq 'unlike')
 		{
-			my $type = $self->post_unlike($post,$req);
+			my $type = $controller->post_unlike($post,$req);
 			
 			if($req->output_fmt eq 'json')
 			{
@@ -1408,17 +1444,17 @@ package Boards;
 		}
 		elsif($sub_page eq 'edit')
 		{
-			if(!$self->can_user_edit($post))
+			if(!$controller->can_user_edit($post))
 			{
 				$r->error("Not Allowed","Sorry, you're not allowed to edit this post.");
 			}
 			
-			my $tmpl = $self->get_template($self->config->{new_post_tmpl} || 'new_post.tmpl');
+			my $tmpl = $self->get_template($controller->config->{new_post_tmpl} || 'new_post.tmpl');
 			
-			$tmpl->param(board_nav => $self->macro_board_nav());
+			$tmpl->param(board_nav => $controller->macro_board_nav());
 			$tmpl->param('folder_'.$board_folder_name => 1);
 			
-			my $edit_resultset = $self->load_post_edit_form($post);
+			my $edit_resultset = $controller->load_post_edit_form($post);
 			$tmpl->param($_ => $edit_resultset->{$_}) foreach keys %$edit_resultset;
 			
 			$tmpl->param(post_url => "$bin/$board_folder_name/$folder_name/save");
@@ -1430,12 +1466,12 @@ package Boards;
 		}
 		elsif($sub_page eq 'save')
 		{
-			if(!$self->can_user_edit($post))
+			if(!$controller->can_user_edit($post))
 			{
 				$r->error("Not Allowed","Sorry, you're not allowed to edit this post.");
 			}
 			
-			$self->post_edit_save($post,$req);
+			$controller->post_edit_save($post,$req);
 			
 			my $folder = $post->folder_name;
 			
@@ -1475,7 +1511,7 @@ Cheers!};
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
 			my $dont_inc_comments = $req->no_comments == 1;
-			my $post_resultset = $self->load_post($post,$req,0,undef,$dont_inc_comments);
+			my $post_resultset = $controller->load_post($post,$req,0,undef,$dont_inc_comments);
 			
 			if($req->output_fmt eq 'json')
 			{
@@ -1485,11 +1521,17 @@ Cheers!};
 			}
 			else
 			{
-				my $tmpl = $self->get_template($self->config->{post_tmpl} || 'post.tmpl');
-				$tmpl->param(board_nav => $self->macro_board_nav());
+				my $tmpl = $self->get_template($controller->config->{post_tmpl} || 'post.tmpl');
+				$tmpl->param(board_nav => $controller->macro_board_nav());
 				$tmpl->param( $_ => $post_resultset->{$_}) foreach keys %$post_resultset;
-				$self->apply_video_providers($tmpl);
+				$controller->apply_video_providers($tmpl);
 				$tmpl->param(single_post_page => 1); # set a flag to differentiate this template from the list.tmpl in case the post.tmpl includes the same template needed to render posts in list.tmpl
+				
+				my $tmpl_incs = $controller->config->{tmpl_incs} || {};
+				foreach my $key (keys %$tmpl_incs)
+				{
+					$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+				}
 				
 				my $view = Content::Page::Controller->get_view('sub',$r);
 				$view->breadcrumb_list->push($post->subject,"$bin/$folder_name/".$post->folder_name,0);
@@ -1544,7 +1586,7 @@ Cheers!};
 		my $post = shift;
 		my $args = shift;
 		
-		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY;
+		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY || !$post->boardid->fb_sync_enabled;
 		
 		if($action eq 'new_post' ||
 		   $action eq 'new_comment')

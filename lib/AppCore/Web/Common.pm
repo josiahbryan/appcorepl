@@ -322,11 +322,19 @@ package AppCore::Web::Common;
 	sub _template_filter
 	{
 		my $textref = shift;
-		my $tmpl = shift;
+		#my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
+		
+		#print STDERR "_template_filter: tmpl: '$tmpl', text: ".$$textref."\n";
 		
 		$$textref =~ s/\${inc:([^\}]+)}/get_included_file($1)/segi;
 		#$$textref =~ s/\${if:([^\}]+)}/_rewrite_if_macro($1)/segi;
 		#$$textref =~ s/\${(end|\/)if}/<\/tmpl_if>/gi;
+		
+		if($AppCore::Config::ENABLE_TMPL2JQ_MACRO)
+		{
+			$$textref =~ s/\${tmpl2jq:([^\}]+)}/_tmpl2jq($1)/segi;
+		}
+		
 		
 		$$textref =~ s/<tmpl_if ([^>]+)>/_rewrite_if_macro($1)/segi;
 		
@@ -342,10 +350,61 @@ package AppCore::Web::Common;
 # 			$$textref =~ s/<\$([^\>]+)>/$pairs{$1}/gi;
 # 		}
 		
-		$$textref =~ s/<perl>((?:.|\n)*?)<\/perl>/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
+		#$$textref =~ s/<perl>((?:.|\n)*?)<\/perl>/_template_perl_eval($1,$+[1],$textref,$tmpl)/segi;
 		
 		#die Dumper $$textref;
 	}
+	
+	sub _tmpl2jq
+	{
+		my $file = shift;
+		my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
+		my $block = AppCore::Web::Common->get_included_file($file,0,$tmpl);
+		#$block =~ s/<tmpl_if ([^>]+?)>/{{if $1}}/segi;
+		$block =~ s/<tmpl_if ([^>]*?)>/_rewrite_if_macro2($1,$block)/segi;
+		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
+		$block =~ s/<tmpl_unless ([^>]+?)>/_rewrite_if_macro2($1,$block,1)/segi;
+		$block =~ s/<\/tmpl_unless>/{{\/if}}/gi;
+		$block =~ s/<tmpl_loop ([^>]+?)>/{{each $1}}/gi;
+		$block =~ s/<\/tmpl_loop>/{{\/each}}/gi;
+		$block =~ s/<tmpl_else>/{{else}}/gi;
+		$block =~ s/<tmpl_var ([^>]+)>/$tmpl->param($1)/segi if $tmpl;
+		$block =~ s/%%(.+?html)%%/{{html $1}}/g;
+		$block =~ s/%%([^\%]+)%%/\${$1}/g;
+
+		#print STDERR "Final block: $block\n";
+		
+		return $block;
+	}
+	
+	sub _rewrite_if_macro2
+	{
+		my $data = shift;
+		my $block = shift;
+		my $unless = shift;
+		
+		my ($var,$typecast) = $data =~ /^([^:]+)(?:\:(.*))?/;
+		
+		$typecast = lc $typecast;
+		$typecast = 'list' if $block =~ /<tmpl_loop $var>/;
+		
+		if(!$typecast || $typecast eq 'num')
+		{
+			return $unless ? "{{if $var<=0}}" : "{{if $var>0}}";
+		}
+		elsif($typecast eq 'str')
+		{
+			return $unless ? "{{if !$var}}" : "{{if !!$var}}";
+		}
+		elsif($typecast eq 'list')
+		{
+			#return "{{if ".($unless?"!":"")."($var.length)}}";
+			return $unless ? "{{if $var.length<=0}}" : "{{if $var.length}}";
+		}
+	}
+	
+	
+	
 	
 	sub _rewrite_if_macro
 	{
@@ -361,16 +420,32 @@ package AppCore::Web::Common;
 		shift if $_[0] eq __PACKAGE__;
 		my $file = shift;
 		my $level = shift || 0;
-		my $orig = $file;
-		#return $FileCache{$orig} if $FileCache{$orig}; 
+		my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
+		my $orig = $file; 
+		#return $FileCache{$orig} if $FileCache{$orig};
+		use Data::Dumper;
 		
+		# Always properly replace %%appcore%% regardless of the variable defenition in the $tmpl
 		$file =~ s/%%appcore%%/$AppCore::Config::WWW_ROOT/gi;
 		
+		# Handle arbitrary variable replacements in the filename
+		$file =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi if $tmpl && $file =~ /%%/;
+		
+		# Intelligently prepend the document root if this is an absolute filename relative to $WWW_DOC_ROOT
 		if($file =~ /^\/appcore/i)
 		{
 			$file = $AppCore::Config::WWW_DOC_ROOT . $file;
 		}
 		
+		if($tmpl && !-f $file)
+		{
+			my $test = join('/', $tmpl->{pargs}->{path}, $file);
+			$file = $test if -f $test;
+		}
+		
+		#if($file =~ /^%%[^\%]+%%$/)
+		
+		#print STDERR "get_included_file: file: '$file'\n";
 		my $data = undef;
 		if(-f $file)
 		{
@@ -384,7 +459,9 @@ package AppCore::Web::Common;
 		}
 		else
 		{
-			print STDERR __PACKAGE__."::get_included_file(): File does not exist: '$file'\n";
+			#print STDERR Dumper $tmpl; 
+			print STDERR __PACKAGE__."::get_included_file(): File does not exist: '$file'\n" if $file;
+		
 			$data = "";
 		}
 		
@@ -422,7 +499,7 @@ package AppCore::Web::Common;
 	{
 		my $file = shift;
 		#my $module = shift || undef;
-		my $bless_pkg = shift || 'HTML::Template::RetrievableParameters';
+		#my $bless_pkg = shift || 'HTML::Template::RetrievableParameters';
 		$TMPL_FILE = $file;
 		#AppCore::Common::print_stack_trace() if $pkg eq 'AppCore::Module::OMS::WebApp';
 		my ($split_path,$split_file) = $file =~ /^(.*)\/([^\/]+)$/;
@@ -432,6 +509,8 @@ package AppCore::Web::Common;
 		die "File doesn't exist: $file" if !-f $file && index($file,' ') < 0;
 		 
 		my %args;
+		
+		#print STDERR "load_template: $file\n";
 		
 		if(-f $file)
 		{
@@ -454,7 +533,7 @@ package AppCore::Web::Common;
 		
 		use Data::Dumper;
 		#print STDERR Dumper(\%args);
-		my $tmpl = $bless_pkg->new(
+		my $tmpl = HTML::Template::DelayedLoading->new(
 			%args
 		);
 		
@@ -632,29 +711,62 @@ package AppCore::Web::Common;
 	}
 }
 
-package HTML::Template::RetrievableParameters;
+package HTML::Template::DelayedLoading;
 {
+	use strict;
 	use base 'HTML::Template';
+	
+	sub new
+	{
+		my $class = shift;
+		my @args = @_;
+		my %hash = @args;
+		
+		return bless {
+			pargs => \%hash,
+			params	=> {},
+		}, $class;
+	}
 	
 	sub param
 	{
-		my @copy = @_;
-		HTML::Template::param(@_);
+		my $self = shift;
+		my $key = shift;
 		
-		my $self = shift @copy;
-		my $key = shift @copy;
-		my $val = shift @copy;
+		if(@_)
+		{
+			$self->{params}->{$key} = shift;
+		}
 		
-		if($val)
+		if(@_)
 		{
-			$self->{_param_cache} ||= {};
-			$self->{_param_cache}->{$key} = $val;
+			warn __PACKAGE__."::param(): This method only handles key=>value arguments - nothing fancy";
 		}
-		else
-		{
-			return $self->{_param_cache}->{$key};
-		}
-	};
+		
+		return $self->{params}->{$key};
+	}
+	
+	our $CurrentObject;
+	sub output
+	{
+		my $self = shift;
+		my %pargs = %{ $self->{pargs} || {} };
+		
+		$CurrentObject = $self;
+		
+		#use Data::Dumper;
+		#print STDERR Dumper $self;
+		my $tmpl = HTML::Template->new(%pargs);
+		$tmpl->param(%{ $self->{params} });
+		
+		#print STDERR __PACKAGE__."::output(): ".Dumper(\%pargs);
+		
+		my $output = $tmpl->output(@_);
+		
+		undef $CurrentObject;
+		return $output;
+	}
+	
 	
 	
 };

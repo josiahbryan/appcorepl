@@ -39,15 +39,39 @@
 	
 	<script>
 	
+	$.fn.serializeObject = function()
+	{
+		var o = {},
+		    a = this.serializeArray();
+		$.each(a, function() 
+		{
+			var t = this, 
+			    n = t.name, 
+			    v = t.value;
+			if (o[n] !== undefined) 
+			{
+				if (!o[n].push) 
+				{
+					o[n] = [o[n]];
+				}
+				o[n].push(v || '');
+			} 
+			else 
+			{
+				o[n] = v || '';
+			}
+		});
+		return o;
+	};
+	
 	function ajax_post_new(formElm)
 	{
-		var postData = {
-			comment: formElm.text.value,
-			poster_name: formElm.poster_name.value,
-			poster_email: formElm.poster_email.value,
-			output_fmt: "json",
-			plain_text: 1
-		};
+		var postData = $(formElm).serializeObject();
+		postData.output_fmt = "json";
+		postData.plain_text = 1;
+		
+//		console.debug(postData);
+//		return false;
 		
 		$("#post-placeholder").show();
 		
@@ -99,50 +123,12 @@
 		<table class='postlist' align=center cellspacing=0>
 			<tbody>
 				<tr class='post newpost'>
-					<td valign='top' class='data' colspan=2>
-						
-						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
-							
-							<table>
-								<tr>
-									<td>
-										<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%' align=left>
-									</td>
-									<td colspan=2>
-										<div class='content'>
-											<textarea class='expandText' style="width:200px;height:5em" class="expandText" name="text"></textarea>
-										</div>
-									</td>
-								<tmpl_if user_display>
-								<tr>
-									<td colspan=3>
-										<div class='ident' id='postas_display'>
-											Posting as <b>%%user_display%%</b>
-										</div>
-										<div class='controls'>
-											<button type='submit' class='button'>Post</button>
-										</div>
-									</td>
-								</tr>
-								<tmpl_else>
-									<tr>
-										<td>Name:</td>
-										<td><input value='%%user_display%%' name='poster_name' size=15></td>
-									
-										<td rowspan=2>
-											<div class='controls'>
-												<button type='submit' class='button'>Post</button>
-											</div>
-										</td>
-									</tr>
-									<tr>
-										<td>Email:</td>
-										<td><input value='%%user_email%%' name='poster_email' size=15></td>
-									</tr>
-								</tmpl_if>
-							</table>
-						
-						</form>
+					<td valign='top' class='data' colspan=2>text
+						<tmpl_if tmpl_inc_newpost_mobile>
+							${inc:%%tmpl_inc_newpost_mobile%%}
+						<tmpl_else>
+							${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-newpostform-mobile.tmpl}
+						</tmpl_if>
 					</td>
 				</tr>
 				<tmpl_if len>
@@ -166,7 +152,11 @@
 				</tr>
 					
 				<tmpl_loop posts>
-					${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow-mobile.tmpl}
+					<tmpl_if tmpl_inc_postrow_mobile>
+						${inc:%%tmpl_inc_postrow_mobile%%}
+					<tmpl_else>
+						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow-mobile.tmpl}
+					</tmpl_if>
 				</tmpl_loop>
 				
 				<tmpl_if next_idx>
@@ -182,46 +172,15 @@
 		<table class='postlist' width='100%' align=center cellspacing=0>
 			<tbody>
 				<tr class='post newpost'>
-					<td valign='top' align='center' class='photo'>
-						<!--<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}">-->
+					<!--<td valign='top' align='center' class='photo'>
 						<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%'>
-					</td>
-					<td valign='top' class='data'>
-						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
-							<div class='content'>
-								<textarea class='expandText' style="width:99%;height:5em" class="expandText" name="text"></textarea>
-								<!--<span><input type=radio name=category value=1 id=cat_1><label for=cat_1>Prayer</label></span>
-								<span><input type=radio name=category value=2 id=cat_2><label for=cat_1>Praise!</label></span>
-								<span><input type=checkbox name=is_epa value=1 id=is_epa><label for=is_epa>E-PrayerAlert</label></span>-->
-							</div>
-							<div class='controls'>
-								<button type='submit' class='button'>Post</button>
-							</div>
-							<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
-								<table>
-									<tr>
-										<td>Name:</td>
-										<td><input value='%%user_display%%' name='poster_name'></td>
-									</tr>
-									<tr>
-										<td>Email:</td>
-										<td><input value='%%user_email%%' name='poster_email'></td>
-									</tr>
-								</table>
-							</div>
-							<tmpl_if user_display>
-								<div class='ident' id='postas_display'>
-									<script>
-									function show_postas_form()
-									{
-										$("#postas_form").show(200);
-										$("#postas_display").hide(200);
-									}
-									</script>
-									Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
-								</div>
-							</tmpl_if>
-						</form>
+					</td>-->
+					<td valign='top' class='data' colspan=2>
+						<tmpl_if tmpl_inc_newpost>
+							${inc:%%tmpl_inc_newpost%%}
+						<tmpl_else>
+							${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-newpostform.tmpl}
+						</tmpl_if>
 					</td>
 				</tr>
 				<tmpl_if len>
@@ -245,8 +204,20 @@
 				</tr>
 					
 				<tmpl_loop posts>
-					${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+					<tmpl_if tmpl_inc_postrow>
+						${inc:%%tmpl_inc_postrow%%}
+					<tmpl_else>
+						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+					</tmpl_if>
 				</tmpl_loop>
+				
+				<!--<tr id=preload>
+					<td style='padding: 2em'>
+						<center>
+							<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
+						</center>
+					</td>
+				</tr>-->
 				
 				<tmpl_if next_idx>
 					<tr class='loadmore'>
@@ -260,7 +231,6 @@
 	</tmpl_if>
 	
 	<script>
-	window.PagingNextIndex = %%next_idx%%;
 	//loadmore_link
 	var pagingLock = false;
 	var pagingFunc = function(){
@@ -270,7 +240,7 @@
 			
 		pagingLock = true;
 		
-		if(!window.PagingNextIndex)
+		if(window.PagingNextIndex<0)
 			return false;
 			
 		$("body").css("cursor", "progress");
@@ -341,6 +311,9 @@
 						$("#current_text").html("Showing all "+data.max_idx+" posts");
 					}
 					
+					if(document.getElementById("preload"))
+						$("#preload").remove();
+					
 					// Remove busy cursor
 					$("body").css("cursor", "auto");
 					th.css("cursor", "pointer");
@@ -361,6 +334,12 @@
 	
 	$(".loadmore a").live("click",pagingFunc);
 	$("a.loadmore_link").live("click",pagingFunc);
+	
+	window.PagingNextIndex = %%next_idx%%;
+// 	window.PagingNextIndex = 0; //%%next_idx%%;
+// 	$(function() { setTimeout(function() {
+// 		pagingFunc();
+// 	}, 500); });
 	
 	// Add a "load on scroll" method. 
 	// This listens for the "onscroll" event and checks to see if the
@@ -391,7 +370,11 @@
 		</script>
 	<tmpl_else>
 		<script id="post-tmpl" type="text/x-jquery-tmpl">
-			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+			<tmpl_if tmpl_inc_postrow>
+				${tmpl2jq:%%tmpl_inc_postrow%%}
+			<tmpl_else>
+				${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+			</tmpl_if>
 		</script>
 	</tmpl_if>
 

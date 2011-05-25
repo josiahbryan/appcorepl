@@ -30,9 +30,11 @@ my $controller = Boards->new;
 my %seen_feed; # flag feeds we've already synced so we dont duplicate post
 
 # Upload all new posts to FB from Boards
-my @posts = Boards::Post->retrieve_from_sql(q{extra_data like '%"needs_uploaded":1%'});
+my @posts = Boards::Post->retrieve_from_sql(q{deleted=0 and extra_data like '%"needs_uploaded":1%'});
 foreach my $post (@posts)
 {
+	next if ! $post->boardid->fb_sync_enabled;
+	
 	my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 	
 	# Upload the post to FB

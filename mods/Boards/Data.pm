@@ -382,7 +382,7 @@ package Boards::Post;
 	{
 		my $self = shift;
 		my @tags = Boards::Post::Tag::Pair->search(postid => $self);
-		return map { $_->tagid } @tags;
+		return sort { $a->tag cmp $b->tag } map { $_->tagid } @tags;
 	}
 	
 	sub get_tagged

@@ -1,0 +1,216 @@
+						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
+							
+							<table width=100%>
+								<tr>
+									<td valign=top>
+										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
+									</td>
+									<td valign=top class=content colspan=2>
+										<textarea class="expandText" name="comment" id="newpost_text"></textarea>
+									</td>
+									<!--<td class=tags>
+										<div class=wrap>
+											<div><input type=radio name=tag value=pray> Prayer</div>
+											<div><input type=radio name=tag value=praise> Praise</div>
+											<div><input type=checkbox name=epa value=1> ePrayerAlert</div>
+										</div>
+										
+										<style>
+										.newpost .tags,
+										.newpost .tags div * { vertical-align: middle; }
+										
+										.newpost .tags .wrap 
+										{
+											margin-top: -1px;
+											padding-left: 2px;
+										}
+										
+										.newpost .tags .wrap div
+										{
+											background: #e9eeff;
+											border-bottom: 1px solid #c7cddf;
+											border-top: 1px solid white;
+											padding: 2px 5px;
+										}
+										</style>
+									
+									</td>-->
+								<tmpl_if user_display>
+								<tr>
+									<td colspan=3>
+										<div class='ident' id='postas_display'>
+											Posting as <b>%%user_display%%</b>
+											<input value='%%user_display%%' name='poster_name' type=hidden>
+											<input value='%%user_email%%' name='poster_email' type=hidden>
+										</div>
+										
+										<div class='controls'>
+											<button type='submit' class='button'>Post</button>
+										</div>
+										
+										
+										<div class='tags'>
+											<span for=tag_praise><input type=radio name=tag value=praise id=tag_praise><label for=tag_praise> Praise!</label></span>
+											<span for=tag_pray><input type=radio name=tag value=pray     id=tag_pray><label for=tag_pray> Prayer Request</label></span>
+											<span for=tag_talk><input type=radio name=tag value=talk     id=tag_talk checked><label for=tag_talk> Just Talking</label></span>
+											&nbsp;&nbsp;| 
+											<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+										</div>
+									</td>
+								</tr>
+								<tmpl_else>
+									<tr>
+										<td valign=middle>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' size=15></td>
+									
+										<td rowspan=2>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+											
+											<div class='tags'>
+												<span for=tag_praise><input type=radio name=tag value=praise id=tag_praise><label for=tag_praise> Praise!</label></span>
+												<span for=tag_pray><input type=radio name=tag   value=pray   id=tag_pray><label for=tag_pray> Prayer Request</label></span>
+												<span for=tag_talk><input type=radio name=tag   value=talk   id=tag_talk checked><label for=tag_talk> Just Talking</label></span>
+												&nbsp;&nbsp;| 
+												<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td valign=middle>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
+									</tr>
+								</tmpl_if>
+							</table>
+							
+							<style>
+							
+							.newpost .tags,
+							.newpost .tags span * { vertical-align: middle; }
+							.newpost .tags { 
+								margin-top: 3px;
+								text-align: right; 
+							}
+							
+							.newpost .controls { margin-left: .5em; }
+							
+							.newpost .ident { margin-top: 6px; }
+							
+							.newpost .tags span
+							{
+								font-weight: normal;
+								color: rgb(80,80,80);
+								padding: 2 5px 4px 0;
+							}
+							
+							.newpost .tags span.current
+							{
+								color: black;
+								font-weight: bold;
+								background: #fcffb1;
+							}
+							
+							.postlist tr.talktype-pray
+							{
+								background: #fcfeb3;
+								
+							}
+							
+							.postlist tr.talktype-pray td.data,
+							.postlist tr.talktype-pray td.photo
+							{
+								border-top: 1px solid white;
+								border-bottom: 1px solid #e3e684;
+							}
+							
+							.postlist tr.talktype-pray td.photo
+							{
+								padding-left: 3px;
+							}
+							
+							
+							</style>
+							
+							<script>
+							// Put it all in a $(function(){}) block and
+							// make highlightTab a "var" instead of declaring
+							// it as a function - both of these decisions
+							// allow the YUI JS compressor to replace var names
+							// and the highlightTag function name with a much
+							// shorter name. Since no global vars are used or declared,
+							// this block is reduced to the following code (approx). 
+							// However, we maintain the code here in "long hand"
+							// for easier maintenance.
+							
+							// $(function(){var a=$("#tag_talk"),b=function(d,f){var e=d.get(0).id,
+							// c=$(".tags span[for="+e+"]");if(f){c.addClass("current")}else{
+							// c.removeClass("current")}};b(a,true);$(".newpost .tags input").live("click",function(){
+							// b(a,false);b(a=$(this),true)})})
+							
+							
+							$(function(){
+								// *** Highlight Current Tag *** /
+								var currentTag   = $("#tag_talk"),
+								    highlightTag = function(tag, isCurrent)
+								{
+									var cId    = tag.get(0).id,
+									    cLabel = $(".tags span[for="+cId+"]");
+									if(isCurrent)
+										cLabel.addClass("current");
+									else
+										cLabel.removeClass("current");
+								}
+								
+								highlightTag(currentTag, true);
+							
+								$(".newpost .tags input").live("click",function()
+								{
+									highlightTag(currentTag, false);
+									highlightTag(currentTag = $(this), true);
+								});
+								
+								// *** Automatically Change Tag Based on Typed Text *** /
+								var rx1 = new RegExp("pray", "i"),
+								    rx2 = new RegExp("prais", "i"),
+								    //rx3 = new RegExp("talk", "i"),
+								    flagged = false,
+								    update = function()
+								{
+									var t = this;
+									if(!t.value)
+									{
+										$("#tag_talk").click();
+										t.tagged = false;
+										return;
+									}
+									if(t.tagged)
+										return;
+									if(rx1.test(t.value))
+									{
+										$("#tag_pray").click();
+										t.tagged = true;
+										return;
+									}
+									if(rx2.test(t.value))
+									{
+										$("#tag_praise").click();
+										t.tagged = true;
+										return;
+									}
+// 									if(rx3.test(t.value))
+// 									{
+// 										$("#tag_talk").click();
+// 										t.tagged = true;
+// 										return;
+// 									}
+								};
+								//alert(update);
+								var n = $("#newpost_text");
+							
+								n.change(update).keyup(update).keydown(update);
+								//n.get(0).onkeyup = update;
+								
+							});
+							</script>
+						</form>

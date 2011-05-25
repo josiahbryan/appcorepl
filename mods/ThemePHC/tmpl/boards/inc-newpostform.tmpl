@@ -1,0 +1,67 @@
+						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
+							
+							<table width=100%>
+								<tr>
+									<td>
+										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
+									</td>
+									<td class=content>
+										<textarea class="expandText" name="comment"></textarea>
+									</td>
+								<tmpl_if user_display>
+								<tr>
+									<td colspan=3>
+										<div class='ident' id='postas_display'>
+											Posting as <b>%%user_display%%</b>
+											<input value='%%user_display%%' name='poster_name' type=hidden>
+											<input value='%%user_email%%' name='poster_email' type=hidden>
+										</div>
+										<div class='controls'>
+											<button type='submit' class='button'>Post</button>
+										</div>
+									</td>
+								</tr>
+								<tmpl_else>
+									<tr>
+										<td>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' size=15></td>
+									
+										<td rowspan=2>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
+									</tr>
+								</tmpl_if>
+							</table>
+						
+						</form>
+						
+						<!--<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
+								<table>
+									<tr>
+										<td>Name:</td>
+										<td><input value='%%user_display%%' name='poster_name'></td>
+									</tr>
+									<tr>
+										<td>Email:</td>
+										<td><input value='%%user_email%%' name='poster_email'></td>
+									</tr>
+								</table>
+							</div>
+							<tmpl_if user_display>
+								<div class='ident' id='postas_display'>
+									<script>
+									function show_postas_form()
+									{
+										$("#postas_form").show(200);
+										$("#postas_display").hide(200);
+									}
+									</script>
+									Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+								</div>
+							</tmpl_if>-->
