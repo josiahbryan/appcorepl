@@ -235,7 +235,7 @@
 				{
 					// apply proper indent to child comments
 					data.indent_css = isPost ? 0 :
-								parseInt($("#comment"+postid).attr("indent_css")) + 2;
+						parseInt($("#comment"+postid).attr("indent_css")) + 2;
 					
 					//console.debug(data);
 					//console.debug("isPost:"+isPost);
@@ -254,6 +254,9 @@
 						// This needs to be inserted after the selector
 						output.insertAfter(insertSelector);
 					}
+					
+					// Handle video and image links possible added by server - defined in js/boards-postlist-actions.js
+					runOnloadScripts();
 					
 					//$("#post-placeholder").hide();
 					

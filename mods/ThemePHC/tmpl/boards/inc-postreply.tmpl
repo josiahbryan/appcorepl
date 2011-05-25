@@ -12,39 +12,41 @@
 						userid='%%posted_by%%'>
 				</td>
 				<td valign=top align='left' class='indent%%indent%%'>
-					<div class='posted_by'>
-						<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
+					<span class='posted_by'>
+						<a name='c%%postid%%'><!--<span class='by'>by</span> --><span class='name'>%%poster_name%%</span></a>
 						&middot;
-						<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%%
-						<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>
+					</span>
+					
+					<span class="comment_text text">
+						<span id='short_text_%%postid%%' class='short_text'>
+							<tmpl_if clean_html:str>%%clean_html%%<tmpl_else>%%text_html%%</tmpl_if>
+							<!--%%text_html%%-->
 						</span>
-					</div>
-					
-					<!--<tmpl_if can_admin>
-						<a class='admin_link' href='%%delete_url%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'>
-							<img src='%%appcore%%/images/silk/bullet_toggle_minus.png' title='Delete this comment' border=0 align=absmiddle>
-						</a> 
-					</tmpl_if>-->
-					
-					<div class="comment_text text">
-						<div id='short_text_%%postid%%' class='short_text'>
-							%%clean_html%%
-						</div>
 						<tmpl_if short_text_has_more>
-							<div id='long_text_%%postid%%' class='long_text'></div>
+							<span id='long_text_%%postid%%' class='long_text'></span>
 						</tmpl_if>
-					</div>
+					</span>
 					
 					<div class='actions' id='acts%%postid%%'>
+						<span class='timestamp'>
+							<a href='#' onclick='return false' class='ago' title='%%pretty_timestamp%%'>%%approx_time_ago%% ago</a>
+						<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>
+						</span>
+						
+						&middot;
+						
 						<tmpl_if short_text_has_more>
 							<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>
 							&middot;
 						</tmpl_if>
+						
 						<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%' type='comment' top_commentid='%%top_commentid%%'>Reply</a> &middot;
+						
 						<tmpl_if can_edit>
 							<a class='edit_post_link' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/edit'>Edit</a> &middot;
 							<a class='delete_comment_link' postid='%%postid%%' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/delete'>Delete</a> &middot;
 						</tmpl_if> 
+						
 						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-likes.tmpl}
 					</div>
 					

@@ -20,13 +20,48 @@ package Boards::TextFilter::AutoLink;
 			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
 			
 			# New regex:
-			$$textref =~ s/([^'"\/<>])((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1<a href="$2">$2<\/a>/gi;
+			$$textref =~ s/([^'"\/<>:]|^)((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1<a href="$2">$2<\/a>/gi;
 			
 			#print STDERR "AutoLink: After: ".$$textref."\n";
 		};
 		
 	};
 	
+package Boards::TextFilter::ImageLink;
+	{ 
+		use base 'Boards::TextFilter';
+		__PACKAGE__->register("Link Images","Add an image below the post if found in the text");
+		
+		sub filter_text
+		{
+			my $self = shift;
+			my $textref = shift;
+			return if $$textref =~ /<img/i; # Don't do our magic if the text already contains an <img> tag
+			
+			# Extract all URLs from text
+			my @urls = $$textref =~ /((?:http|ftp|https):\/\/[\w\-_]+(?:\.[\w\-_]+)+(?:[\w\-\.,@?^=%&:\/~\+#]*[\w\-\@?^=%&\/~\+#])?)/g;
+			
+			# Get only images (add more extensions as desired...)
+			@urls = grep { /\.(jpg|gif|png)/ } @urls; 
+			
+			my %hash = map { $_ => 1 } @urls; # Only use each url once 
+			@urls = grep { $_ } keys %hash; # Filter out empty URLs
+			 
+			# Only add the <hr> if there really are images available
+			if(@urls)
+			{
+				# Add links to the image
+				$$textref .= "<hr size=1 class='post-attach-divider'>";
+				$$textref .= join '', map qq{
+					<a href='$_' class='image-link' title='Click to view image'>
+					<img src="$_" border=0>
+					<span class='overlay'></span>
+					</a>
+				}, @urls;
+			}
+		};
+	};
+
 package Boards::VideoProvider::YouTube;
 	{
 		use base 'Boards::VideoProvider';
@@ -134,8 +169,7 @@ package Boards;
 	our $SPAM_OVERRIDE     = 0;
 	our $SHORT_TEXT_LENGTH = 60;
 	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
-	our $APPROX_TIME_REFERESH = 15; # seconds
-	
+	our $APPROX_TIME_REFERESH  = 15; # seconds
 	
 	# Setup our admin package
 	use Admin::ModuleAdminEntry;
@@ -154,9 +188,7 @@ package Boards;
 	sub DISPATCH_METHOD { 'main_page'}
 	
 	# Directly callable methods
-	__PACKAGE__->WebMethods(qw{
-
-	});
+	__PACKAGE__->WebMethods(qw{});
 
 	# Hook for our database objects
 	sub apply_mysql_schema
@@ -196,10 +228,6 @@ package Boards;
 				main_tmpl	=> 'main.tmpl',
 				
 				admin_acl	=> ['Admin-WebBoards'],
-				
-				# must define inorder to post notifications to a Facebook feed
-				fb_feed_id	=> undef, # feed to notify
-				fb_access_token	=> undef, # access token for given feed
 			});
 		}
 		
@@ -932,21 +960,12 @@ package Boards;
 		#timemark();
 		#$b->{text} = AppCore::Web::Common->clean_html($b->{comment})
 		
-		open(LOG,">/tmp/log.html");
-		
-		print LOG "Mark1: text: [".$b->{text}."]\n";
 		my $short = AppCore::Web::Common->html2text($b->{text});
-		
-		print LOG "Mark2: short [html2text]: [$short]\n";
 		
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 		$b->{short_text_has_more} = length($short) > $short_len;
 		
-		print LOG "Mark3: short_text: [$b->{short_text}]\n";
-		
 		my $clean_html = AppCore::Web::Common->text2html($b->{short_text});
-		
-		print LOG "Mark4: clean_html [text2html]: [$clean_html]\n";
 		
 		#$b->{short_text_html} =~ s/([^'"])((?:http:\/\/www\.|www\.|http:\/\/)[^\s]+)/$1<a href="$1">$2<\/a>/gi;
 		
@@ -967,13 +986,22 @@ package Boards;
 			$filter->controller->filter_text(\$clean_html);
 			$filter->controller->filter_text(\$text_tmp);
 		}
+		
+# 		open(LOG,">>/tmp/test.log");
+# 		print LOG "postid $b->{postid}: $clean_html\n";
+# 		close(LOG);
+		
 		#use Data::Dumper;
 		#die Dumper \@TEXT_FILTERS;
 		$b->{text}       = $self->create_video_links($text_tmp);
 		$b->{clean_html} = $self->create_video_links($clean_html);
 		
-		print LOG "Mark5: final clean_html: [$clean_html]\n";
-		close(LOG);
+		# Trim whitespace off start/end of html
+		$b->{clean_html} =~ s/(^\s|\s+$)//g;
+		
+		#use Data::Dumper;
+		#die Dumper($b) if $b->{postid} == 10585;
+		
 		
 		# just for jQuery's sake - the template converter in AppCore::Web::Result treats variables ending in _html special
 		$b->{text_html} = $b->{text}; 
@@ -1195,6 +1223,30 @@ package Boards;
 			$req->{comment} = text2html($req->{comment});
 		}
 		
+		# Make sure it's loaded...
+		$self->load_video_providers;
+		
+		my $post_class = undef;
+		foreach my $provider (@VideoProviders)
+		{
+			my $config = $provider->controller->config;
+			my $rx = $config->{url_regex};
+			my ($url) = $req->{comment} =~ /$rx/;
+			if($url)
+			{
+				$post_class = "video";
+				last;
+			}
+		}
+		
+		if(!$post_class && 
+		    $req->{comment} =~ /\.(jpg|gif|png)/)
+		{
+			$post_class = "image";
+		}
+		
+		$post_class = "post" if !$post_class;
+		
 		$user = AppCore::Common->context->user if !$user;
 		
 		my $photo = $req->{poster_photo};
@@ -1213,6 +1265,7 @@ package Boards;
 			subject			=> $req->{subject},
 			text			=> $req->{comment},
 			folder_name		=> $fake_it,
+			post_class		=> $post_class,
 		});
 		
 		if($append_flag)

@@ -82,6 +82,9 @@
 					$("#post-placeholder").hide();
 					formElm.text.value = "";
 					formElm.text.updateAutogrow();
+					
+					// Run onload scripts
+					runOnloadScripts();
 				}	
 			},
 			error: errorFunc
@@ -314,17 +317,7 @@
 						$("#post-tmpl").tmpl(postData).insertBefore("tr.loadmore");
 					}
 					
-					
-					var list = window.VideoProviderList;
-					for(var i=0;i<list.length;i++)
-					{
-						if(list[i].extra_js)
-						{
-// 							console.debug("running:");
-// 							console.debug(list[i].extra_js);
-							eval(list[i].extra_js);
-						}
-					}
+					runOnloadScripts();
 					
 					loading.remove();
 					
@@ -388,7 +381,6 @@
 			domElm.doPaging();
 		}
 	});
-	
 	
 	
 	</script>

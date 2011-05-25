@@ -215,6 +215,11 @@ package Content;
 					return $r->redirect($page_obj->redirect_url);
 				}
 				
+				if(!$page_obj->check_acl)
+				{
+					die "Error: You dont have the necessary clearance to access ".$page_obj->url."\n"; 
+				}
+				
 				
 				# Found valid page, output
 				my $type = $page_obj->typeid;

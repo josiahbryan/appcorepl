@@ -187,6 +187,30 @@ tr.newpost td.photo {
 img.loading, 
 #post-placeholder { display: none; }
 
+/* Styling for an image link */
+.postlist td a.image-link {
+	/*display: block;*/
+	position: relative;
+	/*width: 120px;
+	height: 90px;*/
+	overflow: hidden !important;
+	/*border: 2px solid black;*/
+	/*background: white;*/
+	/*padding: 10px;*/
+	/*-moz-transform: rotate(7deg);
+	-webkit-transform: rotate(7deg);*/
+	/*margin-top: 4em;*/
+}
+
+.postlist td a.image-link img {
+	border: 1px solid black;
+	padding: 10px;
+	/*width: auto;
+	height: auto;
+	margin: auto auto;*/
+	background: white;
+}
+
 /* Styling for the video play link */
 .postlist td a.video-play-link {
 	display: block;

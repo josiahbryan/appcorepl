@@ -37,6 +37,7 @@ package Content::Page;
 			{	field	=> 'nav_title',		type	=> 'varchar(255)' },
 			{	field	=> 'description',	type	=> 'varchar(255)' },
 			{	field	=> 'teaser',		type	=> 'varchar(255)' },
+			{	field	=> 'acl',		type	=> 'text' },
 			{	field	=> 'content',		type	=> 'text' },
 			{	field	=> 'mobile_content',	type	=> 'text' },
 			{	field	=> 'mobile_alt_url',	type	=> 'varchar(255)' },
@@ -58,6 +59,25 @@ package Content::Page;
 			Content::Page::ThemeEngine::View
 		};
 		$self->mysql_schema_update($_) foreach @db_objects;
+	}
+	
+	sub check_acl
+	{
+		my $self = shift;
+		my $user = AppCore::Common->context->user;
+		my $acl = $self->{_acl};
+		if(!$acl)
+		{
+			my @list = split /,/, $self->acl;
+			s/(^\s+|\s+$)//g foreach @list;
+			$acl = $self->{_acl} = \@list;
+		}
+			 
+		$acl = [] if ref $acl ne 'ARRAY';
+		return 1 if !@$acl || (@$acl && $acl->[0] eq 'EVERYONE' && !$user);
+		return $user->check_acl($acl) if $user;
+		return 0 if @$acl;
+		return 1;
 	}
 };
 
@@ -257,11 +277,11 @@ package Content::Page::Controller;
 	sub theme
 	{
 		my $self = shift;
-		if(@_)
-		{
-			return $CurrentTheme = shift;
-		}
-		if(!$CurrentTheme)
+# 		if(@_)
+# 		{
+# 			return $CurrentTheme = shift;
+# 		}
+# 		if(!$CurrentTheme)
 		{
 			$CurrentTheme = $AppCore::Config::THEME_MODULE;
 		}
@@ -608,6 +628,8 @@ package Content::Page::ThemeEngine;
 		#print STDERR "Building nav...\n";
 		foreach my $page (@pages)
 		{
+			next if !$page->check_acl;
+			
 			my @url = split /\//, $page->url;
 			shift @url;
 			
@@ -773,6 +795,7 @@ package Content::Page::ThemeEngine;
 				my @tmpl_sibs;
 				foreach my $sib (@sibs)
 				{
+					next if !$sib->check_acl;
 					# This test is to eliminate kids from the sibling list
 					my $test = $sib->url;
 					$test =~ s/^$url_base\///g;
@@ -791,6 +814,8 @@ package Content::Page::ThemeEngine;
 				my @tmpl_kids;
 				foreach my $kid (@kids)
 				{
+					next if !$kid->check_acl;
+					
 					# This test is to eliminate kids or kids from the kids list
 					my $test = $kid->url;
 					$test =~ s/^$url\///g;

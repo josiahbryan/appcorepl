@@ -33,6 +33,42 @@
 	});
 	</script>
 	
+	<table class='editform' width='100%'>
+		<tr>
+			<td>Address:</td> <td>
+				%%server_name%%/<tmpl_if pageid><a href='%%page_url%%' id='edit_url'><b><span id='url_text'>%%page_url%%</span> <img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0></b></a></tmpl_if><input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40 <tmpl_if pageid>style='display:none'</tmpl_if>>
+				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+			</td>
+		</tr>
+		<tr>
+			<td>Page Title:</td> <td>
+				<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
+				<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
+				<script>var e= $x('title');if(e)e.focus()</script>
+			</td>
+		</tr>
+		
+		<tr>
+			<td>ACL:</td> <td>
+				<input type=text name=acl id=acl onfocus='select()' value='%%page_acl%%' size=65> 
+			</td>
+		</tr>
+		<tr>
+			<td valign='top'>Redirect To:</td> <td>
+				<!--%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if redirect_url><tmpl_var redirect_url escape=html></tmpl_if>' size=40>-->
+				<select name='redirect_url'>
+					<option value=''>(Use Content Below)</option>
+					
+					<tmpl_loop redir_list>
+						<option value='%%value%%'>%%value%% - %%text%%</option>
+					</tmpl_loop>
+				</select>
+				<br>
+				<span style='font-size:.85em;color:rgb(100,100,100)'>(If you specify a page here, the content below will not be shown at all.)</span>
+			</td>
+		</tr>
+	</table>
+	
 	<div id="tabs">
 		<ul>
 			<li><a href="#tabs-1">Edit Page Content</a></li>
@@ -41,35 +77,6 @@
 		</ul>
 		<div id="tabs-1">
 			<table class='editform' width='100%'>
-				<tr>
-					<td>Address:</td> <td>
-						%%server_name%%/<tmpl_if pageid><a href='%%page_url%%' id='edit_url'><b><span id='url_text'>%%page_url%%</span> <img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0></b></a></tmpl_if><input type=text name=url id=url onfocus='select()' value='<tmpl_if page_url><tmpl_var page_url escape=html></tmpl_if>' size=40 <tmpl_if pageid>style='display:none'</tmpl_if>>
-						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					</td>
-				</tr>
-				<tr>
-					<td>Page Title:</td> <td>
-						<input type=text name=title id=title onfocus='select()' value='<tmpl_if page_title><tmpl_var page_title escape=html><tmpl_else><tmpl_var page_url></tmpl_if>' size=65> 
-						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-						<script>var e= $x('title');if(e)e.focus()</script>
-					</td>
-				</tr>
-				
-				<tr>
-					<td valign='top'>Redirect To:</td> <td>
-						<!--%%server_name%%/<input type=text name=url id=url onfocus='select()' value='<tmpl_if redirect_url><tmpl_var redirect_url escape=html></tmpl_if>' size=40>-->
-						<select name='redirect_url'>
-							<option value=''>(Use Content Below)</option>
-							
-							<tmpl_loop redir_list>
-								<option value='%%value%%'>%%value%% - %%text%%</option>
-							</tmpl_loop>
-						</select>
-						<br>
-						<span style='font-size:.85em;color:rgb(100,100,100)'>(If you specify a page here, the content below will not be shown at all.)</span>
-					</td>
-				</tr>
-				
 				<tr>
 					<td colspan=2>
 						<textarea name=content id=body_value rows=20 cols=95 style='width:96%'><tmpl_if page_content><tmpl_var page_content></tmpl_if></textarea>

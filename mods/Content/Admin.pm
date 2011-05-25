@@ -195,6 +195,7 @@ package Content::Admin;
 		$tmpl->param(page_content => $page_obj->content);
 		$tmpl->param(page_mobile_content => $page_obj->mobile_content);
 		$tmpl->param(page_mobile_alt_url => $page_obj->mobile_alt_url);
+		$tmpl->param(page_acl => $page_obj->acl);
 		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
 		
 		$tmpl->param(redir_list	=> $self->_redir_select_list($page_obj->redirect_url));
@@ -659,6 +660,7 @@ package Content::Admin;
 		$page_obj->mobile_alt_url($req->mobile_alt_url);
 		$page_obj->mobile_content($req->mobile_content);
 		$page_obj->redirect_url($req->redirect_url);
+		$page_obj->acl($req->acl);
 		$page_obj->update;
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";

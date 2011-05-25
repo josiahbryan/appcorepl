@@ -1,3 +1,66 @@
+	function isImageOk(img) {
+		// During the onload event, IE correctly identifies any images
+		// that weren't downloaded as not complete. Others should too.
+		// Gecko-based browsers act like NS4 in that they report this
+		// incorrectly: they always return true.
+		if (!img.complete) {
+			return false;
+		}
+		
+		// However, they do have two very useful properties: naturalWidth
+		// and naturalHeight. These give the true size of the image. If
+		// it failed to load, either of these should be zero.
+		if (typeof img.naturalWidth != "undefined" && img.naturalWidth == 0) {
+			return false;
+		}
+		
+		// No other way of checking: assume it's ok.
+		return true;
+	}
+		
+	// Scale images that are below posts (e.g. automatically added based on links in text) to below 100x...  
+	function scaleImages() 
+	{ 
+		$(".image-link img").each(function(){
+			var t = this,
+			th = $(t);
+	
+			t.onload = function()
+			{
+				var w  = parseFloat(th.width()),
+				h  = parseFloat(th.height()),
+				ar = h/w,
+				newWidth  = 100.0, 
+				newHeight = newWidth * ar;
+				
+				if(w > newWidth || h > newHeight)
+				{
+					th.css("width",  newWidth +"px");
+					th.css("height", newHeight+"px");
+					
+				}
+			};
+			
+			if(isImageOk(t))
+				t.onload();
+		});
+	}
+	scaleImages();
+	
+	function runOnloadScripts()
+	{
+		var list = window.VideoProviderList;
+		for(var i=0;i<list.length;i++)
+		{
+			if(list[i].extra_js)
+			{
+				eval(list[i].extra_js);
+			}
+		}
+		
+		scaleImages();
+	}
+	
 	$(".postlist a.readmore_link").live("click",function() {
 		
 		var	th     = $(this),
