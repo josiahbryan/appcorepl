@@ -38,7 +38,7 @@ foreach my $post (@posts)
 	my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 	
 	# Upload the post to FB
-	$controller->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 });
+	$controller->get_controller($post->boardid)->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 });
 	
 	# Clear the 'needs uploaded' flag
 	$post->data->set('needs_uploaded',0);
@@ -76,9 +76,31 @@ foreach my $board (@boards)
 
 print date().": $0 Finished\n\n";
 
-
 ###############################################################################################3
 
+sub lookup_user
+{
+	my ($poster_fb_id,$name) = @_;
+	my $user;
+	AppCore::User->by_field(fb_userid => $poster_fb_id) if $poster_fb_id;
+	if(!$user)
+	{
+		#print STDERR "lookup_user(): Mark1: [$name]\n";
+		$user = AppCore::User->by_field(display => $name);
+	}
+	if(!$user && $name =~ /(\w+?)\s+\w+\s+(\w+)/) # remove the middle name and re-search
+	{
+		#print STDERR "lookup_user(): Mark2: [$1 $2]\n";
+		$user = AppCore::User->by_field(display => "$1 $2");
+	}
+	if(!$user && $name =~ /(\w+)\s+(?:\w+\s+)?\w+-(\w+)/) # try the second last name (the first of the hyphenated last name would be tried in the middle name regex)
+	{
+		#print STDERR "lookup_user(): Mark3: [$1 $2]\n";
+		$user = AppCore::User->by_field(display => "$1 $2");
+	}
+	return $user;
+}
+	
 
 sub update_board
 {
@@ -88,7 +110,9 @@ sub update_board
 	my $json = get($feed_url);
 	my $feed_hash = decode_json($json);
 	my $feed_list = $feed_hash->{data};
-
+	
+	my $board_controller = $controller->get_controller($board);
+	
 	foreach my $fb_post (@$feed_list)
 	{
 		my $external_id = $fb_post->{id};
@@ -102,8 +126,7 @@ sub update_board
 			my $poster_photo_url = "https://graph.facebook.com/" . $poster_fb_id . "/picture";
 			
 			# Attempt to locate a local user matching the Facebook user
-			my $user = AppCore::User->by_field(fb_userid => $poster_fb_id);
-			$user = AppCore::User->by_field(display => $fb_post->{from}->{name}) if !$user;
+			my $user = lookup_user($poster_fb_id, $fb_post->{from}->{name});
 			$poster_photo_url = download_user_photo($user, $poster_photo_url, $poster_fb_id);
 			
 			# Create a set of arguments for create_new_thread()
@@ -115,7 +138,7 @@ sub update_board
 			};
 			
 			# Use Boards to create a new thread
-			$post = $controller->create_new_thread($board, $data, $user);
+			$post = $board_controller->create_new_thread($board, $data, $user);
 			
 			# Apply Facebook-specific data/fields that create_new_thread doesnt know about
 			my $create_time = normalize_timestamp($fb_post->{created_time});
@@ -127,7 +150,7 @@ sub update_board
 			# Flag it as from FB and store the FB Post ID for future reference
 			$post->external_id($external_id);
 			$post->external_source('Facebook');
-			#$post->external_url('https://www.facebook.com/pleasanthillchurch'); # TODO
+			
 			my ($user,$post_num) = split /_/, $external_id;
 			if($user && $post_num)
 			{
@@ -193,8 +216,7 @@ sub update_board
 				foreach my $named_like (@list)
 				{
 					# Attempt to locate a local user matching the Facebook user
-					my $user = AppCore::User->by_field(fb_userid => $named_like->{id});
-					$user = AppCore::User->by_field(display => $named_like->{name}) if !$user;
+					my $user = lookup_user($named_like->{id}, $named_like->{name});
 					
 					my @result;
 					if($user && $user->id)
@@ -227,7 +249,7 @@ sub update_board
 						#use Data::Dumper;
 						#print STDERR "Debug: ref: $ref, post: $post, Dump:".Dumper($ref).", tmp:".$ref->postid."\n";
 						
-						$controller->send_notifications('new_like', $ref, {noun=>$noun});
+						$board_controller->send_notifications('new_like', $ref, {noun=>$noun});
 						
 						print "Post: Created named like from '$named_like->{name}' (user? $user) on post '".$post->subject."\n";
 					}
@@ -245,15 +267,22 @@ sub update_board
 			# (until the FB api changes) because we upload comments as new top-level stories on FB.
 			# So this is only one way - create new comments on our posts based on comments from FB
 			my $fb_cmtid = $cmt_ref->{id};
-			my $cmt = Boards::Post->by_field(external_id => $fb_cmtid);
+			my $cmt = Boards::Post->by_field(external_id => $fb_cmtid, deleted => 0);
+			while($cmt && $cmt->top_commentid->deleted)
+			{
+				$cmt->external_id(0);
+				$cmt->update;
+				
+				$cmt = Boards::Post->by_field(external_id => $fb_cmtid, deleted => 0);
+			}
+			
 			if(!$cmt)
 			{
 				my $poster_fb_id = $cmt_ref->{from}->{id};
 				my $poster_photo_url = "https://graph.facebook.com/" . $poster_fb_id . "/picture";
 				
 				# Attempt to locate a local user matching the Facebook user
-				my $user = AppCore::User->by_field(fb_userid => $poster_fb_id);
-				$user = AppCore::User->by_field(display => $cmt_ref->{from}->{name}) if !$user;
+				my $user = lookup_user($poster_fb_id, $cmt_ref->{from}->{name});
 				$poster_photo_url = download_user_photo($user, $poster_photo_url, $poster_fb_id);
 				
 				my $has_top = $post->top_commentid && $post->top_commentid->id;
@@ -266,7 +295,7 @@ sub update_board
 				};
 				
 				# Let Boards do the actual creation for us
-				$cmt = $controller->create_new_comment($board,$post,$data,$user);
+				$cmt = $board_controller->create_new_comment($board,$post,$data,$user);
 				
 				# Revise the timestamp to match FB timestamp
 				my $create_time = normalize_timestamp($cmt_ref->{created_time});

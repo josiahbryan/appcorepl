@@ -70,8 +70,8 @@
 		postData.output_fmt = "json";
 		postData.plain_text = 1;
 		
-//		console.debug(postData);
-//		return false;
+// 		console.debug(postData);
+// 		return false;
 		
 		$("#post-placeholder").show();
 		
@@ -104,8 +104,8 @@
 					//console.debug(data);
 					$("#post-tmpl").tmpl(data).insertAfter("#post-placeholder");
 					$("#post-placeholder").hide();
-					formElm.text.value = "";
-					formElm.text.updateAutogrow();
+					formElm.comment.value = "";
+					formElm.comment.updateAutogrow();
 					
 					// Run onload scripts
 					runOnloadScripts();

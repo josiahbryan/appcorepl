@@ -693,9 +693,9 @@ package AppCore::Web::Common;
 		
 		# If plain text, convert paragraphs to <p>...</p>
 		$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
-		$html =~ s/\*([\w\s])\*/<b>$1<\/b>/g;
-		$html =~ s/\/([\w\s])\//<i>$1<\/i>/g;
-		$html =~ s/_([\w\s])_/<u>$1<\/u>/g;
+		$html =~ s/\*([\w\s]+)\*/<b>$1<\/b>/g;
+		$html =~ s/\/([\w\s]+)\//<i>$1<\/i>/g;
+		$html =~ s/_([\w\s]+)_/<u>$1<\/u>/g;
 		$html =~ s/\n{2,}/\n\n/sg;
 		#$html =~ s/\n/<br>\n/g;
 		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;

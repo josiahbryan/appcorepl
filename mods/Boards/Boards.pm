@@ -546,6 +546,26 @@ package Boards;
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
 	
+	sub get_controller
+	{
+		my $self = shift;
+		my $board = shift;
+		
+		my $controller = $self;
+		
+		#die $board->folder_name;
+		if($board->forum_controller)
+		{
+			#eval 'use '.$board->forum_controller;
+			#die $@ if $@ && $@ !~ /Can't locate/;
+			
+			$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
+			$controller->binpath($self->binpath);
+		}
+		
+		return $controller;
+	}
+	
 	sub board_page
 	{
 		my $self = shift;
@@ -563,18 +583,8 @@ package Boards;
 			return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
 		}
 		
-		my $controller = $self;
+		my $controller = $self->get_controller($board);
 		
-		#die $board->folder_name;
-		if($board->forum_controller)
-		{
-			#eval 'use '.$board->forum_controller;
-			#die $@ if $@ && $@ !~ /Can't locate/;
-			
-			$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
-			$controller->binpath($self->binpath);
-		}
-
 		my $sub_page = $req->next_path;
 		
 		#$tmpl->param(can_upload=>1) if ($_ = AppCore::Common->context->user) && $_->check_acl($UPLOAD_ACL);
@@ -786,7 +796,8 @@ package Boards;
 						my $id     = $data->{postid};
 						
 						$data->{indent}		= $indent;
-						$data->{indent_css}	= $indent * 2;
+						$data->{indent_css}	= $indent * 4; # Arbitrary multiplier
+						$data->{indent_is_odd}	= $indent % 2 == 0;
 						
 						# Lookup the top-most post for this comment
 						# If its orphaned, we just delete the comment
@@ -969,7 +980,8 @@ package Boards;
 		# 'single_post_page' IS used when viewing a single post - other than that, the template
 		# should just default to undefined. HTML::Template handles it fine, but jQuery tmpl doesnt.
 		# Grrrr.
-		$b->{single_post_page}  = 0;
+		$b->{single_post_page} = 0;
+		$b->{indent_is_odd}    = 0;
 		
 		my $cur_user = AppCore::Common->context->user;
 		$b->{can_edit} = ($can_admin || ($cur_user && $cur_user->id == $b->{posted_by}) ? 1:0);
@@ -1349,16 +1361,12 @@ package Boards;
 			my $comment     = $controller->create_new_comment($board,$post,$req);
 			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
 			
-			$controller->send_notifications('new_comment',$comment,{comment_url => $comment_url});
+			$controller->send_notifications('new_comment',$comment);
 			
 			print STDERR __PACKAGE__."::post_page($post): Posted reply ID $comment to post ID $post\n";
 			
 			if($req->output_fmt eq 'json')
 			{
-				# NOTE: $self in this case WILL be the 'controller' for $board,
-				# because post_page() is called as $controller->post_page(...)  -
-				# Therefore, we dont need to call it by $board->controller ourself 
-				# - $self is already set correctly.
 				my $output = $controller->load_post_for_list($comment,$board->folder_name);
 				
 				my $json = encode_json($output);
@@ -1722,9 +1730,13 @@ Here's a link to that page:
 Cheers!};
 			
 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-				@AppCore::Config::ADMIN_EMAILS : 
-				($AppCore::Config::WEBMASTER_EMAIL);
-			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body);
+				   @AppCore::Config::ADMIN_EMAILS : 
+				  ($AppCore::Config::WEBMASTER_EMAIL);
+			
+			# Dont email the person that just posted this :-)
+			@list = grep { $_ ne $post->poster_email } @list;
+			
+			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body) if @list;
 		}
 		elsif($action eq 'new_comment')
 		{
@@ -1733,7 +1745,7 @@ Cheers!};
 # 			return;
 			
 			my $comment = $post;
-			my $comment_url = $args->{comment_url};
+			my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."#c" . $comment->id;
 			
 			my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
 
@@ -1754,18 +1766,24 @@ Cheers!};
 				  ($AppCore::Config::WEBMASTER_EMAIL);
 			
 			my $email_subject = "[$title $noun] New Comment Added to Thread '".$comment->top_commentid->subject."'";
+			
+			# Dont email the person that just posted this :-)
+			@list = grep { $_ ne $comment->poster_email } @list;
+			
 			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
 			
 			AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
 					if $comment->parent_commentid && 
 					$comment->parent_commentid->id && 
-					$comment->parent_commentid->poster_email && 
+					$comment->parent_commentid->poster_email &&
+					$comment->parent_commentid->poster_email ne $comment->poster_email && 
 					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 			
 			AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
 					if $comment->top_commentid && 
 					$comment->top_commentid->id && 
-					$comment->top_commentid->poster_email && 
+					$comment->top_commentid->poster_email &&
+					$comment->top_commentid->poster_email ne $comment->poster_email &&  
 					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 			
 			my $board = $comment->boardid;
@@ -1776,6 +1794,7 @@ Cheers!};
 						$board->managerid && 
 						$board->managerid->id && 
 						$board->managerid->email && 
+						$board->managerid->email ne $comment->poster_email &&
 						!AppCore::EmailQueue->was_emailed($board->managerid->email);
 						
 			AppCore::EmailQueue->reset_was_emailed;

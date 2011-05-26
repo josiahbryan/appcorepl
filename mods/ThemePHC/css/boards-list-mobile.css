@@ -305,8 +305,8 @@ a.like-icon {
 .like-loading-img  { padding-left: 4px; }
 
 /* Alternating highlighting for various indent levels */
-.indent0, .indent2, .indent4, .indent6, .indent8, .indent10, .indent12, .indent14, .indent16, .indent18, .indent20 { background: #e2e7f7 !important; }
-.indent1, .indent3, .indent5, .indent7, .indent9, .indent11, .indent13, .indent15, .indent17, .indent19, .indent21 { background: #dce1f1 !important; }
+.indent-odd  { background: #e2e7f7 !important; }
+.indent-even { background: #dce1f1 !important; }
 
 a.not-a-link { cursor: default; }
 

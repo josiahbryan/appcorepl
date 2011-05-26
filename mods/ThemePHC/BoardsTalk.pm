@@ -51,10 +51,25 @@ package ThemePHC::BoardsTalk;
 	
 		my $post = $self->SUPER::create_new_thread($board, $req, $user);
 		
-		# Store the tag in the ticker_class member for easy access in the template rendering
 		my $tag = $req->{tag} || 'talk';
+		
+		if(!$req->{user_clicked_tag})
+		{
+			if($req->{comment} =~ /(please\s[^\.\!\?]*?)?remember|pray/i)
+			{
+				$tag = 'pray';
+			}
+			elsif($req->{comment} =~ /(prais|thank)/i)
+			{
+				$tag = 'praise';
+			}
+		}
+		
+		# Store the tag in the ticker_class member for easy access in the template rendering
 		$post->ticker_class($tag);
 		$post->update;
+		
+		return $post;
 	}
 	
 };

@@ -50,9 +50,12 @@
 										
 										
 										<div class='tags'>
-											<span for=tag_praise><input type=radio name=tag value=praise id=tag_praise><label for=tag_praise> Praise!</label></span>
-											<span for=tag_pray><input type=radio name=tag value=pray     id=tag_pray><label for=tag_pray> Prayer Request</label></span>
-											<span for=tag_talk><input type=radio name=tag value=talk     id=tag_talk checked><label for=tag_talk> Just Talking</label></span>
+											<span id=span_tag_praise>
+												<input type=radio class=tag name=tag value=praise id=tag_praise><label       for=tag_praise class=tag> Praise!</label></span>
+											<span id=span_tag_pray>
+												<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
+											<span id=span_tag_talk>
+												<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
 											&nbsp;&nbsp;| 
 											<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
 										</div>
@@ -69,9 +72,12 @@
 											</div>
 											
 											<div class='tags'>
-												<span for=tag_praise><input type=radio name=tag value=praise id=tag_praise><label for=tag_praise> Praise!</label></span>
-												<span for=tag_pray><input type=radio name=tag   value=pray   id=tag_pray><label for=tag_pray> Prayer Request</label></span>
-												<span for=tag_talk><input type=radio name=tag   value=talk   id=tag_talk checked><label for=tag_talk> Just Talking</label></span>
+												<span id=span_tag_praise>
+													<input type=radio class=tag name=tag value=praise id=tag_praise><label       for=tag_praise class=tag> Praise!</label></span>
+												<span id=span_tag_pray>
+													<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
+												<span id=span_tag_talk>
+													<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
 												&nbsp;&nbsp;| 
 												<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
 											</div>
@@ -104,19 +110,40 @@
 								padding: 2 5px 4px 0;
 							}
 							
+							#span_tag_pray
+							{
+								background: #fcffb1;
+							}
+							
+							#span_tag_praise
+							{
+								background: #d9ffd2;
+							}
+							
+							#span_tag_talk
+							{
+								background: rgb(235,235,235);
+							}
+							
+							
 							.newpost .tags span.current
 							{
 								color: black;
 								font-weight: bold;
-								background: #fcffb1;
 							}
 							
-							.postlist tr.talktype-pray
+							
+							/*** Pray ***/
+							
+							.postlist tr.talktype-pray,
+							.postlist tr.talktype-ePrayerAlert
 							{
 								background: #fcfeb3;
 								
 							}
 							
+							.postlist tr.talktype-ePrayerAlert td.data,
+							.postlist tr.talktype-ePrayerAlert td.photo,
 							.postlist tr.talktype-pray td.data,
 							.postlist tr.talktype-pray td.photo
 							{
@@ -124,10 +151,113 @@
 								border-bottom: 1px solid #e3e684;
 							}
 							
+							.postlist tr.talktype-ePrayerAlert td.photo,
 							.postlist tr.talktype-pray td.photo
 							{
 								padding-left: 3px;
 							}
+							
+							.postlist span.talktype-pray,
+							.postlist span.talktype-ePrayerAlert
+							{
+								color: #636439;
+								font-weight: bold;
+							}
+							
+							/* Prayer Comments */
+							.postlist tr.talktype-pray .comment_text_wrap,
+							.postlist tr.talktype-ePrayerAlert .comment_text_wrap 
+							{
+								border-top: 1px solid #fdffc5;
+								border-bottom: 1px solid #d7d999;
+							}
+							.postlist tr.talktype-pray .indent-odd,
+							.postlist tr.talktype-ePrayerAlert .indent-odd {
+								background: #e8eaa5 !important;
+							}
+							.postlist tr.talktype-pray .indent-even,
+							.postlist tr.talktype-ePrayerAlert .indent-even {
+								background: #e4e6a2 !important;
+							}
+							
+							/*** Praise ***/
+							
+							.postlist tr.talktype-praise
+							{
+								background: #d9ffd2;
+								
+							}
+							
+							.postlist tr.talktype-praise td.data,
+							.postlist tr.talktype-praise td.photo
+							{
+								border-top:    1px solid white;
+								border-bottom: 1px solid #bfe1b9;
+							}
+							
+							.postlist tr.talktype-praise td.photo
+							{
+								padding-left: 3px;
+							}
+							
+							.postlist span.talktype-praise
+							{
+								color: #556452;
+								font-weight: bold;
+							}
+							
+							/* Praise Comments */
+							.postlist tr.talktype-praise .comment_text_wrap
+							{
+								border-top: 1px solid #e2ffdd;
+								border-bottom: 1px solid #b5d5af;
+							}
+							.postlist tr.talktype-praise .indent-odd {
+								background: #d0f3c9 !important;
+							}
+							.postlist tr.talktype-praise .indent-even {
+								background: #c7eac1 !important;
+							}
+							
+							/*** Talk ***/
+							.postlist tr.talktype-talk
+							{
+								background: rgb(235,235,235);
+								
+							}
+							
+							.postlist tr.talktype-talk td.data,
+							.postlist tr.talktype-talk td.photo
+							{
+								border-top:    1px solid white;
+								border-bottom: 1px solid rgb(200,200,200);
+							}
+							
+							.postlist tr.talktype-talk td.photo
+							{
+								padding-left: 3px;
+							}
+							
+							.postlist span.talktype-talk
+							{
+								color: rgb(100,100,100);
+								font-weight: bold;
+							}
+							
+							/* Talk Comments */
+							.postlist tr.talktype-talk .comment_text_wrap
+							{
+								border-top: 1px solid rgb(245,245,245);
+								border-bottom: 1px solid rgb(140,140,140);
+							}
+							.postlist tr.talktype-talk .indent-odd {
+								background: rgb(210,210,210) !important;
+							}
+							.postlist tr.talktype-talk .indent-even {
+								background: rgb(190,190,190) !important;
+							}
+							
+							
 							
 							
 							</style>
@@ -152,27 +282,51 @@
 							$(function(){
 								// *** Highlight Current Tag *** /
 								var currentTag   = $("#tag_talk"),
+								    userClickedTag = false,
 								    highlightTag = function(tag, isCurrent)
 								{
 									var cId    = tag.get(0).id,
-									    cLabel = $(".tags span[for="+cId+"]");
+									    cLabel = $("#span_"+cId);
 									if(isCurrent)
+									{
 										cLabel.addClass("current");
+										tag.attr('checked',true);
+									}
 									else
 										cLabel.removeClass("current");
 								}
 								
 								highlightTag(currentTag, true);
 							
-								$(".newpost .tags input").live("click",function()
+								$(".tags input.tag").live("click",function()
 								{
 									highlightTag(currentTag, false);
 									highlightTag(currentTag = $(this), true);
 								});
 								
-								// *** Automatically Change Tag Based on Typed Text *** /
-								var rx1 = new RegExp("pray", "i"),
-								    rx2 = new RegExp("prais", "i"),
+								// The user_clicked_tag form element is used to tell the server
+								// that the user, well, clicked the tag instead of automatically
+								// highlighting it. This allows the server to override the tag
+								// choice if it knows better - but dont override if the user
+								// actually clicked the tag themself. Note the "user clicked"
+								// flag is cleared if the user erases all text in the box 
+								// (called in the update() function below) 
+								var setUserClicked = function(flag)
+								{
+									// When called as an event handler as a result of bind() calls,
+									// 'flag' will be an Object reference instead of boolean,
+									// but it still evaluates true for our purposes here.
+									$("#user_clicked_tag").get(0).value = flag ? 1:0;
+									userClickedTag = flag ? true:false; // flag may not always be really a boolean, but may be true 
+								};
+								
+								// Call the 'set user clicked' routine only if the user actually uses the mouse to click a radio button or label
+								$(".tags input.tag").bind('mouseup',setUserClicked);
+								$(".tags label.tag").bind('mouseup',setUserClicked);
+								
+								// *** Automatically Change Tag Based on Typed Text *** 
+								var rx1 = new RegExp("((please\\s.*?)?remember|pray)", "i"),
+								    rx2 = new RegExp("(prais|thank)", "i"),
 								    //rx3 = new RegExp("talk", "i"),
 								    flagged = false,
 								    update = function()
@@ -182,9 +336,10 @@
 									{
 										$("#tag_talk").click();
 										t.tagged = false;
+										setUserClicked(false);
 										return;
 									}
-									if(t.tagged)
+									if(t.tagged || userClickedTag)
 										return;
 									if(rx1.test(t.value))
 									{
@@ -213,4 +368,5 @@
 								
 							});
 							</script>
+							<input type=hidden name=user_clicked_tag id=user_clicked_tag value=0>
 						</form>

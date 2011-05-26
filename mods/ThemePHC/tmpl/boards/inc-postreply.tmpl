@@ -1,9 +1,9 @@
 	<!--<div class=comment_text style='margin-left:%%indent_css%%em;margin-right:%%indent_css%%em;'>-->
-	<div class='comment_text_wrap indent%%indent%%' id="wrap%%postid%%">
+	<div class='comment_text_wrap indent-<tmpl_if indent_is_odd>odd<tmpl_else>even</tmpl_if>' id="wrap%%postid%%">
 		<table class=comment_text  id='comment%%postid%%' indent_css="%%indent_css%%" width='100%'>
 			<tr>
 			<!--src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25"-->
-				<td valign=top style='padding-left:%%indent_css%%em' width='1%' class='indent%%indent%%'>
+				<td valign=top style='padding-left:%%indent_css%%em' width='1%' class='indent-<tmpl_if indent_is_odd>odd<tmpl_else>even</tmpl_if>'>
 					<img class='user_photo' 
 						src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25</tmpl_if>"
 						 
@@ -11,7 +11,7 @@
 						height=25 
 						userid='%%posted_by%%'>
 				</td>
-				<td valign=top align='left' class='indent%%indent%%'>
+				<td valign=top align='left' class='indent-<tmpl_if indent_is_odd>odd<tmpl_else>even</tmpl_if>'>
 					<span class='posted_by'>
 						<a name='c%%postid%%'><!--<span class='by'>by</span> --><span class='name'>%%poster_name%%</span></a>
 						&middot;
