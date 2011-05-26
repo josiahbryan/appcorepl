@@ -18,7 +18,13 @@ package ThemePHC::BoardsTalk;
 	use Boards::Data;
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('PHC Talk Board','PHC Prayer/Praise/Talk Page',1,0);  # 1 = uses page path,  0 = doesnt use content
+	#__PACKAGE__->register_controller('PHC Talk Board','PHC Prayer/Praise/Talk Page',1,0);  # 1 = uses page path,  0 = doesnt use content
+	
+	# Register our controller-specific notifications
+	# TODO: Should we list the module as 'Boards' or as our own ThemePHC::BoardsTalk ...? For now, leaving as boards till pref UI is implemented.
+	our $PREF_EMAIL_PRAISE = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Praise" posts');
+	our $PREF_EMAIL_PRAYER = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Prayer Requests" posts');
+	our $PREF_EMAIL_TALK   = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Just Talking" posts');
 	
 	my $EPA_ACL = [qw/Pastor/];
 	

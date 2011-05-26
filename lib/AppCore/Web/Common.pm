@@ -695,7 +695,7 @@ package AppCore::Web::Common;
 		$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
 		# Auto italic/underline/bold based on common conventions in text
 		$html =~ s/\*([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
-		$html =~ s/\/([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\//<i>$1<\/i>/g;
+		#$html =~ s/\/([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\//<i>$1<\/i>/g;
 		$html =~ s/_([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)_/<u>$1<\/u>/g;
 		# Limit multiple newlines to 2 each
 		$html =~ s/\n{2,}/\n\n/sg;

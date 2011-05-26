@@ -336,6 +336,7 @@
 	$("a.loadmore_link").live("click",pagingFunc);
 	
 	window.PagingNextIndex = %%next_idx%%;
+	
 // 	window.PagingNextIndex = 0; //%%next_idx%%;
 // 	$(function() { setTimeout(function() {
 // 		pagingFunc();
@@ -360,6 +361,109 @@
 			domElm.doPaging();
 		}
 	});
+	
+	$(function()
+	{
+		var	pollingTimestamp = '%%first_ts%%',
+			pollingLock = false,
+			doPoll = function()
+			{
+				if(pollingLock) 
+					return;
+				pollingLock = true;
+	
+				$.ajax({
+					type: "GET",
+					url: "%%binpath%%/%%board_folder_name%%",
+					data: 
+					{
+						first_ts: pollingTimestamp,
+						output_fmt: 'json',
+						mode: 'poll_new_posts',
+					},
+					success: function(data)
+					{
+						//console.debug("got post data: "+data+", typeof: "+typeof(data));
+						//alert("Got post data:"+data+", type:"+typeof(data));
+						if(typeof(data) == "string")
+						{
+							// something wierd on server - should be JSON!
+							//alert("Got data as string");
+						}
+						else
+						{
+							if(data.last_ts)
+								pollingTimestamp = data.last_ts;
+							
+							try
+							{
+								// Iterate over the list of posts and reate the posts from the template
+								var posts = data.list;
+								for(var i=0;i<posts.length;i++)
+								{
+									var postData = posts[i];
+									
+									var isPost = postData.top_commentid<=0;
+									
+									if(isPost)
+									{
+										$("#post-tmpl").tmpl(postData).insertAfter("#post-placeholder");
+									}
+									else
+									{
+										var parentId = parseInt(postData.parent_commentid); 
+										var postid = parentId;
+										if(!postid)
+											postid = parseInt(postData.top_commentid);
+										var replyToPost = !parentId;
+										
+										postData.indent_css = replyToPost ? 0 : parseInt($("#comment"+postid).attr("indent_css")) + %%boards_indent_multiplier%%;
+										
+										postData.indent_is_odd = ((postData.indent_css+0)/%%boards_indent_multiplier%%) % 2 == 0 ? 1:0;
+										
+										var output = $("#reply-tmpl").tmpl(postData);
+										
+										if(replyToPost)
+										{
+											var insertSelector = "#post"+postid+" .replies_container";
+											//console.debug("insertSelector:"+insertSelector);
+											// This needs to be appended to the selector
+											output.appendTo(insertSelector);
+										}
+										else
+										{
+											var insertSelector = "#wrap" + postid;
+											// This needs to be inserted after the selector
+											//console.debug("insertSelector:"+insertSelector);
+											output.insertAfter(insertSelector);
+										}
+									}
+								}
+								
+								if(data.list.length > 0)
+									runOnloadScripts();
+								
+								pollingLock = false;
+							}
+							catch(e)
+							{
+								if(e && window.console)
+									window.console.debug(e);
+							}
+						}	
+					},
+					error: function() 
+					{ 
+						//alert("Error");
+						//document.location.href = linkHref; 
+					}
+					
+				});
+			};
+		setInterval(doPoll, 2500);
+		
+	});
+	
 	
 	
 	</script>

@@ -5,7 +5,7 @@
 									<td>
 										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
 									</td>
-									<td class=content>
+									<td class=content colspan=2>
 										<textarea class="expandText" name="comment"></textarea>
 									</td>
 								<tmpl_if user_display>
@@ -23,7 +23,7 @@
 								</tr>
 								<tmpl_else>
 									<tr>
-										<td>Name:</td>
+										<td align=right>Name:</td>
 										<td><input class='text' value='%%user_display%%' name='poster_name' size=15></td>
 									
 										<td rowspan=2>
@@ -33,7 +33,7 @@
 										</td>
 									</tr>
 									<tr>
-										<td>Email:</td>
+										<td align=right>Email:</td>
 										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
 									</tr>
 								</tmpl_if>

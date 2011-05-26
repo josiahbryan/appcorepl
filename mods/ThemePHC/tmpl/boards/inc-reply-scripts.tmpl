@@ -77,8 +77,9 @@
 						<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
 					</div>
 					<div class='controls'>
+						<a href='#' class='cancel'>Cancel</a>
 						<button type='submit' class='button' id='button_${postid}'>Post</button>
-						<a href='#' class='cancel'>Cancel</a> 
+						 
 					</div>
 					<div class='form' id='postas_form_${postid}'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
 						<table>
@@ -93,10 +94,15 @@
 						</table>
 					</div>
 					<tmpl_if user_display>
-					<div class='ident' id='postas_display_${postid}'>
-						Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form_tmpl(${postid}));'>Change</a>
-					</div>
+						<div class='ident' id='postas_display_${postid}'>
+							Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form_tmpl(${postid}));'>Change</a><tmpl_if board_fb_sync_enabled> | </tmpl_if> 
+						</div>
 					</tmpl_if>
+					<div class=opts>
+						<tmpl_if board_fb_sync_enabled>
+						<input type=checkbox style='vertical-align:middle !important' name=fb_post value=1 id=fb_post checked><label for=fb_post>Post on Facebook</label>
+						</tmpl_if>
+					</div>
 					<div class='fc'></div>
 				</div>
 			</form>
@@ -235,7 +241,9 @@
 				{
 					// apply proper indent to child comments
 					data.indent_css = isPost ? 0 :
-						parseInt($("#comment"+postid).attr("indent_css")) + 2;
+						parseInt($("#comment"+postid).attr("indent_css")) + %%boards_indent_multiplier%%;
+					
+					data.indent_is_odd = ((data.indent_css+0)/%%boards_indent_multiplier%%) % 2 == 0 ? 1:0;
 					
 					//console.debug(data);
 					//console.debug("isPost:"+isPost);
@@ -250,7 +258,7 @@
 					}
 					else
 					{
-						var insertSelector = "#comment" + postid;
+						var insertSelector = "#wrap" + postid;
 						// This needs to be inserted after the selector
 						output.insertAfter(insertSelector);
 					}

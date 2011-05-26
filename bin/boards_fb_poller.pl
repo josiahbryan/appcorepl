@@ -34,6 +34,7 @@ my @posts = Boards::Post->retrieve_from_sql(q{deleted=0 and extra_data like '%"n
 foreach my $post (@posts)
 {
 	next if ! $post->boardid->fb_sync_enabled;
+	next if $post->data->get('user_said_no_fb');
 	
 	my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
 	

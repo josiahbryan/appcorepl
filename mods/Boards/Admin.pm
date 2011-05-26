@@ -279,11 +279,11 @@ package Boards::Admin;
 		}
 		
 		#print STDERR "Dump of req: ".Dumper($req);
-		foreach my $col ($obj->columns)
+		foreach my $col (qw/title tagline description managerid folder_name sort_key hidden enabled fb_sync_enabled fb_feed_id fb_feed_name fb_access_token/ )
 		{
 			#print STDERR "Checking col: $col\n";
-			next if $col eq 'boardid';
-			$obj->set($col, $req->$col) if defined $req->$col;
+			#next if $col eq 'boardid';
+			$obj->set($col, $req->{$col}); # if defined $req->$col;
 		}
 		
 		$obj->update;

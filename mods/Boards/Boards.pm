@@ -170,6 +170,7 @@ package Boards;
 	our $SHORT_TEXT_LENGTH = 60;
 	our $LAST_POST_SUBJ_LENGTH = $SUBJECT_LENGTH;
 	our $APPROX_TIME_REFERESH  = 15; # seconds
+	our $INDENT_MULTIPLIER = 4; # I feel so dirty putting this in the code instead of a template - but I feel even dirtier putting an expression in CSS, so it's here...
 	
 	# Setup our admin package
 	use Admin::ModuleAdminEntry;
@@ -183,6 +184,10 @@ package Boards;
 			{ field => 'description', 	type => 'text',		description => 'A long description of the board to appear on the board page itself' }, 
 		]
 	);
+	
+	# Register user preferences
+	our $PREF_EMAIL_ALL      = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email for all new posts');  # defaults to bool for datatype and true for default value
+	our $PREF_EMAIL_COMMENTS = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email when someone comments on my posts');
 	
 	# Setup the Web Module 
 	sub DISPATCH_METHOD { 'main_page'}
@@ -695,7 +700,37 @@ package Boards;
 			my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
 			my $board_folder_name = $board->folder_name;
 			
-			# Get the current pating location
+			
+			# Check to see if this is an ajax poll request for new posts
+			if($req->{first_ts})
+			{
+				my $sth = $dbh->prepare_cached(q{
+					select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and timestamp>? and deleted=0 order by timestamp 
+				});
+				
+				$sth->execute($board->id, $req->{first_ts});
+				my @results;
+				my $ts;
+				while(my $b = $sth->fetchrow_hashref)
+				{
+					my $x = $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+					$ts = $x->{timestamp};
+					push @results, $x;
+				}
+				
+				my $output = 
+				{
+					list	=> \@results,
+					count	=> scalar @results,
+					last_ts	=> $ts,
+				};
+				
+				my $json = encode_json($output);
+				return $r->output_data("application/json", $json) if $req->output_fmt eq 'json';
+				return $r->output_data("text/plain", $json);
+			}
+			
+			# Get the current paging location
 			my $idx = $req->idx || 0;
 			my $len = $req->len || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
 			$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
@@ -762,8 +797,10 @@ package Boards;
 				# Create a crossref of posts to data objects for the next block which puts the comments with the parents
 				my @tmp_list;
 				my %crossref;
+				my $first_ts = undef;
 				while(my $b = $sth->fetchrow_hashref)
 				{
+					$first_ts = $b->{timestamp};# if !$first_ts;
 					$crossref{$b->{postid}} = $b;
 					$b->{reply_count} = 0;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
@@ -796,7 +833,7 @@ package Boards;
 						my $id     = $data->{postid};
 						
 						$data->{indent}		= $indent;
-						$data->{indent_css}	= $indent * 4; # Arbitrary multiplier
+						$data->{indent_css}	= $indent * $INDENT_MULTIPLIER; # Arbitrary multiplier
 						$data->{indent_is_odd}	= $indent % 2 == 0;
 						
 						# Lookup the top-most post for this comment
@@ -817,6 +854,47 @@ package Boards;
 						$indents{$id} = $indent + 1; 
 					}	
 				}
+				
+				# This funky foreach() block is required because of the way we structured the database query
+				# Instead of multiple DB queries to get kids in the right order, we grab the entire list of kids
+				# ordered by timestamp - so here we batch the kids by their parent then re-flatten the list out to a 1d list
+				
+				foreach my $post (@list)
+				{
+					my @list = @{$post->{replies} || []};
+					next if !@list;
+
+					# Make a map of comment id (postid) to the ref
+					my %posts = map { $_->{postid} => $_ } @list;
+					
+					# Add each comment to a list of kids on its parent
+					map { push @{$posts{$_->{parent_commentid}}->{tmp}}, $_ } @list;
+					
+					# Sort each list of kids by their timestamp
+						# Dont need to sort by timestamp since they come sorted from the SQL query
+					#map { $_->{tmp} = [ sort { $a->{timestamp} cmp $b->{timestamp} } @{$_->{tmp} || []} ] } @list;
+					
+					# Make a list of only top-level comments and sort by timestamp
+						# Dont need to sort by timestamp since they come sorted from the SQL query
+					my @tops = #sort { $a->{timestamp} cmp $b->{timestamp} } 
+						grep { !$_->{parent_commentid} } @list;
+					
+					# Finally flatten out the list by building up a single level list of parents/comments in order
+					my @final;
+					sub pushit 
+					{ 
+						my $f = shift; 
+						my $p = shift; 
+						push @$f, $p;
+						foreach my $k (@{$p->{tmp}})
+						{
+							pushit($f,$k);
+						}
+					}
+					pushit(\@final, $_) foreach @tops;
+					
+					$post->{replies} = \@final;
+				}
 	
 				# Put newest at top of list
 				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
@@ -826,6 +904,7 @@ package Boards;
 				{
 					list 		=> \@list,
 					timestamp	=> time,
+					first_timestamp	=> $first_ts,
 				};
 				$BoardDataCache{$cache_key} = $data;
 				#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
@@ -867,6 +946,8 @@ package Boards;
 				len	=> $len,
 				idx2	=> $idx + $len,
 				next_idx=> $next_idx,
+				#first_id=> @{$data->{list}} ? $data->{list}->[0]->{postid} : 0,
+				first_ts=> $data->{first_timestamp},
 				max_idx => $max_idx,
 				can_admin=> $can_admin,
 			};
@@ -884,6 +965,7 @@ package Boards;
 			$tmpl->param(board_nav => $controller->macro_board_nav());
 			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
 			$tmpl->param(user_email_md5 => md5_hex($user->email)) if $user && $user->id;
+			$tmpl->param(boards_indent_multiplier => $INDENT_MULTIPLIER);
 			
 			my $tmpl_incs = $controller->config->{tmpl_incs} || {};
 			#use Data::Dumper;
@@ -1534,6 +1616,7 @@ Cheers!};
 				$tmpl->param( $_ => $post_resultset->{$_}) foreach keys %$post_resultset;
 				$controller->apply_video_providers($tmpl);
 				$tmpl->param(single_post_page => 1); # set a flag to differentiate this template from the list.tmpl in case the post.tmpl includes the same template needed to render posts in list.tmpl
+				$tmpl->param(boards_indent_multiplier => $INDENT_MULTIPLIER);
 				
 				my $tmpl_incs = $controller->config->{tmpl_incs} || {};
 				foreach my $key (keys %$tmpl_incs)
@@ -1594,7 +1677,7 @@ Cheers!};
 		my $post = shift;
 		my $args = shift;
 		
-		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY || !$post->boardid->fb_sync_enabled;
+		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY || ($post->isa('Boards::Post') && (!$post->boardid->fb_sync_enabled || $post->data->get('user_said_no_fb')));
 		
 		if($action eq 'new_post' ||
 		   $action eq 'new_comment')
@@ -1736,7 +1819,7 @@ Cheers!};
 			# Dont email the person that just posted this :-)
 			@list = grep { $_ ne $post->poster_email } @list;
 			
-			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] New Post Added to Forum '".$board->title."'",$email_body) if @list;
+			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
 		}
 		elsif($action eq 'new_comment')
 		{
@@ -1765,7 +1848,7 @@ Cheers!};
 				   @AppCore::Config::ADMIN_EMAILS : 
 				  ($AppCore::Config::WEBMASTER_EMAIL);
 			
-			my $email_subject = "[$title $noun] New Comment Added to Thread '".$comment->top_commentid->subject."'";
+			my $email_subject = "[$title] ".$comment->poster_name." commented on '".$comment->top_commentid->subject."'";
 			
 			# Dont email the person that just posted this :-)
 			@list = grep { $_ ne $comment->poster_email } @list;
@@ -1989,6 +2072,12 @@ Cheers!};
 		{
 			$comment->folder_name($fake_it.'_'.$comment->id);
 			$comment->update;
+		}
+		
+		if(defined $req->{fb_post} && !$req->{fb_post})
+		{
+			$comment->data->set('user_said_no_fb',1);
+			$comment->data->update;
 		}
 		
 		return $comment;

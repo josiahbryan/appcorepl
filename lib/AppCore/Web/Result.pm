@@ -278,7 +278,7 @@ package AppCore::Web::Result;
 						}
 						else
 						{
-							print STDERR "Error running compressor - '$tmp_file' never created!\n";
+							print STDERR "Error running compressor for URL ".AppCore::Web::Common->get_full_url().": '$tmp_file' never created!\n";
 						}
 					}
 				}

@@ -86,7 +86,8 @@ div.fc { clear: both; }
 .newpost .controls a { font-size: .75em; }*/
 
 /* Styling for the comment "Cancel" link */
-.reply_form .controls a.cancel {
+.reply_form .controls a.cancel,
+.reply_form div.opts {
 	/*font-size: .7em;*/
 	float: left;
 	/*margin-right: 5px;*/

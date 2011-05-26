@@ -2,7 +2,7 @@
 							
 							<table width=100%>
 								<tr>
-									<td valign=top>
+									<td valign=top class=photo-cell>
 										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
 									</td>
 									<td valign=top class=content colspan=2>
@@ -63,8 +63,8 @@
 								</tr>
 								<tmpl_else>
 									<tr>
-										<td valign=middle>Name:</td>
-										<td><input class='text' value='%%user_display%%' name='poster_name' size=15></td>
+										<td valign=middle align=right>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' size=12></td>
 									
 										<td rowspan=2>
 											<div class='controls'>
@@ -84,8 +84,8 @@
 										</td>
 									</tr>
 									<tr>
-										<td valign=middle>Email:</td>
-										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
+										<td valign=middle align=right>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=12></td>
 									</tr>
 								</tmpl_if>
 							</table>
@@ -133,6 +133,16 @@
 							}
 							
 							
+							/* Add padding to photo for coloring */
+							.postlist tr.talktype-ePrayerAlert td.photo,
+							.postlist tr.talktype-pray td.photo,
+							.postlist tr.talktype-praise td.photo, 
+							.postlist tr.talktype-talk td.photo,
+							.postlist .newpost td.photo-cell
+							{
+								padding-left: 5px;
+							}
+							
 							/*** Pray ***/
 							
 							.postlist tr.talktype-pray,
@@ -149,12 +159,6 @@
 							{
 								border-top: 1px solid white;
 								border-bottom: 1px solid #e3e684;
-							}
-							
-							.postlist tr.talktype-ePrayerAlert td.photo,
-							.postlist tr.talktype-pray td.photo
-							{
-								padding-left: 3px;
 							}
 							
 							.postlist span.talktype-pray,
@@ -195,11 +199,6 @@
 								border-bottom: 1px solid #bfe1b9;
 							}
 							
-							.postlist tr.talktype-praise td.photo
-							{
-								padding-left: 3px;
-							}
-							
 							.postlist span.talktype-praise
 							{
 								color: #556452;
@@ -231,11 +230,6 @@
 							{
 								border-top:    1px solid white;
 								border-bottom: 1px solid rgb(200,200,200);
-							}
-							
-							.postlist tr.talktype-talk td.photo
-							{
-								padding-left: 3px;
 							}
 							
 							.postlist span.talktype-talk

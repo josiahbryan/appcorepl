@@ -233,7 +233,7 @@ package AppCore::Web::DispatchCore;
 		
 		my $url = get_full_url;
 		#print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /(res\/|forms\/validate)/;
-		print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /(res\/|forms\/validate)/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
+		print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /poll/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
 		# || $ENV{REMOTE_ADDR} eq '10.0.1.60'; # netmon ip
 		
 		my $request = AppCore::Web::Request->new($args);
@@ -326,7 +326,7 @@ package AppCore::Web::DispatchCore;
 		my $diff = $time_end - $time_start;
 		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/ || $ENV{HTTP_REFERER} =~ /dispatch_time_debug/;
 		#my $show_time = 1;
-		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time; 
+		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time && $url !~ /poll/;
 		#################
 	}
 

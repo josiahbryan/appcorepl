@@ -69,11 +69,13 @@ package AppCore::User;
 		$self->mysql_schema_update('AppCore::User');	
 		$self->mysql_schema_update('AppCore::User::Group');
 		$self->mysql_schema_update('AppCore::User::GroupList');
+		$self->mysql_schema_update('AppCore::User::PrefOption');
+		$self->mysql_schema_update('AppCore::User::Preference');
+		
  	}
 	
 	sub stringify_fmt { qw/#userid/ }
 
-	
 	use AppCore::AuthUtil;
 	sub authenticate { AppCore::AuthUtil->authenticate(@_) }
 	
@@ -642,5 +644,108 @@ package AppCore::User::GroupList;
 	
 };	
 
+package AppCore::User::PrefOption;
+{
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta({
+		class_noun	=> 'Preference Option',
+		class_title	=> 'Preference Option Database',
+		
+		db		=> $AppCore::Config::USERS_DBNAME,
+		table		=> 'user_pref_opts',
+		
+		schema	=>
+		[
+			{
+				'field'	=> 'optid',
+				'extra'	=> 'auto_increment',
+				'type'	=> 'int(11)',
+				'key'	=> 'PRI',
+				readonly=> 1,
+				auto	=> 1,
+			},
+			{	field	=> 'controller',	type	=> 'varchar(255)' },
+			{	field	=> 'module',		type	=> 'varchar(255)' },
+			{	field	=> 'module_name',	type	=> 'varchar(255)' },
+			{	field	=> 'subsection_name',	type	=> 'varchar(255)' },
+			{	field	=> 'name',		type	=> 'varchar(255)' },
+			{	field	=> 'description',	type	=> 'varchar(255)' },
+			{	field	=> 'datatype',		type	=> "enum('string','int','bool')" },
+			{	field	=> 'default_value',	type	=> 'varchar(255)' }, 
+			{	field	=> 'acl',		type	=> 'varchar(255)' },
+		]
+	
+	});
+	
+	sub register
+	{
+		my $class = shift;
+		
+		my $pkg = shift;
+		$pkg = ref $pkg if ref $pkg;
+		
+		my $subsec = shift || '';
+		my $name = shift;
+		my $opts = shift || {};
+		
+		my $mod = $opts->{module} || undef;
+		if(!$mod)
+		{
+			($mod) = split('::',$pkg);
+		}
+		
+		$opts->{module_name} = AppCore::Web::Common::guess_title($mod) if !$opts->{module_name};
+		$opts->{data_type} = 'bool' if !$opts->{data_type};
+		$opts->{default_value} = '1' if $opts->{data_type} eq 'bool' & !$opts->{default_value};
+		
+# 		use Data::Dumper;
+# 		die Dumper $opts;
+		my $self = undef;
+		undef $@;
+		eval
+		{
+			$self = $class->find_or_create({controller=>$pkg, module=>$mod, subsection_name=>$subsec, name => $name});
+			
+			my @keys = qw/module_name description datatype default_value acl/;
+			foreach my $key (@keys)
+			{
+				$self->$key($opts->{$key}) if $self->get($key) ne $opts->{$key};
+			}
+			$self->update if $self->is_changed;
+		};
+		warn $@ if $@;
+		return $self;
+	}
+};
 
+package AppCore::User::Preference;
+{
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta({
+		class_noun	=> 'Preference',
+		class_title	=> 'Preference Choice Database',
+		
+		db		=> $AppCore::Config::USERS_DBNAME,
+		table		=> 'user_prefs',
+		
+		schema	=>
+		[
+			{
+				'field'	=> 'prefid',
+				'extra'	=> 'auto_increment',
+				'type'	=> 'int(11)',
+				'key'	=> 'PRI',
+				readonly=> 1,
+				auto	=> 1,
+			},
+			{	field	=> 'userid',	type	=> 'int', linked => 'AppCore::User' },
+			{	field	=> 'optid',	type	=> 'int', linked => 'AppCore::User::PrefOption' },
+			{	field	=> 'value',	type	=> 'varchar(255)' },
+			{	field	=> 'timestamp',	type	=> 'timestamp' },
+		]
+	
+	});
+};
 1;
