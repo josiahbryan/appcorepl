@@ -693,12 +693,16 @@ package AppCore::Web::Common;
 		
 		# If plain text, convert paragraphs to <p>...</p>
 		$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
-		$html =~ s/\*([\w\s]+)\*/<b>$1<\/b>/g;
-		$html =~ s/\/([\w\s]+)\//<i>$1<\/i>/g;
-		$html =~ s/_([\w\s]+)_/<u>$1<\/u>/g;
+		# Auto italic/underline/bold based on common conventions in text
+		$html =~ s/\*([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
+		$html =~ s/\/([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\//<i>$1<\/i>/g;
+		$html =~ s/_([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)_/<u>$1<\/u>/g;
+		# Limit multiple newlines to 2 each
 		$html =~ s/\n{2,}/\n\n/sg;
 		#$html =~ s/\n/<br>\n/g;
+		# Cleanup messy list html
 		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+		# Add <br> between paragraphs with only a single \n linebreak between them
 		$html =~ s/([^\n])\n([^\n])/$1<br>\n$2/g;
 		
 		return $html;
