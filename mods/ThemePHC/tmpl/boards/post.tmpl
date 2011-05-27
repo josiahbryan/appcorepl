@@ -9,7 +9,11 @@ loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
 
 <a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
 <table class='postlist' width='100%' align=center cellspacing=0>
-	${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+	<tmpl_if tmpl_inc_postrow>
+		${inc:%%tmpl_inc_postrow%%}
+	<tmpl_else>
+		${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+	</tmpl_if>
 </table>
 
 <tmpl_include inc-reply-scripts.tmpl>
@@ -19,6 +23,7 @@ loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/mods/ThemePHC/js/boards-postlist-actions.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/mods/ThemePHC/js/jquery.purr.js" index="50"></script>
 
 <!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
      when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially

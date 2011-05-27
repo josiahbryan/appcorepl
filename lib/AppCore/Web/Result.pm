@@ -292,7 +292,7 @@ package AppCore::Web::Result;
 		
 		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
 		{
-			$out =~ s/<img src=['"](\/[^'"]+)['"]/"<img src='".cdn_url($1)."'"/segi;
+			$out =~ s/<img src=(['"])(\/[^'"]+)(['"])/"<img src=$1".cdn_url($2)."$3"/segi;
 		}
 		
 		#timemark("cdn - img");

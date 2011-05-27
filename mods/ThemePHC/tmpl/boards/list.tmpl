@@ -352,7 +352,6 @@
 	// post or whatever. The 'flag='dynamic...'' is just to prevent the server compressor from grabbing this
 	// script block because it only grabs script blocks with certain attributes and ingores others.
 	window.PagingNextIndex = %%next_idx%%;
-	window.PollingTimestamp = '%%first_ts%%';
 	</script>
 	
 	<script>
@@ -381,115 +380,6 @@
 			domElm.doPaging();
 		}
 	});
-	
-	$(function()
-	{
-		window.LockPolling = false;
-		var     pollingLock = false,
-			doPoll = function()
-			{
-				// External lock preventing polling while posting
-				if(window.LockPolling)
-					return;
-				
-				// Internal lock preventing duplicate polls
-				if(pollingLock) 
-					return;
-				pollingLock = true;
-	
-				$.ajax({
-					type: "GET",
-					url: "%%binpath%%/%%board_folder_name%%",
-					data: 
-					{
-						first_ts: window.PollingTimestamp,
-						output_fmt: 'json',
-						mode: 'poll_new_posts',
-					},
-					success: function(data)
-					{
-						//console.debug("got post data: "+data+", typeof: "+typeof(data));
-						//alert("Got post data:"+data+", type:"+typeof(data));
-						if(typeof(data) == "string")
-						{
-							// something wierd on server - should be JSON!
-							//alert("Got data as string");
-						}
-						else
-						{
-							if(data.last_ts)
-								window.PollingTimestamp = data.last_ts;
-							
-							try
-							{
-								// Iterate over the list of posts and reate the posts from the template
-								var posts = data.list;
-								for(var i=0;i<posts.length;i++)
-								{
-									var postData = posts[i];
-									
-									var isPost = postData.top_commentid<=0;
-									
-									if(isPost)
-									{
-										$("#post-tmpl").tmpl(postData).insertAfter("#post-placeholder");
-									}
-									else
-									{
-										var parentId = parseInt(postData.parent_commentid); 
-										var postid = parentId;
-										if(!postid)
-											postid = parseInt(postData.top_commentid);
-										var replyToPost = !parentId;
-										
-										postData.indent_css = replyToPost ? 0 : parseInt($("#comment"+postid).attr("indent_css")) + %%boards_indent_multiplier%%;
-										
-										postData.indent_is_odd = ((postData.indent_css+0)/%%boards_indent_multiplier%%) % 2 == 0 ? 1:0;
-										
-										var output = $("#reply-tmpl").tmpl(postData);
-										
-										if(replyToPost)
-										{
-											var insertSelector = "#post"+postid+" .replies_container";
-											//console.debug("insertSelector:"+insertSelector);
-											// This needs to be appended to the selector
-											output.appendTo(insertSelector);
-										}
-										else
-										{
-											var insertSelector = "#wrap" + postid;
-											// This needs to be inserted after the selector
-											//console.debug("insertSelector:"+insertSelector);
-											output.insertAfter(insertSelector);
-										}
-									}
-								}
-								
-								if(data.list.length > 0)
-									runOnloadScripts();
-								
-								pollingLock = false;
-							}
-							catch(e)
-							{
-								if(e && window.console)
-									window.console.debug(e);
-							}
-						}	
-					},
-					error: function() 
-					{ 
-						//alert("Error");
-						//document.location.href = linkHref; 
-					}
-					
-				});
-			};
-		setInterval(doPoll, 2500);
-		
-	});
-	
-	
 	
 	</script>
 	
@@ -522,6 +412,7 @@ $(function() {
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/mods/ThemePHC/js/boards-postlist-actions.js" index="50"></script>
+<script type="text/javascript" src="%%appcore%%/mods/ThemePHC/js/jquery.purr.js" index="50"></script>
 
 <!-- Some browsers don't seem to load the loader gif until its actually visible - which causes visual artifacts
      when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially

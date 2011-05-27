@@ -704,11 +704,19 @@ package Boards;
 			# Check to see if this is an ajax poll request for new posts
 			if($req->{first_ts})
 			{
-				my $sth = $dbh->prepare_cached(q{
-					select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and timestamp>? and deleted=0 order by timestamp 
-				});
+				my $postid = $req->{postid};
+				print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
+				my $sth = $dbh->prepare_cached(
+					'select b.*, u.photo as user_photo '.
+					'from board_posts b left join users u on (b.posted_by=u.userid) '.
+					'where boardid=? and timestamp>? '.
+					($postid? 'and top_commentid=?':' ').
+					'and deleted=0 order by timestamp');
 				
-				$sth->execute($board->id, $req->{first_ts});
+				my @args = ($board->id, $req->{first_ts});
+				push @args, $postid if $postid;
+				
+				$sth->execute(@args);
 				my @results;
 				my $ts;
 				while(my $b = $sth->fetchrow_hashref)
@@ -755,9 +763,6 @@ package Boards;
 			my $data = $BoardDataCache{$cache_key};
 			if(!$data)
 			{
-				# Used to clean up orphaned comments if the parent is deleted
-				my $del_sth = $dbh->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
-				
 				my $sth;
 				
 				if(!$len)
@@ -801,101 +806,12 @@ package Boards;
 				while(my $b = $sth->fetchrow_hashref)
 				{
 					$first_ts = $b->{timestamp};# if !$first_ts;
-					$crossref{$b->{postid}} = $b;
 					$b->{reply_count} = 0;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
 				}
 				
-				my $tmpl_incs = $controller->config->{tmpl_incs} || {};
-						
-				# Now we put all the comments with the parent posts
-				my @list;
-				my %indents;
-				foreach my $data (@tmp_list)
-				{
-					# This is a parent post, just add it to the master list
-					if($data->{top_commentid} == 0)
-					{
-						foreach my $key (keys %$tmpl_incs)
-						{
-							$data->{'tmpl_inc_'.$key} = $tmpl_incs->{$key};
-						}
-						
-						push @list, $data;
-					}
-					else
-					{
-						# This is a comment, so we need to calculate an "indent" value 
-						# for the template to use to indet the comment
-						
-						my $parent_comment = $data->{parent_commentid};
-						my $indent = $indents{$parent_comment} || 0;
-						my $id     = $data->{postid};
-						
-						$data->{indent}		= $indent;
-						$data->{indent_css}	= $indent * $INDENT_MULTIPLIER; # Arbitrary multiplier
-						$data->{indent_is_odd}	= $indent % 2 == 0;
-						
-						# Lookup the top-most post for this comment
-						# If its orphaned, we just delete the comment
-						my $top_data = $crossref{$data->{top_commentid}};
-						if(!$top_data)
-						{
-							print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref - marking deleted.\n";
-							$del_sth->execute($data->{postid});
-						}
-						else
-						{
-							# Add the comment to the post
-							push @{$top_data->{replies}}, $data;
-						}
-			
-						$top_data->{reply_count} ++;
-						$indents{$id} = $indent + 1; 
-					}	
-				}
-				
-				# This funky foreach() block is required because of the way we structured the database query
-				# Instead of multiple DB queries to get kids in the right order, we grab the entire list of kids
-				# ordered by timestamp - so here we batch the kids by their parent then re-flatten the list out to a 1d list
-				
-				foreach my $post (@list)
-				{
-					my @list = @{$post->{replies} || []};
-					next if !@list;
-
-					# Make a map of comment id (postid) to the ref
-					my %posts = map { $_->{postid} => $_ } @list;
-					
-					# Add each comment to a list of kids on its parent
-					map { push @{$posts{$_->{parent_commentid}}->{tmp}}, $_ } @list;
-					
-					# Sort each list of kids by their timestamp
-						# Dont need to sort by timestamp since they come sorted from the SQL query
-					#map { $_->{tmp} = [ sort { $a->{timestamp} cmp $b->{timestamp} } @{$_->{tmp} || []} ] } @list;
-					
-					# Make a list of only top-level comments and sort by timestamp
-						# Dont need to sort by timestamp since they come sorted from the SQL query
-					my @tops = #sort { $a->{timestamp} cmp $b->{timestamp} } 
-						grep { !$_->{parent_commentid} || $_->{parent_commentid} == $post->{postid} } @list;
-					
-					# Finally flatten out the list by building up a single level list of parents/comments in order
-					my @final;
-					sub pushit 
-					{ 
-						my $f = shift; 
-						my $p = shift; 
-						push @$f, $p;
-						foreach my $k (@{$p->{tmp}})
-						{
-							pushit($f,$k);
-						}
-					}
-					pushit(\@final, $_) foreach @tops;
-					
-					$post->{replies} = \@final;
-				}
-	
+				my $threaded = $controller->thread_post_list(\@tmp_list);
+				my @list = @$threaded;
 				# Put newest at top of list
 				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
 				@list = reverse @list;
@@ -904,7 +820,7 @@ package Boards;
 				{
 					list 		=> \@list,
 					timestamp	=> time,
-					first_timestamp	=> $first_ts,
+					first_timestamp	=> $first_ts, # Used for in-page polling dyanmic new content inlining
 				};
 				$BoardDataCache{$cache_key} = $data;
 				#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
@@ -947,7 +863,7 @@ package Boards;
 				idx2	=> $idx + $len,
 				next_idx=> $next_idx,
 				#first_id=> @{$data->{list}} ? $data->{list}->[0]->{postid} : 0,
-				first_ts=> $data->{first_timestamp},
+				first_ts=> $data->{first_timestamp}, # Used for in-page polling dyanmic new content inlining
 				max_idx => $max_idx,
 				can_admin=> $can_admin,
 			};
@@ -1220,6 +1136,7 @@ package Boards;
 		my $more_local_ctx  = shift || undef;
 		my $dont_incl_comments = shift || 0;
 		
+		my $first_ts = $post->timestamp;
 		
 		my $folder_name = $post->folder_name;
  		my $board_folder_name 
@@ -1255,7 +1172,9 @@ package Boards;
 			my @tmp_list;
 			while(my $b = $sth->fetchrow_hashref)
 			{
-				push @tmp_list, $self->load_post_for_list($b,$board_folder_name,$can_admin);
+				my $b = $self->load_post_for_list($b,$board_folder_name,$can_admin);
+				$first_ts = $b->{timestamp};
+				push @tmp_list, $b;
 			}
 			
 			my $board = $post->boardid;
@@ -1263,11 +1182,68 @@ package Boards;
 			$post_ref->{'board_'.$_} = $board->get($_)."" foreach $board->columns;
 			$post_ref->{'post_' .$_} = $post_ref->{$_}."" foreach $post->columns;
 			$post_ref->{reply_count}  = 0;
-			
+			$post_ref->{first_ts} = $first_ts; # Used for in-page polling dyanmic new content inlining
+	
 			# Now we put all the comments with the parent posts
-			my @list;
-			my %indents;
-			foreach my $data (@tmp_list)
+# 			my @list;
+# 			my %indents;
+# 			foreach my $data (@tmp_list)
+# 			{
+# 				# This is a comment, so we need to calculate an "indent" value 
+# 				# for the template to use to indet the comment
+# 				
+# 				my $parent_comment = $data->{parent_commentid};
+# 				my $indent = $indents{$parent_comment} || 0;
+# 				my $id     = $data->{postid};
+# 				
+# 				$data->{indent}		= $indent;
+# 				$data->{indent_css}	= $indent * 2;
+# 				
+# 				# Add the comment to the post
+# 				push @{$post_ref->{replies}}, $data;
+# 				
+# 				$post_ref->{reply_count} ++;
+# 				$indents{$id} = $indent + 1; 
+# 			}
+			$self->thread_post_list(\@tmp_list, $post_ref);
+			
+			$PostDataCache{$cache_key} = $post_ref;
+		}
+		
+		return $post_ref;
+	}
+	
+	sub thread_post_list
+	{
+		my $self        = shift;
+		my $input       = shift || [];
+		my $single_post = shift || undef;
+		my $controller  = shift || $self;
+		my @tmp_list = @{$input || []};
+		
+		# Used to clean up orphaned comments if the parent is deleted
+		my $del_sth = Boards::Post->db_Main->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
+		
+		my $tmpl_incs = $controller->config->{tmpl_incs} || {};
+						
+		my %crossref = map { $_->{postid} => $_ } @tmp_list;
+					
+		# Now we put all the comments with the parent posts
+		my @list;
+		my %indents;
+		foreach my $data (@tmp_list)
+		{
+			# This is a parent post, just add it to the master list
+			if(!$single_post && $data->{top_commentid} == 0)
+			{
+				foreach my $key (keys %$tmpl_incs)
+				{
+					$data->{'tmpl_inc_'.$key} = $tmpl_incs->{$key};
+				}
+				
+				push @list, $data;
+			}
+			else
 			{
 				# This is a comment, so we need to calculate an "indent" value 
 				# for the template to use to indet the comment
@@ -1277,19 +1253,70 @@ package Boards;
 				my $id     = $data->{postid};
 				
 				$data->{indent}		= $indent;
-				$data->{indent_css}	= $indent * 2;
+				$data->{indent_css}	= $indent * $INDENT_MULTIPLIER; # Arbitrary multiplier
+				$data->{indent_is_odd}	= $indent % 2 == 0;
 				
-				# Add the comment to the post
-				push @{$post_ref->{replies}}, $data;
-				
-				$post_ref->{reply_count} ++;
-				$indents{$id} = $indent + 1; 
-			}
+				# Lookup the top-most post for this comment
+				# If its orphaned, we just delete the comment
+				my $top_data = $single_post ? $single_post : $crossref{$data->{top_commentid}};
+				if(!$top_data)
+				{
+					print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref - marking deleted.\n";
+					$del_sth->execute($data->{postid});
+				}
+				else
+				{
+					# Add the comment to the post
+					push @{$top_data->{replies}}, $data;
+				}
 	
-			$PostDataCache{$cache_key} = $post_ref;
+				$top_data->{reply_count} ++;
+				$indents{$id} = $indent + 1; 
+			}	
 		}
 		
-		return $post_ref;
+		# This funky foreach() block is required because of the way we structured the database query
+		# Instead of multiple DB queries to get kids in the right order, we grab the entire list of kids
+		# ordered by timestamp - so here we batch the kids by their parent then re-flatten the list out to a 1d list
+		@list = ($single_post) if $single_post; 
+		foreach my $post (@list)
+		{
+			my @list = @{$post->{replies} || []};
+			next if !@list;
+
+			# Make a map of comment id (postid) to the ref
+			my %posts = map { $_->{postid} => $_ } @list;
+			
+			# Add each comment to a list of kids on its parent
+			map { push @{$posts{$_->{parent_commentid}}->{tmp}}, $_ } @list;
+			
+			# Sort each list of kids by their timestamp
+				# Dont need to sort by timestamp since they come sorted from the SQL query
+			#map { $_->{tmp} = [ sort { $a->{timestamp} cmp $b->{timestamp} } @{$_->{tmp} || []} ] } @list;
+			
+			# Make a list of only top-level comments and sort by timestamp
+				# Dont need to sort by timestamp since they come sorted from the SQL query
+			my @tops = #sort { $a->{timestamp} cmp $b->{timestamp} } 
+				grep { !$_->{parent_commentid} || $_->{parent_commentid} == $post->{postid} } @list;
+			
+			# Finally flatten out the list by building up a single level list of parents/comments in order
+			my @final;
+			sub pushit 
+			{ 
+				my $f = shift; 
+				my $p = shift; 
+				push @$f, $p;
+				foreach my $k (@{$p->{tmp}})
+				{
+					pushit($f,$k);
+				}
+			}
+			pushit(\@final, $_) foreach @tops;
+			
+			$post->{replies} = \@final;
+		}
+		
+		return $single_post ? $single_post : \@list;
 	}
 	
 	sub can_user_edit

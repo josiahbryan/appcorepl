@@ -1,4 +1,4 @@
-<tmpl_if is_mobile>
+	<tmpl_if is_mobile>
 		<script id="reply-tmpl" type="text/x-jquery-tmpl">
 			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply-mobile.tmpl}
 		</script>	
@@ -290,4 +290,226 @@
 		return false;
 	}
 	
+	</script>
+	<script flag='dynamic_server_content'>
+	<tmpl_if single_post_page>
+	window.PostID = %%postid%%;
+	</tmpl_if>
+	window.PollingTimestamp = '%%first_ts%%';
+	</script>
+	
+	<script>
+	$(function()
+	{
+		
+		function insertPlayer()
+		{
+			var playerpath	= '%%appcore%%/mods/ThemePHC/flash/singlemp3player.swf';
+			var filename	= '%%appcore%%/mods/ThemePHC/rx.mp3';
+	
+			var mp3html = '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" ';
+			mp3html += 'width="1" height="1" ';
+			mp3html += 'codebase="http://download.macromedia.com/pub/shockwave/cabs/flash/swflash.cab">';
+			mp3html += '<param name="movie" value="'+playerpath+'?';
+			mp3html += 'showDownload=false&file=' + filename + '&autoStart=true';
+			mp3html += '&backColor=ffffff&frontColor=ffffff';
+			mp3html += '&repeatPlay=false&songVolume=150" />';
+			mp3html += '<param name="wmode" value="transparent" />';
+			mp3html += '<embed wmode="transparent" width="1" height="1" ';
+			mp3html += 'src="' + playerpath + '?'
+			mp3html += 'showDownload=false&file=' + filename + '&autoStart=true';
+			mp3html += '&backColor=ffffff&frontColor=ffffff';
+			mp3html += '&repeatPlay=false&songVolume=150" ';
+			mp3html += 'type="application/x-shockwave-flash" pluginspage="http://www.macromedia.com/go/getflashplayer" />';
+			mp3html += '</object>';
+			return mp3html;
+	
+		}
+		(function($) {
+			var DEFAULT_INTERVAL = 1000;
+			var original  = document.title;
+			var timeoutId = undefined;
+			$.flashTitle = function(newMsg, interval) 
+			{
+				if (!newMsg) 
+				{
+					// stop flashing and reset title
+					clearTimeout(timeoutId);
+					document.title = original;
+				} else 
+				{
+					// loop flashing
+					interval = interval || DEFAULT_INTERVAL;
+					timeoutId = setTimeout(function() 
+					{
+						clearTimeout(timeoutId);
+						document.title = (document.title == original) ? newMsg : original;
+						timeoutId = setTimeout(arguments.callee, interval);
+					}, interval);
+				}
+			};
+			
+			// Stop flashing title when mouse moves
+			$(document.body).bind('mousemove',function(){$.flashTitle()});
+		})(jQuery);
+		
+		function purr(msg,msgTitle,notSticky)
+		{
+			var notice = '<div class="notice">'
+					+ '<div class="notice-body">' 
+						+ '<img src="%%appcore%%/mods/ThemePHC/images/purr/info.png" alt="" />'
+						+ (msgTitle ? + '<h3>'+msgTitle+'</h3>' : '')
+						+ '<p>' + msg + '</p>'
+					+ '</div>'
+					+ '<div class="notice-bottom">'
+					+ '</div>'
+				+ '</div>';
+				
+			var p = $( notice ).purr(
+				{
+					usingTransparentPNG: true,
+					isSticky: !notSticky,
+				}
+			);
+			p.bind("mouseup",function()
+			{
+				p.children("a.close").click();
+			});;
+		}
+		
+		window.LockPolling = false;
+		
+		var     pollingLock = false,
+			doPoll = function()
+			{
+				// External lock preventing polling while posting
+				if(window.LockPolling)
+					return;
+				
+				// Internal lock preventing duplicate polls
+				if(pollingLock) 
+					return;
+				pollingLock = true;
+	
+				$.ajax({
+					type: "GET",
+					url: "%%binpath%%/%%board_folder_name%%",
+					data: 
+					{
+						first_ts: window.PollingTimestamp,
+						output_fmt: 'json',
+						<tmpl_if single_post_page>
+						postid: window.PostID,
+						</tmpl_if>
+						mode: 'poll_new_posts'
+					},
+					success: function(data)
+					{
+						//console.debug("got post data: "+data+", typeof: "+typeof(data));
+						//alert("Got post data:"+data+", type:"+typeof(data));
+						if(typeof(data) == "string")
+						{
+							// something wierd on server - should be JSON!
+							//alert("Got data as string");
+						}
+						else
+						{
+							if(data.last_ts)
+								window.PollingTimestamp = data.last_ts;
+							
+							try
+							{
+								var windowMessage = "";
+								var foundPostCount = 0;
+								// Iterate over the list of posts and reate the posts from the template
+								var posts = data.list;
+								if(posts)
+								{
+									for(var i=0;i<posts.length;i++)
+									{
+										var postData = posts[i];
+										
+										var isPost = postData.top_commentid<=0;
+										
+										if(isPost)
+										{
+											$("#post-tmpl").tmpl(postData).insertAfter("#post-placeholder");
+											foundPostCount ++;
+											purr("<a href='#p"+postData.postid+"'>New post</a> from <b>"+postData.poster_name+"</b>: <a href='#p"+postData.postid+"'>"+postData.subject+"</a>");
+											windowMessage = "New post from "+postData.poster_name;
+										}
+										else
+										{
+											var parentId = parseInt(postData.parent_commentid); 
+											var postid = parentId;
+											if(!postid)
+												postid = parseInt(postData.top_commentid);
+											var replyToPost = !parentId;
+											
+											postData.indent_css = replyToPost ? 0 : parseInt($("#comment"+postid).attr("indent_css")) + %%boards_indent_multiplier%%;
+											
+											postData.indent_is_odd = ((postData.indent_css+0)/%%boards_indent_multiplier%%) % 2 == 0 ? 1:0;
+											
+											var output = $("#reply-tmpl").tmpl(postData);
+											
+											var foundThisPost = false;
+											if(replyToPost)
+											{
+												var insertSelector = "#post"+postid+" .replies_container";
+												//console.debug("insertSelector:"+insertSelector);
+												// This needs to be appended to the selector
+												if($(insertSelector).get(0))
+													foundThisPost = true;
+													
+												output.appendTo(insertSelector);
+											}
+											else
+											{
+												var insertSelector = "#wrap" + postid;
+												// This needs to be inserted after the selector
+												//console.debug("insertSelector:"+insertSelector);
+												if($(insertSelector).get(0))
+													foundThisPost = true;
+												output.insertAfter(insertSelector);
+											}
+											
+											if(foundThisPost)
+											{
+												foundPostCount ++;
+												purr("<a href='#c"+postData.postid+"'>New comment</a> from <b>"+postData.poster_name+"</b>: <a href='#c"+postData.postid+"'>"+postData.subject+"</a>");
+												windowMessage = "New comment from "+postData.poster_name;
+											}
+										}
+									}
+									
+									if(foundPostCount > 0)
+									{
+										$('<div/>').html(insertPlayer()).appendTo($(document.body));
+										
+										$.flashTitle(foundPostCount == 1 ? windowMessage : "New posts on page");
+										
+										runOnloadScripts();
+									}
+								}
+								pollingLock = false;
+								//purr("<a href='#'>New test style</a> from <b>Josiah Bryan</b>");
+							}
+							catch(e)
+							{
+								if(e && window.console)
+									window.console.debug(e);
+							}
+						}	
+					},
+					error: function() 
+					{ 
+						//alert("Error");
+						//document.location.href = linkHref; 
+					}
+					
+				});
+			};
+		setInterval(doPoll, 2500);
+		
+	});
 	</script>
