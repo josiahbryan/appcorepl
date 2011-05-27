@@ -152,6 +152,9 @@ package Boards;
 		Content::Page::Controller
 	};
 	
+	# For proper redirection to the right page
+	use Content::Page;
+	
 	# For making MD5's of emails
 	use Digest::MD5 qw/md5_hex/;
 	
@@ -177,7 +180,7 @@ package Boards;
 	Admin::ModuleAdminEntry->register(__PACKAGE__, 'Boards', 'boards', 'List all boards on this site and manage boards settings.');
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('Board Page','Bulletin Board Front Page',1,0,  # 1 = uses page path,  0 = doesnt use content
+	our $PAGE_TYPEID = __PACKAGE__->register_controller('Board Page','Bulletin Board Front Page',1,0,  # 1 = uses page path,  0 = doesnt use content
 		[
 			{ field => 'title',		type => 'string',	description => 'The title of the bulletin board' },
 			{ field => 'tagline',		type => 'string',	description => 'A short description of the board' },
@@ -628,6 +631,26 @@ package Boards;
 		my $board = shift || undef;
 		
 		my $folder_name = $req->shift_path;
+		
+		# Make sure we are being accessed thru a Content::Page object if one exists with "our name on it", so to speak
+		if(!$req->{page_obj})
+		{
+			my $sth = ($self->{_sth_pagecheck} ||= Content::Page->db_Main->prepare('select pageid from `'.Content::Page->table.'` where url like ? and typeid=?'));
+			$sth->execute("%/${folder_name}",$PAGE_TYPEID);
+			if($sth->rows)
+			{
+				my $page = Content::Page->retrieve($sth->fetchrow);
+				my $cur_url = $req->page_path."/$folder_name";
+				#print STDERR get_full_url().": board_page: Matched folder $folder_name to pageid $page, page url:".$page->url.", current path: $cur_url\n";
+				if($page->url ne $cur_url)
+				{
+					my $new_url = $page->url.($req->path?"/".join('/',$req->path_info):"").($ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '');
+					print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
+					return $r->redirect($new_url);
+				}
+			}
+		}
+		
 		
 		$req->push_page_path($folder_name);
 		
@@ -1210,7 +1233,7 @@ package Boards;
 		my $folder_name = $post->folder_name;
  		my $board_folder_name 
  		              = $post->boardid->folder_name;
-		my $bin       = $self->binpath();
+		my $bin       = $self->binpath;
 		
 		unless($dont_count_view)
 		{
@@ -1693,6 +1716,7 @@ Cheers!};
 			# If use requested the folder name of a comment post instead of the actual post (The top comment), then redirect accordingly
 			if($req->output_fmt ne 'json' && $post->top_commentid && $post->top_commentid->id)
 			{
+				print STDERR "Top post, need redir, bin:$bin, binpath:".$self->binpath."\n";
 				$r->redirect("$bin/$board_folder_name/".$post->top_commentid->folder_name."#c".$post->id);
 			}
 			

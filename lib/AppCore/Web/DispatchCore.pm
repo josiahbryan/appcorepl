@@ -236,6 +236,10 @@ package AppCore::Web::DispatchCore;
 		print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /poll/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
 		# || $ENV{REMOTE_ADDR} eq '10.0.1.60'; # netmon ip
 		
+		# Reset modpath and binpath caches on each request
+		%AppCore::Web::Module::ModpathCache = ();
+		%AppCore::Web::Module::BinpathCache = ();
+		
 		my $request = AppCore::Web::Request->new($args);
 		$request->push_page_path($app);
 		

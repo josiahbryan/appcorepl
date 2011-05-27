@@ -231,7 +231,6 @@ package AppCore::Web::Module;
 	}
 	
 	our %ModpathCache;
-	
 	sub modpath
 	{
 		my $pkg = shift;

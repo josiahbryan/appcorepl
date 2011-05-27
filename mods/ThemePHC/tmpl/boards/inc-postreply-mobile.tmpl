@@ -10,7 +10,7 @@
 				align=left>
 				
 			<div class='posted_by'>
-				<a name='c%%postid%%'><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
+				<a name='c%%postid%%'><span class='by'>by</span> <span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span></a>
 				&middot;
 				<span class='timestamp'>%%approx_time_ago%% ago
 				<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>

@@ -158,10 +158,11 @@ package Content::Page::Type;
 		
 		my $field_list = shift || [];
 		
+		my $self = undef;
 		undef $@;
 		eval
 		{
-			my $self = $class->find_or_create({controller=>$pkg});
+			$self = $class->find_or_create({controller=>$pkg});
 			
 			$self->name($name)                   if $self->name          ne $name;
 			$self->description($diz)             if $self->description   ne $diz;
@@ -171,6 +172,8 @@ package Content::Page::Type;
 			$self->update if $self->is_changed;
 		};
 		warn $@ if $@;
+		
+		return $self;
 		
 	}
 	
@@ -262,7 +265,7 @@ package Content::Page::Controller;
 	sub register_controller
 	{
 		my $pkg = shift;
-		Content::Page::Type->register($pkg, @_);
+		return Content::Page::Type->register($pkg, @_);
 	}
 	
 	our %ViewInstCache;
