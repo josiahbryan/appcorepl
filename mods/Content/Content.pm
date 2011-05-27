@@ -64,19 +64,28 @@ package Content;
 		
 		if(!$self->process_page($req,$r))
 		{
-			my $url = AppCore::Web::Common->get_full_url();
+			# Reset page path and path info
+			$req->path($ENV{PATH_INFO});
+			$req->page_path('');
 			
-			my $trim = $url;
-			$trim =~ s/^\///g;
-			if(index($trim, '/') < 0)
+			my $first_item = $req->next_path;
+			
+			# Try to load a user's home page
+			my $user = AppCore::User->by_field(user => $first_item);
+			if($user)
 			{
-				my $post = Boards::Post->by_field(folder_name => $trim);
-				if($post && $post->id)
-				{
-					my $url = Boards->module_url($post->boardid->folder_name . "/" . ($post->folder_name ? $post->folder_name : $post->id));
-					#print STDERR "Auto-redirecting fallthru to post $post, url: $url\n";
-					return $r->redirect($url);
-				}
+				my $ctrl = AppCore::Web::Module->bootstrap('Boards');
+				$ctrl->binpath('');
+				return $ctrl->user_page($req,$r,$user);
+			}
+			
+			# Try to redirect to a specific bulletin board post
+			my $post = Boards::Post->by_field(folder_name => $first_item);
+			if($post && $post->id)
+			{
+				my $url = Boards->module_url($post->boardid->folder_name . "/" . ($post->folder_name ? $post->folder_name : $post->id));
+				#print STDERR "Auto-redirecting fallthru to post $post, url: $url\n";
+				return $r->redirect($url);
 			}
 			
 			#return $r->error("Unknown Page Address","The page requested does not exist: <b>$url</b>");
@@ -84,6 +93,7 @@ package Content;
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			
 			my $tmpl = $self->get_template("bad_url.tmpl");
+			my $url = get_full_url();
 			#$tmpl->param(bad_url => AppCore::Web::Common->encode_entities($url));
 			$tmpl->param(bad_url => $url);
 			

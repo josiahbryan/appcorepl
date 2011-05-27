@@ -20,7 +20,7 @@
 							</td>
 							<td colspan=2>
 								<div class='content'>
-									<textarea class='expandText' style="height:5em" class="expandText" name="text"></textarea>
+									<textarea class='expandText' style="height:5em" class="expandText" name="text" tabindex="10"></textarea>
 								</div>
 							</td>
 						<tmpl_if user_display>
@@ -30,26 +30,26 @@
 									Posting as <b>%%user_display%%</b>
 								</div>
 								<div class='controls'>
-									<button type='submit' class='button' id='button_${postid}'>Post</button>
-									<a href='#' class='cancel'>Cancel</a>
+									<button type='submit' class='button' id='button_${postid}' tabindex="20">Post</button>
+									<a href='#' class='cancel' tabindex="30">Cancel</a>
 								</div>
 							</td>
 						</tr>
 						<tmpl_else>
 							<tr>
 								<td>Name:</td>
-								<td><input value='%%user_display%%' name='poster_name' size=15></td>
+								<td><input value='%%user_display%%' name='poster_name' size=15 tabindex="20"></td>
 							
 								<td rowspan=2>
 									<div class='controls'>
-										<button type='submit' class='button' id='button_${postid}'>Post</button>
-									<a href='#' class='cancel'>Cancel</a>
+										<button type='submit' class='button' id='button_${postid}' tabindex="40">Post</button>
+										<a href='#' class='cancel' tabindex="50">Cancel</a>
 									</div>
 								</td>
 							</tr>
 							<tr>
 								<td>Email:</td>
-								<td><input value='%%user_email%%' name='poster_email' size=15></td>
+								<td><input value='%%user_email%%' name='poster_email' size=15 tabindex="30"></td>
 							</tr>
 						</tmpl_if>
 					</table>
@@ -74,22 +74,22 @@
 				<div class='wrap'>
 					<input type='hidden' name='postid' value='${postid}'>
 					<div class='content'>
-						<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text"></textarea>
+						<textarea class='expandText' style="width: 450px; height:5em" class="expandText" name="text" tabindex="1"></textarea>
 					</div>
 					<div class='controls'>
-						<a href='#' class='cancel'>Cancel</a>
-						<button type='submit' class='button' id='button_${postid}'>Post</button>
+						<button type='submit' class='button' id='button_${postid}' tabindex="2">Post</button>
+						<a href='#' class='cancel' tabindex="5">Cancel</a>
 						 
 					</div>
 					<div class='form' id='postas_form_${postid}'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
 						<table>
 							<tr>
 								<td>Name:</td>
-								<td><input value='%%user_display%%' name='poster_name'></td>
+								<td><input value='%%user_display%%' name='poster_name' tabindex="3"></td>
 							</tr>
 							<tr>
 								<td>Email:</td>
-								<td><input value='%%user_email%%' name='poster_email'></td>
+								<td><input value='%%user_email%%' name='poster_email' tabindex="4"></td>
 							</tr>
 						</table>
 					</div>
@@ -292,10 +292,10 @@
 	
 	</script>
 	<script flag='dynamic_server_content'>
-	<tmpl_if single_post_page>
-	window.PostID = %%postid%%;
-	</tmpl_if>
-	window.PollingTimestamp = '%%first_ts%%';
+		<tmpl_if single_post_page>
+			window.PostID = %%postid%%;
+		</tmpl_if>
+		window.PollingTimestamp = '%%first_ts%%';
 	</script>
 	
 	<script>
@@ -326,9 +326,12 @@
 	
 		}
 		(function($) {
-			var DEFAULT_INTERVAL = 1000;
-			var original  = document.title;
-			var timeoutId = undefined;
+			var	DEFAULT_INTERVAL = 1000,
+				original  = document.title,
+				timeoutId = undefined,
+				isFlashing = false,
+				stopFlasher = function(){$.flashTitle()},
+				body = $(document.body);
 			$.flashTitle = function(newMsg, interval) 
 			{
 				if (!newMsg) 
@@ -336,7 +339,12 @@
 					// stop flashing and reset title
 					clearTimeout(timeoutId);
 					document.title = original;
-				} else 
+					
+					// Remove event handler
+					body.unbind('mousemove',stopFlasher);
+					
+				} 
+				else 
 				{
 					// loop flashing
 					interval = interval || DEFAULT_INTERVAL;
@@ -346,11 +354,13 @@
 						document.title = (document.title == original) ? newMsg : original;
 						timeoutId = setTimeout(arguments.callee, interval);
 					}, interval);
+					
+					// Stop flashing title when mouse moves
+					body.bind('mousemove',stopFlasher);
 				}
 			};
 			
-			// Stop flashing title when mouse moves
-			$(document.body).bind('mousemove',function(){$.flashTitle()});
+			
 		})(jQuery);
 		
 		function purr(msg,msgTitle,notSticky)
@@ -484,10 +494,16 @@
 									
 									if(foundPostCount > 0)
 									{
-										$('<div/>').html(insertPlayer()).appendTo($(document.body));
+										// Play sound effect
+										var d = $('<div/>').html(insertPlayer());
+										d.appendTo($(document.body));
+										// Sound effect isnt long, remove after its done
+										setTimeout(function(){d.remove();delete d}, 1000);
 										
+										// Start page title flasher (auto stops on mouse move)
 										$.flashTitle(foundPostCount == 1 ? windowMessage : "New posts on page");
 										
+										// Fix any video thumbs and other onload scripts
 										runOnloadScripts();
 									}
 								}

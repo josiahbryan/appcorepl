@@ -51,7 +51,7 @@ package AppCore::Web::Request;
 		if(@_ > 1)
 		{
 			$self->{_PATH_INFO} = [@_];
-			$self->{PATH_INF} = join('/', @_);
+			$self->{PATH_INFO} = join('/', @_);
 		}
 		else
 		{

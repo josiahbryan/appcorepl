@@ -10,8 +10,14 @@
 			</a>
 			
 			<div class='posted_by'>
-				<a name="p%%postid%%"><span class='by'>by</span> <span class='name'>%%poster_name%%</span></a>
-				&middot;
+				<span class='by'>by</span> <span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span>
+				<tmpl_if board_userid>
+					<tmpl_if original_board_folder_name>
+						<span class='by'>in</span> 
+						<span class='name'><a href='%%binpath%%/%%original_board_folder_name%%'><b>%%board_title%%</b></a></span>
+					</tmpl_if>
+				</tmpl_if>
+				<a name="p%%postid%%">&middot;</a>
 				<span class='timestamp'>%%approx_time_ago%% ago on %%pretty_timestamp%% 
 				<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if> 
 				<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a></span>

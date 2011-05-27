@@ -2,6 +2,13 @@
 <title><tmpl_var post_subject> - <tmpl_var board_title> - Bulletin Boards</title>
 <h1><tmpl_var post_subject></h1>
 
+<div class='other_links'>
+	<a href='%%binpath%%/%%board_folder_name%%'>&laquo; %%board_title%%</a> 
+	<tmpl_if username>
+		 &middot; <a href='/%%username%%'>%%poster_name%%'s PHC Home Page &raquo;</a>
+	</tmpl_if>
+</div>
+
 <script>
 // Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
 loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';

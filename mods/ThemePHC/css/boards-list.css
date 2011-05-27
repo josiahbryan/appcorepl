@@ -507,3 +507,20 @@ table.comment_text td {
 	height: 22px;
 	background: url(%%modpath%%/images/purr/purrBottom.png) no-repeat left top;
 }
+
+
+/* post.tmpl links just below the header */
+.other_links
+{
+	/*text-align: center;*/
+	/*background: rgb(230,230,230);*/
+	padding: 3px 0 9px;
+	margin-bottom: .95em;
+	font-size: .909em;
+	border-bottom: 1px solid rgb(230,230,230);
+}
+
+.other_links a
+{
+	color: rgb(100,100,100);
+}

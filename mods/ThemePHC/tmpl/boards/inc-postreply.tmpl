@@ -13,8 +13,8 @@
 				</td>
 				<td valign=top align='left' class='indent-<tmpl_if indent_is_odd>odd<tmpl_else>even</tmpl_if>'>
 					<span class='posted_by'>
-						<a name='c%%postid%%'><!--<span class='by'>by</span> --><span class='name'>%%poster_name%%</span></a>
-						&middot;
+						<!--<span class='by'>by</span> --><span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span>
+						<a name='c%%postid%%'>&middot;</a>
 					</span>
 					
 					<span class="comment_text text">

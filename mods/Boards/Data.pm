@@ -344,6 +344,7 @@ package Boards::Post;
 		[
 			{ field => 'postid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
 			{ field	=> 'boardid',			type => 'int', linked => 'Boards::Board', default => 0 },
+			{ field	=> 'to_userid',			type => 'int', linked => 'AppCore::User', default => 0 }, # For future use: A "wall" for the user :-)
 			{ field => 'poster_name',		type => 'varchar(255)'},
 			{ field => 'poster_email',		type => 'varchar(255)'},
 			{ field => 'poster_photo',		type => 'varchar(255)'},  # not used yet.......
@@ -576,6 +577,7 @@ package Boards::Board;
 		[
 			{ field => 'boardid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
 			{ field	=> 'managerid',			type => 'int',	linked => 'AppCore::User' },
+			{ field	=> 'board_userid',		type => 'int', linked => 'AppCore::User', default => 0 }, # If set, this is an 'auto created' board for a specific user
 			{ field	=> 'groupid',			type => 'int',	linked => 'Boards::Group' },
 			{ field	=> 'folder_name',		type => 'varchar(255)' },
 			{ field => 'pageid',			type => 'int',	linked => 'Content::Page' },  # pageid replaces section_name because it gives us the proper URL thru which this board should be accessed

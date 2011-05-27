@@ -319,6 +319,7 @@ package Boards;
 	# main_page - list of all boards
 	# board_page - page listing posts (search/print/paging,etc)
 	# post_page - viewing one post
+	# user_page - user's home page
 	
 	# Function: main_page()
 	# List all boards that are not hidden/private/user created (basically 'System' boards)
@@ -571,18 +572,66 @@ package Boards;
 		return $controller;
 	}
 	
+	
+	sub user_page
+	{
+		my $self = shift;
+		#my ($section_name,$folder_name,$skin,$r,$page,$req,$path) = @_;
+		my $req = shift;
+		my $r = shift;
+		my $user = shift || undef;
+		
+		if(!$user)
+		{
+			my $username = $req->next_path;
+			$user = AppCore::User->by_field(user => $username);
+			
+			if(!$user)
+			{
+				return $r->error("No Such User", "Sorry, the user you requested does not exist");	
+			}
+		}
+		
+		if(!$user)
+		{
+			return $r->error("No User Given","Sorry, no user given");
+		}
+		
+		
+		my $board = Boards::Board->by_field(board_userid => $user);
+		 
+		if(!$board)
+		{
+			my $group = Boards::Group->find_or_create({ title=> 'User Walls' }); 
+			$board = Boards::Board->create({
+				groupid 	=> $group->id, 
+				board_userid	=> $user,
+				managerid	=> $user,
+				folder_name	=> $user->user,
+				title		=> $user->display.'\'s Wall',
+			});
+			
+			print STDERR "Boards::user_page(): Created new user wall: boardid $board for user '". $user->display. "'\n";
+		}
+			
+		return $self->board_page($req,$r,$board);
+		
+	}
+	
+	
 	sub board_page
 	{
 		my $self = shift;
 		#my ($section_name,$folder_name,$skin,$r,$page,$req,$path) = @_;
 		my $req = shift;
 		my $r = shift;
+		my $board = shift || undef;
 		
 		my $folder_name = $req->shift_path;
 		
 		$req->push_page_path($folder_name);
 		
-		my $board = Boards::Board->by_field(folder_name => $folder_name);
+		$board = Boards::Board->by_field(folder_name => $folder_name) if !$board;
 		if(!$board)
 		{
 			return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
@@ -700,16 +749,29 @@ package Boards;
 			my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
 			my $board_folder_name = $board->folder_name;
 			
+			my $user_wall_clause = 0; # Since this var is used in an "or" statement, the 0 will null it out unless we put something there
+			
+			# This board is specific to a user if board_userid is set
+			my $board_userid = 0;
+			if($board->board_userid && $board->board_userid->id)
+			{
+				my $user = $board->board_userid;
+				my $userid = $board_userid = $user->id.''; # cast to string for tainting...
+				$userid =~ s/[^\d]//g; # taint just to be safe...
+				$userid += 0;  # force cast to int...
+				$user_wall_clause = 'posted_by='. $userid;
+			}
+			
 			
 			# Check to see if this is an ajax poll request for new posts
 			if($req->{first_ts})
 			{
 				my $postid = $req->{postid};
-				print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
+				#print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
 				my $sth = $dbh->prepare_cached(
-					'select b.*, u.photo as user_photo '.
+					'select b.*, u.photo as user_photo, u.user as username '.
 					'from board_posts b left join users u on (b.posted_by=u.userid) '.
-					'where boardid=? and timestamp>? '.
+					"where (boardid=? or $user_wall_clause) and timestamp>? ".
 					($postid? 'and top_commentid=?':' ').
 					'and deleted=0 order by timestamp');
 				
@@ -744,7 +806,7 @@ package Boards;
 			$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
 			
 			# Find the total number of posts in this board
-			my $find_max_index_sth = $dbh->prepare_cached('select count(b.postid) as count from board_posts b where boardid=? and top_commentid=0 and deleted=0');
+			my $find_max_index_sth = $dbh->prepare_cached("select count(b.postid) as count from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0");
 			$find_max_index_sth->execute($board->id);
 			my $max_idx = $find_max_index_sth->rows ? $find_max_index_sth->fetchrow : 0;
 			
@@ -768,15 +830,15 @@ package Boards;
 				if(!$len)
 				{
 					# If paging disabled, just use a single query to load everything
-					$sth = $dbh->prepare_cached(q{
-						select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) where boardid=? and deleted=0 order by timestamp 
+					$sth = $dbh->prepare_cached(qq{
+						select p.*,b.b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (b.posted_by=u.userid), boards b where p.boardid=b.boardid and (boardid=? or $user_wall_clause) and deleted=0 order by timestamp 
 					});
 				}
 				else
 				{
 					# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
 					# that should be included because the post is included
-					my $find_posts_sth = $dbh->prepare_cached('select b.postid from board_posts b where boardid=? and top_commentid=0 and deleted=0 order by timestamp desc limit ?,?');
+					my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc limit ?,?");
 					$find_posts_sth->execute($board->id, $idx, $len);
 					my @posts;
 					push @posts, $_ while $_ = $find_posts_sth->fetchrow;
@@ -784,14 +846,15 @@ package Boards;
 					# Keep user from getting a "dirty" error by giving a simple error
 					if(!@posts)
 					{
-						return $r->error("No posts at index ".($idx+0));
+						#return $r->error("No posts at index ".($idx+0));
+						@posts = (0); # Allow the page to be empty :-)
 					}
 					
 					my $list = join ',',  @posts;
 					
 					# Now do the actual query that loads both posts and comments in one gos
-					$sth = $dbh->prepare_cached('select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) '.
-						'where boardid=? and deleted=0 and '.
+					$sth = $dbh->prepare_cached('select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+						"where (p.boardid=? or $user_wall_clause) and deleted=0 and p.boardid=b.boardid and".
 						'(postid in ('.$list.') or top_commentid in ('.$list.')) '.
 						'order by timestamp');
 				}
@@ -807,6 +870,8 @@ package Boards;
 				{
 					$first_ts = $b->{timestamp};# if !$first_ts;
 					$b->{reply_count} = 0;
+					$b->{board_userid} = $board_userid; 
+					#die Dumper $b;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
 				}
 				
@@ -947,7 +1012,11 @@ package Boards;
 			my $hash = {};
 			$hash->{$_} = $post->{$_}."" foreach $post->columns;
 			my $user = $post->posted_by;
-			$hash->{user_photo} = $user->photo if $user && $user->id;
+			if($user && $user->id)
+			{
+				$hash->{username} = $user->user;
+				$hash->{user_photo} = $user->photo;
+			}
 			
 			$post = $hash;
 		}
@@ -1161,8 +1230,8 @@ package Boards;
 			my $can_admin = $user && $user->check_acl($self->config->{admin_acl}) ? 1:0;
 			
 			# Do the actual query that loads all and comments in one gos
-			my $sth = Boards::Post->db_Main->prepare_cached('select b.*, u.photo as user_photo from board_posts b left join users u on (b.posted_by=u.userid) '.
-				'where deleted=0 and '.
+			my $sth = Boards::Post->db_Main->prepare_cached('select p.*,b.folder_name as original_board_folder_name, b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+				'where p.boardid=b.boardid and p.deleted=0 and '.
 				'top_commentid=? '.
 				'order by timestamp');
 		
@@ -1413,6 +1482,7 @@ package Boards;
 			text			=> $req->{comment},
 			folder_name		=> $fake_it,
 			post_class		=> $post_class,
+			to_userid		=> $board->board_userid,
 		});
 		
 		if($append_flag)
