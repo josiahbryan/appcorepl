@@ -193,6 +193,9 @@
 	
 	function ajax_post_reply(formElm)
 	{
+		// Lock polling script till we get reply from server
+		window.LockPolling = true;
+		
 		var postid = formElm.postid.value;
 		var isPost = formElm.getAttribute("type") != "comment";
 		var topid  = isPost ? postid : formElm.getAttribute("top_commentid");
@@ -219,6 +222,8 @@
 			{
 				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
 			}
+			
+			window.LockPolling = false;
 		};
 		
 		
@@ -262,6 +267,10 @@
 						// This needs to be inserted after the selector
 						output.insertAfter(insertSelector);
 					}
+					
+					// Update the polling script
+					window.PollingTimestamp = data.timestamp;
+					window.LockPolling = false;
 					
 					// Handle video and image links possible added by server - defined in js/boards-postlist-actions.js
 					runOnloadScripts();

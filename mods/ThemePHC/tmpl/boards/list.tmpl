@@ -66,6 +66,7 @@
 	
 	function ajax_post_new(formElm)
 	{
+		window.LockPolling = true;
 		var postData = $(formElm).serializeObject();
 		postData.output_fmt = "json";
 		postData.plain_text = 1;
@@ -82,6 +83,8 @@
 			{
 				document.location.href = "%%binpath%%/%%board_folder_name%%/new?text=" + postData.text; 
 			}
+			
+			window.LockPolling = false;
 		}
 		
 		var postUrl = "%%binpath%%/%%board_folder_name%%/post";
@@ -106,6 +109,10 @@
 					$("#post-placeholder").hide();
 					formElm.comment.value = "";
 					formElm.comment.updateAutogrow();
+					
+					// Update the polling script
+					window.PollingTimestamp = data.timestamp;
+					window.LockPolling = false;
 					
 					// Run onload scripts
 					runOnloadScripts();
@@ -335,7 +342,20 @@
 	$(".loadmore a").live("click",pagingFunc);
 	$("a.loadmore_link").live("click",pagingFunc);
 	
+	</script>
+	
+	<script flag='dynamic_server_content'>
+	// Put these two values in a script block marked with 'flag='dynamic_server_content'' just to throw off the
+	// server-based script compressor. The compressor grabs all script blocks and does an MD5 to see if they
+	// have changed, and if so, it uses YUI to re-compress them. Since these values are LIKELY to change based
+	// on database values, we DONT want to trigger a recompress (takes >950ms or so) just because we have a new
+	// post or whatever. The 'flag='dynamic...'' is just to prevent the server compressor from grabbing this
+	// script block because it only grabs script blocks with certain attributes and ingores others.
 	window.PagingNextIndex = %%next_idx%%;
+	window.PollingTimestamp = '%%first_ts%%';
+	</script>
+	
+	<script>
 	
 // 	window.PagingNextIndex = 0; //%%next_idx%%;
 // 	$(function() { setTimeout(function() {
@@ -364,10 +384,15 @@
 	
 	$(function()
 	{
-		var	pollingTimestamp = '%%first_ts%%',
-			pollingLock = false,
+		window.LockPolling = false;
+		var     pollingLock = false,
 			doPoll = function()
 			{
+				// External lock preventing polling while posting
+				if(window.LockPolling)
+					return;
+				
+				// Internal lock preventing duplicate polls
 				if(pollingLock) 
 					return;
 				pollingLock = true;
@@ -377,7 +402,7 @@
 					url: "%%binpath%%/%%board_folder_name%%",
 					data: 
 					{
-						first_ts: pollingTimestamp,
+						first_ts: window.PollingTimestamp,
 						output_fmt: 'json',
 						mode: 'poll_new_posts',
 					},
@@ -393,7 +418,7 @@
 						else
 						{
 							if(data.last_ts)
-								pollingTimestamp = data.last_ts;
+								window.PollingTimestamp = data.last_ts;
 							
 							try
 							{

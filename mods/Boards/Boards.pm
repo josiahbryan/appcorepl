@@ -877,7 +877,7 @@ package Boards;
 					# Make a list of only top-level comments and sort by timestamp
 						# Dont need to sort by timestamp since they come sorted from the SQL query
 					my @tops = #sort { $a->{timestamp} cmp $b->{timestamp} } 
-						grep { !$_->{parent_commentid} } @list;
+						grep { !$_->{parent_commentid} || $_->{parent_commentid} == $post->{postid} } @list;
 					
 					# Finally flatten out the list by building up a single level list of parents/comments in order
 					my @final;
