@@ -146,6 +146,13 @@
 		-moz-border-radius: 4px;
 	}
 	
+	.board-tagline p,
+	p.board-tagline
+	{
+		text-indent: 0 !important;
+		/*text-align: center;*/
+	}
+	
 	.add_new_forum_link { float:right; font-size: 10px; margin-right: 5px; margin-top:5px }
 	
 	td.subject span.by

@@ -368,18 +368,23 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 		my $self = shift;
 		
 		my @tmp = @{$self->{list}};
+		my @final;
+		my $last = undef;
 		foreach my $item (@tmp)
 		{
+			next if $last && $item->{url} eq $last->{url};
+			$last = $item;
 			$item->{current} = 0;
 			if($item->{title} =~ /%%/)
 			{
 				$item->{title} = AppCore::Web::Common::load_template($item->{title})->output;
 			}
+			push @final, $item;
 		}
 		
-		$tmp[$#tmp]->{current} = 1 if @tmp;
+		$final[$#tmp]->{current} = 1 if @final;
 		
-		return \@tmp; 
+		return \@final; 
 	}
 	
 	sub push
@@ -935,11 +940,22 @@ package Content::Page::ThemeEngine;
 			if(@list)
 			{
 				$subnav = clone( $subnav );
-				push @{$subnav->{nav_path}}, @list;
 				
 				my @tmp = @{$subnav->{nav_path}};
-				$_->{current} = 0 foreach @tmp;
-				$tmp[$#tmp]->{current} = 1 if @tmp;
+				push @tmp, @list;
+				
+				my @final;
+				my $last;
+				foreach my $item (@tmp)
+				{
+					next if $last && $item->{url} eq $last->{url};
+					$last = $item;
+					$item->{current} = 0;
+					push @final, $item;
+				}
+				$final[$#final]->{current} = 1 if @final;
+				
+				$subnav->{nav_path} = \@final;
 			}
 
 			$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;

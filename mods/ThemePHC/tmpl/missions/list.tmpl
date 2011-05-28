@@ -1,0 +1,137 @@
+<a:cssx src="%%appcore%%/mods/Boards/css/boards.css">
+<title><tmpl_var m_display_name> - Missions</title>
+
+<h1><tmpl_var m_display_name></h1>
+
+<!--%macro::sub_nav()%-->
+<!--<tmpl_var board_nav>-->
+
+<style>
+
+fieldset{ border:0;padding:0;margin:0 }
+
+.mblob
+{
+	border:0px solid black;
+	padding: 0px;
+}
+
+.mblob .blob-photo
+{
+	float:left;
+	margin: 0 10px 10px 0;
+	/*margin: 20px;*/
+}
+
+.mblob .country,
+.mblob .city {}
+.map_link
+{font-weight:bold }
+
+.mblob .mission_name,
+.mblob .family_name
+
+{
+	/*font-size: 1em; */
+	font-weight: bold;
+	color: rgb(60,160,60);
+}
+
+.edit_bio_link
+{
+	float: right;
+	width: 140px;
+	margin-top:.9em;
+}
+
+</style>
+
+<fieldset class='mblob'>
+
+	<tmpl_if m_photo_url>
+		<img class="border blob-photo" src="%%appcore%%/mods/ThemePHC%%m_photo_url%%" alt="Photo of %%m_family_name%%"/>
+	</tmpl_if>
+
+	<div class='basics'>
+		<tmpl_if m_family_name><span class='family_name'>%%m_family_name%%</span><br>Serving with </tmpl_if>
+		<span class='mission_name'>%%m_mission_name%%</span>
+		<tmpl_if m_family_name> in <tmpl_else><br></tmpl_if>
+		<a class='map_link' href='http://maps.google.com/maps?q=%%m_lat%% %%m_lng%%&ie=utf-8&oe=utf-8&rls=org.mozilla:en-US:official&client=firefox-a&um=1&sa=N&tab=wl&z=2'>
+			<tmpl_if m_city><span class='city'>%%m_city%%</span><tmpl_unless country_us>, </tmpl_unless></tmpl_if>
+			<span class='country'>
+					<tmpl_if country_us>
+						<tmpl_unless m_city>
+							<tmpl_if m_family_name> the </tmpl_if>
+							%%m_country%%
+						</tmpl_unless>
+
+					<tmpl_else>
+						%%m_country%%
+					</tmpl_if>
+			</span>
+		</a>
+
+	</div>
+
+	<tmpl_if m_description>
+		<div class='details'>
+			%%m_description%%
+		</div>
+	<tmpl_else>
+		<div class='ffjc-error'>
+			This entry needs to be updated with a description and probably a photo. Please notify <a href='mailto:ashley@josiahbryan.com?subject=%%m_family_name%%'>Ashley</a> or <a href='mailto:pastor@mypleasanthillchurch.org?subject=%%m_family_name%%'>Pastor Bryan</a> if you see this message!
+			
+		</div>
+	</tmpl_if>
+
+</fieldset>
+
+<!--<tmpl_var board_tagline>-->
+
+<tmpl_if description>
+	<div id='board-intro'>
+		<tmpl_var description>
+	</div>
+</tmpl_if>
+
+<tmpl_if can_admin>
+	<a class='new_link edit_bio_link' href='%%binpath%%/edit?boardid=%%board_boardid%%'><img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0> Edit this Mission Bio</a>
+</tmpl_if>
+
+
+
+<tmpl_if posts>
+
+	<h3>Latest News from %%m_display_name%%</h3>
+	<tmpl_if can_admin><a class='new_link' href='%%binpath%%/<tmpl_var board_folder_name>/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add an update here ...</a></tmpl_if>
+
+
+	<table class='posts' width='100%' cellpadding=0 cellspacing=0>
+		<thead>
+			<th align=left class='title'>Update</th>
+			<th nowrap align=right>Views</th>
+			<th nowrap align=right>Replies</th>
+			<th align=left nowrap>Last Comment</th>
+		</thead>
+		<tbody>
+			<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
+			<tmpl_loop posts>
+				<tr class='<tmpl_var post_flags>'>
+					<td width='65%' class='subject'><tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='%%appcore%%/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if><a href='%%bin%%/<tmpl_var board_folder_name>/<tmpl_var folder_name>' class='title_link'><tmpl_var subject></a><tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if><span class='tagline'><span class='tagline'><span class='hidden'> - </span><tmpl_var short_text></span></td>
+					<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>
+					<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>
+					<td width='15%' nowrap class='lastpost' valign=top >
+						<tmpl_if post_postid>
+							<span class='post'>
+								<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+								<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+							</span>
+						<tmpl_else>-</tmpl_if>
+					</td>
+				</tr>
+			</tmpl_loop>
+		</tbody>
+	</table>
+<tmpl_else>
+	<tmpl_if can_admin><a class='new_link' href='%%appcore%%/missions/<tmpl_var board_folder_name>/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add an update here ...</a></tmpl_if>
+</tmpl_if>

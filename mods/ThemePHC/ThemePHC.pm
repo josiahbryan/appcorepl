@@ -12,6 +12,13 @@ package Boards::TextFilter::TagVerses;
 		ThemePHC::VerseLookup->tag_verses($textref);
 	};
 	
+	sub replace_block
+	{
+		my $block = shift;
+		__PACKAGE__->filter_text(\$block);
+		return $block;
+	}
+	
 };
 	
 
@@ -22,6 +29,9 @@ package ThemePHC;
 	use Scalar::Util 'blessed';
 	
 	use ThemePHC::VerseLookup;
+	
+	# Load our missions module so it gets registered with the page tyep database
+	use ThemePHC::Missions;
 
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 	
@@ -34,6 +44,9 @@ package ThemePHC;
 			ThemePHC::VerseLookup
 		};
 		AppCore::DBI->mysql_schema_update($_) foreach @db_objects;
+		
+		# Make sure missions and other sub modules are in sync
+		ThemePHC::Missions->apply_mysql_schema();
 	}
 	
 	

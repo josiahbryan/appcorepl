@@ -986,7 +986,9 @@ package Boards;
 			
 			$controller->apply_video_providers($tmpl);
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push($board->title,"$bin/$folder_name",0);
+			$view->output($tmpl);
 			return $r;
 		}
 	}
@@ -1726,7 +1728,7 @@ Cheers!};
 			# If use requested the folder name of a comment post instead of the actual post (The top comment), then redirect accordingly
 			if($req->output_fmt ne 'json' && $post->top_commentid && $post->top_commentid->id)
 			{
-				print STDERR "Top post, need redir, bin:$bin, binpath:".$self->binpath."\n";
+				#print STDERR "Top post, need redir, bin:$bin, binpath:".$self->binpath."\n";
 				$r->redirect("$bin/$board_folder_name/".$post->top_commentid->folder_name."#c".$post->id);
 			}
 			
@@ -1756,7 +1758,8 @@ Cheers!};
 				}
 				
 				my $view = Content::Page::Controller->get_view('sub',$r);
-				$view->breadcrumb_list->push($post->subject,"$bin/$folder_name/".$post->folder_name,0);
+				$view->breadcrumb_list->push($board->title,"$bin/".$board->folder_name,0);
+				$view->breadcrumb_list->push($post->subject,"$bin/".$board->folder_name."/".$post->folder_name,0);
 				$view->output($tmpl);
 				return $r;
 			}
@@ -1870,7 +1873,7 @@ Cheers!};
 			my $message = $action eq 'new_post' ?
 				$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
 				$post->poster_name.": $quote - ".
-				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+				($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
 				" on \"".$post->top_commentid->subject."\" at $short_abs_url";
 			
 			

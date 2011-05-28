@@ -1,0 +1,160 @@
+<a:cssx src="%%appcore%%/mods/Boards/css/boards.css">
+
+<title>Missions</title>
+<h1>Missions Supported</h1>
+
+<!-- gmaps api key: ABQIAAAA2fYS3gGbRe83STuGuZb86hQFdfWze92I_jhuY9WDjkvwSGshhxRh8uCtMckeFZFhaLusUQCpGacx4w - works for *.mypleasanthillchurch.org -->
+
+<tmpl_if current_nav_group_children>
+	<div class='sub_nav'>
+	<!--section-bg-->
+		<tmpl_loop current_nav_group_children>
+			<a href='<tmpl_var url>' <tmpl_if current>class='current'</tmpl_if> title="<tmpl_var name=hint escape=html>"><tmpl_var title></a><tmpl_unless last> | </tmpl_unless>
+		</tmpl_loop>
+	</div>
+</tmpl_if>
+
+
+<div class='board-tagline'>
+<div class='verse-tag-me'>
+<p>
+	Outreach?&nbsp; Well it&rsquo;s just as it sounds&mdash;at PHC we reach out beyond ourselves to a hurting and lost world desperately in need of the Good News of Jesus.&nbsp; Outreach flows from the command and mission God has given us, His people.&nbsp; God tells us to &ldquo;Go into all the world&rdquo; with this message (<strong>Matthew 28:19-20, Mark 16:15</strong>), and He promises us power to do the job (<strong>Acts 1:8</strong>).</p>
+<p>
+	At PHC outreach is a key component to our vision statement: &ldquo;Building Lives for Eternity!&rdquo;&nbsp; We use the word, &ldquo;BUILD&rdquo; to remind us of the five Biblical essentials for a church.&nbsp; The &ldquo;D&rdquo; stands for &ldquo;Displaying our lives in witness.&rdquo;&nbsp; So here on the Hill we keep this priority front and center.</p>
+<p>
+	A second way outreach is built into the fabric of our church is in our current &ldquo;141 Plan.&rdquo;&nbsp; This plan, based on John 1:41-42, is about each one of us taking responsibility to bring one more person to the fellowship of our church family.&nbsp;</p>
+<p>
+	Of course, because outreach is so important to our Lord, we make sure it happens in almost all our ministries and activities.&nbsp; We just don&rsquo;t want anybody to miss out on heaven.</p>
+</div>
+</div>
+
+<tmpl_if can_admin>
+	<a class='new_link' style='width:160px' href='%%binpath%%/missions/new?groupid=%%groupid%%'><img src='%%appcore%%/images/silk/page_add.png' border=0 align=absmiddle> Add a new Missionary</a>
+</tmpl_if>
+
+
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAA2fYS3gGbRe83STuGuZb86hQFdfWze92I_jhuY9WDjkvwSGshhxRh8uCtMckeFZFhaLusUQCpGacx4w"
+      type="text/javascript"></script>
+
+<script type="text/javascript">
+
+//<![CDATA[
+
+var markers = {};
+
+$(function()
+{
+	
+	var mlist = %%mlist_json%%;
+	
+	if (GBrowserIsCompatible()) 
+	{
+		var map = new GMap2(document.getElementById("map"));
+		map.setCenter(new GLatLng(0,0), 1);
+		
+// 		var bounds = map.getBounds();
+// 		var southWest = bounds.getSouthWest();
+// 		var northEast = bounds.getNorthEast();
+// 		var lngSpan = northEast.lng() - southWest.lng();
+// 		var latSpan = northEast.lat() - southWest.lat();
+		
+		for (var i = 0; i < mlist.length; i++) 
+		{
+			var	m = mlist[i],
+			    	point = new GLatLng(
+					m.lat, m.lng
+				),
+				marker = new GMarker(point,
+					{
+						title : m.family_name ? m.family_name : m.mission_name,
+					}
+				);
+			
+			marker.bindInfoWindow($('#popuphtml'+m.missionid).get(0));
+			
+			markers[m.missionid] = marker;
+			
+			map.addOverlay(marker);
+		}
+
+	}	
+});
+
+function show_marker(id)
+{
+	var m = markers[id];
+	
+	if(!m) return true;
+	
+	m.openInfoWindow($('#popuphtml'+id).get(0));
+	$('#map').get(0).scrollIntoView();
+	
+	return false;
+}
+
+//]]>
+</script>
+<style>
+.mblob
+{
+	font-size: .8em !important;
+	margin-top: -5px;
+}
+
+.mblob a { font-size: .75em }
+
+.mblob .mission_name,
+.mblob .family_name,
+.mblob .country,
+.mblob .city
+
+{
+	/*font-size: 1em; */
+	font-weight: bold;
+	color: rgb(60,160,60);
+}
+</style>
+<div style='display:none'>
+	<tmpl_loop mlist>
+		<div id='popuphtml%%missionid%%'>
+			<div class='mblob'>
+				<tmpl_if family_name><span class='family_name'>%%family_name%%</span><br>Serving with </tmpl_if>
+				<span class='mission_name'>%%mission_name%%</span>
+				<tmpl_if family_name> in <tmpl_else><br></tmpl_if>
+				<tmpl_if city><span class='city'>%%city%%</span><tmpl_unless country_us>, </tmpl_unless></tmpl_if>
+				<span class='country'>
+						<tmpl_if country_us>
+							<tmpl_unless city>
+								<tmpl_if family_name> the </tmpl_if>
+								%%country%%
+							</tmpl_unless>
+		
+						<tmpl_else>
+							%%country%%
+						</tmpl_if>
+				</span>
+				<br>
+				<a href='%%binpath%%/%%board_folder_name%%'>Read about %%list_title%% ...</a>
+			</div>
+			
+			
+		</div>
+	</tmpl_loop>
+</div>
+
+<div id="map" style="width: 511px; height: 300px;margin:0 auto;border:1px solid black;padding:1px"><center><b>Loading world map of our missionaries, please wait...</b></center></div>
+
+    
+<tmpl_loop missions_list>
+	<h3>%%country%%</h3>
+	<ul>
+		<tmpl_loop list>
+			<li><a href='%%binpath%%/%%board_folder_name%%'>%%list_title%%</a> - (<a href='http://maps.google.com/maps?q=%%lat%%%20%%lng%%&ie=utf-8&oe=utf-8&rls=org.mozilla:en-US:official&client=firefox-a&um=1&sa=N&tab=wl&z=2' onclick='return show_marker(%%missionid%%)'>Map</a>)
+
+
+			</li>
+		</tmpl_loop>
+	</ul>
+
+
+</tmpl_loop>

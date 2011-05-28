@@ -1,0 +1,153 @@
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+
+<title><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></title>
+<h1><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></h1>
+
+%macro::sub_nav()%
+<!--<tmpl_var board_nav>-->
+
+<script type="text/javascript" src="/fckeditor/fckeditor.js"></script> 
+<style>
+.board_edit h3
+{
+	background-image: none !important;
+	border-bottom: 1px solid black;
+}
+</style>
+
+<form action='<tmpl_var post_url>' method=POST ENCTYPE="multipart/form-data" style='display:inline;border:0;padding:0;margin:0' class='board_edit'>
+	<input type=hidden name=boardid value="<tmpl_var board_boardid>">
+	<input type=hidden name=groupid value="<tmpl_var group_groupid>">
+
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td colspan=99>
+					<h3>Name</h3>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Country Name:</td> <td>
+					<input type=text name=country onfocus='select()' value='<tmpl_var m_country escape=html>' size=65><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>You MUST provide a country. Example: <b>United States</b> or <b>Africa</b>.</span>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Mission Name:</td> <td>
+					<input type=text name=mission_name onfocus='select()' value='<tmpl_var m_mission_name escape=html>' size=65><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>AIM</b> or <b>Gideons International</b>.</span>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Family Name:</td> <td>
+					<input type=text name=family_name onfocus='select()' value='<tmpl_var m_family_name escape=html>' size=65><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>John and Susan Framitz</b>.</span>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>"Local" Name:</td> <td>
+					<input type=text name=city onfocus='select()' value='<tmpl_var m_city escape=html>' size=65><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>For the US, include City and State. Example: <b>Muncie, IN</b> or <b>Kenya</b>.</span>
+				</td>
+			</tr>
+			<tr>
+				<td colspan=99>
+					<h3>Details Page</h3>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Picture:</td> <td><INPUT TYPE="FILE" NAME="upload" size=55 id=i_file>
+					<tmpl_if m_photo_url>
+						<br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>The current photo is shown below. To change the photo, just select a different photo using the Browse button above - when you save this page, the photo will be replaced.</span>
+						<br>
+						<img src='%%m_photo_url%%' class='boarder'>
+					</tmpl_if>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Content:</td>
+				<td>
+					<textarea rows=3 cols=65 id=comment name=description><tmpl_var m_description escape=html></textarea>
+					<script type="text/javascript">var e=$x('comment');if(e){e.focus();e.select()}</script>
+				</td>
+
+			</tr>
+			<tr>
+				<td colspan=99>
+					<h3>Location on the Map</h3>
+					<!--
+					<div class='ffjc-info'>
+						<b>Easy Button:</b>
+						If you don't know or don't want to change the lat/long of the map location, click the big red easy button to ask the computer to try to find out lat/long for you.
+					</div>
+					-->
+				</td>
+			</tr>
+
+			<tr>
+				<td valign=top>Latitude:</td> <td valign=top>
+					<input type=text id='m_lat' name=lat onfocus='select()' onchange='sync_preview_link()' value='<tmpl_var m_lat escape=html>' size=5>&nbsp;&nbsp;&nbsp;
+					Longitude: &nbsp;&nbsp;<input id='m_lng' type=text name=lng onfocus='select()' onchange='sync_preview_link()' value='<tmpl_var m_lng escape=html>' size=5><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>The latitude and longitude (in decimal form) of the missions location.<br>
+					Example: <b>48.6026</b> and <b>-93.4037</b></span><br>
+
+					<div id='map_preview_link_container' <tmpl_unless m_lat>style='display:none'</tmpl_unless>>
+						<a target='_new' href='http://maps.google.com/maps?q=%%m_lat%% %%m_lng%%&ie=utf-8&oe=utf-8&rls=org.mozilla:en-US:official&client=firefox-a&um=1&sa=N&tab=wl&z=2' id='map_preview_link'>Preview what the map will look like with this latitude and longitude</a>.<br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>(Map will open in a new window.)</span>
+					</div>
+
+					<script>
+					function sync_preview_link()
+					{
+						var lat = $x('m_lat').value;
+						var lng = $x('m_lng').value;
+						var url = "http://maps.google.com/maps?q="+lat+" "+lng+"&ie=utf-8&oe=utf-8&rls=org.mozilla:en-US:official&client=firefox-a&um=1&sa=N&tab=wl&z=2";
+						$x('map_preview_link').href = url;
+						$x('map_preview_link_container').style.display = 'inline';
+
+					}
+					</script>
+
+				</td>
+			</tr>
+
+
+
+			<tr>
+				<td>&nbsp;</td><td>
+				<br>
+
+				<tmpl_if board_boardid>
+					<div style='float:right'>
+						<input type='button' onclick='if(confirm("Are you sure you want to delete this missionary?")){document.location.href="%%bin%%/%%pageid%%/delete?mid=%%m_missionid%%"}' value='Delete'>
+					</div>
+				</tmpl_if>
+				
+				<input type=submit value="Save Changes">
+				<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+
+
+		</table>
+	</div>
+
+</form>
+<script>
+function win_onload()
+{
+
+	var oFCKeditor = new FCKeditor('comment') ;
+	oFCKeditor.BasePath = '/fckeditor/' ;
+	oFCKeditor.ToolbarSet = 'JBlog';
+	oFCKeditor.Height = "400px" ;
+
+	oFCKeditor.ReplaceTextarea();
+}
+
+//setTimeout(win_onload,50);
+global.onload(win_onload);
+</script>
