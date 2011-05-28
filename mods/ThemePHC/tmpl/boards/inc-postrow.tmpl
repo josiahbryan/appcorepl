@@ -12,9 +12,9 @@
 			<div class='posted_by'>
 				<span class='by'>by</span> <span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span>
 				<tmpl_if board_userid>
-					<tmpl_if original_board_folder_name>
+					<tmpl_if original_board_folder_name:str>
 						<span class='by'>in</span> 
-						<span class='name'><a href='/boards/%%original_board_folder_name%%'><b>%%board_title%%</b></a></span>
+						<span class='name'><a href='/boards/%%original_board_folder_name%%#p%%postid%%'><b>%%board_title%%</b></a></span>
 					</tmpl_if>
 				</tmpl_if>
 				<a name="p%%postid%%">&middot;</a>

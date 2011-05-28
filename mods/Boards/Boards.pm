@@ -167,7 +167,7 @@ package Boards;
 	# The 'banned words' library which parses the Dan's Guardian words list
 	use Boards::BanWords;
 	
-	our $SUBJECT_LENGTH    = 30;
+	our $SUBJECT_LENGTH    = 50;
 	our $MAX_FOLDER_LENGTH = 225;
 	our $SPAM_OVERRIDE     = 0;
 	our $SHORT_TEXT_LENGTH = 60;
@@ -877,8 +877,7 @@ package Boards;
 					
 					# Now do the actual query that loads both posts and comments in one gos
 					$sth = $dbh->prepare_cached('select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
-						"where (p.boardid=? or $user_wall_clause) and deleted=0 and p.boardid=b.boardid and".
-						'(postid in ('.$list.') or top_commentid in ('.$list.')) '.
+						"where (((p.boardid=? or $user_wall_clause) and postid in (".$list.")) or top_commentid in (".$list.")) and deleted=0 and p.boardid=b.boardid ".
 						'order by timestamp');
 				}
 				
@@ -947,9 +946,9 @@ package Boards;
 				posts	=> $data->{list},
 				idx	=> $idx,
 				idx1	=> $idx + 1,
-				len	=> $len,
-				idx2	=> $idx + $len,
-				next_idx=> $next_idx,
+				len	=> $max_idx < $len ? $max_idx : $len,
+				idx2	=> $idx + $len > $max_idx ? $max_idx : $idx + $len,
+				next_idx=> $next_idx >= $max_idx ? 0 : $next_idx,
 				#first_id=> @{$data->{list}} ? $data->{list}->[0]->{postid} : 0,
 				first_ts=> $data->{first_timestamp}, # Used for in-page polling dyanmic new content inlining
 				max_idx => $max_idx,
@@ -978,6 +977,10 @@ package Boards;
 			{
 				$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
 			}
+			
+			# Since a theme has the option to inline a new post form in the post template,
+			# provide the controller a method to hook into the template variables from here as well
+			$controller->new_post_hook($tmpl,$board);
 			
 			$tmpl->param($_ => $output->{$_}) foreach keys %$output;
 			
@@ -1423,6 +1426,17 @@ package Boards;
 			
 	}
 	
+	sub guess_subject
+	{
+		my $self = shift;
+		my $text = shift;
+		$text = AppCore::Web::Common->html2text($text);
+		#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+		my $idx = index($text,"\n");
+		my $len = $idx > -1 && $idx < $SUBJECT_LENGTH ? $idx : $SUBJECT_LENGTH;
+		return substr($text,0,$len) . ($idx < 0 && length($text) > $len ? '...' : '');
+	}
+	
 	sub create_new_thread
 	{
 		my $self = shift;
@@ -1438,11 +1452,7 @@ package Boards;
 		
 		if(!$req->{subject})
 		{
-			my $text = AppCore::Web::Common->html2text($req->{comment});
-			#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
-			my $idx = index($text,"\n");
-			my $len = $idx > -1 && $idx < $SUBJECT_LENGTH ? $idx : $SUBJECT_LENGTH;
-			$req->{subject} = substr($text,0,$len) . ($idx < 0 && length($text) > $len ? '...' : '');
+			$req->{subject} = $self->guess_subject($req->{comment});
 		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});
@@ -1842,7 +1852,7 @@ Cheers!};
 			my $abs_url = $self->module_url("$board_folder/$folder_name" . ($action eq 'new_comment' ? "#c".$post->id:""),1);
 			my $short_abs_url = $AppCore::Config::BOARDS_ENABLE_TINYURL_SHORTNER ? LWP::Simple::get("http://tinyurl.com/api-create.php?url=${abs_url}") : $abs_url;
 			
-			my $short_len = 160; #$AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
+			my $short_len = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
 			my $short = AppCore::Web::Common->html2text($post->text);
 			
 			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
@@ -2143,8 +2153,9 @@ Cheers!};
 		
 		if(!$req->{subject})
 		{
-			my $text = AppCore::Web::Common->html2text($req->{comment});
-			$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+			#my $text = AppCore::Web::Common->html2text($req->{comment});
+			#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
+			$req->{subject} = $self->guess_subject($req->{comment});
 		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});

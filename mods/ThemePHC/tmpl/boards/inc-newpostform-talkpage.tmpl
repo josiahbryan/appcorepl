@@ -56,8 +56,9 @@
 												<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
 											<span id=span_tag_talk>
 												<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
-											&nbsp;&nbsp;| 
+											<tmpl_if can_epa>&nbsp;&nbsp;| 
 											<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+											</tmpl_if>
 										</div>
 									</td>
 								</tr>
@@ -78,8 +79,9 @@
 													<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
 												<span id=span_tag_talk>
 													<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
-												&nbsp;&nbsp;| 
+												<tmpl_if can_epa>&nbsp;&nbsp;| 
 												<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+												</tmpl_if>
 											</div>
 										</td>
 									</tr>

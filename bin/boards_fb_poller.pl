@@ -36,7 +36,12 @@ foreach my $post (@posts)
 	next if ! $post->boardid->fb_sync_enabled;
 	next if $post->data->get('user_said_no_fb');
 	
-	my $noun = $post->top_commentid && $post->top_commentid->id ? 'comment' : 'post';
+	my $noun = 'post';
+	if($post->top_commentid && $post->top_commentid->id)
+	{
+		$noun = 'comment';
+		next if $post->top_commentid->deleted;
+	}
 	
 	# Upload the post to FB
 	$controller->get_controller($post->boardid)->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 });
@@ -88,6 +93,18 @@ sub lookup_user
 	{
 		#print STDERR "lookup_user(): Mark1: [$name]\n";
 		$user = AppCore::User->by_field(display => $name);
+	}
+	if(!$user && $name =~ /(\w+?)\s+(\w+)/) # Try to stem common names
+	{
+		# TODO is their a module to do this already??
+		my $last = $2;
+		my $first = lc $1;
+		if($first eq 'matthew')
+		{
+			$first = 'Matt';
+		}
+		
+		$user = AppCore::User->by_field(display => "$first $last");
 	}
 	if(!$user && $name =~ /(\w+?)\s+\w+\s+(\w+)/) # remove the middle name and re-search
 	{
