@@ -279,6 +279,10 @@ package AppCore::Web::Module;
 		my $pkg = $self;
 		$pkg = ref $pkg if ref $pkg;
 		
+		use Data::Dumper;
+		#die Dumper $pkg, [ eval '@'.$pkg.'::ISA' ]; 
+		
+		
 		# Give the current theme an opportunity to remap the template into something different if desired
 		my $abs_file = Content::Page::Controller->theme->remap_template($pkg,$file);
 		#print STDERR "get_template: 0: $abs_file\n";
@@ -322,6 +326,18 @@ package AppCore::Web::Module;
 		else
 		{
 			print STDERR "Template file didnt exist: $abs_file\n";
+		}
+		
+		my @pkg_isa = eval '@'.$pkg.'::ISA';
+		if(!-f $file && @pkg_isa && index($file,' ') < 0)
+		{
+			foreach my $isa (@pkg_isa)
+			{
+				if($isa->isa('AppCore::Web::Module'))
+				{
+					return $isa->get_template($file);
+				}
+			}
 		}
 		
 		return AppCore::Web::Common::load_template($file);

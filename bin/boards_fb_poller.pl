@@ -267,7 +267,7 @@ sub update_board
 						#use Data::Dumper;
 						#print STDERR "Debug: ref: $ref, post: $post, Dump:".Dumper($ref).", tmp:".$ref->postid."\n";
 						
-						$board_controller->send_notifications('new_like', $ref, {noun=>$noun});
+						#$board_controller->send_notifications('new_like', $ref, {noun=>$noun});
 						
 						print "Post: Created named like from '$named_like->{name}' (user? $user) on post '".$post->subject."\n";
 					}

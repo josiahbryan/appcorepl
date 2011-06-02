@@ -1,6 +1,47 @@
 <a:cssx src="%%appcore%%/mods/Boards/css/comments.css"/>
 <a:cssx src="%%appcore%%/mods/Boards/css/boards.css"/>
 
+<style>
+/* PHC Boards 'boards.css' style overrides */
+	.posts thead
+	{
+		color: 			#2c3d82;
+		background:		#e0e6fc;
+		padding-left:40px;
+		height: 35px;
+	}
+	
+	.posts th 
+	{
+		/*background: rgb(220,220,220);*/
+		font-size:     .85em;
+		padding-left:  5px;
+		padding-right: 5px;
+		padding-top:   2px;
+		border-top:    2px solid #314795;
+		border-bottom: 2px solid #314795;
+	}
+	
+	.posts th.title     { padding-left: 30px }
+	/*.posts, .group-list { border-bottom: 2px solid #314795 }*/
+	.posts { border-bottom: 0 }
+	
+	.posts td
+	{
+		font-size: .85em;
+		padding: .5em 0;
+	}
+	
+	.post_text { border-bottom: 2px solid rgb(160,160,160) }
+	
+	/*.new_link, .new_reply_link, .edit_post_link
+	{ 
+		border: 2px solid #314795 !important;
+		color: #364a90 !important;
+	}*/
+	
+</style>
+
 <title><tmpl_var post_subject> - <tmpl_var board_title> - Bulletin Boards</title>
 <h1><tmpl_var post_subject></h1>
 <!--<div class='post_page'>

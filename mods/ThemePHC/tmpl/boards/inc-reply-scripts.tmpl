@@ -433,6 +433,7 @@
 								var foundPostCount = 0;
 								// Iterate over the list of posts and reate the posts from the template
 								var posts = data.list;
+								var foundToplevelPostCount = 0;
 								if(posts)
 								{
 									for(var i=0;i<posts.length;i++)
@@ -445,6 +446,7 @@
 										{
 											$("#post-tmpl").tmpl(postData).insertAfter("#post-placeholder");
 											foundPostCount ++;
+											foundToplevelPostCount ++;
 											purr("<a href='#p"+postData.postid+"'>New post</a> from <b>"+postData.poster_name+"</b>: <a href='#p"+postData.postid+"'>"+postData.subject+"</a>");
 											windowMessage = "New post from "+postData.poster_name;
 										}
@@ -506,6 +508,16 @@
 										// Fix any video thumbs and other onload scripts
 										runOnloadScripts();
 									}
+									
+									if(foundToplevelPostCount > 0)
+									{
+										// Update the number of posts displayed at the top of the page
+										var idx2 = $('.idx2'); 
+										idx2.html( parseInt(idx2.html()) + foundToplevelPostCount );
+										var max  = $('.max_idx');
+										max.html( parseInt(max.html()) + foundToplevelPostCount );
+										
+									}
 								}
 								pollingLock = false;
 								//purr("<a href='#'>New test style</a> from <b>Josiah Bryan</b>");
@@ -525,7 +537,7 @@
 					
 				});
 			};
-		setInterval(doPoll, 2500);
+		setInterval(doPoll, 5000);
 		
 	});
 	</script>

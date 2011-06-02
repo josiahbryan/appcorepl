@@ -1,12 +1,12 @@
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<link href="%%appcore%%/mods/Boards/css/boards.css" rel="stylesheet" type="text/css" />
 
 <title><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></title>
 <h1><tmpl_if board_boardid>Edit &quot;<tmpl_var board_title>&quot;<tmpl_else>New <tmpl_var short_noun> in <tmpl_var group_title></tmpl_if></h1>
 
-%macro::sub_nav()%
+<!--%macro::sub_nav()%-->
 <!--<tmpl_var board_nav>-->
 
-<script type="text/javascript" src="/fckeditor/fckeditor.js"></script> 
+<script src='%%appcore%%/ckeditor/ckeditor.js' index='0'></script> 
 <style>
 .board_edit h3
 {
@@ -29,26 +29,26 @@
 				</td>
 			</tr>
 			<tr>
-				<td valign=top>Country Name:</td> <td>
-					<input type=text name=country onfocus='select()' value='<tmpl_var m_country escape=html>' size=65><br>
+				<td valign=top nowrap>Country Name:</td> <td>
+					<input type=text name=country onfocus='select()' value='<tmpl_var m_country escape=html>' size=50><br>
 					<span style='font-size:.85em;color:rgb(100,100,100)'>You MUST provide a country. Example: <b>United States</b> or <b>Africa</b>.</span>
 				</td>
 			</tr>
 			<tr>
 				<td valign=top>Mission Name:</td> <td>
-					<input type=text name=mission_name onfocus='select()' value='<tmpl_var m_mission_name escape=html>' size=65><br>
+					<input type=text name=mission_name onfocus='select()' value='<tmpl_var m_mission_name escape=html>' size=50><br>
 					<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>AIM</b> or <b>Gideons International</b>.</span>
 				</td>
 			</tr>
 			<tr>
 				<td valign=top>Family Name:</td> <td>
-					<input type=text name=family_name onfocus='select()' value='<tmpl_var m_family_name escape=html>' size=65><br>
+					<input type=text name=family_name onfocus='select()' value='<tmpl_var m_family_name escape=html>' size=50><br>
 					<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>John and Susan Framitz</b>.</span>
 				</td>
 			</tr>
 			<tr>
 				<td valign=top>"Local" Name:</td> <td>
-					<input type=text name=city onfocus='select()' value='<tmpl_var m_city escape=html>' size=65><br>
+					<input type=text name=city onfocus='select()' value='<tmpl_var m_city escape=html>' size=50><br>
 					<span style='font-size:.85em;color:rgb(100,100,100)'>For the US, include City and State. Example: <b>Muncie, IN</b> or <b>Kenya</b>.</span>
 				</td>
 			</tr>
@@ -58,7 +58,7 @@
 				</td>
 			</tr>
 			<tr>
-				<td valign=top>Picture:</td> <td><INPUT TYPE="FILE" NAME="upload" size=55 id=i_file>
+				<td valign=top>Picture:</td> <td><INPUT TYPE="FILE" NAME="upload" size=45 id=i_file>
 					<tmpl_if m_photo_url>
 						<br>
 						<span style='font-size:.85em;color:rgb(100,100,100)'>The current photo is shown below. To change the photo, just select a different photo using the Browse button above - when you save this page, the photo will be replaced.</span>
@@ -70,8 +70,8 @@
 			<tr>
 				<td valign=top>Content:</td>
 				<td>
-					<textarea rows=3 cols=65 id=comment name=description><tmpl_var m_description escape=html></textarea>
-					<script type="text/javascript">var e=$x('comment');if(e){e.focus();e.select()}</script>
+					<textarea rows=3 cols=55 id=comment name=description><tmpl_var m_description escape=html></textarea>
+					<script type="text/javascript">var e=$('#comment').get(0);if(e){e.focus();e.select()}</script>
 				</td>
 
 			</tr>
@@ -102,11 +102,11 @@
 					<script>
 					function sync_preview_link()
 					{
-						var lat = $x('m_lat').value;
-						var lng = $x('m_lng').value;
+						var lat = $('m_lat').value();
+						var lng = $('m_lng').value();
 						var url = "http://maps.google.com/maps?q="+lat+" "+lng+"&ie=utf-8&oe=utf-8&rls=org.mozilla:en-US:official&client=firefox-a&um=1&sa=N&tab=wl&z=2";
-						$x('map_preview_link').href = url;
-						$x('map_preview_link_container').style.display = 'inline';
+						$('map_preview_link').attr('href',url);
+						$('map_preview_link_container').css('display','inline');
 
 					}
 					</script>
@@ -137,17 +137,29 @@
 
 </form>
 <script>
-function win_onload()
+$(function()
 {
 
-	var oFCKeditor = new FCKeditor('comment') ;
-	oFCKeditor.BasePath = '/fckeditor/' ;
-	oFCKeditor.ToolbarSet = 'JBlog';
-	oFCKeditor.Height = "400px" ;
+// 	var oFCKeditor = new FCKeditor('comment') ;
+// 	oFCKeditor.BasePath = '/fckeditor/' ;
+// 	oFCKeditor.ToolbarSet = 'JBlog';
+// 	oFCKeditor.Height = "400px" ;
+// 
+// 	oFCKeditor.ReplaceTextarea();
 
-	oFCKeditor.ReplaceTextarea();
-}
+	CKEDITOR.replace( 'description', {
+		extraPlugins : 'autogrow',
+		width: '96%',
+		//skin: 'office2003'
+		skin: 'kama',
+		disableNativeSpellChecker: false,
+		removePlugins: 'elementspath,scayt,contextmenu',
+
+		//skin: 'v2'
+	});
+	
+});
 
 //setTimeout(win_onload,50);
-global.onload(win_onload);
+// global.onload(win_onload);
 </script>

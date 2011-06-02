@@ -68,7 +68,7 @@ package Boards::VideoProvider::YouTube;
 		__PACKAGE__->register({
 			name		=> "YouTube",						# Name isn't used currently
 			provider_class	=> "video-youtube",					# provider_class is used in page to match provider to iframe template, and construct template and image ID's
-			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=.+?\b)/,	# Used to find this provider's URL in content
+			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=[a-zA-Z0-9\-]+)/,	# Used to find this provider's URL in content
 			
 			iframe_size	=> [375,312],						# The size of the iframe - used to animate the link block element size larger to accomidate the new iframe
 												# The iframe template is used by jQuery's template plugin to generate the iframe html
@@ -82,7 +82,8 @@ package Boards::VideoProvider::YouTube;
 		{
 			my $self = shift;
 			my $url = shift;
-			my ($code) = $url =~ /v=(.+?)\b/;
+			my ($code) = $url =~ /v=([a-zA-Z0-9\-]+)/;
+			#print STDERR "youtube url: $url, code: $code\n";
 			return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
 		};
 	};
@@ -1077,6 +1078,9 @@ package Boards;
 		# Grrrr.
 		$b->{single_post_page} = 0;
 		$b->{indent_is_odd}    = 0;
+		$b->{board_userid}	= 0;
+		$b->{original_board_folder_name} = '';
+		
 		
 		my $cur_user = AppCore::Common->context->user;
 		$b->{can_edit} = ($can_admin || ($cur_user && $cur_user->id == $b->{posted_by}) ? 1:0);
