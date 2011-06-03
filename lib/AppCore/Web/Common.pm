@@ -654,6 +654,8 @@ package AppCore::Web::Common;
 		$html =~ s/&quot;/"/g;
 		$html =~ s/&mdash;/--/g;
 		$html =~ s/&rsquo;/'/g;
+		$html =~ s/&[lr]dquo;/"/g;
+		$html =~ s/&hellip;/.../g;
 		## template-specific codes
 		$html =~ s/\%\%(.*?)\%\%//gi;
 		$html =~ s/\%(\/?)tmpl_(.*?)\%//gi;

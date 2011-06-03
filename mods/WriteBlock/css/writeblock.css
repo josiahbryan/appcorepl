@@ -1,0 +1,47 @@
+/* Table styling */
+@import url("%%modpath%%/css/table.css");
+
+html {
+	margin:0;
+	padding:0;
+}
+
+/* Reset body and table cell font size */
+body, td { font-size: 78.75% }
+
+body
+{
+	/*font-family: Calibri, Verdana, Sans-Serif;*/
+	font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+	/*font-size: 11px;*/
+	/*font-size: 62.5%;*/
+	
+	margin: 0;
+	padding: 0;
+	background: white;
+	/*rgb(100,100,100);*/
+}
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
+}
+
+label { cursor: pointer }
+
+#header
+{
+	margin: 1em;
+	border-bottom: 1px solid rgb(220,220,220);
+	color: rgb(120,120,120);
+}
+
+#header h1 { font-size: 300%; }
+
+#body
+{
+	margin: 0 1em 1em;
+}
+
+
+

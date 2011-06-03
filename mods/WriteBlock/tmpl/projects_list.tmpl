@@ -1,0 +1,19 @@
+
+<h1>Projects List</h1>
+<a href='%%binpath%%/new'>Add new project...</a>
+
+<!-- Group ID: %%group_groupid%% -->
+<!-- Group Title: %%group_title%% -->
+
+<table class='pretty'>
+	<thead>
+		<th>Project Name</th>
+	</thead>
+	<tbody>
+		<tmpl_loop boards>
+			<tr>
+				<td><a href='%%bin%%/%%folder_name%%'>%%title%%</a></td>
+			</tr>
+		</tmpl_loop>
+	</tbody>
+</table>

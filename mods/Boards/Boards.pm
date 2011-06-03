@@ -1469,11 +1469,20 @@ package Boards;
 			$append_flag = 1;
 		}
 		
-		$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
-		$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
+		$user = AppCore::Common->context->user if !$user;
+		if($user && $user->id)
+		{
+			$req->{poster_name}  = $user->display	if !$req->{poster_name};
+			$req->{poster_email} = $user->email	if !$req->{poster_email};
+		}
+		else
+		{
+			$req->{poster_name}  = 'Anonymous'          if !$req->{poster_name};
+			$req->{poster_email} = 'nobody@example.com' if !$req->{poster_email};
+		}
 		
 		# Try to guess if HTML is really just text
-		if(!might_be_html($req->{comment}) || $req->{plain_text})
+		if((!might_be_html($req->{comment}) || $req->{plain_text}) && !$req->{no_html_conversion})
 		{
 			$req->{comment} = text2html($req->{comment});
 		}
@@ -1501,8 +1510,6 @@ package Boards;
 		}
 		
 		$post_class = "post" if !$post_class;
-		
-		$user = AppCore::Common->context->user if !$user;
 		
 		my $photo = $req->{poster_photo};
 		if(!$photo && $user && $user->id)
@@ -1699,24 +1706,33 @@ package Boards;
 			
 			$controller->post_edit_save($post,$req);
 			
-			my $folder = $post->folder_name;
-			
-			my $abs_url = $self->module_url("$board_folder_name/$folder",1);
-			
-			my $email_body = $post->poster_name." edited post '".$post->subject."' in forum '".$board->title.qq{':
-
-    }.AppCore::Web::Common->html2text($req->{comment}).qq{
-
-Here's a link to that page: 
-    $abs_url
-    
-Cheers!};
-			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-			           @AppCore::Config::ADMIN_EMAILS : 
-			          ($AppCore::Config::WEBMASTER_EMAIL);
-			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
+# 			my $folder = $post->folder_name;
+# 			
+# 			my $abs_url = $self->module_url("$board_folder_name/$folder",1);
+# 			
+# 			my $email_body = $post->poster_name." edited post '".$post->subject."' in forum '".$board->title.qq{':
+# 
+#     }.AppCore::Web::Common->html2text($req->{comment}).qq{
+# 
+# Here's a link to that page: 
+#     $abs_url
+#     
+# Cheers!};
+# 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
+# 			           @AppCore::Config::ADMIN_EMAILS : 
+# 			          ($AppCore::Config::WEBMASTER_EMAIL);
+# 			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
 		
-			$r->redirect("$bin/$board_folder_name/".$post->folder_name);
+			if($req->output_fmt eq 'json')
+			{
+				my $json = encode_json({status=>'ok'});
+				#return $r->output_data("application/json", $json);
+				return $r->output_data("application/json", $json);
+			}
+			else
+			{
+				$r->redirect("$bin/$board_folder_name/".$post->folder_name);
+			}
 				
 		}
 		else
@@ -2362,6 +2378,11 @@ Cheers!};
 		if($self->is_spam($req->comment))
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+		}
+		
+		if(!$req->{subject})
+		{
+			$req->{subject} = $self->guess_subject($req->{comment});
 		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});

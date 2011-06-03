@@ -1,0 +1,173 @@
+<h1>%%board_title%%</h1>
+
+<style>
+table.editor_tbl
+{
+	border-collapse:collapse;
+	border: 1px solid #364a90; /* light orange */
+	-moz-box-shadow: 0px 0px 8px #000;
+	/*-moz-box-shadow: 0 0 3px #fff, 0px 0px 8px #000;*/
+	margin: 8 0; 
+	
+	width: 50em;
+}
+
+table.editor_tbl .util
+{
+	color: #364a90;
+}
+
+table.editor_tbl td
+{
+	padding: 0 .5em .5em .5em;
+	text-indent: 2em;
+	font-size: 12px;
+}
+
+table.editor_tbl td.editing {
+	text-indent: 0;
+	padding-right: 0;
+	padding-left: 0;
+}
+
+table.editor_tbl td.editing textarea {
+	font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+	/*font-size: 78.75%;*/
+	text-indent: 2em;
+	font-size: 12px;
+	padding: 0;
+	margin: 0;
+	border: 0;
+	background: #fffedd;
+	margin-bottom: -1em;
+	padding-left: .45em;
+}
+
+table.editor_tbl td a  {
+	color: black;
+	text-decoration: none;
+	cursor: text;
+}
+
+table.editor_tbl td a:active,
+table.editor_tbl td a:focus {
+	outline: 0;
+}
+
+table.editor_tbl td textarea
+{
+	width: 100%;
+	border: 0;
+}
+
+table.editor_tbl img.loading {
+	float: right;
+	margin-right: -3em;
+}
+
+</style>
+
+
+<table class='editor_tbl'>
+	<tmpl_loop posts>
+		<tr>
+			<td><a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>%%text%%</a></td>
+		</tr>
+	</tmpl_loop>
+</table>
+	
+<script>
+// Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
+loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
+</script>
+
+<script type="text/javascript">
+$(function() {
+	
+	//$('textarea').autogrow();
+	var currentEditorCell = false;
+	
+	function clearFocus()
+	{
+		if(currentEditorCell)
+		{
+			var dat = currentEditorCell;
+			//console.debug(dat);
+				
+			var newText = dat.ta.get(0).value;
+			
+			dat.th.removeClass("editing");
+			dat.ta.remove();
+			dat.lnk.text(newText);
+			dat.lnk.show();
+			
+			var loading = $('<img class="loading"/>')
+				.attr('src',loaderGif)
+				.attr('align','absmiddle');
+			
+			loading.appendTo(dat.th);
+			
+			var func = function(data)
+				{
+					// user's peace of mind...
+					setTimeout(function() { loading.remove(); }, 500);
+				};
+				
+			$.ajax({
+				type: "POST",
+				url: dat.lnk.attr("href") + "/save",
+				data: 
+				{
+					comment: newText, 
+					output_fmt: 'json'
+				},
+				success: func,
+				error: func,
+			});
+			
+			currentEditorCell = false;
+			
+		}
+	}
+	
+	$(document).click(function(evt) {
+		var target = $((evt ? evt : window.event).target);
+		
+		var tid = target.attr('id');
+		if (!currentEditorCell || tid != currentEditorCell.id) {
+			clearFocus();
+		}
+
+	});
+	
+	var counter = 0;
+	$('.editor_tbl td a').live('click',function(){
+		
+		clearFocus();
+		
+		var th = $(this.parentNode);
+		var lnk = $(this);
+		lnk.hide();
+		var curTxt = lnk.text();
+		var ta = $("<textarea>"+curTxt+"</textarea>").appendTo(th);
+		ta.get(0).focus();
+		ta.autogrow();
+		
+		th.ta = ta;
+		th.lnk = lnk;
+		
+		ta.attr('id',counter);
+		
+		th.addClass("editing");
+		currentEditorCell = { th: th, ta: ta, lnk: lnk, curTxt: curTxt, id: counter };
+		
+		counter++;
+		
+		return false;
+	
+	});
+	
+});
+</script>
+
+<script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
