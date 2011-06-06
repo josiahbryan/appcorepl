@@ -194,7 +194,11 @@ package AppCore::Web::DispatchCore;
 		$app =~ s/^(.*?)(?:\/(.*))$/$1/;
 		$path = $2;
 		
- 		my $mod_ref = $self->{module_cache}->{lc $app}; #->{module};
+ 		my $mod_ref;
+ 		if($app)
+ 		{
+ 			$mod_ref = $self->{module_cache}->{lc $app}; #->{module};
+ 		}
 		
 		if(!$mod_ref)
 		{
@@ -204,7 +208,6 @@ package AppCore::Web::DispatchCore;
 		
 		#my $mod_ref = AppCore::Web::Module::bootstrap($mod_pkg);
 		my $mod_obj = $mod_ref->{obj};
-		
 		#print $mod_obj->main();
 		
 		# Compose the arguments hashref for the app

@@ -702,7 +702,7 @@ package AppCore::Common;
 	}
 	
 	use Time::HiRes qw/time/;
-	our $LastTime;
+	our $LastTime = 0;
 	our $TimeSum;
 	sub timemark
 	{

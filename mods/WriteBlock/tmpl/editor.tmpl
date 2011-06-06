@@ -69,11 +69,22 @@ table.editor_tbl img.loading {
 
 
 <table class='editor_tbl'>
+
 	<tmpl_loop posts>
 		<tr>
 			<td><a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>%%text%%</a></td>
 		</tr>
 	</tmpl_loop>
+
+<!--
+<tr>
+	<td>
+		<Xmpl_loop posts>
+			<p>%%text%%</p>
+		</Xmpl_loop>
+	</td>
+</tr>
+-->
 </table>
 	
 <script>

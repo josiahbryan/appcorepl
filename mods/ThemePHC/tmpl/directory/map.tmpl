@@ -1,0 +1,216 @@
+<title>PHC Family Directory</title> 
+<h1>PHC Family Directory</h1>
+<!--%macro::sub_nav()%-->
+
+
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+
+.dir-body 
+{
+	display: block;
+	page: main;
+	counter-reset: page 1;
+	
+}
+
+.dir-body, .dir-body td
+{
+	font-family: Bergamo, Georgia, serif;
+}
+
+
+.photo
+{
+	max-width: 10em;
+	max-height: 8em;
+	border: .25px solid black;
+}
+.photo_cell
+{
+	width: 10em;
+	padding-top: .5em;
+}
+.info_cell
+{
+	padding-top: .5em;
+	padding-left: .5em;
+}
+
+.no_photo
+{
+	border: 1px solid black;
+	background: rgb(220,220,220);
+	font-weight: bold;
+	font-size: 2em;
+}
+
+tr.name
+{
+	font-weight: bold;
+}
+
+div.incomplete
+{
+	border: .1px solid black;
+	color: green;
+}
+
+tr.address td
+{
+	/*border-bottom: .1px solid black;*/ 
+}
+
+tr.name td
+{
+	/*border-top: .1px solid black;*/
+}
+
+table.kids td.bday
+{
+	padding-left: .5em;
+	font-size: .85em;
+	color: rgb(80,80,80);
+}
+
+td.key
+{
+	color: rgb(80,80,80);
+	font-size: .85em;
+}
+
+
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+</style>
+
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAA2fYS3gGbRe83STuGuZb86hR2bvkXktRCd2Yk1CPnFurnk_kHOxQgmeEg7NKHO-6yjZBBmHd36Yndhw" type="text/javascript"></script>
+
+<script type="text/javascript">
+
+
+    var map = null;
+    var geocoder = null;
+
+	var entries = [];
+	var idx =0;
+
+    function initialize() {
+      if (GBrowserIsCompatible()) {
+        map = new GMap2(document.getElementById("map_canvas"));
+//         map.setCenter(new GLatLng(37.4419, -122.1419), 13);
+        geocoder = new GClientGeocoder();
+        map.setUIToDefault();
+      }
+      
+      <tmpl_loop entries>
+      entries.push(["<tmpl_var adress>","%%first%% <tmpl_if spouse>& %%spouse%%</tmpl_if> %%last%%","%%photo%%"]);
+      </tmpl_loop>
+	do_next();
+    }
+//	setTimeout(initialize,1500);
+		global.onload(initialize);
+	function do_next()
+	{
+		clearTimeout(do_next.t);
+		if(idx < entries.length)
+		{
+			showAddress(entries[idx][0],  entries[idx]);
+			do_next.t = setTimeout(do_next, 1000);
+			idx++;
+		}
+	}
+
+function addAddressToMap(response,address,entry) {
+//  map.clearOverlays();
+  if (!response || response.Status.code != 200) {
+   // alert("\"" + address + "\" not found");
+  } else {
+    place = response.Placemark[0];
+	var postalRx = new RegExp(/(\d+)$/);
+	var matches = postalRx.exec(address);
+	var origZip = matches ? matches[1] : "";
+	var newZip = place.AddressDetails.Country.AdministrativeArea.SubAdministrativeArea.Locality.PostalCode.PostalCodeNumber;
+	if(matches && newZip != origZip)
+	{
+//		alert("invalid address: newZip="+newZip+", origZip: "+origZip);
+	}
+	else
+	{
+	    point = new GLatLng(place.Point.coordinates[1],
+        	                place.Point.coordinates[0]);
+	    marker = new GMarker(point);
+	    var html="<table border=0><tr><td valign=top><img src="+entry[2]+"></td>"+
+		"<td valign=top><b>"+entry[1]+"</b><br>"+place.address+"</td>"+
+		"</table>";
+	//    alert(html+"\nEntry: "+entry);
+	    marker.bindInfoWindowHtml(html, {maxWidth:400});
+	    map.addOverlay(marker);
+		
+	}
+  }
+}
+
+    function showAddress(address,entry) {
+    	if(!address || address=="")
+    		return;
+      if (geocoder) {
+		geocoder.getLocations(address, function(response) { addAddressToMap(response,address,entry); do_next(); });
+/*
+        geocoder.getLatLng(
+          address,
+          function(point) {
+            if (!point) {
+              //alert(address + " not found");
+            } else {
+              map.setCenter(point, 13);
+              var marker = new GMarker(point,{title : title});
+              map.addOverlay(marker);
+		do_next();
+              //marker.openInfoWindowHtml(address);
+            }
+          }
+        );
+*/
+      }
+
+    }
+    </script>
+  </head>
+
+      <div id="map_canvas" style="width: 750px; height: 600px"></div>
+
+<script>
+document.body.onunload = GUnload;
+</script>	
+  </body>
+</html>
+

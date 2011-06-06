@@ -328,6 +328,7 @@ package AppCore::Web::Module;
 			print STDERR "Template file didnt exist: $abs_file\n";
 		}
 		
+		# Check the superclass(es) for templates if their are any superclasses...
 		my @pkg_isa = eval '@'.$pkg.'::ISA';
 		if(!-f $file && @pkg_isa && index($file,' ') < 0)
 		{

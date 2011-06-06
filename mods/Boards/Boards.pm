@@ -791,16 +791,19 @@ package Boards;
 			if($req->{first_ts})
 			{
 				my $postid = $req->{postid};
+				my $from_str = $req->{from};
 				#print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
 				my $sth = $dbh->prepare_cached(
 					'select b.*, u.photo as user_photo, u.user as username '.
 					'from board_posts b left join users u on (b.posted_by=u.userid) '.
 					"where (boardid=? or $user_wall_clause) and timestamp>? ".
 					($postid? 'and top_commentid=?':' ').
+					($from_str? 'and poster_name=?':' ').
 					'and deleted=0 order by timestamp');
 				
 				my @args = ($board->id, $req->{first_ts});
 				push @args, $postid if $postid;
+				push @args, $from_str if $from_str;
 				
 				$sth->execute(@args);
 				my @results;
@@ -855,14 +858,14 @@ package Boards;
 				{
 					# If paging disabled, just use a single query to load everything
 					$sth = $dbh->prepare_cached(qq{
-						select p.*,b.b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (b.posted_by=u.userid), boards b where p.boardid=b.boardid and (boardid=? or $user_wall_clause) and deleted=0 order by timestamp 
+						select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b where p.boardid=b.boardid and (p.boardid=? or $user_wall_clause) and deleted=0 order by timestamp desc, postid desc 
 					});
 				}
 				else
 				{
 					# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
 					# that should be included because the post is included
-					my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc limit ?,?");
+					my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc, postid desc limit ?,?");
 					$find_posts_sth->execute($board->id, $idx, $len);
 					my @posts;
 					push @posts, $_ while $_ = $find_posts_sth->fetchrow;
@@ -879,7 +882,7 @@ package Boards;
 					# Now do the actual query that loads both posts and comments in one gos
 					$sth = $dbh->prepare_cached('select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
 						"where (((p.boardid=? or $user_wall_clause) and postid in (".$list.")) or top_commentid in (".$list.")) and deleted=0 and p.boardid=b.boardid ".
-						'order by timestamp');
+						'order by timestamp, postid desc');
 				}
 				
 				$sth->execute($board->id);

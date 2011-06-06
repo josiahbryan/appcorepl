@@ -32,6 +32,7 @@ package ThemePHC;
 	
 	# Load our missions module so it gets registered with the page tyep database
 	use ThemePHC::Missions;
+	use ThemePHC::Directory;
 
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 	
@@ -47,6 +48,7 @@ package ThemePHC;
 		
 		# Make sure missions and other sub modules are in sync
 		ThemePHC::Missions->apply_mysql_schema();
+		ThemePHC::Directory->apply_mysql_schema();
 	}
 	
 	

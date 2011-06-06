@@ -1,0 +1,329 @@
+<title>PHC Family Directory</title> 
+<h1>PHC Family Directory</h1>
+<!--%macro::sub_nav()%-->
+
+
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+
+.dir-body 
+{
+	display: block;
+	page: main;
+	counter-reset: page 1;
+	
+}
+
+.dir-body, .dir-body td
+{
+	font-family: Bergamo, Georgia, serif;
+}
+
+
+.photo
+{
+	max-width: 10em;
+	max-height: 8em;
+	border: .25px solid black;
+}
+.photo_cell
+{
+	width: 10em;
+	padding-top: .5em;
+}
+.info_cell
+{
+	padding-top: .5em;
+	padding-left: .5em;
+}
+
+.no_photo
+{
+	border: 1px solid black;
+	background: rgb(220,220,220);
+	font-weight: bold;
+	font-size: 2em;
+}
+
+tr.name
+{
+	font-weight: bold;
+}
+
+div.incomplete
+{
+	border: .1px solid black;
+	color: green;
+}
+
+tr.address td
+{
+	/*border-bottom: .1px solid black;*/ 
+}
+
+tr.name td
+{
+	/*border-top: .1px solid black;*/
+}
+
+table.kids td.bday
+{
+	padding-left: .5em;
+	font-size: .85em;
+	color: rgb(80,80,80);
+}
+
+td.key
+{
+	color: rgb(80,80,80);
+	font-size: .85em;
+	width: 1%;
+	white-space:nowrap;
+}
+
+
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+</style>
+<tmpl_if entries>
+	<!--
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%/sermons?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%/sermons?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%/sermons?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%/sermons?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Entries</span>
+		</span>
+	</div>
+	-->
+	
+	<!--<div class='info'>
+		<a href='/PHC_Family_Directory.pdf'><img src='/images/pdf.gif' align='left' style='border:1px solid rgb(200,200,200);padding:2px;background:white;margin-top:-17px;margin-left:-8px;margin-right:8px;' border=0></a>
+		<b>Did you know?</b> You can download a <a href='/PHC_Family_Directory.pdf'>printable version of the directory</a>! Just <a href='/PHC_Family_Directory.pdf'>click here</a> to download and print off your own 22-page full-color copy!
+	</div>-->
+	<table class='entry' width='100%' class=dir-body>
+		
+	<tmpl_loop entries>
+			
+			<tr>
+				<td colspan=2>
+					<a name='%%display%%'><hr size=1></a>
+				</td>
+			</tr>
+			
+			<tr rowspan="2">
+				<td class='photo_cell' align='center' valign='top'>
+					<tmpl_if photo>
+						<a href='%%large_photo%%' target='_new'><img src='%%photo%%' class='photo' border='0'></a>
+					<tmpl_else>
+						<!--<div class='no_photo'>
+							?
+						</div>-->
+					</tmpl_if>
+				</td>
+				<td class='info_cell' valign='top'>
+					<table class='dirinfo'>
+						<tr class='name'>
+							<td class='name' colspan='2'>
+								<a name='%%first%%<tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%'>%%first%% <tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%</a>
+							</td>
+						</tr>
+						<tmpl_if incomplete_flag>
+							<tr class='incomplete'>
+								<td colspan='2'>
+									<div class='incomplete'>
+										(No Directory Info Sheet found - Just fill one out and drop it off at the sound booth.)
+									</div>
+								</td>
+							</tr>
+						</tmpl_if> 
+						<tmpl_if adress>
+							<tr class='address'>
+								<td class='value' colspan='2'>
+									%%adress%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if home>
+							<tr class='phone phone-home'>
+								<td class='key'>
+									Home Phone:
+								</td>
+								<td class='value'>
+									%%home%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_unless p_cell_dir>
+							<tmpl_if cell>
+								<tr class='cell'>
+									<td class='key'>
+										<tmpl_if spouse>%%first%%'s </tmpl_if>Cell:
+									</td>
+									<td class='value'>
+										%%cell%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						<tmpl_unless p_spouse_cell_dir>
+							<tmpl_if spouse_cell>
+								<tr class='cell'>
+									<td class='key'>
+										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Cell:
+									</td>
+									<td class='value'>
+										%%spouse_cell%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						
+						
+						<tmpl_unless p_email_dir>
+							<tmpl_if email>
+								<tr class='email'>
+									<td class='key'>
+										<tmpl_if spouse>%%first%%'s </tmpl_if>Email:
+									</td>
+									<td class='value'>
+										<a href='mailto:%%email%%'>%%email%%</a>
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						<tmpl_unless p_spouse_cell_email>
+							<tmpl_if spouse_email>
+								<tr class='email'>
+									<td class='key'>
+										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Email:
+									</td>
+									<td class='value'>
+										<a href='mailto:%%spouse_email%%'>%%spouse_email%%</a>
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						
+						
+						<tmpl_if birthday>
+							<tr class='birthday'>
+								<td class='key'>
+									<tmpl_if spouse>%%first%%'s </tmpl_if>Birthday:
+								</td>
+								<td class='value'>
+									%%birthday%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if spouse_birthday>
+							<tr class='birthday'>
+								<td class='key'>
+									<tmpl_if spouse>%%spouse%%'s </tmpl_if>Birthday:
+								</td>
+								<td class='vale'>
+									%%spouse_birthday%%
+								</td>
+							</tr>
+						</tmpl_if>
+						
+						<tmpl_if anniversary>
+							<tr class='anniversary'>
+								<td class='key'>
+									Anniversary:
+								</td>
+								<td class='vale'>
+									%%anniversary%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if comments>
+							<tr class='comments'>
+								<td colspan='2'>
+									<i>%%comments%%</i>
+								</td>
+							</tr>
+						</tmpl_if> 
+						
+						<tmpl_if kids>
+							<tr class='kids'>
+								<td class='key' valign='top'>
+									Children:
+								</td>
+								<td class='value'>
+									<table class='kids'>
+										<tmpl_loop kids>
+											<tr>
+												<td class='name'>
+													%%display%%
+												</td>
+												<td class='bday'>
+													%%birthdday%%
+												</td>
+											</tr>
+										</tmpl_loop>
+									</table>
+								</td>
+							</tr>
+						</tmpl_if>
+						
+						
+					</table>
+				</td>
+			</tr>
+	</tmpl_loop>
+			
+			
+		</table>
+	
+	<!--
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%/sermons?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%/sermons?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%/sermons?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%/sermons?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Entries</span>
+		</span>
+	</div>
+	-->
+</tmpl_if>
