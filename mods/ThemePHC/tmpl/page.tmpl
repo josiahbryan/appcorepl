@@ -149,5 +149,90 @@
 				</td>
 			</tr>
 		</table>
+		<style>
+		
+		</style>
+		<script>
+		$(function() 
+		{
+			var block2 = $('.nav_level2');
+			var block1 = $('.nav-sibs');
+			
+			block1.fixedPos = '2.2em';
+			block1.unfix = function() {
+				markUnfixed(block2);
+			}
+			
+			block2.fixedPos = '1.5em';
+			block2.fix = function() {
+				this.css('border','1px solid rgb(200,200,200)').css('width','957px');
+				markFixed(block1);
+			}
+			block2.unfix = function() {
+				this.css('border','0').css('width','auto');
+				markUnfixed(block1);
+			}
+			
+			
+			
+			var fixedList = [block1,block2];
+			
+			function markFixed(navRef)
+			{
+				navRef.css('position','fixed');
+				navRef.css('top', navRef.fixedPos);
+				
+				if(navRef.fix)
+					navRef.fix();
+			}
+			
+			function markUnfixed(navRef)
+			{
+				if(navRef.css('position') == 'fixed')
+				{
+					//console.debug(navRef.attr('className')+": mark2"); 
+					//console.debug(navRef.attr('className')+":  unfixing");
+					navRef.css('position','relative');
+					navRef.css('top', 'auto');
+					
+					if(navRef.unfix)
+						navRef.unfix();
+				}
+			}
+			
+			function fixThisFloater(navRef,scrollTop)
+			{
+				var rowTop = navRef.offset().top;
+				if(!navRef.origTop)
+					navRef.origTop = rowTop;
+					
+				//console.debug(navRef.attr('className')+": rowTop:"+rowTop+", scrollTop:"+scrollTop+", origTop:"+navRef.origTop); 
+				if(rowTop < scrollTop && navRef.css('position') != 'fixed')
+				{
+					markFixed(navRef);
+				}
+				else
+				if(navRef.origTop > scrollTop)
+				{
+					//console.debug(navRef.attr('className')+": mark1: "+navRef.css('position'));
+					markUnfixed(navRef);
+				}
+			}
+			
+			function fixFloaters() {
+				//return;
+				//var rowRef = $("tr.loadmore");
+				var scrollTop = $(window).scrollTop(); // + $(window).height();
+				var fudge = 0; // amount by which to fudge the detection
+				
+				for(var i=0;i<fixedList.length;i++)
+				{
+					fixThisFloater(fixedList[i],scrollTop);
+				}
+			}
+			
+			$(window).bind('scroll', fixFloaters);
+		});
+		</script>
 		
 	</tmpl_if>

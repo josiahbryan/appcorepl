@@ -4,10 +4,6 @@ use lib '/var/www/html/appcore/lib';
 use AppCore::DBI;
 use AppCore::User;
 use AppCore::Web::Module;
-#use LWP::Simple qw/get/;
-#use JSON qw/decode_json/;
-#use Boards::Data;
-#use Boards;
 use AppCore::Web::Common;
 use ThemePHC::Directory;
 

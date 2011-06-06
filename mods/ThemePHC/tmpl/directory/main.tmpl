@@ -80,10 +80,15 @@ tr.name td
 	/*border-top: .1px solid black;*/
 }
 
+table.kids
+{
+	border-spacing: 0;
+}
+
 table.kids td.bday
 {
 	padding-left: .5em;
-	font-size: .85em;
+	/*font-size: .85em;*/
 	color: rgb(80,80,80);
 }
 
@@ -131,17 +136,37 @@ td.key
 	</div>
 	-->
 	
-	<!--<div class='info'>
-		<a href='/PHC_Family_Directory.pdf'><img src='/images/pdf.gif' align='left' style='border:1px solid rgb(200,200,200);padding:2px;background:white;margin-top:-17px;margin-left:-8px;margin-right:8px;' border=0></a>
-		<b>Did you know?</b> You can download a <a href='/PHC_Family_Directory.pdf'>printable version of the directory</a>! Just <a href='/PHC_Family_Directory.pdf'>click here</a> to download and print off your own 22-page full-color copy!
-	</div>-->
+	<div class='info'>
+		<table>
+			<tr>
+				<td><a href='/PHC_Family_Directory.pdf'><img src='%%modpath%%/images/pdf.gif' align='left' style='' border=0></a></td>
+				<td><b>Did you know?</b> You can download a <a href='/PHC_Family_Directory.pdf'>printable version of the directory</a>! Just <a href='/PHC_Family_Directory.pdf'>click here</a> to download and print off your own 22-page full-color copy!</td>
+			</tr>
+		</table>
+	</div>
+	
+	<style>
+		.edit
+		{
+			float: right;
+			
+		}
+		
+		.edit a
+		{
+			text-decoration: none;
+			font-weight: normal;
+			color: #364a90;
+		}
+	</style>
+	
 	<table class='entry' width='100%' class=dir-body>
 		
 	<tmpl_loop entries>
-			
+		<tmpl_if display>
 			<tr>
 				<td colspan=2>
-					<a name='%%display%%'><hr size=1></a>
+					<a name='%%first%%<tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%'><hr size=1></a>
 				</td>
 			</tr>
 			
@@ -158,8 +183,14 @@ td.key
 				<td class='info_cell' valign='top'>
 					<table class='dirinfo'>
 						<tr class='name'>
-							<td class='name' colspan='2'>
-								<a name='%%first%%<tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%'>%%first%% <tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%</a>
+							<td class='name' colspan=2>
+								%%first%% <tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%
+							
+								<tmpl_if can_edit>
+									<div class='edit'>
+										<a href='#'>Edit</a>
+									</div>
+								</tmpl_if>
 							</td>
 						</tr>
 						<tmpl_if incomplete_flag>
@@ -292,7 +323,7 @@ td.key
 													%%display%%
 												</td>
 												<td class='bday'>
-													%%birthdday%%
+													%%birthday%%
 												</td>
 											</tr>
 										</tmpl_loop>
@@ -305,10 +336,11 @@ td.key
 					</table>
 				</td>
 			</tr>
+		</tmpl_if>
 	</tmpl_loop>
 			
 			
-		</table>
+	</table>
 	
 	<!--
 	<div class='paging top'>

@@ -50,7 +50,7 @@ package PHC::Directory::Family;
 			
 			{ field	=> 'lat',			type => 'float' },
 			{ field	=> 'lng',			type => 'float' },
-			{ field => 'deleted',			type => 'int' },
+			{ field => 'deleted',			type => 'int', null =>0, default=>1 },
 		],	
 	});
 };
@@ -213,7 +213,7 @@ package PHC::Directory;
 # 		}
 # 		
 
-		my @fams = PHC::Directory::Family->retrieve_from_sql('1 order by last, first');
+		my @fams = PHC::Directory::Family->retrieve_from_sql('deleted!=1 order by last, first');
 		foreach my $fam (@fams)
 		{
 			$fam->{$_} = $fam->get($_) foreach $fam->columns;
@@ -358,7 +358,7 @@ package ThemePHC::Directory;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
-		$DirectoryData = [];
+		undef $DirectoryData;
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
@@ -378,54 +378,175 @@ package ThemePHC::Directory;
 		
 		#my $sub_page = shift @$path;
 		my $sub_page = $req->next_path;
+		if($sub_page eq 'delete')
+		{
+			AppCore::AuthUtil->require_auth(['ADMIN','Pastor']);
+			
+			my $fam = $req->familyid;
+			
+			my $entry = PHC::Directory::Family->retrieve($fam);
+			return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
+			
+			$entry->deleted(1);
+			$entry->update;
+		}
+		elsif($sub_page eq 'edit')
+		{
+			my $fam = $req->familyid;
+			
+			my $entry = PHC::Directory::Family->retrieve($fam);
+			return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
+			
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $can_edit = $admin || $entry->userid == $user;
+			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
+			
+			my $tmpl = $self->get_template('directory/edit.tmpl');
+			
+			$tmpl->param($_ => $entry->get($_)) foreach $entry->columns;
+			
+			my @kids = PHC::Directory::Child->search(familyid => $entry->id);
+			foreach my $kid (@kids)
+			{
+				$kid->{$_} = $kid->get($_) foreach $kid->columns;
+			}
+			$tmpl->param(kids => \@kids);
+			
+			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			return $r;
+			
+		}
+		elsif($sub_page eq 'new')
+		{
+			AppCore::AuthUtil->require_auth(['ADMIN','Pastor']);
+			
+			my $tmpl = $self->get_template('directory/edit.tmpl');
+			
+			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			return $r;
+		}
+		elsif($sub_page eq 'post')
+		{
+			my $fam = $req->familyid;
+			
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			
+			my $entry = PHC::Directory::Family->retrieve($fam);
+			if(!$entry)
+			{
+				if($admin)
+				{
+					$entry = PHC::Directory::Family->insert({ last => $req->last });
+				}
+				else
+				{
+					return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
+				} 
+			}
+			
+			my $can_edit = $admin || $entry->userid == $user;
+			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
+			
+			foreach my $col ($entry->columns)
+			{
+				#print STDERR "Checking col: $col\n";
+				next if $col eq $entry->get_class_primary;
+				$entry->set($col, $req->$col) if defined $req->$col;
+			}
+			
+			my $name = $entry->first;
+			$name .= ' & '.$entry->spouse if $entry->spouse;
+			$name .= ' '.$entry->last;
+			
+			$entry->display if $name ne $entry->display;
+			
+			$entry->update;
+			
+			my @kids = PHC::Directory::Child->search(familyid => $entry->id);
+			if(@kids)
+			{
+				foreach my $kid (@kids)
+				{
+					my $name = $req->{'name_'.$kid->id};
+					$kid->display($name) if $kid->display ne $name;
+					
+					my $bday = $req->{'bday_'.$kid->id};
+					$kid->birthday($bday) if $kid->birthday ne $bday;
+					
+					$kid->update if $kid->is_changed;
+				}
+			}
+			
+			if($req->{name_new})
+			{
+				PHC::Directory::Child->insert({
+					familyid	=> $entry->id,
+					display 	=> $req->{name_new},
+					birthday	=> $req->{bday_new},
+				});
+			}
+			
+			if($req->{add_another})
+			{
+				return $r->redirect($self->binpath.'/edit?familyid='.$fam);
+			}
+			else
+			{
+				return $r->redirect($self->binpath.'#'.$entry->display);
+			}
+			
+		}
+		else
+		{
 	
-		if(!$DirectoryData)
-		{
-			print STDERR __PACKAGE__.": Cache miss, reloading data\n";
-			$DirectoryData = PHC::Directory->load_directory();
+			if(!$DirectoryData)
+			{
+				#print STDERR __PACKAGE__.": Cache miss, reloading data\n";
+				$DirectoryData = PHC::Directory->load_directory();
+			}
+			
+			my @directory = @{$DirectoryData || []};
+			
+			
+			my $map_view = $req->{map} eq '1';
+			
+			my $tmpl = $self->get_template('directory/'.( $map_view? 'map.tmpl' : 'main.tmpl' ));
+			
+			my $start = $req->{start} || 0;
+			
+			$start =~ s/[^\d]//g;
+			$start = 0 if !$start || $start<0;
+			
+			my $count = @directory;
+			
+			my $length = 15;
+			$start = $count - $length if $start + $length > $count;
+			
+			@directory = @directory[$start .. $start+$count];
+			
+			$tmpl->param(count => $count);
+			$tmpl->param(pages => int($count / $length));
+			$tmpl->param(cur_page => int($start / $length) + 1);
+			$tmpl->param(next_start => $start + $length);
+			$tmpl->param(prev_start => $start - $length);
+			$tmpl->param(is_end => $start + $length == $count);
+			$tmpl->param(is_start => $start <= 0);
+			
+			#die Dumper \@directory;
+			
+			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			foreach my $entry (@directory)
+			{
+				$entry->{can_edit} = $admin || $entry->{userid} == $user;
+			}
+			$tmpl->param(entries => \@directory);
+			
+			
+			#$r->output($tmpl);
+			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			return $r;
 		}
-		
-		my $dir_list = $DirectoryData; 
-		
-		my @directory = @{$dir_list || []};
-		
-		my $map_view = $req->{map} eq '1';
-		
-		my $tmpl = $self->get_template('directory/'.( $map_view? 'map.tmpl' : 'main.tmpl' ));
-		
-		my $start = $req->{start} || 0;
-		
-		$start =~ s/[^\d]//g;
-		$start = 0 if !$start || $start<0;
-		
-		my $count = @directory;
-		
-		my $length = 15;
-		$start = $count - $length if $start + $length > $count;
-		
-		@directory = @directory[$start .. $start+$count];
-		
-		$tmpl->param(count => $count);
-		$tmpl->param(pages => int($count / $length));
-		$tmpl->param(cur_page => int($start / $length) + 1);
-		$tmpl->param(next_start => $start + $length);
-		$tmpl->param(prev_start => $start - $length);
-		$tmpl->param(is_end => $start + $length == $count);
-		$tmpl->param(is_start => $start <= 0);
-		
-		#die Dumper \@directory;
-		
-		#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
-		foreach my $entry (@directory)
-		{
-			###
-		}
-		$tmpl->param(entries => \@directory);
-		
-		
-		#$r->output($tmpl);
-		my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
-		return $r;
 	}
 	
 	
