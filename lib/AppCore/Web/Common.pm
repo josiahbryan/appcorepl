@@ -388,18 +388,20 @@ package AppCore::Web::Common;
 		$typecast = lc $typecast;
 		$typecast = 'list' if $block =~ /<tmpl_loop $var>/;
 		
+		# Adding 'this.' to the start of $var prevents errors when variables dont exist the dataset given to the template but are referenced in the template markup 
+		
 		if(!$typecast || $typecast eq 'num')
 		{
-			return $unless ? "{{if $var<=0}}" : "{{if $var>0}}";
+			return $unless ? "{{if this.$var<=0}}" : "{{if this.$var>0}}";
 		}
 		elsif($typecast eq 'str')
 		{
-			return $unless ? "{{if !$var}}" : "{{if !!$var}}";
+			return $unless ? "{{if !this.$var}}" : "{{if !!this.$var}}";
 		}
 		elsif($typecast eq 'list')
 		{
 			#return "{{if ".($unless?"!":"")."($var.length)}}";
-			return $unless ? "{{if $var.length<=0}}" : "{{if $var.length}}";
+			return $unless ? "{{if this.$var.length<=0}}" : "{{if this.$var.length}}";
 		}
 	}
 	

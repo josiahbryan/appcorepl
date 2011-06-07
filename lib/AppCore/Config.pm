@@ -110,7 +110,7 @@ BEGIN
 	$ENABLE_JS_REORDER_YUI = 1;	# Run the combined block of scripts in that page thru YUI before inclusion
 	
 	# Compress CSSX with YUI compressor if the .jar in $USE_YUI_COMPRESS exists  
-	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
+	$USE_YUI_COMPRESS = 0; #'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
 	$YUI_COMPRESS_SETTINGS = '';
 
 	###########################################

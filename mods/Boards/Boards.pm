@@ -904,7 +904,7 @@ package Boards;
 					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
 				}
 				
-				my $threaded = $controller->thread_post_list(\@tmp_list);
+				my $threaded = $controller->thread_post_list(\@tmp_list, undef, undef, $board->board_userid);
 				my @list = @$threaded;
 				# Put newest at top of list
 				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
@@ -1165,6 +1165,8 @@ package Boards;
 		$b->{like_url}     = $like_url;
 		$b->{unlike_url}   = $unlike_url;
 		
+		$b->{'post_class_'.$b->{post_class}} = 1;
+		
 		Boards::Post::Like->like_data_for_post($b->{postid}, $b);
 		
 		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
@@ -1326,7 +1328,10 @@ package Boards;
 		my $input       = shift || [];
 		my $single_post = shift || undef;
 		my $controller  = shift || $self;
+		my $board_user	= shift || undef; # if specified, assume this is a user's board and add faux posts for orphaned comments
 		my @tmp_list = @{$input || []};
+		
+		my $board = $board_user ? Boards::Board->by_field(board_userid => $board_user) : undef;
 		
 		# Used to clean up orphaned comments if the parent is deleted
 		my $del_sth = Boards::Post->db_Main->prepare_cached('update board_posts set deleted=1 where postid=?',undef,1);
@@ -1368,8 +1373,58 @@ package Boards;
 				my $top_data = $single_post ? $single_post : $crossref{$data->{top_commentid}};
 				if(!$top_data)
 				{
-					print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref - marking deleted.\n";
-					$del_sth->execute($data->{postid});
+					#print STDERR "Odd: Orphaned child $data->{postid} - has top commentid $data->{top_commentid} but not in crossref - marking deleted.\n";
+					#$del_sth->execute($data->{postid});
+					if($board_user)
+					{
+						my $ext_id = 'user_comment:'.$id;
+						my $post = Boards::Post->by_field(external_id => $ext_id);
+						if(!$post)
+						{
+							my $top = Boards::Post->retrieve($data->{top_commentid});
+							
+							my $tmpl = $self->get_template($controller->config->{user_comment_tmpl} || 'user_comment_story.tmpl');
+							$tmpl->param($_ => $data->{$_}) foreach keys %$data;
+							if($top)
+							{
+								$tmpl->param('top_'.$_ => $top->get($_)) foreach $top->columns;
+								$tmpl->param('top_user' => $top->posted_by->user) if $top->posted_by && $top->posted_by->id;
+								$tmpl->param('top_board_'.$_ => $top->boardid->get($_)) foreach $top->boardid->columns;
+							}
+							
+							$post = Boards::Post->insert({
+								external_id	=> $ext_id,
+								# Dont set external_source/url so it doesnt show up as external in the template rendering
+								boardid		=> $board,
+								poster_name	=> $data->{poster_name},
+								poster_email	=> $data->{poster_email},
+								poster_photo	=> $data->{poster_photo},
+								posted_by	=> 0,
+								timestamp	=> $data->{timestamp},
+								subject		=> $data->{poster_name} . ' commented on '.($top ? $top->poster_name.'\'s Post' : 'Post #'.$data->{top_commentid}),
+								text		=> $tmpl->output,
+								post_class	=> 'user_comment',
+							});
+							
+							my $fake_it = $self->to_folder_name($post->subject);
+							$fake_it = ($fake_it?$fake_it.'_':'').$post->id if Boards::Post->by_field(folder_name => $fake_it);
+							
+							$post->folder_name($fake_it);
+							$post->update;
+							
+							print STDERR "Created user comment story from comment $data->{postid} - new story postid is $post\n"; 
+						}
+						
+						#$data->{$_} = $post->get($_) foreach $post->columns;
+						my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
+						my $data = $controller->load_post_for_list($post,$post->boardid->folder_name,$can_admin);
+						foreach my $key (keys %$tmpl_incs)
+						{
+							$data->{'tmpl_inc_'.$key} = $tmpl_incs->{$key};
+						}
+						
+						push @list, $data;
+					}
 				}
 				else
 				{
@@ -1384,7 +1439,7 @@ package Boards;
 		
 		# This funky foreach() block is required because of the way we structured the database query
 		# Instead of multiple DB queries to get kids in the right order, we grab the entire list of kids
-		# ordered by timestamp - so here we batch the kids by their parent then re-flatten the list out to a 1d list
+		# ordered by timestamp - so here we batch the kids by their parent then re-flatten the list out to a simple 2d list
 		@list = ($single_post) if $single_post; 
 		foreach my $post (@list)
 		{

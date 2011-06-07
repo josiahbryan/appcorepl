@@ -179,7 +179,7 @@
 			</tbody>
 		</table>
 	<tmpl_else>
-		<table class='postlist' width='100%' align=center cellspacing=0>
+		<table class='postlist' width='100%' align=center cellspacing=0 style='margin-bottom:1em'>
 			<tbody>
 				<tr class='post newpost'>
 					<!--<td valign='top' align='center' class='photo'>
@@ -389,8 +389,11 @@
 		if(rowTop < scrollBottom)
 		{
 			var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
-			domElm.doPaging = pagingFunc;
-			domElm.doPaging();
+			if(domElm)
+			{
+				domElm.doPaging = pagingFunc;
+				domElm.doPaging();
+			}
 		}
 	});
 	

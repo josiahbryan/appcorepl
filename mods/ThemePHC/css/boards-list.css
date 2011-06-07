@@ -524,3 +524,10 @@ table.comment_text td {
 {
 	color: rgb(100,100,100);
 }
+
+
+.post-user_comment td.photo,
+.post-user_comment td.data
+{
+	padding-top: 5px;
+}

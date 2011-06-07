@@ -1,0 +1,8 @@
+<span class=posted_by><span class=name>%%poster_name%%</span></span> 
+<a href="/boards/%%top_board_folder_name%%/%%top_folder_name%%#%%postid%%">commented</a> on 
+<tmpl_if top_postid> 
+	<tmpl_if top_user:str><a href="/%%top_user%%"></tmpl_if>%%top_poster_name%%<tmpl_if top_user:str></a></tmpl_if>'s
+	<a href="/boards/%%top_board_folder_name%%/%%top_folder_name%%">Post</a>
+<tmpl_else> 
+	Post # %%top_commentid%%
+</tmpl_if>
