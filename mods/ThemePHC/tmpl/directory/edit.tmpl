@@ -1,0 +1,163 @@
+<title><tmpl_if familyid>Edit %%display%%<tmpl_else>Create New Family</tmpl_if></title>
+<h1><tmpl_if familyid>Edit %%display%%<tmpl_else>Create New Family</tmpl_if></h1>
+
+<form action='%%binpath%%/post' method=POST>
+
+	<input type=hidden name=familyid value="<tmpl_var familyid>">
+	
+	<table class='editform'>
+		<tr>
+			<td>First Name:</td> <td><input id='first_name' type=text name=first class='textinput' value='%%first%%' size=40></td>
+		</tr>
+		<tr>
+			<td>Last Name:</td> <td><input type=text name=last class='textinput' value='%%last%%' size=40></td>
+		</tr>
+		<tmpl_if is_admin>
+		<tr>
+			<td>Photo Num:</td> <td><input type=text name=photo_num class='textinput' value='%%photo_num%%' size=15></td>
+		</tr>
+		<tr>
+			<td>User Account:</td> <td>
+				<select name='userid'>
+					<tmpl_loop users>
+						<option value='%%value%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+					</tmpl_loop>
+				</select>
+			</td>
+		</tr>
+		</tmpl_if>
+		<tr>
+			<td>Birthday:</td> <td><input type=text name=birthday class='textinput' value='%%birthday%%' size=15></td>
+		</tr>
+		<tr>
+			<td>Email:</td> <td><input type=text name=email class='textinput' value='%%email%%' size=40></td>
+		</tr>
+		<tr>
+			<td>Cell Phone:</td> <td><input type=text name=cell class='textinput' value='%%cell%%' size=15></td>
+		</tr>
+		<tr>
+			<td>Home Phone:</td> <td><input type=text name=home class='textinput' value='%%home%%' size=15></td>
+		</tr>
+		<tr>
+			<td>Address:</td> <td><input type=text name=address class='textinput' value='%%address%%' size=40></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_cell_dir <tmpl_if p_cell_dir>checked</tmpl_if> id=p_cell_dir><label for=p_cell_dir> Don't show my cell phone# in the directory</label></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_cell_onecall <tmpl_if p_cell_onecall>checked</tmpl_if> id=p_cell_onecall><label for=p_cell_onecall> Don't call my cell with the OneCall system</label></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_email_dir <tmpl_if p_email_dir>checked</tmpl_if> id=p_email_dir><label for=p_email_dir> Don't show my email in the directory</label></td>
+		</tr>
+		<tr><td colspan=2><hr size=1></td></tr>
+		<tr><td colspan=2><h3>Spouse</h3></td></tr>
+		<tr>
+			<td>Spouse's Name:</td> <td><input type=text name=spouse class='textinput' value='%%spouse%%' size=40></td>
+		</tr>
+		<tmpl_if is_admin>
+		<tr>
+			<td>Spouse's User Account:</td> <td>
+				<select name='spouse_userid'>
+					<tmpl_loop spouse_users>
+						<option value='%%value%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+					</tmpl_loop>
+				</select>
+			</td>
+		</tr>
+		</tmpl_if>
+		
+		<tr>
+			<td>Spouse's Birthday:</td> <td><input type=text name=spouse_birthday class='textinput' value='%%spouse_birthday%%' size=40></td>
+		</tr>
+		<tr>
+			<td>Spouse's Cell Phone:</td> <td><input type=text name=spouse_cell class='textinput' value='%%spouse_cell%%' size=40></td>
+		</tr>
+		<tr>
+			<td>Spouse's Email:</td> <td><input type=text name=spouse_email class='textinput' value='%%spouse_email%%' size=40></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_spouse_cell_dir <tmpl_if p_spouse_cell_dir>checked</tmpl_if> id=p_spouse_cell_dir><label for=p_spouse_cell_dir> Don't show my spouse's cell phone# in the directory</label></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_spouse_cell_onecall <tmpl_if p_spouse_cell_onecall>checked</tmpl_if> id=p_spouse_cell_onecall><label for=p_spouse_cell_onecall> Don't call my spouse's cell with the OneCall system</label></td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td><td><input type=checkbox value=1 name=p_spouse_email_dir <tmpl_if p_spouse_email_dir>checked</tmpl_if> id=p_spouse_email_dir><label for=p_spouse_email_dir> Don't show my spouse's email in the directory</label></td>
+		</tr>
+		<tr><td colspan=2><hr size=1></td></tr>
+		<tr>
+			<td>Anniversary:</td> <td><input type=text name=anniversary class='textinput' value='%%anniversary%%' size=40></td>
+		</tr>
+		<tr>
+			<td>Comments:</td> <td><input type=text name=comments class='textinput' value='%%comments%%' size=40></td>
+		</tr>
+		<tr><td colspan=2><hr size=1></td></tr>
+		<tr>
+			<td colspan=2>
+			<h3>Children</h3>
+			<table class='editform kids-tbl' width=100%>
+				<thead>
+					<th>Name</th>
+					<th>Birthday</th>
+				</thead>
+				<tbody>
+					<tmpl_loop kids>
+						<tr>
+							<td>
+								<input type=text class='textinput' name='name_%%childid%%' value='%%display%%' size=40>
+							</td>
+							<td>
+								<input type=text class='textinput' name='bday_%%childid%%' value='%%birthday%%' size=15>
+							</td>
+						</tr>
+					</tmpl_loop>
+					<tr>
+						<td>
+							<a name='add_another'><input type=text class='textinput' id='name_new' name='name_new' value='' size=40></a>
+						</td>
+						<td>
+							<input type=text class='textinput' name='bday_new' value='' size=15>
+						</td>
+					</tr>
+					<tr>
+						<td colspan=2>
+							<input type=submit name=add_another value='Add Another Child'>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+		<tr><td colspan=2><hr size=1></td></tr>
+		<tr>
+			<td colspan=2 class=controls>
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+			</td>
+		</tr>
+	</table>
+	
+	
+</form>
+
+<script>
+$(document).ready(function() {
+	
+	if(window.location.hash.indexOf("add_another")>0)
+	{
+		$('#name_new').get(0).focus();
+	}
+	else
+	{
+		$('#first_name').get(0).focus();
+	}
+	
+	$('.textinput').live("focus", function() {
+		this.select();
+	});
+	
+	
+});
+	
+</script>

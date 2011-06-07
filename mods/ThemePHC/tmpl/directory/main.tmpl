@@ -117,8 +117,28 @@ td.key
 .paging .total { font-weight: bold }
 .paging .curpg { font-weight: bold }
 
+td.load-done,
+td.loading
+{
+	background: rgb(230,230,230);
+	border: 1px solid rgb(100,100,100);
+	padding: .5em;
+	margin-top: 1em;
+	font-size: .75em;
+	font-weight: bold;
+	text-align: center;
+	color: rgb(80,80,80);
+}
+
+tr.loadmore a
+{
+	text-decoration: none;
+	/*font-weight: normal;*/
+	color: #364a90;
+}
+
 </style>
-<tmpl_if entries>
+
 	<!--
 	<div class='paging top'>
 		<tmpl_unless is_start>
@@ -135,7 +155,7 @@ td.key
 		</span>
 	</div>
 	-->
-	
+<!--	
 	<div class='info'>
 		<table>
 			<tr>
@@ -143,7 +163,7 @@ td.key
 				<td><b>Did you know?</b> You can download a <a href='/PHC_Family_Directory.pdf'>printable version of the directory</a>! Just <a href='/PHC_Family_Directory.pdf'>click here</a> to download and print off your own 22-page full-color copy!</td>
 			</tr>
 		</table>
-	</div>
+	</div>-->
 	
 	<style>
 		.edit
@@ -160,187 +180,183 @@ td.key
 		}
 	</style>
 	
-	<table class='entry' width='100%' class=dir-body>
-		
-	<tmpl_loop entries>
-		<tmpl_if display>
+	<form action='%%binpath%%' method=GET>
+		<table class='entry' width='100%' class=search-results>
 			<tr>
-				<td colspan=2>
-					<a name='%%first%%<tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%'><hr size=1></a>
+				<td align=center>
+					<hr size=1>
+					<div style='margin-top:1em'>
+						Search: <input type=text name=search value='%%search%%' class='search_field'> <input type=submit value='Search'>
+					</div>
 				</td>
 			</tr>
-			
-			<tr rowspan="2">
-				<td class='photo_cell' align='center' valign='top'>
-					<tmpl_if photo>
-						<a href='%%large_photo%%' target='_new'><img src='%%photo%%' class='photo' border='0'></a>
-					<tmpl_else>
-						<!--<div class='no_photo'>
-							?
-						</div>-->
-					</tmpl_if>
-				</td>
-				<td class='info_cell' valign='top'>
-					<table class='dirinfo'>
-						<tr class='name'>
-							<td class='name' colspan=2>
-								%%first%% <tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%
-							
-								<tmpl_if can_edit>
-									<div class='edit'>
-										<a href='#'>Edit</a>
-									</div>
-								</tmpl_if>
-							</td>
-						</tr>
-						<tmpl_if incomplete_flag>
-							<tr class='incomplete'>
-								<td colspan='2'>
-									<div class='incomplete'>
-										(No Directory Info Sheet found - Just fill one out and drop it off at the sound booth.)
-									</div>
-								</td>
-							</tr>
-						</tmpl_if> 
-						<tmpl_if adress>
-							<tr class='address'>
-								<td class='value' colspan='2'>
-									%%adress%%
-								</td>
-							</tr>
-						</tmpl_if>
-						<tmpl_if home>
-							<tr class='phone phone-home'>
-								<td class='key'>
-									Home Phone:
-								</td>
-								<td class='value'>
-									%%home%%
-								</td>
-							</tr>
-						</tmpl_if>
-						<tmpl_unless p_cell_dir>
-							<tmpl_if cell>
-								<tr class='cell'>
-									<td class='key'>
-										<tmpl_if spouse>%%first%%'s </tmpl_if>Cell:
-									</td>
-									<td class='value'>
-										%%cell%%
-									</td>
-								</tr>
-							</tmpl_if>
-						</tmpl_unless>
-						<tmpl_unless p_spouse_cell_dir>
-							<tmpl_if spouse_cell>
-								<tr class='cell'>
-									<td class='key'>
-										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Cell:
-									</td>
-									<td class='value'>
-										%%spouse_cell%%
-									</td>
-								</tr>
-							</tmpl_if>
-						</tmpl_unless>
-						
-						
-						<tmpl_unless p_email_dir>
-							<tmpl_if email>
-								<tr class='email'>
-									<td class='key'>
-										<tmpl_if spouse>%%first%%'s </tmpl_if>Email:
-									</td>
-									<td class='value'>
-										<a href='mailto:%%email%%'>%%email%%</a>
-									</td>
-								</tr>
-							</tmpl_if>
-						</tmpl_unless>
-						<tmpl_unless p_spouse_cell_email>
-							<tmpl_if spouse_email>
-								<tr class='email'>
-									<td class='key'>
-										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Email:
-									</td>
-									<td class='value'>
-										<a href='mailto:%%spouse_email%%'>%%spouse_email%%</a>
-									</td>
-								</tr>
-							</tmpl_if>
-						</tmpl_unless>
-						
-						
-						<tmpl_if birthday>
-							<tr class='birthday'>
-								<td class='key'>
-									<tmpl_if spouse>%%first%%'s </tmpl_if>Birthday:
-								</td>
-								<td class='value'>
-									%%birthday%%
-								</td>
-							</tr>
-						</tmpl_if>
-						<tmpl_if spouse_birthday>
-							<tr class='birthday'>
-								<td class='key'>
-									<tmpl_if spouse>%%spouse%%'s </tmpl_if>Birthday:
-								</td>
-								<td class='vale'>
-									%%spouse_birthday%%
-								</td>
-							</tr>
-						</tmpl_if>
-						
-						<tmpl_if anniversary>
-							<tr class='anniversary'>
-								<td class='key'>
-									Anniversary:
-								</td>
-								<td class='vale'>
-									%%anniversary%%
-								</td>
-							</tr>
-						</tmpl_if>
-						<tmpl_if comments>
-							<tr class='comments'>
-								<td colspan='2'>
-									<i>%%comments%%</i>
-								</td>
-							</tr>
-						</tmpl_if> 
-						
-						<tmpl_if kids>
-							<tr class='kids'>
-								<td class='key' valign='top'>
-									Children:
-								</td>
-								<td class='value'>
-									<table class='kids'>
-										<tmpl_loop kids>
-											<tr>
-												<td class='name'>
-													%%display%%
-												</td>
-												<td class='bday'>
-													%%birthday%%
-												</td>
-											</tr>
-										</tmpl_loop>
-									</table>
-								</td>
-							</tr>
-						</tmpl_if>
-						
-						
-					</table>
-				</td>
-			</tr>
-		</tmpl_if>
-	</tmpl_loop>
-			
-			
+		</table>
+		<script>
+		$(function() {
+			var field = $('.search_field').get(0);
+			if(field)// && field.value != '')
+			{
+				field.focus();
+				field.select();
+			}
+		});
+		
+		</script>
+	</form>
+	
+	<table class='entry' width='100%' class=search-results>
+		<tr class='search-footer'></tr>
 	</table>
+	
+	<table class='entry' width='100%' class=dir-body>
+		<tmpl_loop entries>
+			<tmpl_include 'inc-dir-entry.tmpl'>
+		</tmpl_loop>
+		<tmpl_unless search>
+			<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
+		</tmpl_unless>
+	</table>
+	
+	<tmpl_if search>
+		<tmpl_unless entries>
+			<hr size=1>
+			<center>
+			<h2 style='margin:2em'>Sorry, no entries match "<i><tmpl_var search escape=html></i>"</h2>
+			</center>
+		</tmpl_unless>
+	</tmpl_if>
+	
+	<script id="entry-tmpl" type="text/x-jquery-tmpl">
+		${tmpl2jq:%%modpath%%/tmpl/directory/inc-dir-entry.tmpl}
+	</script>
+	
+	<script flag='dynamic_server_content'>
+	// Put these two values in a script block marked with 'flag='dynamic_server_content'' just to throw off the
+	// server-based script compressor. The compressor grabs all script blocks and does an MD5 to see if they
+	// have changed, and if so, it uses YUI to re-compress them. Since these values are LIKELY to change based
+	// on database values, we DONT want to trigger a recompress (takes >950ms or so) just because we have a new
+	// post or whatever. The 'flag='dynamic...'' is just to prevent the server compressor from grabbing this
+	// script block because it only grabs script blocks with certain attributes and ingores others.
+	window.PagingNextIndex = %%start%%;
+	</script>
+	
+	<script>
+	$(function() {
+	
+		var loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
+			
+		//loadmore_link
+		var pagingLock = false;
+		var pagingFunc = function(){
+			
+			if(pagingLock)
+				return;
+				
+			pagingLock = true;
+			
+			if(window.PagingNextIndex<0)
+				return false;
+				
+			$("body").css("cursor", "progress");
+			$("tr.loadmore").children("td").html("<img src="+loaderGif+" align=absmiddle> Loading ... ").addClass("loading");
+			
+			// Set a timeout so the browser has time to update the DOM with the loader gif we just added
+			setTimeout(pagingStage2,100);		
+		};
+		
+		var pagingStage2 = function()
+		{
+			var loadMoreUrl = '%%binpath%%';
+			var linkHref = loadMoreUrl+"?start="+window.PagingNextIndex;
+			
+			$.ajax({
+				type: "GET",
+				url: loadMoreUrl,
+				data: 
+				{
+					start: window.PagingNextIndex,
+					length: %%length%%,
+					output_fmt: 'json'
+				},
+				success: function(data)
+				{
+					//console.debug("got post data: "+data+", typeof: "+typeof(data));
+					//alert("Got post data:"+data+", type:"+typeof(data));
+					if(typeof(data) == "string")
+					{
+						// something wierd on server - should be JSON!
+						document.location.href = linkHref;
+						//alert("Got data as string");
+					}
+					else
+					{
+						// Iterate over the list of posts and reate the posts from the template
+						var posts = data.list;
+						for(var i=0;i<posts.length;i++)
+						{
+							var postData = posts[i];
+							//console.debug(postData);
+							$("#entry-tmpl").tmpl(postData).insertBefore("tr.loadmore");
+						}
+						
+						window.PagingNextIndex = parseInt(data.start) + parseInt(data.length);
+						
+						$("tr.loadmore").children("td").html("<a href='%%bin%%?start="+window.PagingNextIndex+"'>See more entries...</a>");
+						
+						// Store the next index for the next time they request more posts
+						if(window.PagingNextIndex >= parseInt(data.count))
+						{
+							window.PagingNextIndex = -1;
+							$("tr.loadmore").children("td").html("(No more entries)").addClass("load-done");
+						}
+						
+						// Remove busy cursor
+						$("body").css("cursor", "auto");
+						
+						pagingLock = false;
+					}	
+				},
+				error: function() 
+				{ 
+					//alert("Error");
+					document.location.href = linkHref; 
+				}
+				
+			});
+			
+			return false;
+		}
+		
+// 		$(".loadmore a").live("click",pagingFunc);
+// 		$("a.loadmore_link").live("click",pagingFunc);
+		
+		
+		// Add a "load on scroll" method. 
+		// This listens for the "onscroll" event and checks to see if the
+		// bottom "Load more" link is visible at the bottom of the window.
+		// As soon as the link gets close (see 'fudge'), then the 
+		// paging function (above) is triggered just as if the user
+		// had clicked the link
+		<tmpl_unless search>
+		$(window).bind('scroll', function(){
+				
+			var rowRef = $("tr.loadmore");
+			var scrollBottom = $(window).scrollTop() + $(window).height();
+			var fudge = 100; // amount by which to fudge the detection
+			var rowTop = rowRef.offset().top - fudge; 
+			if(rowTop < scrollBottom)
+			{
+				//var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
+				//domElm.doPaging = pagingFunc;
+				//domElm.doPaging();
+				pagingFunc();
+			}
+		});
+		</tmpl_unless>
+	
+	});
+	
+	</script>
 	
 	<!--
 	<div class='paging top'>
@@ -358,4 +374,5 @@ td.key
 		</span>
 	</div>
 	-->
-</tmpl_if>
+
+<script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>

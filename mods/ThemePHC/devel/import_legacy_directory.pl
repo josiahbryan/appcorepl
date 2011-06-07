@@ -69,6 +69,28 @@ foreach my $entry (@$data)
 		}
 	}
 	
+	if(!$fam->userid)
+	{
+		my $name = $fam->first.' '.$fam->last;
+		my $user = AppCore::User->by_field(display => $name);
+		if($user)
+		{
+			print STDERR "Matched user $user to primary userid on family ".$fam->display."\n";
+			$fam->userid($user);
+		}
+	}
+	
+	if(!$fam->spouse_userid && $fam->spouse)
+	{
+		my $name = $fam->spouse.' '.$fam->last;
+		my $user = AppCore::User->by_field(display => $name);
+		if($user)
+		{
+			print STDERR "Matched user $user to spouse userid on family ".$fam->display."\n";
+			$fam->spouse_userid($user);
+		}
+	}
+	
 	if($fam->is_changed)
 	{
 		print STDERR "Updated ".$fam->display."\n";

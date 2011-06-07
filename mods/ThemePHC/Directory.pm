@@ -53,6 +53,8 @@ package PHC::Directory::Family;
 			{ field => 'deleted',			type => 'int', null =>0, default=>1 },
 		],	
 	});
+	
+	__PACKAGE__->add_constructor(search_like => '(first like ? or last like ? or spouse like ? or address like ? or email like ? or spouse_email like ?) and deleted!=1 order by last, first');
 };
 
 package PHC::Directory::Child;
@@ -145,7 +147,7 @@ package PHC::Directory;
 			$entry{cell}			= xls_value $worksheet->get_cell( $row, $col_idx++ );
 			$entry{email}			= xls_value $worksheet->get_cell( $row, $col_idx++ );
 			$entry{home}			= xls_value $worksheet->get_cell( $row, $col_idx++ );
-			$entry{adress}			= xls_value $worksheet->get_cell( $row, $col_idx++ );
+			$entry{address}			= xls_value $worksheet->get_cell( $row, $col_idx++ );
 			$entry{p_cell_dir}		= xls_value $worksheet->get_cell( $row, $col_idx++ );
 			$entry{p_cell_onecall}		= xls_value $worksheet->get_cell( $row, $col_idx++ );
 			$entry{p_email_dir}		= xls_value $worksheet->get_cell( $row, $col_idx++ );
@@ -196,39 +198,107 @@ package PHC::Directory;
 		return \@entries;
 	}
 	
+	our $DirectoryData;
+	sub clear_cached_dbobjects
+	{
+		#print STDERR __PACKAGE__.": Clearing cache...\n";
+		$DirectoryData = {count=>0, cache=>{}};
+	}	
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
 	sub load_directory
 	{
-		my $www_path = $AppCore::Config::WWW_DOC_ROOT;
-# 		my $www_path = '/var/www/phc';
-# 		my $data_file = $www_path.'/Data.xls';
-# 		my $cache_file = '/tmp/phc-directory.storable';
-# 		if(-f $cache_file)
-# 		{
-# 			my $cache_mtime = (stat($cache_file))[9];
-# 			my $data_mtime = (stat($data_file))[9];
-# 			if($data_mtime <= $cache_mtime)
-# 			{
-# 				return retrieve($cache_file);
-# 			}
-# 		}
-# 		
-
-		my @fams = PHC::Directory::Family->retrieve_from_sql('deleted!=1 order by last, first');
-		foreach my $fam (@fams)
+		my $class = shift;
+		my $start = shift || 0;
+		my $search;
+		my $length;
+		if($start && !@_)
 		{
-			$fam->{$_} = $fam->get($_) foreach $fam->columns;
+			$search = $start;
+			$start = 0;
+			$length = 0;
+		}
+		else
+		{
+			$search = '';
+			$length = shift; 
+		}
+		
+		
+		my $cache_key = 'all';
+		
+		my $count = 0;
+		if($length > 0)
+		{
+			$count = $DirectoryData->{count};
+			if(!$count)
+			{
+				my $sth = PHC::Directory::Family->db_Main->prepare('select count(familyid) from '.PHC::Directory::Family->table.' where deleted!=1');
+				$sth->execute();
+				$count = $sth->fetchrow;
+				$DirectoryData->{count} = $count;
+			}
+				
+			$length = $count - $start if $start + $length > $count;
 			
-			my @kids = PHC::Directory::Child->retrieve_from_sql('familyid='.$fam->id.' order by birthday');
+			$start  += 0; # force cast to numbers
+			$length += 0; # force cast to numbers
+			
+			$cache_key = join '', $start, $length;
+		}
+		elsif($search && length($search) > 0)
+		{
+			$cache_key = 'search:'.$search;
+		}
+		
+		if($DirectoryData->{cache}->{$cache_key})
+		{
+			#print STDERR "load_directory: Cache HIT for key '$cache_key'\n";
+			return $DirectoryData->{cache}->{$cache_key};
+		} 
+			
+		print STDERR "load_directory: Cache miss for key '$cache_key'\n";
+		
+			
+		my $www_path = $AppCore::Config::WWW_DOC_ROOT;
+		
+		my @fams;
+		if($search)
+		{
+			my $like = '%'.$search.'%';
+			@fams = PHC::Directory::Family->search_like($like,$like,$like,$like,$like,$like);
+		}
+		else
+		{
+			@fams = PHC::Directory::Family->retrieve_from_sql('deleted!=1 order by last, first '.($length>0 ? 'limit '.$start.', '.$length : ''));
+		}
+		
+		my @output_list;
+		foreach my $fam_obj (@fams)
+		{
+			my $fam = {};
+			$fam->{$_} = $fam_obj->get($_)."" foreach $fam_obj->columns;
+			
+			my @kids = PHC::Directory::Child->retrieve_from_sql('familyid='.$fam_obj->id.' order by birthday');
 			if(@kids)
 			{
-				foreach my $kid (@kids)
+				my @kid_list;
+				foreach my $kid_obj (@kids)
 				{
-					$kid->{$_} = $kid->get($_) foreach $kid->columns;
+					my $kid = {};
+					$kid->{$_} = $kid_obj->get($_)."" foreach $kid_obj->columns;
+					push @kid_list, $kid;
 				}
-				$fam->{kids} = \@kids;
+				$fam->{kids} = \@kid_list;
+			}
+			else
+			{
+				$fam->{kids} = [];
 			}
 			
-			if($fam->last)
+			push @output_list, $fam;
+			
+			if($fam_obj->last)
 			{
 				#print "$last	/	$fam->{first}\n";
 				my $name = $fam->{first};
@@ -264,7 +334,7 @@ package PHC::Directory;
 						}
 					}
 					
-					$fam->{photo} = $photo_file;
+					$fam->{photo} = $photo_file ? $photo_file: '';
 					
 					$fam->{comments} =~ s/([^\s]+\@[^\s]+\.\w+)/<a href='mailto:$1'>$1<\/a>/g;
 				}
@@ -280,9 +350,36 @@ package PHC::Directory;
 					#print "Info Sheet: $name\n";
 				}
 			}
+			
+			# Make the jQuery template function happy on the client side
+			$fam->{photo}       = '' if !$fam->{photo};;
+			$fam->{large_photo} = '' if !$fam->{large_photo};
+			$fam->{address}     = '' if !$fam->{address};
+			$fam->{comments_html} = $fam->{comments} ? $fam->{comments} : ""; # jQuery tmpl plugin parses the '_html' differently
+			
+			# Make the jQuery template function happy on the client side
+			foreach(keys %$fam)
+			{
+				$fam->{$_} = "" if !defined $fam->{$_};
+			} 
 		}
 		
-		return \@fams;
+# 		my $result = \@output_list;
+# 		if($length > 0)
+# 		{
+			my $result = 
+			{
+				count	=> $count ? $count : scalar @output_list,
+				list	=> \@output_list, 
+				start	=> $start,
+				length	=> $length ? $length : scalar @output_list,
+				search	=> $search,
+			};
+#		}
+		
+		$DirectoryData->{cache}->{$cache_key} = $result;
+		
+		return $result;
 	};
 
 };
@@ -305,7 +402,7 @@ package ThemePHC::Directory;
 	use Data::Dumper;
 	#use DateTime;
 	use AppCore::Common;
-	#use JSON qw/to_json/;
+	use JSON qw/encode_json/;
 	
 	my $MGR_ACL = [qw/Pastor/];
 	
@@ -354,23 +451,13 @@ package ThemePHC::Directory;
 # 		$view->output($page_obj,$r,$view_code);
 	};
 	
-	our $DirectoryData;
-	sub clear_cached_dbobjects
-	{
-		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
-		undef $DirectoryData;
-	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
-	
-	
-	
 	sub dir_page
 	{
 		my $self = shift;
 		my ($req,$r) = @_;
 		
 		my $user = AppCore::Common->context->user;
-		if(!$user || !$user->check_acl(['Can-See-Family-Directory']))
+		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
 		{
 			my $tmpl = $self->get_template('directory/denied.tmpl');
 			return $r->output($tmpl);
@@ -390,6 +477,95 @@ package ThemePHC::Directory;
 			$entry->deleted(1);
 			$entry->update;
 		}
+		elsif($sub_page eq 'claim')
+		{
+			# Must be logged in to claim a family
+			AppCore::AuthUtil->require_auth();
+			
+			my $fam = $req->familyid;
+			
+			my $entry = PHC::Directory::Family->retrieve($fam);
+			return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
+			
+			my $my_entry;
+			if($user)
+			{
+				$my_entry = PHC::Directory::Family->by_field(userid => $user);
+				$my_entry = PHC::Directory::Family->by_field(spouse_userid => $user) if !$my_entry;
+			}
+			
+			if($my_entry && $my_entry->id != $fam)
+			{
+				return $r->error("You've Already Claimed a Family","Sorry, you've already claimed a family! Contact the webmaster for more help.");
+			}
+			
+			if($entry->userid && $entry->spouse_userid)
+			{
+				return $r->error("Both Spouses Already Claimed","The user account for both spouses have already been claimed. Contact the webmaster for more help."); 
+			}
+			
+			my $edit_url = $self->module_url('/edit?familyid='.$fam);
+			
+			if(my $type = $req->{claim_type})
+			{
+				# they saw the form, now update and redirect to edit
+				
+				if($type eq 'spouse')
+				{
+					$entry->spouse_userid($user);
+					$entry->update;
+					return $r->redirect($edit_url);
+				}
+				else
+				{
+					# two spouses, but primary NOT claimed, so assign primary
+					$entry->userid($user);
+					$entry->update;
+					return $r->redirect($edit_url);
+				}
+			}
+			
+			if($entry->spouse && $entry->first)
+			{
+				if($entry->userid && !$entry->spouse_userid)
+				{
+					# two spouses, but primary claimed, so assign secondary
+					$entry->spouse_userid($user);
+					$entry->update;
+					return $r->redirect($edit_url);
+				}
+				elsif($entry->spouse_userid && !$entry->userid)
+				{
+					# two spouses, but primary NOT claimed, so assign primary
+					$entry->userid($user);
+					$entry->update;
+					return $r->redirect($edit_url);
+				}
+				
+				# neither account claimed, show form
+				my $tmpl = $self->get_template('directory/claim.tmpl');
+			
+				$tmpl->param($_ => $entry->get($_)) foreach $entry->columns;
+				
+				my $view = Content::Page::Controller->get_view('sub',$r);
+				$view->breadcrumb_list->push('Claim Family',$self->module_url('/claim?familyid='.$fam),0);
+				$view->output($tmpl);
+				return $r;
+			}
+			elsif($entry->first)
+			{
+				# Only one person in family, claim first account and redirect to edit
+				$entry->userid($user);
+				$entry->update;
+				
+				return $r->redirect($edit_url);
+			}
+			else
+			{
+				return $r->error("No Names","Wiered - no names on this account. Contact the webmaster for more help.");
+			}
+			
+		}
 		elsif($sub_page eq 'edit')
 		{
 			my $fam = $req->familyid;
@@ -398,7 +574,7 @@ package ThemePHC::Directory;
 			return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
 			
 			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
-			my $can_edit = $admin || $entry->userid == $user;
+			my $can_edit = $admin || $entry->userid == $user || $entry->spouse_userid == $user;
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
 			
 			my $tmpl = $self->get_template('directory/edit.tmpl');
@@ -412,9 +588,16 @@ package ThemePHC::Directory;
 			}
 			$tmpl->param(kids => \@kids);
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
-			return $r;
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			$tmpl->param(is_admin => $admin);
 			
+			$tmpl->param(users => AppCore::User->tmpl_select_list($entry->userid,1));
+			$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($entry->spouse_userid,1));
+			
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push('Edit Family',$self->module_url('/edit?familyid='.$fam),0);
+			$view->output($tmpl);
+			return $r;
 		}
 		elsif($sub_page eq 'new')
 		{
@@ -422,8 +605,17 @@ package ThemePHC::Directory;
 			
 			my $tmpl = $self->get_template('directory/edit.tmpl');
 			
-			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			$tmpl->param(is_admin => $admin);
+			
+			$tmpl->param(users => AppCore::User->tmpl_select_list(undef,1));
+			$tmpl->param(spouse_users => AppCore::User->tmpl_select_list(undef,1));
+			
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push('New Family',$self->module_url('/new'),0);
+			$view->output($tmpl);
 			return $r;
+			
 		}
 		elsif($sub_page eq 'post')
 		{
@@ -444,13 +636,40 @@ package ThemePHC::Directory;
 				} 
 			}
 			
-			my $can_edit = $admin || $entry->userid == $user;
+			my $can_edit = $admin || $entry->userid == $user || $entry->spouse_userid == $user;
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
 			
-			foreach my $col ($entry->columns)
+			my @cols = qw/
+				first
+				last
+				birthday
+				cell
+				email
+				home
+				address
+				p_cell_dir
+				p_cell_onecall
+				p_email_dir
+				spouse
+				spouse_birthday
+				spouse_cell
+				spouse_email
+				p_spouse_cell_dir
+				p_spouse_cell_onecall
+				p_spouse_email_dir
+				anniversary
+				comments
+			/;
+			
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			if($admin)
+			{
+				push @cols, qw/userid spouse_userid photo_num/;
+			}
+			
+			foreach my $col (@cols)
 			{
 				#print STDERR "Checking col: $col\n";
-				next if $col eq $entry->get_class_primary;
 				$entry->set($col, $req->$col) if defined $req->$col;
 			}
 			
@@ -488,7 +707,7 @@ package ThemePHC::Directory;
 			
 			if($req->{add_another})
 			{
-				return $r->redirect($self->binpath.'/edit?familyid='.$fam);
+				return $r->redirect($self->binpath.'/edit?familyid='.$fam.'#add_another');
 			}
 			else
 			{
@@ -499,14 +718,6 @@ package ThemePHC::Directory;
 		else
 		{
 	
-			if(!$DirectoryData)
-			{
-				#print STDERR __PACKAGE__.": Cache miss, reloading data\n";
-				$DirectoryData = PHC::Directory->load_directory();
-			}
-			
-			my @directory = @{$DirectoryData || []};
-			
 			
 			my $map_view = $req->{map} eq '1';
 			
@@ -517,31 +728,64 @@ package ThemePHC::Directory;
 			$start =~ s/[^\d]//g;
 			$start = 0 if !$start || $start<0;
 			
-			my $count = @directory;
+			my $length = 10;
 			
-			my $length = 15;
-			$start = $count - $length if $start + $length > $count;
+			if($req->{search} && $req->output_fmt ne 'json')
+			{
+				# Require at least 3 letters if not using json
+				return $r->error("At least 3 letters","You need at least 3 letters to search") if length $req->{search} < 3;
+			}
 			
-			@directory = @directory[$start .. $start+$count];
+			#@directory = @directory[$start .. $start+$count];
+			my $directory_data = PHC::Directory->load_directory($req->{search} ? $req->{search} : ($start, $length));
 			
-			$tmpl->param(count => $count);
-			$tmpl->param(pages => int($count / $length));
-			$tmpl->param(cur_page => int($start / $length) + 1);
-			$tmpl->param(next_start => $start + $length);
-			$tmpl->param(prev_start => $start - $length);
-			$tmpl->param(is_end => $start + $length == $count);
-			$tmpl->param(is_start => $start <= 0);
+			
+			my $my_entry;
+			if($user)
+			{
+				$my_entry = PHC::Directory::Family->by_field(userid => $user);
+				$my_entry = PHC::Directory::Family->by_field(spouse_userid => $user) if !$my_entry;
+			}
+			#$my_entry = 0;
+			my @directory = @{$directory_data->{list}};
+			my $bin = $self->binpath;
+			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
+			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $userid = $user ? $user->id : undef;
+			foreach my $entry (@directory)
+			{
+				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
+				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
+				$entry->{bin} = $bin;
+			}
+			
+			if($req->output_fmt eq 'json')
+			{
+				my $json = encode_json($directory_data);
+				return $r->output_data("application/json", $json); # if $req->output_fmt eq 'json';
+				#return $r->output_data("text/plain", $json);
+			}
+			
+			my $count = $directory_data->{count};
+			$start = $directory_data->{start};
+			$length = $directory_data->{length};
+			$length = 1 if !$length;
+			
+			$tmpl->param(count	=> $count);
+			$tmpl->param(pages	=> int($count / $length));
+			$tmpl->param(cur_page	=> int($start / $length) + 1);
+			$tmpl->param(next_start	=> $start + $length);
+			$tmpl->param(prev_start	=> $start - $length);
+			$tmpl->param(is_end	=> $start + $length >= $count);
+			$tmpl->param(is_start	=> $start <= 0);
+			$tmpl->param(start	=> $start);
+			$tmpl->param(length	=> $length);
+			$tmpl->param(next_idx	=> $start + $length);
+			$tmpl->param(search	=> $req->{search});
 			
 			#die Dumper \@directory;
 			
-			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
-			foreach my $entry (@directory)
-			{
-				$entry->{can_edit} = $admin || $entry->{userid} == $user;
-			}
 			$tmpl->param(entries => \@directory);
-			
 			
 			#$r->output($tmpl);
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);

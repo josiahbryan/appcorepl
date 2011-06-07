@@ -1,0 +1,28 @@
+<title>Claim %%display%%</title>
+<h1>Claim %%display%%</h1>
+
+<form action='%%binpath%%/claim' method=POST>
+
+	<input type=hidden name=familyid value="<tmpl_var familyid>">
+	
+	<table class='editform'>
+		<tr>
+			<td colspan=2>
+				<h3>Choose Which Account Is Yours</h3>
+			</td>
+		<tr>
+			<td colspan=2><input type=radio name=claim_type value='primary' id='type_pri'><label for=type_pri><b>%%first%% %%last%%</b></label></td>
+		</tr>
+		<tr>
+			<td colspan=2><input type=radio name=claim_type value='spouse' id='type_spouse'><label for=type_spouse><b>%%spouse%% %%last%%</b></label></td>
+		</tr>
+		<tr>
+			<td colspan=2 class=controls>
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+			</td>
+		</tr>
+	</table>
+	
+	
+</form>

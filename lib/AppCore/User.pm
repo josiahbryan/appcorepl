@@ -84,9 +84,18 @@ package AppCore::User;
 		my $pkg = shift;
 		my $cur = shift;
 		my $curid = ref $cur ? $cur->id : $cur;
+		my $include_invalid = shift || 0;
 		
 		my @all = $pkg->retrieve_from_sql('1 order by display'); #`last`, `first`');
 		my @list;
+		if($include_invalid)
+		{
+			push @list, { 
+				value 		=> undef,
+				text		=> '(None)',
+				selected	=> !$curid,
+			};
+		}
 		foreach my $item (@all)
 		{
 			push @list, {
