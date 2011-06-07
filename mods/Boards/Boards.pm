@@ -874,15 +874,18 @@ package Boards;
 					if(!@posts)
 					{
 						#return $r->error("No posts at index ".($idx+0));
-						@posts = (0); # Allow the page to be empty :-)
+						#@posts = (0); # Allow the page to be empty :-)
 					}
 					
 					my $list = join ',',  @posts;
 					
 					# Now do the actual query that loads both posts and comments in one gos
-					$sth = $dbh->prepare_cached('select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
-						"where (((p.boardid=? or $user_wall_clause) and postid in (".$list.")) or top_commentid in (".$list.")) and deleted=0 and p.boardid=b.boardid ".
-						'order by timestamp, postid desc');
+					my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+						"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
+						'order by timestamp, postid desc';
+					$sth = $dbh->prepare_cached($sql);
+					
+					#print STDERR "$sql\n".$board->id."\n";
 				}
 				
 				$sth->execute($board->id);
@@ -2059,7 +2062,9 @@ Cheers!};
 					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
 					"Cheers!";
 			
-			AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/;
+			my $user = AppCore::Common->context->user;
+			
+			AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
 			
 			# Notify Webmaster
 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
@@ -2073,6 +2078,11 @@ Cheers!};
 					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
 					"Cheers!";
 			
+			# Dont email the person that just posted this :-)
+			if($user)
+			{
+				@list = grep { $_ ne $user->email} @list;
+			}
 			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
 		}
 	}

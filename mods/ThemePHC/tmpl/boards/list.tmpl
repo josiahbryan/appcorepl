@@ -215,13 +215,19 @@
 					</td>
 				</tr>
 					
-				<tmpl_loop posts>
-					<tmpl_if tmpl_inc_postrow>
-						${inc:%%tmpl_inc_postrow%%}
-					<tmpl_else>
-						${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
-					</tmpl_if>
-				</tmpl_loop>
+				<tmpl_if posts>
+					<tmpl_loop posts>
+						<tmpl_if tmpl_inc_postrow>
+							${inc:%%tmpl_inc_postrow%%}
+						<tmpl_else>
+							${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postrow.tmpl}
+						</tmpl_if>
+					</tmpl_loop>
+				<tmpl_else>
+					<td colspan=2>
+						<h2 style='padding:2em'>No posts here yet!</h2>
+					</td>
+				</tmpl_if>
 				
 				<!--<tr id=preload>
 					<td style='padding: 2em'>
@@ -377,7 +383,9 @@
 		var rowRef = $("tr.loadmore");
 		var scrollBottom = $(window).scrollTop() + $(window).height();
 		var fudge = 100; // amount by which to fudge the detection
-		var rowTop = rowRef.offset().top - fudge; 
+		var off = rowRef.offset(); 
+		if(!off) off = { top:0 };
+		var rowTop = off.top - fudge; 
 		if(rowTop < scrollBottom)
 		{
 			var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");

@@ -51,6 +51,34 @@ package ThemePHC;
 		ThemePHC::Directory->apply_mysql_schema();
 	}
 	
+	sub load_nav_hook 
+	{
+		my $self = shift;
+		my $nav_ref = shift;
+		if($nav_ref->{url} eq '/serve/outreach')
+		{
+			# hehehe...code reuse at it's best...
+			my $list = ThemePHC::Missions->load_missions_list;
+			
+			my @kids;
+			foreach my $country (@{$list || []})
+			{
+				foreach my $m (@{$country->{list} || []})
+				{
+					push @kids, {
+						title	=> $m->{list_title},
+						url	=> join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, 'serve', 'outreach', $m->{board_folder_name}),
+						kid_map	=> {},
+						kids	=> [],
+					}
+				}
+			}
+			
+			@kids = sort {$a->{title} cmp $b->{title}} @kids;
+			
+			$nav_ref->{kids} = \@kids;
+		}
+	}
 	
 	# The output() routine is the core of the Theme - it's where the theme applies the
 	# data from the Content::Page object and any optional $parameters given

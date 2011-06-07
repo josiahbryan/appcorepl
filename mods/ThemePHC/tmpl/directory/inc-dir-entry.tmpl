@@ -16,14 +16,15 @@
 					</tmpl_if>
 				</td>
 				<td class='info_cell' valign='top'>
-					<table class='dirinfo'>
+					<table class='dirinfo' width='100%'>
 						<tr class='name'>
 							<td class='name' colspan=2>
-								%%first%% <tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%
+								<tmpl_if userid><a href='/%%user%%' title="View %%first%%'s Wall"></tmpl_if>%%first%%<tmpl_if userid></a></tmpl_if> <tmpl_if spouse:str> &amp; <tmpl_if spouse_userid><a href='/%%spouse_user%%' title="View %%spouse%%'s Wall"></tmpl_if>%%spouse%%<tmpl_if spouse_userid></a></tmpl_if></tmpl_if> %%last%%
 							
 								<tmpl_if can_edit>
 									<div class='edit'>
 										<a href='%%bin%%/edit?familyid=%%familyid%%'>Edit</a>
+										<tmpl_if is_admin> | <a href='%%bin%%/delete?familyid=%%familyid%%' onclick='return confirm("Are you sure?")'>Delete</a></tmpl_if>
 									</div>
 								<tmpl_else>
 									<tmpl_unless has_account>

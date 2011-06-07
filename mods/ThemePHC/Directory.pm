@@ -351,6 +351,9 @@ package PHC::Directory;
 				}
 			}
 			
+			$fam->{spouse_user} = $fam_obj->spouse_userid ? $fam_obj->spouse_userid->user : '';
+			$fam->{user} = $fam_obj->userid ? $fam_obj->userid->user : ''; 
+			
 			# Make the jQuery template function happy on the client side
 			$fam->{photo}       = '' if !$fam->{photo};;
 			$fam->{large_photo} = '' if !$fam->{large_photo};
@@ -456,13 +459,13 @@ package ThemePHC::Directory;
 		my $self = shift;
 		my ($req,$r) = @_;
 		
-		my $user = AppCore::Common->context->user;
-		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
-		{
-			my $tmpl = $self->get_template('directory/denied.tmpl');
-			return $r->output($tmpl);
-		}
-		
+ 		my $user = AppCore::Common->context->user;
+# 		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
+# 		{
+# 			my $tmpl = $self->get_template('directory/denied.tmpl');
+# 			return $r->output($tmpl);
+# 		}
+# 		
 		#my $sub_page = shift @$path;
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'delete')
@@ -476,6 +479,8 @@ package ThemePHC::Directory;
 			
 			$entry->deleted(1);
 			$entry->update;
+			
+			return $r->redirect($self->binpath);
 		}
 		elsif($sub_page eq 'claim')
 		{
@@ -499,7 +504,7 @@ package ThemePHC::Directory;
 				return $r->error("You've Already Claimed a Family","Sorry, you've already claimed a family! Contact the webmaster for more help.");
 			}
 			
-			if($entry->userid && $entry->spouse_userid)
+			if($entry->userid && $entry->userid->id && $entry->spouse_userid && $entry->spouse_userid->id)
 			{
 				return $r->error("Both Spouses Already Claimed","The user account for both spouses have already been claimed. Contact the webmaster for more help."); 
 			}
@@ -707,7 +712,7 @@ package ThemePHC::Directory;
 			
 			if($req->{add_another})
 			{
-				return $r->redirect($self->binpath.'/edit?familyid='.$fam.'#add_another');
+				return $r->redirect($self->binpath.'/edit?familyid='.$entry->id.'#add_another');
 			}
 			else
 			{
@@ -756,6 +761,7 @@ package ThemePHC::Directory;
 			{
 				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
 				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
+				$entry->{is_admin} = $admin;
 				$entry->{bin} = $bin;
 			}
 			
@@ -782,6 +788,7 @@ package ThemePHC::Directory;
 			$tmpl->param(length	=> $length);
 			$tmpl->param(next_idx	=> $start + $length);
 			$tmpl->param(search	=> $req->{search});
+			$tmpl->param(is_admin	=> $admin);
 			
 			#die Dumper \@directory;
 			

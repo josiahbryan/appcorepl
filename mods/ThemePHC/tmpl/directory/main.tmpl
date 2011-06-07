@@ -180,25 +180,38 @@ tr.loadmore a
 		}
 	</style>
 	
-	<form action='%%binpath%%' method=GET>
+	<form action='%%binpath%%' method=GET class='searchform'>
 		<table class='entry' width='100%' class=search-results>
 			<tr>
 				<td align=center>
 					<hr size=1>
 					<div style='margin-top:1em'>
-						Search: <input type=text name=search value='%%search%%' class='search_field'> <input type=submit value='Search'>
+						Search: <input type=text name=search value='%%search%%' class='search_field' size=<tmpl_if search>16<tmpl_else>20</tmpl_if>> <tmpl_if search><input type=button class='clear_search' value='X'></tmpl_if> <input type=submit value='Search'>
 					</div>
+					<tmpl_if is_admin>
+						<hr size=1>
+						<div style='margin-top:1em'>
+							<a href='%%binpath%%/new'>Add a new family...</a>
+						</div>
+					</tmpl_if>
 				</td>
 			</tr>
 		</table>
 		<script>
 		$(function() {
 			var field = $('.search_field').get(0);
-			if(field)// && field.value != '')
+			if(field) //&& field.value != '')
 			{
 				field.focus();
 				field.select();
 			}
+			
+			$('.clear_search').live('click',function() {
+// 				$('.search_field').get(0).value = '';
+// 				$('.searchform').submit();
+				document.location.href = '%%binpath%%';
+			
+			});
 		});
 		
 		</script>
@@ -237,7 +250,7 @@ tr.loadmore a
 	// on database values, we DONT want to trigger a recompress (takes >950ms or so) just because we have a new
 	// post or whatever. The 'flag='dynamic...'' is just to prevent the server compressor from grabbing this
 	// script block because it only grabs script blocks with certain attributes and ingores others.
-	window.PagingNextIndex = %%start%%;
+	window.PagingNextIndex = %%next_idx%%;
 	</script>
 	
 	<script>

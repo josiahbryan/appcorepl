@@ -626,6 +626,7 @@ package Content::Page::ThemeEngine;
 	sub load_nav
 	{
 		return \@NavCache if @NavCache;
+		my $self = shift;
 		 
 		use Data::Dumper;
 		
@@ -664,8 +665,8 @@ package Content::Page::ThemeEngine;
 						kid_map	=> {},
 						kids	=> []
 					};
-					
 					$ref = $hash{$root};
+					$self->load_nav_hook($ref);
 					push @NavCache, $ref;
 					
 					#print STDERR $page->url.": Adding entry for '$root'".Dumper(\%hash);
@@ -692,6 +693,7 @@ package Content::Page::ThemeEngine;
 							kid_map	=> {},
 							kids	=> []
 						};
+						$self->load_nav_hook($new_ref);
 						push @{$ref->{kids}}, $new_ref;
 					}
 				}
@@ -705,6 +707,9 @@ package Content::Page::ThemeEngine;
 		return \@NavCache;
 		
 	}
+	
+	# Hook for subclasses
+	sub load_nav_hook {}
 	
 	
 	our %PageDataCache;

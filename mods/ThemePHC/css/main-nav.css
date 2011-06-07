@@ -164,9 +164,25 @@ ul#mainnav li ul li:hover a
 }
 
 /* Show the dropdown on hover on main menu */
-ul#mainnav li:hover ul 
+ul#mainnav li:hover ul.level2nav
 {
 	display:block;
+}
+
+ul#mainnav li ul li ul.level3nav { display: none; }
+ul#mainnav li:hover ul li:hover ul.level3nav 
+{
+	display: block;
+}
+
+ul#mainnav li ul li ul.level3nav { width: auto !important; }
+
+ul#mainnav li span.kid_flag {
+	float:right;
+	color:white;
+	font-weight:bold;
+	margin-top:5px;
+	margin-right:10px;
 }
 /*ul#mainnav li:hover
 {

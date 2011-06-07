@@ -18,9 +18,19 @@
 					<tmpl_loop mainnav>
 						<li class='nav-%%no_slash%%'><a href='%%url%%'><span class='icon'><tmpl_if icon><img src='%%icon%%' border=0 align=absmiddle></tmpl_if></span>%%title%%</a>
 							<tmpl_if kids>
-								<ul>
+								<ul class=level2nav>
 									<tmpl_loop kids>
-										<li><a href='%%url%%'>%%title%%</a></li>
+										<li>
+											<tmpl_if kids><span class='kid_flag'>&raquo;</span></tmpl_if>
+											<a href='%%url%%'>%%title%%</a>
+											<tmpl_if kids>
+												<ul class='level3nav'>
+													<tmpl_loop kids>
+														<li><a href='%%url%%'>%%title%%</a>
+													</tmpl_loop>
+												</ul>
+											</tmpl_if>
+										</li>
 									</tmpl_loop>
 								</ul>
 							</tmpl_if>

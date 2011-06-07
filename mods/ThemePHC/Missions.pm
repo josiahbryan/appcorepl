@@ -428,55 +428,8 @@ package ThemePHC::Missions;
 			$tmpl->param(groupid => $CHANNEL_GROUP->id);
 			$tmpl->param(can_admin => $can_admin);
 			
-			if(!$MissionsListCache)
-			{
-				my @missions = PHC::Missions->search(deleted=>0);
-				
-				my %country_groups;
-				
-				# Force US to the top and International to the bottom of the list
-				my %sort_keys = ('united states' => '0', 'international' => 'zzzzzzzzzzzzz');
-				foreach my $x (@missions)
-				{
-					my $c = lc $x->country;
-					
-					$country_groups{$c} ||= { country => $x->country, list => [] };
-					
-					$self->prep_mission_item($x);
-					
-					#die Dumper $x;
-					
-					push @{$country_groups{$c}->{list}}, $x;
-					
-					if(!defined $sort_keys{$c})
-					{
-						$sort_keys{$c} = $c;
-					}
-				}
-				
-				my @country_sort = sort { $sort_keys{$a} cmp $sort_keys{$b} } keys %country_groups;
-				my @list = map { $country_groups{$_} } @country_sort;
-				
-				my @map_list;
-				foreach my $m (@missions)
-				{
-					my $ref = {};
-					
-					$ref->{$_} = $m->get($_) foreach qw/missionid city country mission_name family_name photo_url lat lng deleted/;
-					
-					$ref->{binpath} = $bin;
-					$ref->{'board_'.$_} = $m->boardid->get($_) foreach qw/folder_name section_name/;
-					$ref->{list_title} = $m->family_name ? $m->family_name : $m->mission_name;
-					
-					push @map_list, $ref;
-				}
-				
-				$MissionsListCache = 
-				{
-					page_list => \@list,
-					map_list  => \@map_list,
-				};
-			}
+			# Wont do anything if loaded, otherwise, loads from DB
+			$self->load_missions_list; 
 			
 			$tmpl->param(missions_list => $MissionsListCache->{page_list});
 			
@@ -502,6 +455,64 @@ package ThemePHC::Missions;
 			
 			return $r;
 		}
+	}
+	
+	sub load_missions_list
+	{
+		my $self = shift;
+		if(!$MissionsListCache)
+		{
+			my @missions = PHC::Missions->search(deleted=>0);
+			
+			my %country_groups;
+			
+			my $bin = $self->binpath;
+			
+			# Force US to the top and International to the bottom of the list
+			my %sort_keys = ('united states' => '0', 'international' => 'zzzzzzzzzzzzz');
+			foreach my $x (@missions)
+			{
+				my $c = lc $x->country;
+				
+				$country_groups{$c} ||= { country => $x->country, list => [] };
+				
+				$self->prep_mission_item($x);
+				
+				#die Dumper $x;
+				
+				push @{$country_groups{$c}->{list}}, $x;
+				
+				if(!defined $sort_keys{$c})
+				{
+					$sort_keys{$c} = $c;
+				}
+			}
+			
+			my @country_sort = sort { $sort_keys{$a} cmp $sort_keys{$b} } keys %country_groups;
+			my @list = map { $country_groups{$_} } @country_sort;
+			
+			my @map_list;
+			foreach my $m (@missions)
+			{
+				my $ref = {};
+				
+				$ref->{$_} = $m->get($_) foreach qw/missionid city country mission_name family_name photo_url lat lng deleted/;
+				
+				$ref->{binpath} = $bin;
+				$ref->{'board_'.$_} = $m->boardid->get($_) foreach qw/folder_name section_name/;
+				$ref->{list_title} = $m->family_name ? $m->family_name : $m->mission_name;
+				
+				push @map_list, $ref;
+			}
+			
+			$MissionsListCache = 
+			{
+				page_list => \@list,
+				map_list  => \@map_list,
+			};
+		}
+		
+		return $MissionsListCache->{page_list};
 	}
 	
 	sub create_folder_title
