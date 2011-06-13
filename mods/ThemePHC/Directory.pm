@@ -387,6 +387,23 @@ package PHC::Directory;
 
 };
 
+
+package ThemePHC::Directory::UserActionHook;
+{
+	use User;
+	use base 'User::ActionHook';
+	
+	__PACKAGE__->register(User::ActionHook::EVT_ANY);
+	
+	sub hook
+	{
+		my ($self,$event,$args) = @_;
+		
+		print STDERR __PACKAGE__.": Event: '$event'\n";
+	}
+};
+
+
 package ThemePHC::Directory;
 {
 	# Inherit both the AppCore::Web::Module and Page Controller.
@@ -460,12 +477,12 @@ package ThemePHC::Directory;
 		my ($req,$r) = @_;
 		
  		my $user = AppCore::Common->context->user;
-# 		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
-# 		{
-# 			my $tmpl = $self->get_template('directory/denied.tmpl');
-# 			return $r->output($tmpl);
-# 		}
-# 		
+		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
+		{
+			my $tmpl = $self->get_template('directory/denied.tmpl');
+			return $r->output($tmpl);
+		}
+		
 		#my $sub_page = shift @$path;
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'delete')

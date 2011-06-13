@@ -5,7 +5,8 @@
 	<div class='ffjc-warning'>
 		<b>Your password has been sent to you <tmpl_if user>at <tmpl_var user></tmpl_if>.</b><br>
 		<br>
-		When you receive the email, you may enter your password below. <i>(Yes, its safe to go ahead and close this page while you wait for the email - there's a link back to this page in that email.)</i>
+		When you receive the email, you may enter your password below. <i>(Yes, its safe to go ahead and close this page while you wait for the email - there's a link back to this page in that email.)</i><br>
+		<br>
 	</div>
 </tmpl_if>
 		
@@ -38,18 +39,25 @@
 	
 		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
 			<tr>
-				<td>Your E-Mail:</td> <td style='padding-right:1.5em'>
-					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43 tabindex=1>
-					<script>var e= document.getElementById('user');if(e)e.focus()</script>
-				</td>
-				<td rowspan=3 valign=top style='border-left:2px solid rgb(140,140,140);padding-left:1.5em'>
+				<td colspan=3 valign=top>
 					<center>
-						<h3 style='margin:0'>You can also Connect with your Facebook account!</h3>
+						<h3 style='margin:0'>You can Connect with your Facebook account!</h3>
 						<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'  tabindex=4>
 							<img src='%%modpath%%/images/fb-connect-large.png' style='margin-top:1.5em' border=0 id='fbimg'>
 						</a>
 					</center>
 				
+				</td>
+			</tr>
+			<tr>
+				<td colspan=3>
+					<center><h3 style='margin:0'>Or, you can log in directly with your email and password</h3></center>
+				</td>
+			</tr>
+			<tr>
+				<td>Your E-Mail:</td> <td style='padding-right:1.5em'>
+					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43 tabindex=1>
+					<script>var e= document.getElementById('user');if(e)e.focus()</script>
 				</td>
 			</tr>
 			

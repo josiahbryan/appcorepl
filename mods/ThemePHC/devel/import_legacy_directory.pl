@@ -73,6 +73,7 @@ foreach my $entry (@$data)
 	{
 		my $name = $fam->first.' '.$fam->last;
 		my $user = AppCore::User->by_field(display => $name);
+		$user = AppCore::User->by_field(email => $entry->{email}) if !$user && $entry->{email};
 		if($user)
 		{
 			print STDERR "Matched user $user to primary userid on family ".$fam->display."\n";
@@ -84,6 +85,7 @@ foreach my $entry (@$data)
 	{
 		my $name = $fam->spouse.' '.$fam->last;
 		my $user = AppCore::User->by_field(display => $name);
+		$user = AppCore::User->by_field(email => $entry->{spouse_email}) if !$user && $entry->{spouse_email};
 		if($user)
 		{
 			print STDERR "Matched user $user to spouse userid on family ".$fam->display."\n";

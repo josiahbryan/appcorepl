@@ -121,7 +121,8 @@ td.load-done,
 td.loading
 {
 	background: rgb(230,230,230);
-	border: 1px solid rgb(100,100,100);
+	/*border: 1px solid rgb(100,100,100);*/
+	-moz-border-radius: 3px;
 	padding: .5em;
 	margin-top: 1em;
 	font-size: .75em;
@@ -202,8 +203,8 @@ tr.loadmore a
 			var field = $('.search_field').get(0);
 			if(field) //&& field.value != '')
 			{
-				field.focus();
-				field.select();
+// 				field.focus();
+// 				field.select();
 			}
 			
 			$('.clear_search').live('click',function() {
@@ -240,7 +241,7 @@ tr.loadmore a
 	</tmpl_if>
 	
 	<script id="entry-tmpl" type="text/x-jquery-tmpl">
-		${tmpl2jq:%%modpath%%/tmpl/directory/inc-dir-entry.tmpl}
+		${tmpl2jq:%%modpath%%/tmpl/directory/inc-dir-entry.tmpl}	
 	</script>
 	
 	<script flag='dynamic_server_content'>
@@ -309,7 +310,9 @@ tr.loadmore a
 						{
 							var postData = posts[i];
 							//console.debug(postData);
-							$("#entry-tmpl").tmpl(postData).insertBefore("tr.loadmore");
+							var obj = $("#entry-tmpl").tmpl(postData);
+							//console.debug(obj.get(0));
+							obj.insertBefore("tr.loadmore");
 						}
 						
 						window.PagingNextIndex = parseInt(data.start) + parseInt(data.length);
@@ -365,6 +368,7 @@ tr.loadmore a
 				pagingFunc();
 			}
 		});
+		setTimeout(pagingFunc,500);
 		</tmpl_unless>
 	
 	});

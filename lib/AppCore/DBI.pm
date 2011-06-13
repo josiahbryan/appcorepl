@@ -9,6 +9,13 @@ package AppCore::DBI;
 	use base qw(Class::DBI);
 	
 	
+	our @PriKeyAttrs = (
+		'extra'	=> 'auto_increment',
+		'type'	=> 'int(11)',
+		'key'	=> 'PRI',
+		readonly=> 1,
+		auto	=> 1,
+	);
 	
 	use strict;
 	use Class::DBI;
@@ -2069,7 +2076,7 @@ package AppCore::DBI;
 		
 		return wantarray ? %changes : (\%changes, $has_field_changes);
 	}
-
+	
 	# Function: mysql_schema_update($db,$table,$fields,$opts)
 	# Static function.
 	#
@@ -2102,6 +2109,12 @@ package AppCore::DBI;
 			die 'Usage: mysql_schema_update($db,$table,$fields,$opts) or mysql_schema_update($pkg,$class,...)'; 
 		}
 		
+		# Allow AppCore::DBI-derived classes to call mysql_schema_update() as a class method, e.g.
+		# MySubClass->mysql_schema_update() - and have it Do The Right Thing.
+		if(@_ == 1 && $_[0])
+		{
+			return $_[0]->mysql_schema_update($_[0]);
+		}
 		
 # 		AppCore::Auth::Util->authenticate;
 # 		my $user = AppCore::Common->context->user;

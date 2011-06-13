@@ -1,4 +1,97 @@
 use strict;
+
+package User::ActionHook;
+{
+	
+	# User::ActionHook::EVT_NEW_FB_USER: {user=>$user_obj}
+	# Calls when the user signs in with facebook for the first time
+	sub EVT_NEW_FB_USER { 'EVT_NEW_FB_USER' }
+	
+	# User::ActionHook::EVT_NEW_USER: {user=>$user_obj}
+	# Called when the user completes the signup process
+	sub EVT_NEW_USER { 'EVT_NEW_USER' }
+	
+	# User::ActionHook::EVT_USER_ACTIVATED: {user=>$user_obj}
+	# Called when a user (with no password) chooses a password, "activating" their account
+	# This may be called if the user authenticates with facebook even if they don't choose a local password.
+	sub EVT_USER_ACTIVATED { 'EVT_USER_ACTIVATED' }
+	
+	# User::ActionHook::EVT_USER_LOGIN: {user=>$user_obj}
+	# This is only called during the actual login procedure in the 'User' module - e.g. not during the
+	# AppCore::AuthUtil routines. It is called both on local login and FB authentication - both for
+	# existing users AND new users
+	sub EVT_USER_LOGIN { 'EVT_USER_LOGIN' }
+	
+	# User::ActionHook::EVT_USER_LOGOUT: {user=>$user_obj}
+	# This is only called during an explicit 'logout' - e.g. it's NOT called if the user
+	# just leaves the website.
+	sub EVT_USER_LOGOUT { 'EVT_USER_LOGOUT' }
+	
+	# Any event
+	sub EVT_ANY { 'EVT_ANY' }
+	
+	use base 'AppCore::DBI';
+	__PACKAGE__->meta(
+	{
+		table	=> $AppCore::Config::USER_ACTIONHOOK_DBTABLE || 'user_actionhooks',
+		
+		schema	=> 
+		[
+			{ field => 'hookid',		type	=> 'int', @AppCore::DBI::PriKeyAttrs },
+			{ field	=> 'event',		type	=> 'varchar(255)' },
+			{ field	=> 'controller',	type	=> 'varchar(255)' },
+			{ field	=> 'is_enabled',	type	=> 'int(1)', null=>0, default => 1 },
+		],	
+	});
+	
+	our %PacakgeCodeRefs;
+	
+	sub register
+	{
+		my $filter_ref = undef;
+		undef $@;
+		eval
+		{
+			my $pkg = shift;
+			$pkg = ref $pkg if ref $pkg;
+			
+			my $event = shift;
+			
+			my $code_ref = shift || undef;
+			
+			$filter_ref = $pkg->find_or_create({controller=>$pkg, event=>$event});
+			
+			push @{ $PacakgeCodeRefs{$pkg} }, $code_ref if $code_ref;
+			
+		};
+		warn $@ if $@;
+		
+		return $filter_ref;
+	}
+	
+	sub hook
+	{
+		my $self = shift;
+		my $event = shift;
+		my $args = shift;
+		
+		my $pkg = ref $self ? ref $self : $self;
+		
+		# Default impl of hook() calls any code refs for this package
+		my $code_ref_list = $PacakgeCodeRefs{$pkg};
+		if($code_ref_list)
+		{
+			my @list = @{$code_ref_list || []};
+			foreach my $code_ref (@list)
+			{
+				&{$code_ref}($event,$args);
+			}
+		}
+		
+		return 1;
+	}
+}
+
 package User;
 {
 	use AppCore::Common;
@@ -10,6 +103,9 @@ package User;
 	
 	# Our user storage object
 	use AppCore::User;
+	
+	# For immediate transmission of the user's forgotten password email
+	use AppCore::EmailQueue;
 	
 	# Register our admin component with the Admin module
 	use Admin::ModuleAdminEntry;
@@ -35,6 +131,7 @@ package User;
 	sub apply_mysql_schema
 	{
 		AppCore::User->apply_mysql_schema;
+		User::ActionHook->mysql_schema_update;
 	}
 	
 	sub main
@@ -55,6 +152,35 @@ package User;
 		my $key = shift;
 		my $val = shift;
 		$obj->set($key,$val) if $obj->get($key) ne $val;
+	}
+	
+	sub run_hooks
+	{
+		my $self = shift;
+		my $event = shift;
+		my $args = shift;
+		
+		if($args)
+		{
+			$args->{event} = $event if !$args->{event};
+		}
+		else
+		{
+			$args = { event => $event };
+		}
+		
+		my @hooks = User::ActionHook->search(event => $event);
+		foreach my $hook (@hooks)
+		{
+			my $ctrl = $hook->controller;
+			my $event_name = $event eq User::ActionHook::EVT_ANY() ? $args->{event} : $event;
+			undef $@;
+			eval $ctrl.'->hook($event_name,$args);';
+			#$hook->hook($event, $args);
+			warn "Problem running user action hook '$ctrl' for event '$event': ".$@ if $@;
+		}
+		
+		$self->run_hooks(User::ActionHook::EVT_ANY, $args) if $event ne User::ActionHook::EVT_ANY;
 	}
 	
 	sub connect_with_facebook
@@ -115,10 +241,11 @@ package User;
 					$user_obj = AppCore::User->by_field(display => $display) if !$user_obj;
 					$user_obj = AppCore::User->by_field(display => $first." ".$last) if !$user_obj;
 					
+					my $new_user = 0;
 					if(!$user_obj)
 					{
 						$user_obj = AppCore::User->insert({ user => $fb_user });
-						
+						$new_user = 1;
 						print STDERR "Created new user from facebook data: $display - $email, userid $user_obj\n"; 
 					}
 					else
@@ -158,14 +285,30 @@ package User;
 						print STDERR "Error saving photo to $file_path: $!";
 					}
 					
+					# If the user record existed prior to this interaction, but no password assigned,
+					# and the 'is_fbuser' is false, and it's not a $new_user, then the user has
+					# in a sense 'activated' their local account via facebook.
+					if(!$new_user && 
+					    $user_obj->is_fbuser && 
+					   !$user_obj->pass)
+					{
+						$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user_obj});
+					}
 					
 					$user_obj->is_fbuser(1);
 					$user_obj->fb_token($token);
 					$user_obj->fb_token_expires($expires);
 					$user_obj->update;
 					
+					if($new_user)
+					{
+						$self->run_hooks(User::ActionHook::EVT_NEW_FB_USER,{user=>$user_obj});
+					}
+					
 					if(AppCore::AuthUtil->authenticate($user_obj->user, $token))
 					{
+						$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user_obj});
+						
 						my $url_from = $AppCore::Config::WELCOME_URL; # if !$url_from  || $url_from =~ /\/(login|logout)/;
 						print STDERR "Authenticated ".AppCore::Common->context->user->display." with facebook token $token, redirecting to $url_from\n";
 						return $r->redirect($url_from);
@@ -238,6 +381,8 @@ package User;
 		
 		if(AppCore::Common->context->user)
 		{
+			$self->run_hooks(User::ActionHook::EVT_USER_LOGOUT,{user=>AppCore::Common->context->user});
+			
 			AppCore::AuthUtil->logoff;
 			
 			print STDERR "auth logoff\n";
@@ -311,9 +456,10 @@ package User;
 				
 				AppCore::AuthUtils->authenticate($user,$pass);
 				
-				
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
-				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".$AppCore::Config::WELCOME_URL:""));
+				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
+				
+				$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
 			}
 			elsif(!$user)
 			{
@@ -324,11 +470,15 @@ package User;
 				AppCore::AuthUtil->authenticate($email,$pass);
 				
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
-				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your personalized $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".$AppCore::Config::WELCOME_URL:""));
+				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
+				
+				$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user});
 			}
 			
 			if($signup_ok)
 			{
+				$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user});
+				
 				print STDERR MY_LINE()."auth($sub_page): mark: signup_ok\n";
 				#my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 				#$url_from = AppCore::Common->context->http_bin.'/welcome' if !$url_from;
@@ -385,11 +535,14 @@ package User;
 			{
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] User Forgot Password: $email","User '$email' forgot their password.\n\nCorrect password is:\n\n    ".$user->pass);
 				
-				my $url_from = $self->module_url($LOGIN_ACTION) . '?url_from='.$req->{url_from}.'&sent_pass=1&user='.AppCore::Web::Common->url_encode($email);
+				my $url_from = $self->module_url($LOGIN_ACTION,1) . '?url_from='.$req->{url_from}.'&user='.AppCore::Web::Common->url_encode($email);
 				
-				AppCore::Common->send_email([$user->email],"[$name_short] Forgotten Password","You or someone using your email requested your password. Your password is:\n\n    ".$user->pass."\n\nYou may enter your password at:\n\n    $url_from\n\n");
+				my $msg_ref = AppCore::EmailQueue->send_email([$user->email],"[$name_short] Forgotten Password","You or someone using your email requested your password. Your password is:\n\n    ".$user->pass."\n\nYou may enter your password at:\n\n    $url_from\n\n");
 				
-				return $r->redirect($url_from);
+				# Send right away so the user doesn't have to wait for the crontab daemon to run at the top of the minute
+				$msg_ref->transmit;
+				
+				return $r->redirect($url_from.'&sent_pass=1');
 			}
 		}
 		

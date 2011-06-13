@@ -9,13 +9,12 @@
 	</div>
 </tmpl_if>
 
-<div class='ffjc-info'>
+<div class='ffjc-info' style='margin: 2em'>
 	<b>Why should <i>I</i> signup?</b> Good question! When you signup, you can:
 		<ul>
-			<li>Create a blog @ MyPleasantHillChurch.com
+			<li>Receive updates and reminders from PHC
 			<li>Post on the PHC Bulliten Boards
-			<li>Submit to the Sunday Bulliten online
-			<!--<li>Access the Member's Directory online (*<a href='#approval'>With approval ...</a>)-->
+			<li>Access the PHC Family Directory online (<a href='/about/directory_approval' title='Why do I need approval?'>pending approval</a>)
 			<li>And lots more!
 		</ul>
 </div>
@@ -31,7 +30,7 @@
 				<td>What's your name?</td> <td>
 					<input type=text name=name id=name onfocus='select()' value='<tmpl_var name escape=html>' size=30> 
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					<script>var e= $x('name');if(e)e.focus()</script>
+					<script>var e= $('#name').get(0);if(e)e.focus()</script>
 				</td>
 			</tr>
 			<tr>
@@ -65,7 +64,7 @@
 
 
 <div class='ffjc-info' style='margin:2em'>
-If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b>! Just verify your name and choose a password. Already chosen a password and just can't remember it? No problem - <a href='%%binpath%%/forgot_password?user=<tmpl_var user>'>use this page to request your password</a>!<br>
+If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b>! Just verify your name and choose a password. Already chosen a password and just can't remember it? No problem - <a href='%%binpath%%/forgot_pass?user=<tmpl_var user>'>use this page to request your password</a>!<br>
 </div>
 <!--
 <div class='ffjc-warning'>

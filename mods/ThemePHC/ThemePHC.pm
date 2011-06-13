@@ -20,7 +20,6 @@ package Boards::TextFilter::TagVerses;
 	}
 	
 };
-	
 
 package ThemePHC;
 {
@@ -33,7 +32,7 @@ package ThemePHC;
 	# Load our missions module so it gets registered with the page tyep database
 	use ThemePHC::Missions;
 	use ThemePHC::Directory;
-
+	
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 	
 	# Hook for our database objects
@@ -67,7 +66,7 @@ package ThemePHC;
 				{
 					push @kids, {
 						title	=> $m->{list_title},
-						url	=> join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, 'serve', 'outreach', $m->{board_folder_name}),
+						url	=> join('/', $nav_ref->{url}, $m->{board_folder_name}),
 						kid_map	=> {},
 						kids	=> [],
 					}

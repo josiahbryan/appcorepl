@@ -11,7 +11,7 @@
 	</div>
 </tmpl_if>
 
-<form action='%%binpath%%/forgot_password/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+<form action='%%binpath%%/forgot_pass/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
 
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
@@ -20,7 +20,7 @@
 			<tr>
 				<td>Your E-Mail:</td> <td>
 					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=40>
-					<script>var e= $x('user');if(e)e.focus()</script>
+					<script>var e= $('#user').get(0);if(e)e.focus()</script>
 				</td>
 			</tr>
 			
