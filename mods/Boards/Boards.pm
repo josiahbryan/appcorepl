@@ -190,7 +190,7 @@ package Boards;
 	);
 	
 	# Register user preferences
-	our $PREF_EMAIL_ALL      = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email for all new posts');  # defaults to bool for datatype and true for default value
+	our $PREF_EMAIL_ALL      = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email for all new posts', {default_value=>0});  # defaults to bool for datatype and true for default value
 	our $PREF_EMAIL_COMMENTS = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email when someone comments on my posts');
 	
 	# Setup the Web Module 

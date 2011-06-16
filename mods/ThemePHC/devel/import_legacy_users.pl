@@ -61,6 +61,8 @@ package main;
 {
 	use Data::Dumper;
 	
+	my $MODE = 'allow_dir';
+	
 	my $AppCoreSchema = 
 	[
 		{
@@ -103,30 +105,48 @@ package main;
 		if($acu && $acu->id != 1)
 		{
 			$max_id ++;
-			print STDERR "Conflict at id $user: legacy: ".$user->display.", acu: ".$acu->display." (max id: $max_id)\n";
+			#print STDERR "Conflict at id $user: legacy: ".$user->display.", acu: ".$acu->display." (max id: $max_id)\n";
 		}
 		
-		my ($first,$last) = split /\s/, $user->display;
-		my $new_user = {
-			first => $first,
-			last  => $last,
-		};
-		
-		foreach my $old_field (keys %fieldmap)
+		if($MODE eq 'allow_dir')
 		{
-			next if !$old_field;
-			$new_user->{$fieldmap{$old_field}} = $user->get($old_field);
-		}
-		
-		#die Dumper $new_user;
-		my $new_ref = AppCore::User->create($new_user);
-		if($new_ref->id != $user->id)
-		{
-			die "Ooops...ID's didn't copy for userid $user (newid $new_ref)";
+			if(!$acu)
+			{
+				print STDERR "Huh...didnt find ACU for ".$user->display."\n";
+			}
+			elsif($user->allow_dir)
+			{
+				my $refid = AppCore::User::GroupList->find_or_create(userid => $acu, groupid => 3);
+				print STDERR "Updated groups, added user $acu, '".$acu->display."', to directory group\n";
+			}
 		}
 		else
 		{
-			print "Imported $new_ref - ".$new_ref->display."\n";
+			if(!$acu)
+			{
+				my ($first,$last) = split /\s/, $user->display;
+				my $new_user = {
+					first => $first,
+					last  => $last,
+				};
+				
+				foreach my $old_field (keys %fieldmap)
+				{
+					next if !$old_field;
+					$new_user->{$fieldmap{$old_field}} = $user->get($old_field) || '';
+				}
+				
+				#die Dumper $new_user;
+				my $new_ref = AppCore::User->create($new_user);
+				if($new_ref->id != $user->id)
+				{
+					die "Ooops...ID's didn't copy for userid $user (newid $new_ref)";
+				}
+				else
+				{
+					print "Imported $new_ref - ".$new_ref->display."\n";
+				}
+			}
 		}
 	}
 	

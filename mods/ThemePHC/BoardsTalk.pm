@@ -22,9 +22,17 @@ package ThemePHC::BoardsTalk;
 	
 	# Register our controller-specific notifications
 	# TODO: Should we list the module as 'Boards' or as our own ThemePHC::BoardsTalk ...? For now, leaving as boards till pref UI is implemented.
-	our $PREF_EMAIL_PRAISE = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Praise" posts');
-	our $PREF_EMAIL_PRAYER = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Prayer Requests" posts');
-	our $PREF_EMAIL_TALK   = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Dont send me an email for every new post, but do send me an email for new "Just Talking" posts');
+	our $PREF_EMAIL_PRAISE = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Send me an email for every new "Praise" posts', {default_value=>0});
+	our $PREF_EMAIL_PRAYER = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Send me an email for every new "Prayer Requests" posts', {default_value=>1});
+	our $PREF_EMAIL_TALK   = AppCore::User::PrefOption->register('Boards', 'Prayer/Praise/Talk Notifications', 'Send me an email for every new "Just Talking" posts', {default_value=>0});
+	
+	our $PREF_EALERT_PRAISE = AppCore::User::PrefOption->register('Boards', '"e-Alert" Notifications', 'Include my email when sending ePraiseAlerts');
+	our $PREF_EALERT_PRAYER = AppCore::User::PrefOption->register('Boards', '"e-Alert" Notifications', 'Include my email when sending ePrayerAlerts');
+	our $PREF_EALERT_TALK   = AppCore::User::PrefOption->register('Boards', '"e-Alert" Notifications', 'Include my email when sending eInfoAlerts');
+	
+	# This will allow the 'PrefOption' module to remove any preferences for the section/subsection that have not already been seen
+	AppCore::User::PrefOption->clear_old_prefs('Boards', 'Prayer/Praise/Talk Notifications');
+	AppCore::User::PrefOption->clear_old_prefs('Boards', '"e-Alert" Notifications'); 
 	
 	my $EPA_ACL = [qw/Pastor/];
 	

@@ -6,18 +6,30 @@
 @import url("%%modpath%%/css/editform.css");
 
 /* Admin Template Styles */
-body
-{
-	font-family: Calibri, Verdana, Sans-Serif;
-	font-size: 11px;
-	
+
+html {
+	margin:0;
+	padding:0;
 }
+
+/* Reset body and table cell font size */
+body, td { font-size: 68.75% }
 
 body
 {
+	/*font-family: Calibri, Verdana, Sans-Serif;*/
+	font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+	/*font-size: 11px;*/
+	/*font-size: 62.5%;*/
+	
 	margin: 0;
 	padding: 0;
 	background: rgb(100,100,100);
+}
+
+h1, h2, h3, h4, h5, h6, h7, p, form, ul, ol, li, blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+	margin: 0;
+	padding: 0;
 }
 
 label { cursor: pointer }
@@ -99,7 +111,7 @@ label { cursor: pointer }
 {
 	width: 965px;
 	margin: 0 auto;
-	font-size: 1.5em;
+	/*font-size: 1.5em;*/
 	
 	padding-top: 40px;
 	padding-bottom: 40px;
@@ -114,6 +126,47 @@ label { cursor: pointer }
 	height: 180px;
 	width: 100%;
 }
+
+.pagebody 
+{ 
+	/*padding-right: 15em;*/
+	/*width: 585px;*/
+	font-size: 110%;
+}
+
+.pagebody h1
+{
+	/*margin: .25em 0 .25em 0;*/
+	/*font-family: Georgia, Serif;
+	text-transform: uppercase;*/
+	/*font-size: 120%;*/
+	/*background: #c7cddf;*/
+	background: rgb(230,230,230);
+	border-radius: 3px;
+	-moz-border-radius: 3px;
+	margin: .15em 0 .25em 0;
+	padding: .25em 0 .25em .25em;
+	/*text-shadow: white 0px 0px 8px;*/
+	/*text-align: center;*/
+	
+}
+
+.pagebody h3
+{
+	margin: 1em 0 .25em 0;
+	/*font-family: Georgia, Serif;
+	text-transform: uppercase;*/
+	font-size: 120%;
+	border-bottom: 1px solid #c7cddf; 
+}
+
+.user-footer
+{
+	font-size: 110%;
+}
+
+div.fc { clear:both }
+
 
 
 /* Customizations for the jQuery UI Tabs widget */

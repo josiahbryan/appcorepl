@@ -66,6 +66,8 @@ package AppCore::AuthUtil;
 		if(my $user = AppCore::Common->context->user)
 		{
 			my $acl = shift;
+			use Data::Dumper;
+			#print STDERR "ACL: ".Dumper($acl,$user);
 			if($acl && !$user->check_acl($acl))
 			{
 				AppCore::Web::Common::error("Access Denied","Sorry, the page you're trying to access has restricted access.");

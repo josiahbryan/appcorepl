@@ -1,3 +1,4 @@
+
 /* Table styling */
 @import url("%%modpath%%/css/table.css");
 /* Nav 2 (breadcrumbs) */
@@ -278,3 +279,8 @@ td.nav-sibs-cell
 }
 
 div.fc { clear:both }
+
+.user-footer
+{
+	font-size: 110%;
+}

@@ -3,6 +3,8 @@ package User::Admin;
 {
 	use AppCore::Web::Common;
 	use base 'AppCore::Web::Module';
+	
+	use User; # for access to the 'run_hooks' method
 
 	my $CREATE_ACTION = 'create';
 	my $EDIT_ACTION   = 'edit';
@@ -74,6 +76,16 @@ package User::Admin;
 		
 		my $tmpl = $self->get_template('edit.tmpl');
 		
+		my @groups = AppCore::User::Group->retrieve_from_sql('name!="EVERYONE" order by name');
+		foreach my $group (@groups)
+		{
+			$group->{$_} = $group->get($_) foreach $group->columns;
+			$group->{title} = guess_title($group->name);
+			$group->{is_member} = 0;
+		}
+		
+		$tmpl->param(groups => \@groups);
+		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		
@@ -107,8 +119,19 @@ package User::Admin;
 		
 		$tmpl->param($_ => $obj->get($_)) foreach $obj->columns;
 		
-		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
-		$tmpl->param(url_from => $url_from);
+		my @groups = AppCore::User::Group->retrieve_from_sql('name!="EVERYONE" order by name');
+		foreach my $group (@groups)
+		{
+			my $is_member = AppCore::User::GroupList->by_field(userid => $user, groupid => $group);
+			$group->{$_} = $group->get($_) foreach $group->columns;
+			$group->{title} = guess_title($group->name);
+			$group->{is_member} = 1 if $is_member;
+		}
+		
+		$tmpl->param(groups => \@groups);
+		
+		#my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
+		#$tmpl->param(url_from => $url_from);
 		
 		#$view->output($tmpl);
 		return $r->output($tmpl);
@@ -130,6 +153,7 @@ package User::Admin;
 			return $r->error("No such user","No such user: <b>$id</b>");
 		}
 		
+		AppCore::User::GroupList->search(userid => $obj)->delete_all;
 		$obj->delete;
 		
 		return $r->redirect($self->module_url());
@@ -168,6 +192,25 @@ package User::Admin;
 		$obj->update;
 		
 		print STDERR "Admin: Updated user $userid\n";
+		
+		# Fist, clear all existing groups, then just add bak in the groups we have
+		my @old_refs = AppCore::User::GroupList->search(userid => $obj);
+		my %old_groups = map { $_->groupid => 1 } @old_refs;
+		$_->delete foreach @old_refs;
+		
+		# Now add ...
+		my @groups = AppCore::User::Group->retrieve_from_sql('1 order by name');
+		foreach my $group (@groups)
+		{
+			if($req->{'group_'.$group->id})
+			{
+				AppCore::User::GroupList->insert({userid => $obj, groupid => $group});
+				if(!$old_groups{$group->id})
+				{
+					User->run_hooks(User::ActionHook::EVT_USER_ADDED_TO_GROUP, {user=>$obj, group=>$group});
+				}
+			}
+		}
 		
 		my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 		

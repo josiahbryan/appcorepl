@@ -61,6 +61,8 @@ BEGIN
 		josiahbryan@gmail.com
 	/;
 	
+	$ADMIN_ACL = [qw/ADMIN Pastor/];
+	
 	# Where to redirect user after signon
 	$WELCOME_URL = '/welcome';
 	

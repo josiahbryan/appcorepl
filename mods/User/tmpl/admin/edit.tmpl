@@ -39,6 +39,27 @@
 			</tr>
 			
 			<tr>
+				<td colspan=2>
+					
+					<h3><a name='groups'>Groups</a></h3>
+					<div style='margin:1em'>
+						These are all the available groups. You can check the boxes next to each group<br>
+						 for which the user should have access.
+					</div>
+					<tmpl_loop groups>
+						<div>
+							<input type=checkbox id='cb_%%groupid%%' name='group_%%groupid%%' value=1 <tmpl_if is_member>checked</tmpl_if>><label for=cb_%%groupid%%> <tmpl_if title>%%title%%<tmpl_else>%%name%%</tmpl_if></label>
+						</div>
+					</tmpl_loop>
+					<br>
+					<hr size=1>
+					You can also <a href='/user/settings/advanced?userid=%%userid%%&url_from=/admin/users/edit?userid=%%userid%%'>modify this user's preferences...</a>
+					<hr size=1>
+					
+				</td>
+			</tr>
+			
+			<tr>
 				<td colspan=2 class=controls>
 					<input type=submit value="Save Changes"> 
 					<input type=reset value="Reset to Original Values">

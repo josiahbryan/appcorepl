@@ -45,7 +45,7 @@ ul.admin-mod-list li a .arrow
 ul.admin-mod-list li .diz
 {
 	font-weight: normal;
-	font-size: .75em;
+	/*font-size: .75em;*/
 	color: rgb(100,100,100);
 	padding: 5px;
 	/*text-shadow: rgb(118,118,118) 0px -1px 1px;*/	

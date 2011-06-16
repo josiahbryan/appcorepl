@@ -29,6 +29,12 @@ table.pretty tr:hover .pic .full
 {
 	display: block;
 }
+table.pretty td.fbuser
+{
+	font-weight: bold;
+	color: white;
+	background: green;
+}
 </style>
 
 <table class='pretty'>
@@ -51,8 +57,8 @@ table.pretty tr:hover .pic .full
 			<td align=center>
 				<tmpl_if photo>
 					<div class='pic'>
-						<img src='%%appcore%%%%photo%%' width=25 height=25>
-						<img src='%%appcore%%%%photo%%' width=60 height=60 class='full'>
+						<img src='%%photo%%' width=25 height=25>
+						<img src='%%photo%%' width=60 height=60 class='full'>
 					</div>
 				</tmpl_if>
 			</td>
@@ -61,7 +67,7 @@ table.pretty tr:hover .pic .full
 				<a href='mailto:%%email%%'>%%email%%<a/>
 				<tmpl_else>-</tmpl_if></td>
 			<td>%%user%%</td>
-			<td align=center>
+			<td align=center <tmpl_if is_fbuser>class='fbuser'</tmpl_if>>
 				<tmpl_if is_fbuser>Yes<tmpl_else>No</tmpl_if></td>
 		</tr>
 		</tmpl_loop>

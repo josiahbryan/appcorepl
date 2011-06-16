@@ -400,6 +400,40 @@ package ThemePHC::Directory::UserActionHook;
 		my ($self,$event,$args) = @_;
 		
 		print STDERR __PACKAGE__.": Event: '$event'\n";
+		
+		if($event eq User::ActionHook::EVT_NEW_USER ||
+		   $event eq User::ActionHook::EVT_NEW_FB_USER ||
+		   $event eq User::ActionHook::EVT_USER_ACTIVATED)
+		{
+			# Send admin email to review for the persmission to see the directory
+			# Example URL: http://beta.mypleasanthillchurch.org/admin/users/edit?userid=1#groups
+			
+			my $user = $args->{user};
+			
+			my $url = join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, 'admin/users/edit')."?userid=$user#groups";
+			print STDERR __PACKAGE__.": User signup, emailing admin with URL $url\n";
+			
+			AppCore::Common->send_email([@AppCore::Config::ADMIN_EMAILS],"User Approval for Directory Needed: ".$user->display,
+			
+			"A user has signed in for the first time or signed up, or activated their account. ($event) You'll need to log in and approve them for Family Directory access in the User Admin section. Here's the link right to that user:\n\n\t$url");
+		}
+		elsif($event eq User::ActionHook::EVT_USER_ADDED_TO_GROUP)
+		{
+			# Send user an email to let them know they've been added if its the directory group
+			my $dir_group = AppCore::User::Group->by_field(name => 'Can-See-Family-Directory');
+			if($args->{group} == $dir_group)
+			{
+				my $url = join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, 'connect/directory');
+				print STDERR __PACKAGE__.": User added to directory group ($dir_group), emailing user URL $url\n";
+				
+				#my $user = $args->{user};
+				my $user = AppCore::Common->context->user;
+				AppCore::Common->send_email([$user->email],"[PHC] You've Been Approved for the PHC Family Directory!",
+			
+				"Your user account on the PHC website has been approved for access to the PHC Family Directory! You can see the family directory any time by going to the PHC website and selecting the 'Connect' menu from the top and 'Family Directory' at the bottom of that menu. You can also use this link to go right to the directory:\n\n\t$url");
+			}
+		}
+		
 	}
 };
 

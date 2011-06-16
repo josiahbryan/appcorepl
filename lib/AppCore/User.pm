@@ -680,13 +680,14 @@ package AppCore::User::PrefOption;
 			{	field	=> 'subsection_name',	type	=> 'varchar(255)' },
 			{	field	=> 'name',		type	=> 'varchar(255)' },
 			{	field	=> 'description',	type	=> 'varchar(255)' },
-			{	field	=> 'datatype',		type	=> "enum('string','int','bool')" },
+			{	field	=> 'datatype',		type	=> "enum('string','int','bool')", null=>1, default=>'string' },
 			{	field	=> 'default_value',	type	=> 'varchar(255)' }, 
 			{	field	=> 'acl',		type	=> 'varchar(255)' },
 		]
 	
 	});
 	
+	our %FlagSeen;
 	sub register
 	{
 		my $class = shift;
@@ -705,8 +706,8 @@ package AppCore::User::PrefOption;
 		}
 		
 		$opts->{module_name} = AppCore::Web::Common::guess_title($mod) if !$opts->{module_name};
-		$opts->{data_type} = 'bool' if !$opts->{data_type};
-		$opts->{default_value} = '1' if $opts->{data_type} eq 'bool' & !$opts->{default_value};
+		$opts->{datatype}    = 'bool' if !$opts->{datatype};
+		$opts->{default_value} = '1'  if  $opts->{datatype} eq 'bool' && !defined $opts->{default_value};
 		
 # 		use Data::Dumper;
 # 		die Dumper $opts;
@@ -716,15 +717,48 @@ package AppCore::User::PrefOption;
 		{
 			$self = $class->find_or_create({controller=>$pkg, module=>$mod, subsection_name=>$subsec, name => $name});
 			
+			$FlagSeen{$self->id} = 1;
+			
 			my @keys = qw/module_name description datatype default_value acl/;
 			foreach my $key (@keys)
 			{
-				$self->$key($opts->{$key}) if $self->get($key) ne $opts->{$key};
+				if( $opts->{datatype} eq 'string' ? $self->get($key) ne $opts->{$key} : $self->get($key) != $opts->{$key})
+				{
+					$self->$key($opts->{$key})
+				} 
 			}
 			$self->update if $self->is_changed;
 		};
 		warn $@ if $@;
 		return $self;
+	}
+	
+	sub clear_old_prefs
+	{
+		my $class = shift;
+		
+		my $pkg = shift;
+		$pkg = ref $pkg if ref $pkg;
+		
+		my $subsec = shift || '';
+		
+		my $mod = undef; #$opts->{module} || undef;
+		if(!$mod)
+		{
+			($mod) = split('::',$pkg);
+		}
+		
+		#print STDERR "clear_old_prefs: mod:'$mod', subsec:'$subsec'\n"; 
+		
+		my @find = $class->search({controller=>$pkg, module=>$mod, subsection_name=>$subsec});
+		
+		foreach my $item (@find)
+		{
+			next if $FlagSeen{$item->id};
+			
+			#print STDERR "Deleting $item - '".$item->name."'\n";
+			$item->delete;
+		}
 	}
 };
 

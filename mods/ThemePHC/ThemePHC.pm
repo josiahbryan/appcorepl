@@ -33,6 +33,9 @@ package ThemePHC;
 	use ThemePHC::Missions;
 	use ThemePHC::Directory;
 	
+	# Load the talk controller so it can update user prefs
+	use ThemePHC::BoardsTalk;
+	
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 	
 	# Hook for our database objects

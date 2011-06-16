@@ -27,6 +27,11 @@ package User::ActionHook;
 	# just leaves the website.
 	sub EVT_USER_LOGOUT { 'EVT_USER_LOGOUT' }
 	
+	# User::ActionHook::EVT_USER_ADDED_TO_GROUP: {user=>$user_obj,group=>$group}
+	# This is called when the user is added to a new group
+	# The 'group' argument is an AppCore::User::Group object.
+	sub EVT_USER_ADDED_TO_GROUP { 'EVT_USER_ADDED_TO_GROUP' }
+	
 	# Any event
 	sub EVT_ANY { 'EVT_ANY' }
 	
@@ -117,12 +122,14 @@ package User;
 	
 	sub new { bless {}, shift }
 	
+	my $SETTINGS_ACTION  = 'settings';
 	my $LOGIN_ACTION  = 'login';
 	my $SIGNUP_ACTION = 'signup';
 	my $FORGOT_ACTION = 'forgot_pass';
 	
 	__PACKAGE__->WebMethods(qw/ 
-		main 
+		main
+		settings
 		login
 		signup
 		forgot_pass
@@ -138,7 +145,9 @@ package User;
 	{
 		my ($self,$req) = shift;
 		
-		AppCore::Web::Common->redirect($self->module_url($LOGIN_ACTION));
+		my $url = AppCore::Common->context->user ? $SETTINGS_ACTION : $LOGIN_ACTION;
+		
+		AppCore::Web::Common->redirect($self->module_url($url));
 	}
 	
 	sub get_facebook_redir_url
@@ -356,6 +365,8 @@ package User;
 		
 		if($action eq 'authenticate' && AppCore::AuthUtil->authenticate($req->{user},$req->{pass})) #,1))
 		{
+			$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>AppCore::Common->context->user});
+			
 			my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 			$url_from = $AppCore::Config::WELCOME_URL if !$url_from  || $url_from =~ /\/(login|logout)/;
 			print STDERR "Authenticated ".AppCore::Common->context->user->display.", redirecting to $url_from\n";
@@ -410,6 +421,8 @@ package User;
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';
 		
 		
+		$view->breadcrumb_list->push('Home',"/",0);
+		$view->breadcrumb_list->push('Login',"/user/login",0);
 		$view->output($tmpl);
 	
 		
@@ -459,7 +472,7 @@ package User;
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
 				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
 				
-				$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
+					$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
 			}
 			elsif(!$user)
 			{
@@ -472,7 +485,7 @@ package User;
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
 				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
 				
-				$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user});
+				$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user_ref});
 			}
 			
 			if($signup_ok)
@@ -493,7 +506,7 @@ package User;
 		
 		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 		
-		my $tmpl = $self->get_template('signup'.($mobile?'-mobile' : '').'.tmpl');
+		my $tmpl = $self->get_template('signup.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -506,6 +519,8 @@ package User;
 		# Shouldn't get here if signup was ok
 		$tmpl->param(email_exists => 1) if $sub_page eq 'post';
 		
+		$view->breadcrumb_list->push('Home',"/",0);
+		$view->breadcrumb_list->push('Signup',"",0);
 		#$r->output($tmpl);
 		$view->output($tmpl);
 		
@@ -553,58 +568,142 @@ package User;
 		
 		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 		
-		my $tmpl = $self->get_template('forgot_pass'.($mobile?'-mobile' : '').'.tmpl');
+		my $tmpl = $self->get_template('forgot_pass.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
 		# Shouldn't get here if signup was ok
 		$tmpl->param(invalid_email => 1) if $sub_page eq 'post';
 		
+		$view->breadcrumb_list->push('Home',"/",0);
+		$view->breadcrumb_list->push('Login',"/user/login",0);
+		$view->breadcrumb_list->push('Forgot Pass',"",0);
 		$view->output($tmpl);
 		
 		return $r;
 	}
 	
-	sub profile
+	sub settings
 	{
-		my ($class,$skin,$r,$page,$req,$path) = @_;
+		my ($self,$req,$r) = @_;
 		
-		my $sub_page = shift @$path;
+		my $sub_page = $req->next_path;
 		
-		#AppCore::User::Auth->require_authentication;
-		if(!AppCore::Common->context->user)
+		# User must be logged in to change settings
+		AppCore::AuthUtil->require_auth;
+		
+		my $user = AppCore::Common->context->user;
+		
+		
+		if($sub_page eq 'advanced')
 		{
-			$r->redirect(AppCore::Common->context->http_bin.'/login');
-		}
-		
-		if($sub_page eq 'post')
-		{
-			my $name = $req->{name};
-			my $email = $req->{new_user_value};
-			my $pass = $req->{new_pass_value};
-			
-			my $user = AppCore::Common->context->user;
-			$user->pass($pass) if $pass && $pass !~ /^\*+$/;
-			$user->email($email) if $email;
-			$user->user($email) if $email;
-			$user->display($name) if $name;
-			if($user->is_changed)
+			my $for_user = $req->{userid};
+			if($for_user)
 			{
-				$user->update;
-				AppCore::User::Auth->authenticate($req,1);
+				if($for_user != $user->id && !$user->check_acl($AppCore::Config::ADMIN_ACL))
+				{
+					return $r->error("Not Administrator","Sorry, you must be an administrator to change the settings for another user other than you rown account.");
+				}
 				
-				# Re-apply 'user_' template variables, since they were applied in the load_template() call and won't see the updates we just saved
-				$skin->param('user_'.$_ => $user->get($_)) foreach $user->columns
+				$user = AppCore::User->retrieve($for_user);
+				
+				return $r->error("Unknown UserID","Sorry, the userid you gave does not match any userid in the database.") if !$user;
 			}
+			print STDERR __PACKAGE__."->settings(): user:".$user->display."\n";
+			
+			
+			$req->push_page_path($req->shift_path);
+			
+			my @all_options = AppCore::User::PrefOption->retrieve_from_sql('1 order by controller, module_name, subsection_name, optid');
+			
+			my $np = $req->next_path;
+			if($np eq 'post')
+			{
+				foreach my $opt (@all_options)
+				{	
+					my $val = AppCore::User::Preference->find_or_create(optid => $opt, userid => $user);
+					$val->value($req->{'opt_'.$opt->id});
+					$val->update;
+				}
+			}
+			
+			my $last_values = undef;
+			foreach my $opt (@all_options)
+			{
+				#$last_values = { mod => $opt->module_name, sec => $opt->subsection_name } if !$last_values;
+				
+				my $val = AppCore::User::Preference->by_field(optid => $opt, userid => $user);
+				$opt->{$_} = $opt->get($_) foreach $opt->columns;
+				$opt->{'type_'.$opt->datatype} = 1;
+				$opt->{value} = $val ? $val->value : $opt->default_value;
+				$opt->{mod_change} = 1 if $last_values->{mod} ne $opt->module_name;
+				$opt->{sec_change} = 1 if $last_values->{sec} ne $opt->subsection_name;
+				
+				$last_values = { mod => $opt->module_name, sec => $opt->subsection_name };
+			}
+			
+			
+			return $r->redirect($req->url_from) if $np eq 'post' && $req->url_from;
+			
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			
+			my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+			
+			my $tmpl = $self->get_template('advopts.tmpl'); #.($mobile?'-mobile' : '').'.tmpl');
+			$tmpl->param('saved' => 1) if $np eq 'post';
+			
+			$tmpl->param(opts => \@all_options);
+			$tmpl->param(url_from => $req->{url_from}) if $req->url_from;
+			$tmpl->param('user_'.$_ => $user->get($_)) foreach $user->columns;
+			
+			$view->breadcrumb_list->push('Home',"/",0);
+			$view->breadcrumb_list->push('Settings',"/user/settings",0);
+			$view->breadcrumb_list->push('Advanced',"/user/settings/advanced",0);
+			#$r->output($tmpl);
+			$view->output($tmpl);
+			return $r;
 		}
-		
-		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
-		
-		my $tmpl = $skin->load_template('profile'.($mobile?'-mobile' : '').'.tmpl');
-		$tmpl->param('profile_saved' => 1) if $sub_page eq 'post';
-		$tmpl->param(fake_pass => join '', ('*') x length(AppCore::Common->context->user->pass));
-		
-		$r->output($tmpl);
+		else
+		{
+			
+			if($sub_page eq 'post')
+			{
+				my $name = $req->{name};
+				my $email = $req->{new_user_value};
+				my $pass = $req->{new_pass_value};
+				
+				$user->pass($pass) if $pass && $pass !~ /^\*+$/;
+				$user->email($email) if $email;
+				$user->user($email) if $email;
+				$user->display($name) if $name;
+				if($user->is_changed)
+				{
+					$user->update;
+					AppCore::AuthUtil->authenticate($user->user,$user->pass);
+					
+					## Re-apply 'user_' template variables, since they were applied in the load_template() call and won't see the updates we just saved
+					##$skin->param('user_'.$_ => $user->get($_)) foreach $user->columns
+				}
+			}
+			
+			return $r->redirect($req->url_from) if $sub_page eq 'post' && $req->url_from;
+			
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			
+			my $mobile = getcookie('mobile.sitepref') eq 'mobile';
+			
+			my $tmpl = $self->get_template('profile.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
+			$tmpl->param('user_'.$_ => $user->get($_)) foreach $user->columns;
+			$tmpl->param('profile_saved' => 1) if $sub_page eq 'post';
+			$tmpl->param(fake_pass => join '', ('*') x length($user->pass));
+			$tmpl->param(url_from => $req->{url_from}) if $req->url_from;
+			
+			$view->breadcrumb_list->push('Home',"/",0);
+			$view->breadcrumb_list->push('Settings',"/user/settings",0);
+			#$r->output($tmpl);
+			$view->output($tmpl);
+			return $r;
+		}
 	}
 	
 	sub unsubscribe
