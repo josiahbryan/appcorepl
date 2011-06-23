@@ -23,6 +23,7 @@ package Boards::TextFilter::TagVerses;
 
 package ThemePHC;
 {
+	use AppCore::Common;
 	use Content::Page;
 	use base 'Content::Page::ThemeEngine';
 	use Scalar::Util 'blessed';
@@ -103,6 +104,29 @@ package ThemePHC;
 		if($view_code eq 'home')
 		{
 			$tmpl = $self->load_template('frontpage.tmpl');
+			
+			# Load list of posts using the Boards controller
+			# bootstrap() should cache the module object reference, so we don't use up more memory than needed
+			my $controller = AppCore::Web::Module->bootstrap('Boards');
+			
+			# If we dont specify, it assumes '/themephc'
+			$controller->binpath('/boards'); 
+			
+			# Apply video provider data in case any of the posts are videos.
+			# frontpage.tmpl will include the relevant video scripts template
+			$controller->apply_video_providers($tmpl);
+			
+			# Board '1' is the prayer/praise/talk board
+			my $data = $controller->load_post_list(Boards::Board->retrieve(1));
+			$tmpl->param('talk_'.$_ => $data->{$_}) foreach keys %$data;
+			
+			# Used by the list of slides on the right - note forced stringification required below.
+			$tmpl->param('talk_approx_time' => ''.approx_time_ago($data->{first_ts}));
+			
+# 			use Data::Dumper;
+# 			die Dumper $data;
+			
+			# TODO: Load recent videos and events
 		}
 		elsif($view_code eq 'admin')
 		{

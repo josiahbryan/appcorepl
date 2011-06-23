@@ -545,6 +545,7 @@ package Boards;
 	our %BoardDataCache;
 	our @TextFilters;
 	our @VideoProviders;
+	our %ControllerCache;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
@@ -552,6 +553,7 @@ package Boards;
 		%PostDataCache = ();
 		@TextFilters = ();
 		@VideoProviders = ();
+		%ControllerCache = ();
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
@@ -560,6 +562,8 @@ package Boards;
 	{
 		my $self = shift;
 		my $board = shift;
+		
+		return $ControllerCache{$board->id} if $ControllerCache{$board->id};
 		
 		my $controller = $self;
 		
@@ -572,6 +576,9 @@ package Boards;
 			$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
 			$controller->binpath($self->binpath);
 		}
+		
+		
+		$ControllerCache{$board->id} = $controller;
 		
 		return $controller;
 	}
@@ -767,202 +774,7 @@ package Boards;
 		}
 		else
 		{
-			my $dbh = Boards::Post->db_Main;
-			
-			my $user = AppCore::Common->context->user;
-			my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
-			my $board_folder_name = $board->folder_name;
-			
-			my $user_wall_clause = 0; # Since this var is used in an "or" statement, the 0 will null it out unless we put something there
-			
-			# This board is specific to a user if board_userid is set
-			my $board_userid = 0;
-			if($board->board_userid && $board->board_userid->id)
-			{
-				my $user = $board->board_userid;
-				my $userid = $board_userid = $user->id.''; # cast to string for tainting...
-				$userid =~ s/[^\d]//g; # taint just to be safe...
-				$userid += 0;  # force cast to int...
-				$user_wall_clause = 'posted_by='. $userid;
-			}
-			
-			
-			# Check to see if this is an ajax poll request for new posts
-			if($req->{first_ts})
-			{
-				my $postid = $req->{postid};
-				my $from_str = $req->{from};
-				#print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
-				my $sth = $dbh->prepare_cached(
-					'select b.*, u.photo as user_photo, u.user as username '.
-					'from board_posts b left join users u on (b.posted_by=u.userid) '.
-					"where (boardid=? or $user_wall_clause) and timestamp>? ".
-					($postid? 'and top_commentid=?':' ').
-					($from_str? 'and poster_name=?':' ').
-					'and deleted=0 order by timestamp');
-				
-				my @args = ($board->id, $req->{first_ts});
-				push @args, $postid if $postid;
-				push @args, $from_str if $from_str;
-				
-				$sth->execute(@args);
-				my @results;
-				my $ts;
-				while(my $b = $sth->fetchrow_hashref)
-				{
-					my $x = $controller->load_post_for_list($b,$board_folder_name,$can_admin);
-					$ts = $x->{timestamp};
-					push @results, $x;
-				}
-				
-				my $output = 
-				{
-					list	=> \@results,
-					count	=> scalar @results,
-					last_ts	=> $ts,
-				};
-				
-				my $json = encode_json($output);
-				return $r->output_data("application/json", $json) if $req->output_fmt eq 'json';
-				return $r->output_data("text/plain", $json);
-			}
-			
-			# Get the current paging location
-			my $idx = $req->idx || 0;
-			my $len = $req->len || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
-			$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
-			
-			# Find the total number of posts in this board
-			my $find_max_index_sth = $dbh->prepare_cached("select count(b.postid) as count from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0");
-			$find_max_index_sth->execute($board->id);
-			my $max_idx = $find_max_index_sth->rows ? $find_max_index_sth->fetchrow : 0;
-			
-			$find_max_index_sth->finish; # prevent warnings from DBI for the prepare_cached() stmt...
-			
-			my $next_idx = $idx + $len; 
-			$next_idx = $next_idx >= $max_idx ? 0 : $next_idx; # If next idx past end, set to 0 to indicate to tmpl that there are no more posts ...
-			$next_idx = 0 if !$len; # If paging disabled, there is no next idx...
-			
-			# Create a cache key for this set of posts based on the board id, user (if logged in), and the current page (idx/len) 
-			my $cache_key = $user ? $board->id . $user->id : $board->id;
-			$cache_key .= $idx if $idx;
-			$cache_key .= $len if $len;
-			
-			# Try to load data from in-memory cache - if cache miss, well, rebuild!
-			my $data = $BoardDataCache{$cache_key};
-			if(!$data)
-			{
-				my $sth;
-				
-				if(!$len)
-				{
-					# If paging disabled, just use a single query to load everything
-					$sth = $dbh->prepare_cached(qq{
-						select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b where p.boardid=b.boardid and (p.boardid=? or $user_wall_clause) and deleted=0 order by timestamp desc, postid desc 
-					});
-				}
-				else
-				{
-					# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
-					# that should be included because the post is included
-					my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc, postid desc limit ?,?");
-					$find_posts_sth->execute($board->id, $idx, $len);
-					my @posts;
-					push @posts, $_ while $_ = $find_posts_sth->fetchrow;
-					
-					# Keep user from getting a "dirty" error by giving a simple error
-					if(!@posts)
-					{
-						#return $r->error("No posts at index ".($idx+0));
-						#@posts = (0); # Allow the page to be empty :-)
-					}
-					
-					my $list = join ',',  @posts;
-					
-					# Now do the actual query that loads both posts and comments in one gos
-					my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
-						"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
-						'order by timestamp, postid desc';
-					$sth = $dbh->prepare_cached($sql);
-					
-					#print STDERR "$sql\n".$board->id."\n";
-				}
-				
-				$sth->execute($board->id);
-				
-				# First, prepare all the post results (posts and comments) at the same time
-				# Create a crossref of posts to data objects for the next block which puts the comments with the parents
-				my @tmp_list;
-				my %crossref;
-				my $first_ts = undef;
-				while(my $b = $sth->fetchrow_hashref)
-				{
-					$first_ts = $b->{timestamp};# if !$first_ts;
-					$b->{reply_count} = 0;
-					$b->{board_userid} = $board_userid; 
-					#die Dumper $b;
-					push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
-				}
-				
-				my $threaded = $controller->thread_post_list(\@tmp_list, undef, undef, $board->board_userid);
-				my @list = @$threaded;
-				# Put newest at top of list
-				# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
-				@list = reverse @list;
-				
-				$data = 
-				{
-					list 		=> \@list,
-					timestamp	=> time,
-					first_timestamp	=> $first_ts, # Used for in-page polling dyanmic new content inlining
-				};
-				$BoardDataCache{$cache_key} = $data;
-				#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
-				
-				#die Dumper \@list;
-			}
-			else
-			{
-				#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
-				
-				# Go thru and update approx_time_ago fields for posts and comments
-				if((time - $data->{timestamp}) > $APPROX_TIME_REFERESH)
-				{
-					# This loop takes approx 20-30ms on a few of my tests
-					# Therefore, we only run it if the data is more than $APPROX_TIME_REFERESH seconds old
-					
-					foreach my $ref (@{$data->{list} || []})
-					{
-						$ref->{approx_time_ago} = approx_time_ago($ref->{timestamp});
-						foreach my $reply (@{$ref->{replies} || []})
-						{
-							$reply->{approx_time_ago} = approx_time_ago($reply->{timestamp});
-						}
-					}
-					
-					$data->{timestamp} = time;
-				}
-			}
-			
-			my $board_ref = {};
-			$board_ref->{$_} = $board->get($_)."" foreach $board->columns;
-			
-			my $output = 
-			{
-				board	=> $board_ref,
-				posts	=> $data->{list},
-				idx	=> $idx,
-				idx1	=> $idx + 1,
-				len	=> $max_idx < $len ? $max_idx : $len,
-				idx2	=> $idx + $len > $max_idx ? $max_idx : $idx + $len,
-				next_idx=> $next_idx >= $max_idx ? 0 : $next_idx,
-				#first_id=> @{$data->{list}} ? $data->{list}->[0]->{postid} : 0,
-				first_ts=> $data->{first_timestamp}, # Used for in-page polling dyanmic new content inlining
-				max_idx => $max_idx,
-				can_admin=> $can_admin,
-			};
-			
-			$controller->forum_page_hook($output,$board);
+			my $output = $controller->load_post_list($board,$req);
 			
 			if($req->output_fmt eq 'json')
 			{
@@ -970,6 +782,8 @@ package Boards;
 				return $r->output_data("application/json", $json);
 				#return $r->output_data("text/plain", $json);
 			}
+			
+			my $user = AppCore::Common->context->user;
 			
 			my $tmpl = $self->get_template($controller->config->{list_tmpl} || 'list.tmpl');
 			$tmpl->param(board_nav => $controller->macro_board_nav());
@@ -998,6 +812,216 @@ package Boards;
 			$view->output($tmpl);
 			return $r;
 		}
+	}
+	
+	sub load_post_list
+	{
+		my $self = shift;
+		my $board = shift;
+		my $req = shift || {};
+		my $controller = shift || $self->get_controller($board);
+		
+		my $dbh = Boards::Post->db_Main;
+			
+		my $user = AppCore::Common->context->user;
+		my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
+		my $board_folder_name = $board->folder_name;
+		
+		my $user_wall_clause = 0; # Since this var is used in an "or" statement, the 0 will null it out unless we put something there
+		
+		# This board is specific to a user if board_userid is set
+		my $board_userid = 0;
+		if($board->board_userid && $board->board_userid->id)
+		{
+			my $user = $board->board_userid;
+			my $userid = $board_userid = $user->id.''; # cast to string for tainting...
+			$userid =~ s/[^\d]//g; # taint just to be safe...
+			$userid += 0;  # force cast to int...
+			$user_wall_clause = 'posted_by='. $userid;
+		}
+		
+		
+		# Check to see if this is an ajax poll request for new posts
+		if($req->{first_ts})
+		{
+			my $postid = $req->{postid};
+			my $from_str = $req->{from};
+			#print STDERR "POLL: Postid: $postid, Timestamp: $req->{first_ts}\n" if $postid;
+			my $sth = $dbh->prepare_cached(
+				'select b.*, u.photo as user_photo, u.user as username '.
+				'from board_posts b left join users u on (b.posted_by=u.userid) '.
+				"where (boardid=? or $user_wall_clause) and timestamp>? ".
+				($postid? 'and top_commentid=?':' ').
+				($from_str? 'and poster_name=?':' ').
+				'and deleted=0 order by timestamp');
+			
+			my @args = ($board->id, $req->{first_ts});
+			push @args, $postid if $postid;
+			push @args, $from_str if $from_str;
+			
+			$sth->execute(@args);
+			my @results;
+			my $ts;
+			while(my $b = $sth->fetchrow_hashref)
+			{
+				my $x = $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+				$ts = $x->{timestamp};
+				push @results, $x;
+			}
+			
+			my $output = 
+			{ 
+				list	=> \@results,
+				count	=> scalar @results,
+				last_ts	=> $ts,
+			};
+			
+# 			my $json = encode_json($output);
+# 			return $r->output_data("application/json", $json) if $req->output_fmt eq 'json';
+# 			return $r->output_data("text/plain", $json);
+			return $output;
+		}
+		
+		# Get the current paging location
+		my $idx = $req->{idx} || 0;
+		my $len = $req->{len} || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
+		$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
+		
+		# Find the total number of posts in this board
+		my $find_max_index_sth = $dbh->prepare_cached("select count(b.postid) as count from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0");
+		$find_max_index_sth->execute($board->id);
+		my $max_idx = $find_max_index_sth->rows ? $find_max_index_sth->fetchrow : 0;
+		
+		$find_max_index_sth->finish; # prevent warnings from DBI for the prepare_cached() stmt...
+		
+		my $next_idx = $idx + $len; 
+		$next_idx = $next_idx >= $max_idx ? 0 : $next_idx; # If next idx past end, set to 0 to indicate to tmpl that there are no more posts ...
+		$next_idx = 0 if !$len; # If paging disabled, there is no next idx...
+		
+		# Create a cache key for this set of posts based on the board id, user (if logged in), and the current page (idx/len) 
+		my $cache_key = $user ? $board->id . $user->id : $board->id;
+		$cache_key .= $idx if $idx;
+		$cache_key .= $len if $len;
+		
+		# Try to load data from in-memory cache - if cache miss, well, rebuild!
+		my $data = $BoardDataCache{$cache_key};
+		if(!$data)
+		{
+			my $sth;
+			
+			if(!$len)
+			{
+				# If paging disabled, just use a single query to load everything
+				$sth = $dbh->prepare_cached(qq{
+					select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b where p.boardid=b.boardid and (p.boardid=? or $user_wall_clause) and deleted=0 order by timestamp desc, postid desc 
+				});
+			}
+			else
+			{
+				# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
+				# that should be included because the post is included
+				my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc, postid desc limit ?,?");
+				$find_posts_sth->execute($board->id, $idx, $len);
+				my @posts;
+				push @posts, $_ while $_ = $find_posts_sth->fetchrow;
+				
+				# Keep user from getting a "dirty" error by giving a simple error
+				if(!@posts)
+				{
+					#return $r->error("No posts at index ".($idx+0));
+					#@posts = (0); # Allow the page to be empty :-)
+				}
+				
+				my $list = join ',',  @posts;
+				
+				# Now do the actual query that loads both posts and comments in one gos
+				my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+					"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
+					'order by timestamp, postid desc';
+				$sth = $dbh->prepare_cached($sql);
+				
+				#print STDERR "$sql\n".$board->id."\n";
+			}
+			
+			$sth->execute($board->id);
+			
+			# First, prepare all the post results (posts and comments) at the same time
+			# Create a crossref of posts to data objects for the next block which puts the comments with the parents
+			my @tmp_list;
+			my %crossref;
+			my $first_ts = undef;
+			my $counter = $idx;
+			while(my $b = $sth->fetchrow_hashref)
+			{
+				$first_ts = $b->{timestamp};# if !$first_ts;
+				$b->{reply_count} = 0;
+				$b->{board_userid} = $board_userid;
+				$b->{post_number} = $counter ++; 
+				#die Dumper $b;
+				push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+			}
+			
+			my $threaded = $controller->thread_post_list(\@tmp_list, undef, undef, $board->board_userid);
+			my @list = @$threaded;
+			# Put newest at top of list
+			# (We load oldest->newest so that we can process comments correctly, but reverse so newest top post is at the top, but comments still will show old->new)
+			@list = reverse @list;
+			
+			$data = 
+			{
+				list 		=> \@list,
+				timestamp	=> time,
+				first_timestamp	=> $first_ts, # Used for in-page polling dyanmic new content inlining
+			};
+			$BoardDataCache{$cache_key} = $data;
+			#print STDERR "[-] BoardDataCache Cache Miss for board $board (key: $cache_key)\n"; 
+			
+			#die Dumper \@list;
+		}
+		else
+		{
+			#print STDERR "[+] BoardDataCache Cache Hit for board $board\n";
+			
+			# Go thru and update approx_time_ago fields for posts and comments
+			if((time - $data->{timestamp}) > $APPROX_TIME_REFERESH)
+			{
+				# This loop takes approx 20-30ms on a few of my tests
+				# Therefore, we only run it if the data is more than $APPROX_TIME_REFERESH seconds old
+				
+				foreach my $ref (@{$data->{list} || []})
+				{
+					$ref->{approx_time_ago} = approx_time_ago($ref->{timestamp});
+					foreach my $reply (@{$ref->{replies} || []})
+					{
+						$reply->{approx_time_ago} = approx_time_ago($reply->{timestamp});
+					}
+				}
+				
+				$data->{timestamp} = time;
+			}
+		}
+		
+		my $board_ref = {};
+		$board_ref->{$_} = $board->get($_)."" foreach $board->columns;
+		
+		my $output = 
+		{
+			board	  => $board_ref,
+			posts	  => $data->{list},
+			idx	  => $idx,
+			idx1	  => $idx + 1,
+			len	  => $max_idx    <  $len     ? $max_idx : $len,
+			idx2	  => $idx + $len >  $max_idx ? $max_idx : $idx + $len,
+			next_idx  => $next_idx   >= $max_idx ? 0        : $next_idx,
+			first_ts  => $data->{first_timestamp}, # Used for in-page polling dyanmic new content inlining
+			max_idx   => $max_idx,
+			can_admin => $can_admin,
+		};
+		
+		$controller->forum_page_hook($output,$board);
+		
+		return $output;
+		
 	}
 	
 	sub apply_video_providers

@@ -66,7 +66,7 @@ package AppCore::AuthUtil;
 		if(my $user = AppCore::Common->context->user)
 		{
 			my $acl = shift;
-			use Data::Dumper;
+			#use Data::Dumper;
 			#print STDERR "ACL: ".Dumper($acl,$user);
 			if($acl && !$user->check_acl($acl))
 			{

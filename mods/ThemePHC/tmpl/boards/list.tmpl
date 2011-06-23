@@ -378,23 +378,29 @@
 	// As soon as the link gets close (see 'fudge'), then the 
 	// paging function (above) is triggered just as if the user
 	// had clicked the link
-	$(window).bind('scroll', function(){
-			
-		var rowRef = $("tr.loadmore");
-		var scrollBottom = $(window).scrollTop() + $(window).height();
-		var fudge = 100; // amount by which to fudge the detection
-		var off = rowRef.offset(); 
-		if(!off) off = { top:0 };
-		var rowTop = off.top - fudge; 
-		if(rowTop < scrollBottom)
-		{
-			var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
-			if(domElm)
+	$(function() {
+		function scrollHandler() {
+				
+			var rowRef = $("tr.loadmore");
+			var scrollBottom = $(window).scrollTop() + $(window).height();
+			var fudge = 100; // amount by which to fudge the detection
+			var off = rowRef.offset(); 
+			if(!off) off = { top:0 };
+			var rowTop = off.top - fudge; 
+			if(rowTop < scrollBottom)
 			{
-				domElm.doPaging = pagingFunc;
-				domElm.doPaging();
+				var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
+				if(domElm)
+				{
+					domElm.doPaging = pagingFunc;
+					domElm.doPaging();
+				}
 			}
-		}
+		};
+		$(window).bind('scroll', scrollHandler);
+		
+		if($(window).scrollTop() > 0)
+			scrollHandler();
 	});
 	
 	</script>

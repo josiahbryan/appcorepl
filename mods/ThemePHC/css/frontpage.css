@@ -59,13 +59,14 @@ body
 {
 	width: 100%;
 	position: absolute;
-	z-index: 200;
+	z-index: 500;
 }
 
 #mainlogo-wrap
 {
 	width: 965px;
-	margin: 0 auto;	
+	margin: 0 auto;
+	position: relative;	
 }
 
 #mainlogo
@@ -75,15 +76,29 @@ body
 	/*margin-top: -47px;
 	margin-left: -118px;
 	*/
-	margin-top: -70px;
-	margin-left: -120px;
+	top: -70px;
+	left: -120px;
+	position: absolute;
 	
 }
 
+#build-lnk
+{
+	position: absolute;
+	top: 118;
+	left: 423;
+}
+
+
+
+#mainlogo-wrap a:focus, 
+#mainlogo-wrap a:active
+{
+	outline: 0;
+}
 
 #graphicblock-wrap
 {
-
 	position: absolute;
 	
 	top: 0;
@@ -114,10 +129,21 @@ body
 	width: 728px;
 	height: 322px;
 	
+	/*background-image: url("%%modpath%%/images/graphicbg.jpg");*/
+	background-repeat: no-repeat;
+
+}
+
+.bluebg
+{
+	width: 728px;
+	height: 322px;
+	
 	background-image: url("%%modpath%%/images/graphicbg.jpg");
 	background-repeat: no-repeat;
 
 }
+
 
 #graphic-wrap
 {
@@ -151,6 +177,11 @@ body
 	/*display: none;*/
 }
 
+.block-item h3
+{
+	margin: 4em;
+}
+
 #graphic-floater
 {
 	width: 100%;
@@ -166,6 +197,123 @@ body
 	margin: 0 auto;
 	
 	z-index: 800;
+}
+
+
+#block-timer
+{
+	width: 0;
+	height: 3px;
+	
+	border: 1px solid black;
+	opacity: .95;
+	background: url("%%modpath%%/images/w40.png");
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	
+	position: absolute;
+	top: 311;
+	left: 660;
+	z-index: 500;
+	
+}
+
+#block-time-nbr
+{
+	top: 306;
+	left: 714;
+	width: 10px;
+	height: 1em;	
+	
+	opacity: .85;
+	background: url("%%modpath%%/images/w40.png");
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	margin: auto auto;
+	font-weight: bold;
+	padding: 1 0 3;
+	text-align: center;
+	font-size: 8px;
+	
+	position: absolute;
+	z-index: 555;
+	
+	overflow: hidden;
+	
+	color: rgb(30,30,30);
+	
+	border: 1px solid black;
+	
+	
+}
+
+#photo-wrap
+{
+	position:relative;
+}
+#photo-cap-wrap
+{
+	position: absolute;
+	top: 269px;
+	width: 728px;
+	height: auto;
+}
+
+#photo-cap
+{
+	width: 400px;
+	/*background: rgb(200,200,200);*/
+	opacity: .85;
+	background: url("%%modpath%%/images/w40.png");
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	margin: auto auto;
+	font-weight: bold;
+	padding: 4px;
+	text-align: center;
+	font-size: 1.2em;
+}
+
+#photo-nav-wrap
+{
+	position: absolute;
+	width: 728px;
+	top: 301px;
+	height: auto;
+	text-align: center;
+	/*color: white;*/
+}
+
+#photo-nav
+{
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	opacity: .85;
+	background: url("%%modpath%%/images/w40.png");
+	color: black;
+	padding: 4px;
+}
+
+#photo-nav a
+{
+	font-weight: bold;
+	padding: 0 10px;
+	text-decoration: none;
+	color: black;
+	outline: 0;
+}
+
+#photo-nav a:active, #photo-nav a:focus
+{
+	outline: 0;
+}
+
+#photo-nav a.current
+{
+	color: #e7ff30;
+	background: black;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
 }
 
 #sidebar

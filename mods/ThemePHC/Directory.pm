@@ -395,6 +395,9 @@ package ThemePHC::Directory::UserActionHook;
 	
 	__PACKAGE__->register(User::ActionHook::EVT_ANY);
 	
+	# This has the convenient side effect of creating the requisite ACL group for new install or empty databases
+	our $DIRECTORY_GROUP = AppCore::User::Group->find_or_create(name => 'Can-See-Family-Directory');
+	
 	sub hook
 	{
 		my ($self,$event,$args) = @_;
@@ -420,11 +423,10 @@ package ThemePHC::Directory::UserActionHook;
 		elsif($event eq User::ActionHook::EVT_USER_ADDED_TO_GROUP)
 		{
 			# Send user an email to let them know they've been added if its the directory group
-			my $dir_group = AppCore::User::Group->by_field(name => 'Can-See-Family-Directory');
-			if($args->{group} == $dir_group)
+			if($args->{group} == $DIRECTORY_GROUP)
 			{
 				my $url = join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, 'connect/directory');
-				print STDERR __PACKAGE__.": User added to directory group ($dir_group), emailing user URL $url\n";
+				print STDERR __PACKAGE__.": User added to directory group ($DIRECTORY_GROUP), emailing user URL $url\n";
 				
 				#my $user = $args->{user};
 				my $user = AppCore::Common->context->user;

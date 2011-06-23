@@ -18,7 +18,9 @@
 				<!--<img src='%%modpath%%/images/mainlogo.png' id='mainlogo'>-->
 				<img src='%%modpath%%/images/mainlogo-300px-sm.png' id='mainlogo'>
 				<!--<img src='%%modpath%%/images/mainlogo-cropped2-250px.png' id='mainlogo'>-->
-				
+				<a title='Learn more about Building Lives for Eternity...' href='/about/vision#build' id='build-lnk'>
+					<img src='%%modpath%%/images/build8.png' border=0 alt='Building Lives for Eternity' title='Learn about Building Lives for Eternity...'>
+				</a>
 			</div>
 		</div>
 	</div>
@@ -40,18 +42,35 @@
 <div id='graphic-floater'>
 	<div id='graphic-centerer'>
 		<div id='graphic-wrap'>
-			<div class='block-item' id='block-title-slide'>
-				<center>
-					<img src='%%modpath%%/images/logo-white-textunder-250px-sm.png' style='margin-top:30px'>
-				</center>
+			<div id='block-timer'></div>
+			<div id='block-time-nbr'>10</div>
+			<!-- The 'top:0' style causes this first block to be visible on page load, rather than waiting for the script to kick in -->
+			<div class='block-item' id='block-photos' style='top:0'>
+				<div id='photo-wrap'>
+					<center>
+						<!--<img src='%%modpath%%/images/logo-white-textunder-250px-sm.png' style='margin-top:30px'>-->
+						<img src='%%modpath%%/images/photos/crop2.jpg' id='photo-holder'>
+					</center>
+					<div id='photo-cap-wrap'>
+						<div id='photo-cap'>
+							The praise band leads a song Sunday morning
+						</div>
+					</div>
+					<div id='photo-nav-wrap'>
+						<span id='photo-nav'>
+							<!-- Content inserted here by /appcore/mods/ThemePHC/js/frontpage.js -->
+						</span>
+					</div>
+				</div>
 			</div>
-			<div class='block-item' id='block-video'>
+			<div class='block-item bluebg' id='block-video'>
 				<center>
 					<!--<iframe src="http://player.vimeo.com/video/22211666?byline=0&amp;portrait=0" width="400" height="300" frameborder="0" class='vimeo-video'></iframe>-->
 					 <h3>Still working on Video...</h3>
+					 <!--<img src='%%modpath%%/images/photos/pic6.jpg'>-->
 				</center>
 			</div>
-			<div class='block-item' id='block-events'>
+			<div class='block-item bluebg' id='block-events'>
 				<center>
 					<h1>Upcoming Events!</h1>
 					
@@ -98,43 +117,199 @@
 					
 				</center>
 			</div>
-			<div class='block-item' id='block-photos'>
+			<!--<div class='block-item' id='block-photos'>
 				<center>
 					<h3>Still working on Photos...</h3>
 				</center>
-			</div>
-			<div class='block-item' id='block-prayers'>
-				<center>
+			</div>-->
+			<div class='block-item bluebg' id='block-talk'>
+				<!--<center>
 					<h3>Still working on Prayer Requests...</h3>
-				</center>
+				</center>-->
+				<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+				<style>
+				/* Add padding to photo for coloring */
+				.postlist tr.talktype-ePrayerAlert td.photo,
+				.postlist tr.talktype-pray td.photo,
+				.postlist tr.talktype-praise td.photo, 
+				.postlist tr.talktype-talk td.photo,
+				.postlist .newpost td.photo-cell
+				{
+					padding-left: 5px;
+				}
+				
+				/*** Pray ***/
+				
+				.postlist tr.talktype-pray,
+				.postlist tr.talktype-ePrayerAlert
+				{
+					background: #fcfeb3;
+					
+				}
+				
+				.postlist tr.talktype-ePrayerAlert td.data,
+				.postlist tr.talktype-ePrayerAlert td.photo,
+				.postlist tr.talktype-pray td.data,
+				.postlist tr.talktype-pray td.photo
+				{
+					border-top: 1px solid white;
+					border-bottom: 1px solid #e3e684;
+				}
+				
+				.postlist span.talktype-pray,
+				.postlist span.talktype-ePrayerAlert
+				{
+					color: #636439;
+					font-weight: bold;
+				}
+				
+				/* Prayer Comments */
+				.postlist tr.talktype-pray .comment_text_wrap,
+				.postlist tr.talktype-ePrayerAlert .comment_text_wrap 
+				{
+					border-top: 1px solid #fdffc5;
+					border-bottom: 1px solid #d7d999;
+				}
+				.postlist tr.talktype-pray .indent-odd,
+				.postlist tr.talktype-ePrayerAlert .indent-odd {
+					background: #e8eaa5 !important;
+				}
+				.postlist tr.talktype-pray .indent-even,
+				.postlist tr.talktype-ePrayerAlert .indent-even {
+					background: #e4e6a2 !important;
+				}
+				
+				/*** Praise ***/
+				
+				.postlist tr.talktype-praise
+				{
+					background: #d9ffd2;
+					
+				}
+				
+				.postlist tr.talktype-praise td.data,
+				.postlist tr.talktype-praise td.photo
+				{
+					border-top:    1px solid white;
+					border-bottom: 1px solid #bfe1b9;
+				}
+				
+				.postlist span.talktype-praise
+				{
+					color: #556452;
+					font-weight: bold;
+				}
+				
+				/* Praise Comments */
+				.postlist tr.talktype-praise .comment_text_wrap
+				{
+					border-top: 1px solid #e2ffdd;
+					border-bottom: 1px solid #b5d5af;
+				}
+				.postlist tr.talktype-praise .indent-odd {
+					background: #d0f3c9 !important;
+				}
+				.postlist tr.talktype-praise .indent-even {
+					background: #c7eac1 !important;
+				}
+				
+				/*** Talk ***/
+				.postlist tr.talktype-talk
+				{
+					background: rgb(235,235,235);
+					
+				}
+				
+				.postlist tr.talktype-talk td.data,
+				.postlist tr.talktype-talk td.photo
+				{
+					border-top:    1px solid white;
+					border-bottom: 1px solid rgb(200,200,200);
+				}
+				
+				.postlist span.talktype-talk
+				{
+					color: rgb(100,100,100);
+					font-weight: bold;
+				}
+				
+				/* Talk Comments */
+				.postlist tr.talktype-talk .comment_text_wrap
+				{
+					border-top: 1px solid rgb(245,245,245);
+					border-bottom: 1px solid rgb(140,140,140);
+				}
+				.postlist tr.talktype-talk .indent-odd {
+					background: rgb(210,210,210) !important;
+				}
+				.postlist tr.talktype-talk .indent-even {
+					background: rgb(190,190,190) !important;
+				}
+				
+				
+				</style>
+				<div style='height:322px;overflow:auto'>
+					<!--<h2 style='text-align:center;margin:1em 0'>Prayer/Praise/Talk</h2>-->
+					<h1 style='text-align:center'>Latest Posts in Prayer/Praise/Talk</h1>
+					<table class='postlist' width='100%' align=center cellspacing=0 style='border-top:1px solid rgb(80,80,80);border-left:1px solid rgb(180,180,180)'>
+						<tbody>
+							<tr class='loadmore'>
+								<td colspan=2 align=center>
+									<a href='/connect/talk/new'>Post something here...</a>
+								</td>
+							</tr>
+								
+							<tmpl_if talk_posts>
+								<tmpl_loop talk_posts>
+									${inc:/appcore/mods/ThemePHC/tmpl/boards/inc-postrow-talkpage.tmpl}
+								</tmpl_loop>
+							<tmpl_else>
+								<td colspan=2>
+									<h2 style='padding:2em'>No posts here yet!</h2>
+								</td>
+							</tmpl_if>
+							
+							<tmpl_if talk_next_idx>
+								<tr class='loadmore'>
+									<td colspan=2 align=center>
+										<a href='/connect/talk#num0' id="load_more_bottom">See more posts ...</a>
+									</td>
+								</tr>
+							</tmpl_if>
+						</tbody>
+					</table>
+				</div>
+				
+				<tmpl_include boards/inc-video-scripts.tmpl>
 			</div>
 		</div>
 		<div id='sidebar'>
 			<div class='sidebar-link-block'>
-				<a href='/video' class='link-block' id='link-video' block-suffix='video'>
+				<a href='/connect/photos' class='link-block' id='link-photos' block-suffix='photos'>
+					<span class='title'><b>Photos from PHC</b></span><br/>
+					<span class='subtitle'>Worship and more</span>
+				</a>
+			</div>
+
+			
+			<div class='sidebar-link-block'>
+				<a href='/learn/watch' class='link-block' id='link-video' block-suffix='video'>
 					<span class='title'>Watch Current Message</span><br/>
 					<span class='subtitle'>"Our Marvelous Messiah" - Apr 10</span>
 				</a>
 			</div>
 
 			<div class='sidebar-link-block'>
-				<a href='/events' class='link-block' id='link-events' block-suffix='events'>
+				<a href='/connect/events' class='link-block' id='link-events' block-suffix='events'>
 					<span class='title'><b>Upcomming Events</b></span><br/>
 					<span class='subtitle'>Updated two days ago!</span>
 				</a>
 			</div>
 
 			<div class='sidebar-link-block'>
-				<a href='/photos' class='link-block' id='link-photos' block-suffix='photos'>
-					<span class='title'><b>Photos from PHC</b></span><br/>
-					<span class='subtitle'>Updated yesterday!</span>
-				</a>
-			</div>
-
-			<div class='sidebar-link-block'>
-				<a href='/prayer' class='link-block' id='link-prayers' block-suffix='prayers'>
-					<span class='title'><b>Prayer Requests</b></span><br/>
-					<span class='subtitle'>Updated about two hours ago!</span>
+				<a href='/connect/talk' class='link-block' id='link-talk' block-suffix='talk'>
+					<span class='title'><b>Prayer/Praise/Talk</b></span><br/>
+					<span class='subtitle'>Updated about %%talk_approx_time%% ago!</span>
 				</a>
 			</div>
 		</div>
@@ -146,7 +321,9 @@
 	<!-- Main nav links here -->
 	<div class='bodycontent'>
 		%%page_content%%
-		<tmpl_include user-footer.inc.tmpl>
+		<div style='font-size:.75em'>
+			<tmpl_include user-footer.inc.tmpl>
+		</div>
 	</div>
 	<!-- In-page footer here -->
 </div>

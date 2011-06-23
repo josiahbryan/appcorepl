@@ -45,7 +45,7 @@ package ThemePHC::BoardsTalk;
 		$self->config(); # setup default config
 		$self->apply_config({
 			
-			new_post_tmpl	=> 'prayer/new_post.tmpl',
+			#new_post_tmpl	=> 'prayer/new_post.tmpl',
 			tmpl_incs 	=> 
 			{
 				newpost	=> 'inc-newpostform-talkpage.tmpl',
