@@ -923,12 +923,14 @@ package ThemePHC::Directory;
 			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
 			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
 			my $userid = $user ? $user->id : undef;
+			my $mobile = AppCore::Common->context->mobile_flag;
 			foreach my $entry (@directory)
 			{
 				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
 				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
 				$entry->{is_admin} = $admin;
 				$entry->{bin} = $bin;
+				$entry->{is_mobile} = $mobile;
 			}
 			
 			if($req->output_fmt eq 'json')

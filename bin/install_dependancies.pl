@@ -16,6 +16,9 @@ my @deps = qw/
 	JSON::XS
 	MIME::Lite
 	Clone::Fast
+	Net::DNS
+	Geo::Coder::Yahoo
+	Spreadsheet::ParseExcel
 /;
 
 foreach my $dep (@deps)

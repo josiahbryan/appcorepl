@@ -47,7 +47,13 @@
 						<tmpl_if address:str>
 							<tr class='address'>
 								<td class='value' colspan='2'>
-									%%address%%
+									<tmpl_if is_mobile>
+										<a href='map:%%address%%'>
+									</tmpl_if>
+										%%address%%
+									<tmpl_if is_mobile>
+										</a>
+									</tmpl_if>
 								</td>
 							</tr>
 						</tmpl_if>
@@ -57,7 +63,13 @@
 									Home Phone:
 								</td>
 								<td class='value'>
+									<tmpl_if is_mobile>
+										<a href='tel:%%home%%'>
+									</tmpl_if>
 									%%home%%
+									<tmpl_if is_mobile>
+										</a>
+									</tmpl_if>
 								</td>
 							</tr>
 						</tmpl_if>
@@ -68,7 +80,13 @@
 										<tmpl_if spouse:str>%%first%%'s </tmpl_if>Cell:
 									</td>
 									<td class='value'>
+										<tmpl_if is_mobile>
+											<a href='tel:%%cell%%'>
+										</tmpl_if>
 										%%cell%%
+										<tmpl_if is_mobile>
+											</a>
+										</tmpl_if>
 									</td>
 								</tr>
 							</tmpl_if>
@@ -80,7 +98,13 @@
 										<tmpl_if spouse:str>%%spouse%%'s </tmpl_if>Cell:
 									</td>
 									<td class='value'>
+										<tmpl_if is_mobile>
+											<a href='tel:%%spouse_cell%%'>
+										</tmpl_if>
 										%%spouse_cell%%
+										<tmpl_if is_mobile>
+											</a>
+										</tmpl_if>
 									</td>
 								</tr>
 							</tmpl_if>
