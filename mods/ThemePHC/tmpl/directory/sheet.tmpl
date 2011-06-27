@@ -1,0 +1,293 @@
+<html>
+<head>
+	<title>PHC Directory</title>
+	
+	<style>
+	
+		body 
+		{
+			display: block;
+			page: main;
+			counter-reset: page 1;
+			
+		}
+		
+		body, td
+		{
+			font-family: Bergamo, Georgia, serif;
+		}
+		
+		@page main 
+		{
+			/*@top { content: string(chapter-title) }*/
+			@top { 
+				content: "PHC Family Directory";
+				color: rgb(80,80,80);
+				font-size: .85em; 
+				margin-bottom: 2em;
+				border-bottom: .1px solid rgb(127,127,127);
+			}
+			@bottom {
+				/*content: "Page " counter(page);*/
+				content: "Page " counter(page) " of " counter(pages) "     |     Last Updated %%date%% ";
+				color: rgb(80,80,80);
+				font-size: .85em;
+				margin-top: 2em;
+				border-top: .1px solid rgb(127,127,127);
+			}
+			/*
+			@bottom-right {
+				content: "Generated %%date%%",
+				color: rgb(80,80,80);
+				font-size: .85em;
+				margin-top: 2em;
+                                border-top: .1px solid rgb(127,127,127);
+			}
+			*/
+		}
+		
+
+		.photo
+		{
+			max-width: 10em;
+			max-height: 8.5em;
+			/*width: 160px;*/
+			/*height: 200*/
+			/*max-width: 700px;*/
+			border: .25px solid black;
+		}
+		.photo_cell
+		{
+			width: 10em;
+			/*width: 150px;*/
+			padding-top: .65em;
+		}
+		.info_cell
+		{
+			padding-top: .5em;
+			padding-left: .5em;
+		}
+		
+		.no_photo
+		{
+			border: 1px solid black;
+			background: rgb(220,220,220);
+			font-weight: bold;
+			font-size: 2em;
+		}
+		
+		tr.name
+		{
+			font-weight: bold;
+		}
+		
+		div.incomplete
+		{
+			border: .1px solid black;
+			color: green;
+		}
+		
+		tr.address td
+		{
+			/*border-bottom: .1px solid black;*/ 
+		}
+		
+		tr.name td
+		{
+			border-top: .1px solid black;
+		}
+		
+		table.kids td.bday
+		{
+			padding-left: .5em;
+			font-size: .85em;
+			color: rgb(80,80,80);
+		}
+		
+		td.key
+		{
+			color: rgb(80,80,80);
+			font-size: .85em;
+		}
+
+		table.info tr
+		{ 
+			page-break-after: avoid;
+		}
+		
+		
+		
+	</style>
+</head>
+<body>
+	<h1>PHC Family Directory</h1>
+	
+	<tmpl_loop entries>
+		<table class='entry' width='100%'>
+			<tr rowspan="2">
+				<td class='photo_cell' align='center' valign='top'>
+					<tmpl_if photo>
+						<img src='%%pdf_photo%%' class='photo'>
+						<!--width='%%photo_width%%' height='%%photo_height%%' -->
+					<tmpl_else>
+						<!--<div class='no_photo'>
+							?
+						</div>-->
+					</tmpl_if>
+				</td>
+				<td class='info_cell' valign='top'>
+					<table class='info'>
+						<tr class='name'>
+							<td class='name' colspan='2'>
+								%%first%% <tmpl_if spouse> &amp; %%spouse%%</tmpl_if> %%last%%
+							</td>
+						</tr>
+						<tmpl_if incomplete_flag>
+							<tr class='incomplete'>
+								<td colspan='2'>
+									<div class='incomplete'>
+										(No Directory Info Sheet found - Just fill one out and drop it off at the sound booth.)
+									</div>
+								</td>
+							</tr>
+						</tmpl_if> 
+						<tmpl_if adress>
+							<tr class='address'>
+								<td class='value' colspan='2'>
+									%%adress%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if home>
+							<tr class='phone phone-home'>
+								<td class='key'>
+									Home Phone:
+								</td>
+								<td class='value'>
+									%%home%%
+								</td>
+							</tr>
+						</tmpl_if>
+						
+						<tmpl_unless p_cell_dir>
+							<tmpl_if cell>
+								<tr class='cell'>
+									<td class='key'>
+										<tmpl_if spouse>%%first%%'s </tmpl_if>Cell:
+									</td>
+									<td class='value'>
+										%%cell%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						<tmpl_unless p_spouse_cell_dir>
+							<tmpl_if spouse_cell>
+								<tr class='cell'>
+									<td class='key'>
+										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Cell:
+									</td>
+									<td class='value'>
+										%%spouse_cell%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						
+						
+						<tmpl_unless p_email_dir>
+							<tmpl_if email>
+								<tr class='email'>
+									<td class='key'>
+										<tmpl_if spouse>%%first%%'s </tmpl_if>Email:
+									</td>
+									<td class='value'>
+										%%email%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						<tmpl_unless p_spouse_cell_email>
+							<tmpl_if spouse_email>
+								<tr class='email'>
+									<td class='key'>
+										<tmpl_if spouse>%%spouse%%'s </tmpl_if>Email:
+									</td>
+									<td class='value'>
+										%%spouse_email%%
+									</td>
+								</tr>
+							</tmpl_if>
+						</tmpl_unless>
+						
+						<tmpl_if birthday>
+							<tr class='birthday'>
+								<td class='key'>
+									<tmpl_if spouse>%%first%%'s </tmpl_if>Birthday:
+								</td>
+								<td class='value'>
+									%%birthday%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if spouse_birthday>
+							<tr class='birthday'>
+								<td class='key'>
+									<tmpl_if spouse>%%spouse%%'s </tmpl_if>Birthday:
+								</td>
+								<td class='vale'>
+									%%spouse_birthday%%
+								</td>
+							</tr>
+						</tmpl_if>
+						
+						<tmpl_if anniversary>
+							<tr class='anniversary'>
+								<td class='key'>
+									Anniversary:
+								</td>
+								<td class='vale'>
+									%%anniversary%%
+								</td>
+							</tr>
+						</tmpl_if>
+						<tmpl_if comments>
+							<tr class='comments'>
+								<td colspan='2'>
+									<i>%%comments%%</i>
+								</td>
+							</tr>
+						</tmpl_if> 
+						<tmpl_if kids>
+							<tr class='kids'>
+								<td class='key' valign='top'>
+									Children:
+								</td>
+								<td class='value'>
+									<table class='kids'>
+										<tmpl_loop kids>
+											<tr>
+												<td class='name'>
+													%%display%%
+												</td>
+												<td class='bday'>
+													%%birthday%%
+												</td>
+											</tr>
+										</tmpl_loop>
+									</table>
+								</td>
+							</tr>
+						</tmpl_if>
+					</table>
+				</td>
+			</tr>
+			
+			
+		</table>
+	</tmpl_loop>
+	
+	
+
+</body>
+</html>

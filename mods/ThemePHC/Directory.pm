@@ -214,6 +214,7 @@ package PHC::Directory;
 		my $length;
 		if($start && !@_)
 		{
+			# One arg = assume first arg is a search string
 			$search = $start;
 			$start = 0;
 			$length = 0;
@@ -257,7 +258,7 @@ package PHC::Directory;
 			return $DirectoryData->{cache}->{$cache_key};
 		} 
 			
-		print STDERR "load_directory: Cache miss for key '$cache_key'\n";
+		#print STDERR "load_directory: Cache miss for key '$cache_key'\n";
 		
 			
 		my $www_path = $AppCore::Config::WWW_DOC_ROOT;
@@ -384,6 +385,113 @@ package PHC::Directory;
 		
 		return $result;
 	};
+	
+	sub directory_timestamp
+	{
+		my $max_ts_sth = PHC::Directory::Family->db_Main->prepare_cached('select max(timestamp) as ts from '.PHC::Directory::Family->table,undef,1);
+		$max_ts_sth->execute;
+		return $max_ts_sth->fetchrow;
+	}
+	
+	sub generate_pdf
+	{
+		#use Date::Format;
+		use Storable;
+		my $image_size_cache = '/tmp/phc-directory-imagedata.storable';
+		my $image_data = -f $image_size_cache ? retrieve($image_size_cache) : {};
+		
+		my $root = ${AppCore::Config::WWW_DOC_ROOT}.${AppCore::Config::WWW_ROOT};
+		
+		my $self = shift;
+		my $output_file = shift || $root.'/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf';
+		
+		# Read directory from database
+		my $directory_data = PHC::Directory->load_directory(0, 99999); # NOTE: Assuming a max of 10k families in this church! :-) JB 20110627
+		my @directory = @{$directory_data->{list}};
+		
+		# Load template and apply data
+		my $tmpl = AppCore::Web::Common::load_template(${root}.'/mods/ThemePHC/tmpl/directory/sheet.tmpl');
+		
+		my $doc_root = ${AppCore::Config::WWW_DOC_ROOT};
+		foreach my $entry (@directory)
+		{
+			$entry->{doc_root} = $doc_root;
+			
+			if($entry->{large_photo})
+			{
+				my $lg = $entry->{large_photo};
+				if(!$image_data->{$lg})
+				{
+# 					if(!-f $pdf_file)
+# 					{
+						my ($dir,$file) = $lg =~ /^(.*)\/([^\/]+)$/;
+						my $pdf_file = "$root/mods/ThemePHC/dir_photos/pdf_sized/$file";
+						my $cmd = "convert ${doc_root}${lg} -resize 500x500 $pdf_file";
+						print STDERR "$cmd\n";
+						system($cmd) and die "Error converting $lg -> $pdf_file\n";
+						$image_data->{$lg} = $pdf_file;
+						#print STDERR "Resizing $lg -> $pdf_file\n";
+#					}
+# 					my ($width,$height) = `identify '$doc_root/$entry->{photo}'` =~ /\s(\d+)x(\d+)\s/;
+# 					
+# 					$image_data->{$entry->{photo}} = { w=>$width, h=>$height };
+				}
+				
+				$entry->{pdf_photo} = $image_data->{$lg};
+					
+				
+# 				my $data = $image_data->{$entry->{photo}};
+# 				my $width = $data->{w};
+# 				my $height = $data->{h};
+# 				
+# 				my $max_size = 120;
+# 				
+# 				my $new_height;
+# 				my $new_width;
+# 				if($width > $height)
+# 				{
+# 					$new_width = $max_size;
+# 					my $ar = $height/$width;
+# 					$new_height = $ar * $new_width;
+# 				}
+# 				else
+# 				{
+# 					$new_height = $max_size;
+# 					my $ar = $width/$height;
+# 					$new_width = $ar * $new_height;
+# 				}
+# 				
+# 				#print STDERR "$entry->{photo}: new size: $new_width x $new_height (orig: $width x $height)\n";
+# 				$entry->{photo_width} = $new_width;
+# 				$entry->{photo_height} = $new_height;
+			}
+		}
+		
+		
+		my ($date) = split/\s/, directory_timestamp(); 
+		
+		$tmpl->param(entries => \@directory);
+		$tmpl->param(date => $date); #time2str("%D",time));
+		
+		# Write html to disk
+		open(FILE, ">/tmp/sheet.html");
+		print FILE $tmpl->output;
+		print FILE;
+
+		# Generate PDF from HTML
+		system("prince /tmp/sheet.html");
+		
+		# Remove watermark
+		system("perl -i -pe 's/Rect \\[572.0000 752.0000 597.0000 777.0000\\]/Rect \\[0.0000 0.0000 0.0000 0.0000\\]/g' /tmp/sheet.pdf");
+		
+		# Move to final resting place
+		system("mv /tmp/sheet.pdf $output_file");
+		
+		store $image_data, $image_size_cache;
+
+		# Return final file just to be nice
+		return $output_file;
+	}
 
 };
 
@@ -772,6 +880,11 @@ package ThemePHC::Directory;
 				return $r->redirect($self->binpath.'#'.$entry->display);
 			}
 			
+		}
+		elsif($sub_page eq 'pdf')
+		{
+			# Just send file
+			return $r->output_file(${AppCore::Config::WWW_DOC_ROOT} . ${AppCore::Config::WWW_ROOT} . '/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf','application/pdf');
 		}
 		else
 		{

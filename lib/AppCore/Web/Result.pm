@@ -838,13 +838,18 @@ package AppCore::Web::Result;
 # 		return $self;
 
 		## XXX HACK here - revisit later
-		print "Content-Type: $ctype\r\n\r\n";
-		open(FILE,'<'.$file);
-		binmode STDOUT;
-		print $_ while $_ = <FILE>;
-		close(FILE);
+# 		print "Content-Type: $ctype\r\n\r\n";
+# 		open(FILE,'<'.$file);
+# 		binmode STDOUT;
+# 		print $_ while $_ = <FILE>;
+# 		close(FILE);
+# 		
+# 		exit(0);
+		$self->content_type($ctype);
+		$self->body(read_file($file));
+		$self->is_fragment(0);
 		
-		exit(0);
+		return $self;
 	}
 	
 	sub output_data
