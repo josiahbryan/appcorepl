@@ -1,0 +1,140 @@
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<link href="/css/news.css" rel="stylesheet" type="text/css" />
+
+
+
+<title>News and Events Page</title>
+<h1>News and Events Page</h1>
+
+<tmpl_if current_nav_group_children>
+	<div class='sub_nav'>
+	<!--section-bg-->
+		<tmpl_loop current_nav_group_children>
+			<a href='<tmpl_var bin><tmpl_var url>' <tmpl_if current>class='current'</tmpl_if> title="<tmpl_var name=hint escape=html>"><tmpl_var title></a><tmpl_unless last> | </tmpl_unless>
+		</tmpl_loop>
+	</div>
+</tmpl_if>
+
+
+<p class='board-tagline'>Stay in touch and up to date on whats happening at PHC through this dynamic portal to the happenings at the Hill. Be sure to check out the online <a href='%%bin%%/calendar'>Event Calendar</a>. For the techies out there, you can also <a href='%%bin%%/events/rss'>subscribe to our RSS feed <img src='/images/rss-icon.png' align=absmiddle border=0></a> (<a href='http://en.wikipedia.org/wiki/RSS_(file_format)'>What is RSS?</a>) to stay updated without having to check this page every day!</p>
+
+<style>
+.item
+{
+	/*background: url(/images/s1-line01.png) no-repeat top left; */
+	border-bottom: 2px solid rgb(220,220,220);
+
+	padding-bottom:5px;
+	margin-bottom: 10px;
+}
+
+.item .title {font-weight: bold}
+
+.event_list {list-style: none }
+.event_list .non_weekly,
+.event_list .weekly
+{
+	font-size: 11px;
+	color: 			#553b20;
+	background: 		#fff6ec;
+	border: 		1px solid #c9ac93;
+	-moz-border-radius: 	4px;
+	padding: 		4px;
+	margin-bottom:		2px;
+}
+
+.event_list .non_weekly
+{
+	background: 	#ffebde;
+	border: 	2px solid #c9ac93;
+	color:		#472500;
+}
+
+.event-list-header {
+	margin:0;
+	padding:0;
+	/*margin-bottom:.25em;*/
+}
+
+</style>
+<table border=0 width='95%'>
+	<tr>
+		<td valign=top width='55%'>
+			<h1>News from the Hill</h1>
+			<tmpl_if can_admin><a class='new_link' style='float:right;width:125px;margin-top:.9em' href='%%bin%%/%%pageid%%/news/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add a News Item</a></tmpl_if>
+			<a href='%%bin%%/%%pageid%%/news' class='read_link new_link' style='width:163px'><img src='/images/silk/control_fastforward_blue.png' align=absmiddle border=0>  Read All News Items &raquo;</a>
+			<tmpl_loop recent_news>
+				<div class='item'>
+				<tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a></tmpl_if><!--<tmpl_if can_admin><a href='%%bin%%/events/events/%%fake_folder_name%%/edit'><img src='/images/silk/page_edit.png' border=0 align=absmiddle></a> </tmpl_if>-->
+				<span class='title'><a href='%%bin%%/events/news/%%fake_folder_name%%'>%%subject%%</a></span> - %%text%%</div>
+			</tmpl_loop>
+			<a href='%%bin%%/%%pageid%%/news' class='read_link new_link'><img src='/images/silk/control_fastforward_blue.png' align=absmiddle border=0>  Read All News Items &raquo;</a>
+
+			<!--<div class='item'><span class='title'>Guests</span>—Welcome to Pleasant Hill Church.  Please make yourself at home here.  Pastor Bryan may be reached at 964-3454 or 964-3664 (or email: pastorbryan@physh.org).  For more information check out our web page at www.physh.org.  Thank you for being our guest this morning.
+			</div>
+			<div class='item'><span class='title'>Prayers and Praises</span>—Please use the form in the pew before you to tell us yours.  Place the form in the offering plate as it is passed.</div>
+			<div class='item'><span class='title'>Worship Meditation</span>:  “Live such good lives among the pagans that, though they accuse you of doing wrong, they may see your good deeds and glorify God on the day he visits us..” (1 Peter 2:12)</div>
+			<div class='item'><span class='title'>Hymnals Available</span>—Those who would like to use a hymnal as they sing are welcome to take one from the table at the back of the auditorium.  Bibles are also available.</div>
+			<div class='item'><span class='title'>Missionary Update</span>—Community Help Center Request.  “Your canned food drives, monetary donations, and mitten and hat donations have greatly helped in the preparation of our Christmas Food Baskets.  We are (again) looking forward to your assistance this year.</div>
+			<div class='item'><span class='title'>Missionary Update #2</span>—Mark and Dianne Vanderkooi have completed their long journey back to their mission field home—in Chageen, Chad.  Let us faithfully remember them in pray that they will have a powerful, annointed ministry among the Kwong people of that village.</div>
+			<div class='item'><span class='title'>New PHC Website Coming</span>.  Webmaster Josiah Bryan says we should be up and running by the first of the year—if not sooner. </div>-->
+		</td>
+		<td>&nbsp;</td>
+		<td valign='top' width='45%'>
+			<h1>Happenings at the Hill</h1>
+			<tmpl_if can_admin><a class='new_link' style='float:right;width:90px;margin-top:.9em' href='%%bin%%/%%pageid%%/events/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add Event</a></tmpl_if>
+			<a href='%%bin%%/calendar' class='read_link new_link calendar_link' style='margin-right:6px;float:right;width:80px;margin-top:.9em'><img src='/images/silk/calendar.png' align=absmiddle border=0> Calendar</a>
+
+
+			<a href='%%bin%%/%%pageid%%/events' class='read_link new_link top_list_link' style='width:100px'><img src='/images/silk/control_fastforward_blue.png' align=absmiddle border=0> List Events...</a>
+
+
+			<tmpl_loop recent_events>
+				<h3 class='event-list-header'><tmpl_if same_day>Next </tmpl_if>%%day%%</h3>
+				<ul class='event_list'>
+					<tmpl_loop list>
+						<li class='<tmpl_if item_is_weekly>weekly<tmpl_else>non_weekly</tmpl_if>'>
+						<!--<tmpl_if can_admin>
+							<a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a>
+						</tmpl_if>-->
+						 <strong><a href='%%bin%%/events/events/%%fake_folder_name%%'>%%time%%</a></strong> - %%text%%
+						 <!--<tmpl_if can_admin><a href='%%bin%%/events/events/%%fake_folder_name%%/edit'><img src='/images/silk/page_edit.png' border=0 align=absmiddle></a></tmpl_if>-->
+						 </li>
+					</tmpl_loop>
+				</ul>
+
+			</tmpl_loop>
+			<a href='%%bin%%/calendar' class='read_link new_link calendar_link' style='margin-right:6px;float:right;width:150px;margin-top:.3em'><img src='/images/silk/calendar.png' align=absmiddle border=0> Calendar of Events</a>
+			<a href='%%bin%%/%%pageid%%/events' class='read_link new_link' style='width:125px'><img src='/images/silk/control_fastforward_blue.png' align=absmiddle border=0> See All Events&raquo;</a>
+
+			<!--<p><strong>Tonight—“Family Night”</strong></p>
+			<ul><li><strong>6:00pm</strong>—<em>This
+				Evening at the Hill </em>(for adults)—in the chapel<strong>.&#160; </strong>
+				Pastor will preach more on the Local Church.</li><li><strong>&nbsp;6:00pm</strong>—HIS KROSS (kids)</li><li><strong>6:00pm</strong>—PHYSH(teens)</li></ul>
+			<p></p>
+			<p><strong>Monday</strong></p>
+			<ul><li>The Young
+				Adult/College Age Bible Study at the home of <strong>Lynn
+				and Deb Williams,</strong>
+				is taking a break until after Thanksgiving.&nbsp; The next meeting will be <strong>December 1</strong>.</li></ul>
+			<p></p>
+			<p><strong>Wednesday, November
+			12<sup>th</sup> </strong></p>
+			<ul><li><strong>10:00am</strong>—Bible Study at Crown Point in Union City</li><li><strong>11:00am</strong>—Bible Study at Crown Point in Portland</li><li><strong>2:00pm</strong><strong>—</strong>Bible Study and Prayer at the home
+				of Imogene Raszkowski</li><li><strong>7:00pm</strong>—Prayer Meeting</li></ul>
+
+			<p><strong>Thursday, October 13<sup>rd</sup> at </strong><strong>7pm</strong></p>
+			<ul><li>Small Group Bible
+				Study at the Parsonage—all welcome! </li></ul>
+
+			<p><strong>Saturday, November 15<sup>th</sup> </strong></p>
+			<ul><li>Bear Creek Farms Trip</li></ul>
+
+			<p><strong>Next Sunday, November 16<sup>th</sup> &nbsp;</strong></p>
+			<ul><li><strong>8:00am—</strong>Prayer for the Worship Services
+				and Sunday School</li><li><strong>8:30am</strong>—Choir Warm-Up&nbsp; </li><li><strong>9:00am—</strong>Morning Worship.&nbsp; Pastor’s message will be,
+				“<strong><em>” </em></strong> from 1 Peter.</li><li><strong>6:00pm</strong>—Family Night Activities!
+				– PHYSH, HIS KROSS, &nbsp;and <em>“This Evening at the Hill”</em> </li></ul></p>-->
+		</td>
+	</tr>
+</table>

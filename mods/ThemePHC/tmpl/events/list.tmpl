@@ -1,0 +1,160 @@
+<a:cssx src="%%appcore%%/mods/Boards/css/boards.css"/>
+<tmpl_unless weekly_widget>
+	<title><tmpl_var board_title></title>
+	
+	<h1><tmpl_var board_title></h1>
+	
+	<!--%macro::sub_nav()%-->
+	<!--<style>.subnav{margin-bottom:-10px !important}</style>-->
+	<tmpl_var board_nav>
+	
+	<p class='board-tagline'><tmpl_var board_tagline></p>
+	
+	<tmpl_if description>
+		<div id='board-intro'>
+			<tmpl_var board_description>
+		</div>
+	</tmpl_if>
+
+</tmpl_unless>
+
+<tmpl_if events_page>
+	<style>
+	.posts { margin-top:-.5em;<tmpl_unless weekly_widget>border-bottom:none</tmpl_unless>}
+	h1.event-list-header
+	{
+		/*background-image: url(/images/jib3.png) !important;*/
+		background-image: none!important;
+		background-position: 0 -8px !important;
+		/*background-color: white !important;*/
+		/*padding-left: 70px !important;*/
+		padding-left: 5px !important;
+	}
+	h1 a{border:0 !important}
+	</style>
+	
+	<tmpl_unless weekly_widget>
+		
+		<tmpl_if can_admin>
+			<a class='new_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event to this list!</a>
+		</tmpl_if>
+		
+		<h1 class='event-list-header'>Upcomming Special Events</h1>
+		<tmpl_if dated>
+			<table class='posts' width='100%' cellpadding=0 cellspacing=0>
+				<thead>
+					<th align=left class='title'>Event</th>
+					<!--<th nowrap align=right>Views</th>-->
+					<th nowrap align=right>Comments</th>
+					<!--<th align=left nowrap>Last Comment</th>-->
+				</thead>
+				<tbody>
+					<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
+					<tmpl_loop dated>
+						<tr class='<tmpl_var post_flags>'>
+							<td width='65%' class='subject'>
+								<!--<tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>-->
+								<a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'>%%day_name%%, %%normal_datestamp%% at %%time%%</a> - %%text%%
+								<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
+								<span class='tagline'><span class='hidden'> - </span><!--<tmpl_var text>--></span>
+							</td>
+							<!--<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>-->
+							<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>
+							<!--<td width='15%' nowrap class='lastpost' valign=top >
+								<tmpl_if post_postid>
+									<span class='post'>
+										<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+										<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+									</span>
+								<tmpl_else>-</tmpl_if>
+							</td>-->
+						</tr>
+					</tmpl_loop> 
+				</tbody>
+			</table>
+		<tmpl_else>
+			<h3>Sorry, no upcomming special events listed!</h3>
+		</tmpl_if>
+	
+	</tmpl_unless>
+	
+	<h1 class='event-list-header'><a name='weekly'>Every Week at PHC</a></h1>
+	       
+	<table class='posts' width='100%' cellpadding=0 cellspacing=0>
+		<thead>
+			<!--<th align=left class='title'>Event</th>-->
+			<!--<th nowrap align=right>Views</th>-->
+			<!--<th nowrap align=right>Comments</th>-->
+			<!--<th align=left nowrap>Last Comment</th>-->
+		</thead>
+		<tbody>
+			<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
+			<tmpl_loop weekly>
+				<tr>
+					<td colspan=99>
+						<h3><tmpl_var day_name></h3>
+					</td>
+				</tr>
+				
+				<tmpl_loop list>		
+					<tr class='<tmpl_var post_flags>'>
+						<td width='65%' class='subject'>
+							<!--<tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>-->
+							<a href='%%bin%%/%%folder_name%%' class='title_link'>%%time%%</a> - %%clean_html%%
+							<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
+							<span class='tagline'><!--<span class='hidden'> - </span>--><!--<tmpl_var text>--></span>
+						</td>
+						<!--<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>-->
+						<!--<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>-->
+						<!--<td width='15%' nowrap class='lastpost' valign=top >
+							<tmpl_if post_postid>
+								<span class='post'>
+									<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+									<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+								</span>
+							<tmpl_else>-</tmpl_if>
+						</td>-->
+					</tr>
+				</tmpl_loop>
+			</tmpl_loop> 
+		</tbody>
+	</table>
+<tmpl_else>
+	<tmpl_if can_admin>
+		<a class='new_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add a news item to this list</a>
+	</tmpl_if>
+	
+	<tmpl_if posts>
+		<table class='posts' width='100%' cellpadding=0 cellspacing=0>
+			<thead>
+				<th align=left class='title'>Post Title</th>
+				<th nowrap align=right>Views</th>
+				<th nowrap align=right>Replies</th>
+				<th align=left nowrap>Last Comment</th>
+			</thead>
+			<tbody>
+				<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
+				<tmpl_loop posts>
+					<tr class='<tmpl_var post_flags>'>
+						<td width='65%' class='subject'><tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if><a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'><tmpl_var subject></a><tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if><span class='tagline'><span class='tagline'><span class='hidden'> - </span><tmpl_var short_text></span></td>
+						<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>
+						<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>
+						<td width='15%' nowrap class='lastpost' valign=top >
+							<tmpl_if post_postid>
+								<span class='post'>
+									<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
+									<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
+								</span>
+							<tmpl_else>-</tmpl_if>
+						</td>
+					</tr>
+				</tmpl_loop> 
+			</tbody>
+		</table>
+	<tmpl_else>
+		<h3>Sorry, no posts added yet to this forum.</h3>
+	</tmpl_if>
+
+</tmpl_if>
+	
+

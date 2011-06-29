@@ -28,11 +28,13 @@ package ThemePHC;
 	use base 'Content::Page::ThemeEngine';
 	use Scalar::Util 'blessed';
 	
+	# Load verselookup so its in ram and so it gets its schema updated as needed
 	use ThemePHC::VerseLookup;
 	
-	# Load our missions module so it gets registered with the page tyep database
+	# Load our modules so they gets registered with the page type database
 	use ThemePHC::Missions;
 	use ThemePHC::Directory;
+	use ThemePHC::Events;
 	
 	# Load the talk controller so it can update user prefs
 	use ThemePHC::BoardsTalk;
@@ -52,6 +54,7 @@ package ThemePHC;
 		# Make sure missions and other sub modules are in sync
 		ThemePHC::Missions->apply_mysql_schema();
 		ThemePHC::Directory->apply_mysql_schema();
+		ThemePHC::Events->apply_mysql_schema();
 	}
 	
 	sub load_nav_hook 

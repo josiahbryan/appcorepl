@@ -1,0 +1,246 @@
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+
+
+
+<title>%tmpl_if post_subject%Edit &quot;%%post_subject%%&quot;%tmpl_else%New Item in %%board_title%%%/tmpl_if% - News and Events</title>
+<h1>%tmpl_if post_subject%Edit &quot;%%post_subject%%&quot;%tmpl_else%New Item in %%board_title%%%/tmpl_if%</h1>
+
+%macro::sub_nav()%
+<tmpl_var board_nav>
+
+<script type="text/javascript" src="/eas_www/libj.js"></script>
+<script type="text/javascript" src="/eas_www/calendar.js"></script>
+<script type="text/javascript" src="/eas_www/xtypes.js"></script>
+<script type="text/javascript" src="/fckeditor/fckeditor.js"></script>
+<!--[%%folder_news%%|%%folder_events%%]-->
+<style>
+label{cursor:pointer}
+</style>
+
+<form action='<tmpl_var post_url>' ENCTYPE="multipart/form-data" method=POST style='display:inline;border:0;padding:0;margin:0' name=item>
+	<input type=hidden name=postid value="<tmpl_var post_postid>">
+
+	<input type=hidden name=poster_name value='<tmpl_var user_display escape=html>'>
+	<input type=hidden name=poster_email value="<tmpl_var user_email>">
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+		<script>
+		function update_dow_box()
+		{
+			var is_weekly = $x('weekly_yes').checked;
+			$x('weekday').disabled = is_weekly ? false : true;
+		}
+
+		function update_location_box()
+		{
+			var at_phc = $x('phc_yes').checked;
+			$x('location').disabled = at_phc ? true : false;
+			$x('map_link').disabled = at_phc ? true : false;
+		}
+		</script>
+
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tr>
+				<td valign=top>Flag this Post:</td> <td valign=top>
+					<select name='alert_flag' id='alert_flag'>
+						<option value='0'	 	<tmpl_if ticker_priority4>selected</tmpl_if>>(No Flag)
+						<option value='green' 	<tmpl_if ticker_priority4>selected</tmpl_if>>"Green" Alert
+						<option value='yellow' 	<tmpl_if ticker_priority3>selected</tmpl_if>>"Yellow" Alert
+						<option value='red' 	<tmpl_if ticker_priority2>selected</tmpl_if>>"Red" Alert
+					</select>
+
+					<br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>This determines how it looks in the "News Ticker" at the top of the pages. Normally, just leave it at "No Flag". Use the Red Flag for stuff like cancelations.</span>
+				</td>
+			</tr>
+			<tmpl_if folder_events>
+				<tr>
+					<td valign=top>Date/Time:</td> <td><input type=text name=datetime id=datetime value="<tmpl_var event_datetime>" size=20><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>Please use this format: <B>YYYY-MM-DD HH:MM:SS</b> - and use 24-hour format (military time.) If the event happens every week, you can just put the time - the computer will ignore the date anyway.<br>Remember: <b>DON'T put AM or PM - use military time!</b>.</span>
+						<script>
+						EAS.Data.XType.DateTime.applyTo('datetime')
+						</script>
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Is Weekly?</td> <td nowrap valign=top>
+						<input type='radio' name='is_weekly' %tmpl_unless event_is_weekly%checked%/tmpl_unless% onchange='update_dow_box()' value='no' id='weekly_no'><label for='weekly_no'> <b>No</b>, it only happens on a certain date</label><br>
+						<input type='radio' name='is_weekly' %tmpl_if event_is_weekly%checked%/tmpl_if%         onchange='update_dow_box()' value='yes' id='weekly_yes'><label for='weekly_yes'> <b>Yes</b>, it happens every week</label>
+
+					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>This is what will appear underneath the photo in lists of photos and on the front page.</span>-->
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Day of the Week:</td> <td valign=top>
+						<select name='weekday' id='weekday'>
+							<option value='1' <tmpl_if dow1>selected</tmpl_if>>Monday
+							<option value='2' <tmpl_if dow2>selected</tmpl_if>>Tuesday
+							<option value='3' <tmpl_if dow3>selected</tmpl_if>>Wednesday
+							<option value='4' <tmpl_if dow4>selected</tmpl_if>>Thursday
+							<option value='5' <tmpl_if dow5>selected</tmpl_if>>Friday
+							<option value='6' <tmpl_if dow6>selected</tmpl_if>>Saturday
+							<option value='7' <tmpl_if dow7>selected</tmpl_if>>Sunday
+						</select>
+
+						<br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>This only matters if the event happens every week. If it happens every week, indicate the day the event happens using this field.</span>
+						<script>update_dow_box()</script>
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Describe the Event:</td>
+					<td>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>This description is shown on the main page and on the calendar - its better to make this shorter rather than very long. Try to keep it around 10 - 30 words.</span>
+						<textarea style='display:none' rows=2 cols=55 id=comment name=comment><tmpl_var post_text></textarea>
+						<textarea rows=2 cols=55 id=age name=age><tmpl_var post_text></textarea>
+						<script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>
+					</td>
+
+				</tr>
+				<tr>
+				<tr>
+					<td valign=top>More Details:</td>
+					<td>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>This information is only shown on the event page itself - e.g. if someone clicks on the time for this event, this will be shown on that page.</span>
+						<textarea rows=4 cols=55 id=page_details name=page_details><tmpl_var event_page_details></textarea>
+					</td>
+
+				</tr>
+					<td valign=top>Contact Name:</td> <td><input type=text id='contact_name' name=contact_name value="<tmpl_var event_contact_name>" size=35><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>This name will appear in event descriptions - it can be left blank if desired. Example: <b>Pastor Bruce or Sue Bryan</b></span>
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Contact E-Mail:</td> <td><input type=text id='contact_email' name=contact_email value="<tmpl_var event_contact_email>" size=65><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>Any comments or questions on this event will be sent to this email (as well as posted on the event.) This can be left blank. Example: <b>bryan5@jayco.net</b></span>
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Is it at PHC?</td> <td>
+						<input type='radio' name='at_phc' value='yes' %tmpl_if event_at_phc%checked%/tmpl_if%         onchange='update_location_box()' id='phc_yes'><label for='phc_yes'> <b>Yes</b>, it happens at PHC</label><br>
+						<input type='radio' name='at_phc' value='no'  %tmpl_unless event_at_phc%checked%/tmpl_unless% onchange='update_location_box()' id='phc_no' ><label for='phc_no'> <b>No</b>, it happens away from PHC</label><br>
+					<span style='font-size:.85em;color:rgb(100,100,100)'>If you put "No", please indicate the location and a link to a Google Map of the location below.</span>
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Location Description:</td> <td><input type=text id='location' name=location value="<tmpl_var event_location>" size=65><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>Josiah's House at 316 Meadow Drive, Union City, IN</b></span>
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Map Link:</td> <td><input type=text name=map_link id='map_link'  value="<tmpl_var event_location_map_link>" size=65><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>Example: <b>http://maps.google.com/maps?q=316+meadow+drive,+union+city,+indiana...</b></span>
+						<script>update_location_box()</script>
+					</td>
+				</tr>
+				<tr>
+					<td colspan=99><hr size=1></td>
+				</tr>
+				<tr>
+					<td valign=top>Folder and Subject:</td>
+					<td>
+						<span style='font-size:.85em;color:rgb(100,100,100)'><b>Advanced use only</b> - normally you will let the computer choose the folder and subject.</span><br>
+						<input type='radio' name='fake_folder_override' value='no'  %tmpl_unless event_fake_folder_override%checked%/tmpl_unless%  id='folder_no' ><label for='folder_no'> Let the computer choose the folder and subject.</label><br>
+						<input type='radio' name='fake_folder_override' value='yes' %tmpl_if event_fake_folder_override%checked%/tmpl_if%  id='folder_yes'><label for='folder_yes'> Override the folder and subject manually, below.</label><br>
+
+						<input type=text id='fake_folder' name=subject_override  value="%%post_subject%%" size=35> (Subject)<br>
+						<input type=text id='fake_folder' name=fake_folder       value="%%post_fake_folder_name%%" size=35> (Folder)<br>
+
+
+					</td>
+				</tr>
+				<tr>
+					<td colspan=99><hr size=1></td>
+				</tr>
+
+			<tmpl_else>
+				<tr>
+					<td valign=top>Title:</td> <td><input type=text name=subject id=subject value="<tmpl_var post_subject>" size=65><br>
+						<!--<span style='font-size:.85em;color:rgb(100,100,100)'>This is what will appear underneath the photo in lists of photos and on the front page.</span>-->
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Description:</td>
+					<td>
+					<textarea style='display:none' rows=3 cols=55 id=comment name=comment><tmpl_var post_text></textarea>
+					<textarea rows=3 cols=55 id=age name=age><tmpl_var post_text></textarea>
+					<script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>
+					</td>
+
+				</tr>
+				<tr>
+					<td valign=top>Contact Name:</td> <td><input type=text id='contact_name' name=location value="<tmpl_var event_contact_name>" size=35><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>This name will appear in item descriptions - it can be left blank if desired. Example: <b>Pastor Bruce or Sue Bryan</b></span>
+
+					</td>
+				</tr>
+				<tr>
+					<td valign=top>Contact E-Mail:</td> <td><input type=text id='contact_email' name=contact_email value="<tmpl_var event_contact_email>" size=65><br>
+						<span style='font-size:.85em;color:rgb(100,100,100)'>Any comments or questions on this event will be sent to this email (as well as posted on the event.) This can be left blank. Example: <b>bryan5@jayco.net</b></span>
+
+					</td>
+				</tr>
+
+			</tmpl_if>
+
+			<tr>
+				<td></td>
+				<td>
+				<br>
+
+				<tmpl_if event_eventid>
+					<div style='float:right'>
+						<input type='button' onclick='if(confirm("Are you sure you want to delete this event?")){document.location.href="%%bin%%/%%pageid%%/%%board_folder_name%%/%%post_fake_folder_name%%/delete"}' value='Delete Event'>
+					</div>
+				</tmpl_if>
+
+
+				<input type=submit value="Save Changes and Post Item">
+				<!--<input type=reset value="Reset to Original Values"> -->
+				</td>
+			</tr>
+
+
+		</table>
+	</div>
+
+</form>
+<script>
+function win_onload()
+{
+
+
+
+	<tmpl_if folder_events>
+	var oFCKeditor = new FCKeditor('age') ;
+	oFCKeditor.BasePath = '/fckeditor/' ;
+	oFCKeditor.ToolbarSet = 'JBlog';
+	oFCKeditor.Height = "80px" ;
+
+	oFCKeditor.ReplaceTextarea();
+
+	var oFCKeditor2 = new FCKeditor('page_details') ;
+	oFCKeditor2.BasePath = '/fckeditor/' ;
+	oFCKeditor2.ToolbarSet = 'JBlog';
+	oFCKeditor2.Height = "300px" ;
+
+	oFCKeditor2.ReplaceTextarea();
+	<tmpl_else>
+	var oFCKeditor = new FCKeditor('age') ;
+	oFCKeditor.BasePath = '/fckeditor/' ;
+	oFCKeditor.ToolbarSet = 'JBlog';
+	oFCKeditor.Height = "300px" ;
+
+	oFCKeditor.ReplaceTextarea();
+	</tmpl_if>
+}
+
+
+global.onload(win_onload);
+
+</script>

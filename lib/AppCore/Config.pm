@@ -175,6 +175,8 @@ BEGIN
 	
 	%EMAIL_DOMAIN_CONFIG = map { lc $_ => 1 } qw/
 		mypleasanthillchurch.org
+		gmail.com
+		productiveconcepts.com
 	/;
 	
 	%EMAIL_MX_OVERRIDES = (

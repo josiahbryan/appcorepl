@@ -48,6 +48,30 @@ package ThemePHC::Missions;
 		Content::Page::Controller
 	};
 	
+	
+	# This 'Boards' subclass actually is a rather involved subclass. As may know, Boards
+	# functions something like this: 
+	# [List of Groups (Board::Groups)] ->
+	#	[Each Group has a Collection of Boards (Boards::Board)] -> 
+	#		[Each Board has Collection of Posts (Boards::Post)] -> 
+	#			[Posts have Comments (Boards::Post with top_commentid set)]
+	# 
+	# What the 'Missions' module does is have a statically-set Boards::Group that it keeps all its data inside.
+	# So we have one group, titled 'Missions, and each missionary is represented by a 'Boards::Booard' inside
+	# that group. Individual updates/posts from that missionary appear as Boards::Posts in that 'Boards::Board'
+	# for that missionary. 
+	#
+	# Additionally, we have a 'decorator' class called PHC::Missions (defined above) that holds a number of
+	# extended attributes. This PHC::Missions class directly corresponds to a Boards::Board object (see
+	# PHC::Missions 'boardid' column). 
+	#
+	# We use a variety of hooks to hook into the 'Board' management routines such as editing the 
+	# board (to edit the missionary name/location/photo), and to apply permission restructions.
+	#
+	# Posting updates in the individual boards need no hooks except one general hook to apply 
+	# security permissions. Everything else is handled by the superclass (including commenting functionality.)
+	#
+	
 	use Content::Page;
 	
 	# Register our pagetype
@@ -64,7 +88,7 @@ package ThemePHC::Missions;
 	
 	my $SUBJECT_LENGTH = 50;
 	
-	my $CHANNEL_GROUP = Boards::Group->by_field(title=>'Missions');
+	my $CHANNEL_GROUP = Boards::Group->find_or_create(title=>'Missions');
 	
 	sub apply_mysql_schema
 	{
@@ -171,7 +195,7 @@ package ThemePHC::Missions;
 # 	}
 # 	
 	
-	sub forum_page
+	sub board_page
 	{
 		my $class = shift;
 		my ($req,$r) = @_;

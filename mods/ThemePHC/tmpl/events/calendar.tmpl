@@ -1,0 +1,412 @@
+<h1>Event Calendar</h1>
+%macro::sub_nav()%
+<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<script src='/cookies.js'></script>
+
+<style>
+	.daynum { font-weight: bold }
+
+	.non-month, .day, .day-wkend
+	{
+		height: 5em;
+		width: 8em !important;
+		/*overflow: auto;*/
+
+
+	}
+
+	.non-month
+	{
+		border: 1px solid rgb(180,180,180);
+		background: rgb(220,220,220);
+		color: rgb(140,140,140);
+		/*font-size: .9em;*/
+		-moz-border-radius: 5px;
+	}
+	.daycell .eventlist
+	{
+		height: 5em !important;
+		overflow: hidden !important;
+		/*width: 8em !important;*/
+	}
+
+	.non-month .daynum { font-weight: normal }
+
+	.day
+	{
+		color: #553b20;
+		background: #fff6ec;
+		border: 1px solid #c9ac93;
+		-moz-border-radius: 5px;
+	}
+	.day-wkend
+	{
+		background: #ffebde;
+/*		border: 1px solid #eeeaee;*/
+		border: 1px solid #c9ac93;
+		-moz-border-radius: 5px;
+	}
+
+
+	.day-highlighted
+	{
+		background: #cad4e9;
+	}
+	.day-selected
+	{
+		font-weight: normal;
+		color: #fff !important;
+		background-color: #22437f;
+	}
+	.day-selected a
+	{
+		color: #fff !important;
+	}
+	.day-selected-highlighted
+	{
+		font-weight: normal;
+		color: #fff !important;
+		background-color: #34548f !important;
+	}
+
+	.day-selected-highlighted a
+	{
+		color: #fff !important;
+	}
+
+	.year
+	{
+		background:rgb(180,180,180);
+		border: 1px solid rgb(180,180,180);
+		font-weight: bold;
+	}
+
+	#nav-month a
+	{
+		margin: 0;
+		color: black;
+		display: block;
+		text-decoration: none;
+		padding: 4px 6px;
+		background:rgb(220,220,220);
+	}
+	#nav-month a:hover
+	{
+/*		background-color: <$navhover_bg>;
+		color: <$navhover_fg>;*/
+	}
+	#nav-month strong a
+	{
+		color: #fff !important;
+		background-color: #10203b;
+		/*font-size: 1.1em;*/
+		font-weight: bold;
+	}
+	#nav-month strong a:hover
+	{
+		background-color: #172e56 !important;
+	}
+
+	.this_year { font-weight: bold; font-size: 1.20em }
+
+	.motab .recipe_title { font-size: 100% }
+
+	/*.mpline + .mpline { border-top: 1px solid <$info_bg>; padding-top: 4px; margin-top: 4px }*/
+
+	.day_view
+	{
+		margin-top: -1.75em;
+
+	}
+
+	.sub_nav { border:0 }
+
+	.event
+	{
+		font-size: .7em;
+
+	}
+
+	/*
+	td.day:hover .event,
+	td.day-wkend:hover .event
+	{
+		font-size: .9em;
+	}
+
+	td.day-wkend:hover,
+	td.day:hover
+	{
+		width: 16em  !important;
+	}
+	*/
+
+	.new_link { width: 225px; margin: .5em auto }
+
+	.event.non_weekly
+	{
+		background: 	#ffebde;
+		border: 	2px solid #c9ac93;
+		color:		#472500;
+		padding:	2px;
+	}
+
+	.day-wkend .event.non_weekly,
+	.day-wkend-popover .event.non_weekly
+	{
+		background: #fff6ec;
+	}
+
+
+	.popover
+	{
+		position: absolute;
+		color: #553b20;
+		background: #fff6ec;
+		border: 2px solid #c9ac93;
+		-moz-border-radius: 5px;
+		padding: .5em;
+		font-size: 1.2em;
+	}
+
+	.popover .daynum
+	{
+		font-size: 1.25em;
+	}
+
+	.non-month-popover
+	{
+		border: 2px solid rgb(180,180,180);
+		background: rgb(220,220,220);
+		color: rgb(140,140,140);
+		/*font-size: .9em;*/
+		-moz-border-radius: 5px;
+	}
+	.non-month-popover .daynum { font-weight: normal }
+
+	.day-popover
+	{
+		color: #553b20;
+		background: #fff6ec;
+		border: 2px solid #c9ac93;
+		-moz-border-radius: 5px;
+	}
+	.day-wkend-popover
+	{
+		background: #ffebde;
+/*		border: 1px solid #eeeaee;*/
+		border: 2px solid #c9ac93;
+		-moz-border-radius: 5px;
+	}
+
+	.popover .event
+	{
+		font-size: 1em;
+	}
+
+	.popover .eventlist
+	{
+		height: auto !important;
+		overflow: visible !important;
+		/*width: 20em;*/
+	}
+
+	.eventlist.smalltext {display:block}
+	.eventlist.fulltext  {display:none}
+	.popover .eventlist.smalltext {display:none}
+	.popover .eventlist.fulltext  {display:block}
+
+	</style>
+
+
+
+
+	<table border=0 class='day_view' width='100%'>
+		<tr>
+			<td align=middle>
+				<table width=100% id='date-sel'> <!-- style='display:none;'> -->
+					<tr id='sel-yr'>
+						<td colspan=12 class='year'>
+							<table width=100% cellspacing=0 cellpadding=0>
+							<tr>
+								<td nowrap><a href='<tmpl_var last_year_url>'>&laquo; <tmpl_var last_year></a></td>
+								<td width=100% class='this_year'><font class=this_year><center>%%month_name%% <tmpl_var this_year></center></font></td>
+								<td nowrap align=left><a href='<tmpl_var next_year_url>'><tmpl_var next_year> &raquo;</a></td>
+							</tr>
+							</table>
+						</td>
+					</tr>
+					<tr id='sel-month'>
+						<tmpl_loop name=months>
+							<td id='nav-month'>
+								<tmpl_if is_cur_month><strong></tmpl_if>
+									<a href='<tmpl_var month_url>'><center><tmpl_if is_cur_month><tmpl_var month><tmpl_else><tmpl_var mini_month></tmpl_if></center></a>
+								<tmpl_if is_cur_month></strong></tmpl_if>
+							</td>
+						</tmpl_loop>
+					</tr>
+				</table>
+
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<tmpl_if can_admin><a class='new_link' href='%%bin%%/events/events/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add a new Event to the calendar</a></tmpl_if>
+
+				<div class='ffjc-info' id='mytip' <tmpl_if hide_tip>style='display:none'</tmpl_if>>
+					<b>Hint:</b> To see <b>all</b> the events on a given day, put your mouse over that day and they'll all show up! (<a href='javascript:void(close_tip())'>Close this tip.</a>)
+				</div>
+
+				<script>
+				var TIP_COOKIE = 'phc.calendar.rollover_tip';
+				function close_tip()
+				{
+					$x('mytip').style.display='none';
+					setCookie(TIP_COOKIE,'false');
+				}
+
+				var c = getCookie(TIP_COOKIE);
+				if(c == 'false') {
+					close_tip();
+				}
+
+
+				</script>
+
+<!--onclick='document.location.href="<tmpl_var bin>/kitchen/meal_planning?zoom=day&date=<tmpl_var date>"' style='cursor:pointer'-->
+<!--style='border:1px solid <$bordercolor>' -->
+				<table border=0 class='motab' id='calendar' width='100%'>
+					<thead>
+						<th>Sunday</th>
+						<th>Monday</th>
+						<th>Tuesday</th>
+						<th>Wednesday</th>
+						<th>Thursday</th>
+						<th>Friday</th>
+						<th>Saturday</th>
+					</thead>
+					<tbody>
+						<tmpl_loop weeks>
+							<tr>
+								<tmpl_loop days>
+									<td class='daycell <tmpl_if cur_month>day<tmpl_if weekend>-wkend</tmpl_if><tmpl_else>non-month</tmpl_if>' valign=top <tmpl_unless day_loop>phc:noevents="true"</tmpl_unless>>
+										<span class='daynum'><tmpl_var name=day></span>
+										<div class='eventlist smalltext'>
+											<tmpl_loop day_loop_small>
+												<div class='event <tmpl_if item_is_weekly>weekly<tmpl_else>non_weekly</tmpl_if>'>
+													<a href='%%bin%%/events/events/%%fake_folder_name%%'><span class='time'>%%time%%</span></a>
+													<span class='subject'>%%subject%%</span>
+												</div>
+											</tmpl_loop>
+										</div>
+										<div class='eventlist fulltext'>
+											<tmpl_loop day_loop>
+												<div class='event <tmpl_if item_is_weekly>weekly<tmpl_else>non_weekly</tmpl_if>'>
+													<a href='%%bin%%/events/events/%%fake_folder_name%%'><span class='time'>%%time%%</span></a>
+													<span class='subject'>%%text%%</span>
+												</div>
+											</tmpl_loop>
+										</div>
+
+									</td>
+								</tmpl_loop>
+							</tr>
+						</tmpl_loop>
+					</tbody>
+				</table>
+				<script>
+				var clearTid;
+				function hide_popover(event)
+				{
+					var td = this;
+					//clearTimeout(td.clearTid);
+					clearTid = setTimeout(function(){td.style.display = 'none'},1);
+				}
+
+				function close_popup_cell()
+				{
+					if(popup_cell.popover_div && popup_cell.popover_div.onmouseout) {
+						popup_cell.popover_div.onmouseout();
+					}
+				}
+
+				function clear_hide_popover_tid()
+				{
+					var td = this;
+					clearTimeout(clearTid);
+				}
+
+				function popup_cell(event)
+				{
+					var td = this;
+
+					var noEventFlag = td.getAttribute('phc:noevents') == 'true';
+					if(noEventFlag)
+						return ;
+
+					var x = o(td,true);
+					var y = o(td,false);
+
+					clearTimeout(clearTid);
+
+
+					if(!popup_cell.popover_div)
+					{
+						popup_cell.popover_div = document.createElement('div');
+						popup_cell.popover_div.className = 'popover';
+						popup_cell.popover_div.onmouseout = hide_popover;
+						popup_cell.popover_div.onmouseover = clear_hide_popover_tid;
+						document.body.appendChild(popup_cell.popover_div);
+					}
+
+					if(popup_cell.popover_div.visibleCell == td)
+						return;
+
+
+					var p = popup_cell.popover_div;
+					p.innerHTML = td.innerHTML;
+					p.className = 'popover '+td.className+'-popover';
+					p.visibleCell = td;
+
+					y -= 15;
+					x -= 15;
+
+					p.style.height = 'auto';
+					p.style.top = y+'px';
+					p.style.left = x+'px';
+					p.style.display = 'block';
+
+					setTimeout(function()
+					{
+						if(p.clientHeight < td.clientHeight)
+						{
+							//console.debug("p.clientHeight = "+p.clientHeight+", td.clientHeight = "+td.clientHeight);
+							p.style.height = td.clientHeight + 15;// * 2;
+							//console.debug("p.style.height = "+p.style.height);
+						}
+					},1);
+
+
+				}
+
+				document.body.onclick = close_popup_cell;
+				var tab = $x('calendar');
+				var tb = tab.tBodies[0];
+				var rows = tb.getElementsByTagName('tr');
+				for(var i=0;i<rows.length;i++)
+				{
+					var cols = rows[i].getElementsByTagName('td');
+					for(var j=0;j<cols.length;j++)
+					{
+						var td = cols[j];
+						td.onmouseover = popup_cell;
+						//td.onmouseout = close_popup_cell;
+					}
+				}
+
+
+
+				</script>
+			</td>
+		</tr>
+	</table>

@@ -145,7 +145,7 @@ Server: $host
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
-	our $DEBUG = 1;
+	our $DEBUG = 0;
 	sub send_all
 	{
 		my $self = shift;
@@ -239,7 +239,8 @@ Server: $host
 				Port=> $prof->{port} || 25, 
 				#User=> $prof->{user} || 'notifications', 
 				#Password => $prof->{pass} || 'Notify1125',
-				Hello	=> $domain); # connect to an SMTP server
+				Hello	=> $domain,
+				Debug => $DEBUG); # connect to an SMTP server
 		};
 		
 		if(!$smtp || $@)
@@ -280,6 +281,9 @@ Server: $host
 			}
 			close(FILE);
 			unlink($file);
+			
+			# Wierd, I know - but since we deleted the data file, there really is no point in keeping this record around in the database either...
+			#$self->delete;
 		}
 		else
 		{
@@ -316,16 +320,19 @@ Server: $host
 		foreach $rr (@mx)
 		{
 			my $exch = ref $rr ? $rr->exchange : $rr;
-			print STDERR "Debug: rr loop, exch=$exch\n";
-			my $client = new Net::SMTP($exch) || next;
-	
-			$client->mail($from);
+			print STDERR "Debug: rr loop, exch=$exch\n" if $DEBUG;
+			my $client = new Net::SMTP($exch, 
+				#Hello => 'mybryanlife.com', 
+				#Hello => 'mypleasanthillchurch.org',
+				Hello => 'productiveconcepts.com',
+				#Debug=>$DEBUG) || next;
+				Debug=>1) || next;
+			$client->mail($from), #'jbryan@productiveconcepts.com');
 			$client->to($target);
 			$client->data($msg);
 			$client->quit;
 	
 			return 1;
-	
 			#last;
 		}
 		return 0;
