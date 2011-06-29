@@ -145,7 +145,7 @@ Server: $host
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
-	our $DEBUG = 0;
+	our $DEBUG = 1;
 	sub send_all
 	{
 		my $self = shift;
@@ -310,13 +310,13 @@ Server: $host
 		}
 		#my $success = 0;
 	
-		#print STDERR "Debug: from:$from, target:$target, domain:$domain, mx=[".join(',',@mx)."]\n";
+		print STDERR "Debug: from:$from, target:$target, domain:$domain, mx=[".join(',',@mx)."]\n" if $DEBUG;
 	
 		# Loop through the MXs.
 		foreach $rr (@mx)
 		{
 			my $exch = ref $rr ? $rr->exchange : $rr;
-			#print STDERR "Debug: rr loop, exch=$exch\n";
+			print STDERR "Debug: rr loop, exch=$exch\n";
 			my $client = new Net::SMTP($exch) || next;
 	
 			$client->mail($from);

@@ -1,4 +1,4 @@
-		<tmpl_if display:str>
+	<tmpl_if display:str>
 			<tr id='family_%%familyid%%_divider' class='family_divider'>
 				<td colspan=2>
 					<a name='%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%'><hr size=1></a>
@@ -47,13 +47,7 @@
 						<tmpl_if address:str>
 							<tr class='address'>
 								<td class='value' colspan='2'>
-									<tmpl_if is_mobile>
-										<a href='map:%%address%%'>
-									</tmpl_if>
-										%%address%%
-									<tmpl_if is_mobile>
-										</a>
-									</tmpl_if>
+									%%address%%
 								</td>
 							</tr>
 						</tmpl_if>
@@ -195,8 +189,21 @@
 								</td>
 							</tr>
 						</tmpl_if>
-						
-						
+						<tmpl_if is_admin>
+							<tr class='admin_notes'>
+								<td class='key' valign='top'>
+									Admin Notes:
+								</td>
+								<td class='value'>
+									<tmpl_if admin_notes:str>
+										<b>%%admin_notes%%</b>
+										(<a href='%%bin%%/edit?familyid=%%familyid%%#admin_notes'>Edit</a>)
+									<tmpl_else>
+										(<a href='%%bin%%/edit?familyid=%%familyid%%#admin_notes'>Add Admin Note</a>)
+									</tmpl_if>
+								</td>
+							</tr>
+						</tmpl_if>
 					</table>
 				</td>
 			</tr>

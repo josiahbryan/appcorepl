@@ -92,14 +92,24 @@ table.kids td.bday
 	color: rgb(80,80,80);
 }
 
-td.key
+table.entry td
+{
+	font-size: .85em;
+}
+
+table.entry td.key
 {
 	color: rgb(80,80,80);
-	font-size: .85em;
+	font-size: .75em;
 	width: 1%;
 	white-space:nowrap;
 }
 
+
+.admin_notes td
+{
+	padding-top: .5em;
+}
 
 .paging
 {
@@ -138,6 +148,7 @@ tr.loadmore a
 	color: #364a90;
 }
 
+<tmpl_unless is_mobile>
 div.dlinfo
 {
 	width: 13.25em;
@@ -168,6 +179,7 @@ div.dlinfo td.text img
 	text-align: center;
 	
 }
+</tmpl_unless>
 
 </style>
 
@@ -192,7 +204,7 @@ div.dlinfo td.text img
 		<table>
 			<tr>
 				<td class=text valign=top>
-					<Center><a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'><img src='%%modpath%%/images/pdf.gif' border=0></a></center>
+					<tmpl_unless is_mobile><center><a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'><img src='%%modpath%%/images/pdf.gif' border=0></a></center></tmpl_unless>
 					<b>Did you know?</b> You can download a <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>printable version of the directory</a>! Just <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>click here</a> to download and print off your own 22-page full-color copy!
 				</td>
 			</tr>

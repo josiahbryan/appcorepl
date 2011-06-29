@@ -51,6 +51,8 @@ package PHC::Directory::Family;
 			{ field	=> 'lat',			type => 'float' },
 			{ field	=> 'lng',			type => 'float' },
 			{ field => 'deleted',			type => 'int', null =>0, default=>1 },
+			
+			{ field => 'admin_notes',		type => 'text' },
 		],	
 	});
 	
@@ -830,7 +832,7 @@ package ThemePHC::Directory;
 			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
 			if($admin)
 			{
-				push @cols, qw/userid spouse_userid photo_num/;
+				push @cols, qw/userid spouse_userid photo_num admin_notes/;
 			}
 			
 			foreach my $col (@cols)
@@ -870,6 +872,13 @@ package ThemePHC::Directory;
 					birthday	=> $req->{bday_new},
 				});
 			}
+			
+			if($req->output_fmt eq 'json')
+			{
+				return $r->output_data("application/json", '{saved:true}'); 
+				#return $r->output_data("text/plain", $json);
+			}
+			
 			
 			if($req->{add_another})
 			{
@@ -931,6 +940,10 @@ package ThemePHC::Directory;
 				$entry->{is_admin} = $admin;
 				$entry->{bin} = $bin;
 				$entry->{is_mobile} = $mobile;
+				if($mobile)
+				{
+					$entry->{$_} = add_areacode($entry->{$_},765) foreach qw/cell spouse_cell home/;
+				}
 			}
 			
 			if($req->output_fmt eq 'json')
@@ -966,6 +979,16 @@ package ThemePHC::Directory;
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
 		}
+	}
+	
+	sub add_areacode
+	{
+		my $num = shift;
+		my $areacode = shift;
+		my $test_copy = $num;
+		$test_copy =~ s/[^\d]//g;
+		$num = $areacode . '-' . $num if length $test_copy <= 7;
+		return $num;
 	}
 	
 	

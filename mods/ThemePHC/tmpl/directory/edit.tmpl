@@ -130,6 +130,12 @@
 			</td>
 		</tr>
 		<tr><td colspan=2><hr size=1></td></tr>
+		<tmpl_if is_admin>
+			<tr>
+				<td valign=top><a name='admin_notes'>Admin Notes</a>:</td> <td><textarea name=admin_notes id='admin_notes' class='textinput' rows=4 cols=40>%%admin_notes%%</textarea></td>
+			</tr>
+			<tr><td colspan=2><hr size=1></td></tr>
+		</tmpl_if>
 		<tr>
 			<td colspan=2 class=controls>
 				<input type=submit value="Save Changes"> 
@@ -149,6 +155,12 @@ $(document).ready(function() {
 		$('#name_new').get(0).focus();
 	}
 	else
+	if(window.location.hash.indexOf("admin_notes")>0)
+	{
+		$('#admin_notes').get(0).focus();
+	}
+	else
+	if(!window.location.hash)
 	{
 		$('#first_name').get(0).focus();
 	}
