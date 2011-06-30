@@ -252,10 +252,30 @@ td.nav-sibs-cell
 	color: #364a90;
 }
 
-.nav-sibs .current
+.nav-sibs li.current 
 {
 	font-weight: bold;
+	background: white;
+	margin-left:  -1em;
+	margin-right: -1em;
+	padding-left:  1em;
 }
+
+.nav-sibs li.current a
+{
+	color: black;
+	text-decoration: none;
+}
+
+.nav-sibs li:hover 
+{
+	/*font-weight: bold;*/
+	/*background: white;
+	margin-left:  -1em;
+	margin-right: -1em;
+	padding-left:  1em;*/
+}
+
 
 .pagebody 
 { 
@@ -263,6 +283,8 @@ td.nav-sibs-cell
 	width: 585px;
 	font-size: 110%;
 }
+
+.pagebody td { font-size: 13px }
 
 .pagebody h1
 {

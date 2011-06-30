@@ -128,8 +128,19 @@ package ThemePHC;
 			
 # 			use Data::Dumper;
 # 			die Dumper $data;
+
+			# Load list of upcoming events
+			$controller = AppCore::Web::Module->bootstrap('ThemePHC::Events');
+			$controller->binpath('/connect/events');
 			
-			# TODO: Load recent videos and events
+			my $event_data = $controller->load_basic_events_data();
+			$tmpl->param(events_dated  => $event_data->{dated});
+			$tmpl->param(events_weekly => $event_data->{weekly});
+			
+			$tmpl->param(events_dated_three  => [ @{ $event_data->{dated} }[0..2] ]);
+			
+			
+			# TODO: Load recent videos 
 		}
 		elsif($view_code eq 'admin')
 		{

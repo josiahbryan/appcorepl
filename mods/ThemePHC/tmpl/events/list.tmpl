@@ -2,19 +2,19 @@
 <tmpl_unless weekly_widget>
 	<title><tmpl_var board_title></title>
 	
-	<h1><tmpl_var board_title></h1>
+	<h1>Upcoming Events</h1>
 	
 	<!--%macro::sub_nav()%-->
 	<!--<style>.subnav{margin-bottom:-10px !important}</style>-->
 	<tmpl_var board_nav>
 	
-	<p class='board-tagline'><tmpl_var board_tagline></p>
+	<!--<p class='board-tagline'><tmpl_var board_tagline></p>
 	
 	<tmpl_if description>
 		<div id='board-intro'>
 			<tmpl_var board_description>
 		</div>
-	</tmpl_if>
+	</tmpl_if>-->
 
 </tmpl_unless>
 
@@ -28,45 +28,42 @@ h1.event-list-header
 	/*background-color: white !important;*/
 	/*padding-left: 70px !important;*/
 	padding-left: 5px !important;
+	/*margin-bottom: -1em;*/
+	margin-top: .5em;
 }
 h1 a{border:0 !important}
+
+td.subject,
+td.title
+{
+	background: #e9eeff;
+	border-bottom: 1px solid #c7cddf;
+	border-top: 1px solid white;
+	padding: .5em .25em;
+}
 </style>
 
 <tmpl_unless weekly_widget>
 	
 	<tmpl_if can_admin>
-		<a class='new_link' href='%%binpath%%/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event to this list!</a>
+		<a class='new_link' href='%%binpath%%/new' style='float:right;margin-top: -3.3em;margin-right:4px'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event to this list!</a>
 	</tmpl_if>
 	
-	<h1 class='event-list-header'>Upcomming Special Events</h1>
+	<!--<h1 class='event-list-header'>Upcomming Special Events</h1>-->
 	<tmpl_if dated>
 		<table class='posts' width='100%' cellpadding=0 cellspacing=0>
-			<thead>
-				<!--<th align=left class='title'>Event</th>-->
-				<!--<th nowrap align=right>Views</th>-->
-				<!--<th nowrap align=right>Comments</th>-->
-				<!--<th align=left nowrap>Last Comment</th>-->
-			</thead>
 			<tbody>
 				<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
 				<tmpl_loop dated>
 					<tr class='<tmpl_var post_flags>'>
-						<td width='65%' class='subject'>
+						<td nowrap class='subject'>
 							<!--<tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>-->
-							<a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'>%%day_name%%, %%normal_datestamp%% at %%time%%</a> - %%clean_html%%
-							<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
-							<span class='tagline'><!--<span class='hidden'> - </span>--><!--<tmpl_var text>--></span>
+							<a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'><b>%%day_name%%</b>, <b>%%normal_datestamp%%</b> at <b>%%time%%</b></a>
 						</td>
-						<!--<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>-->
-						<!--<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>-->
-						<!--<td width='15%' nowrap class='lastpost' valign=top >
-							<tmpl_if post_postid>
-								<span class='post'>
-									<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
-									<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
-								</span>
-							<tmpl_else>-</tmpl_if>
-						</td>-->
+						<td class='title'>
+							- %%short_text%%
+							<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
+						</td>
 					</tr>
 				</tmpl_loop> 
 			</tbody>
@@ -79,40 +76,26 @@ h1 a{border:0 !important}
 
 <h1 class='event-list-header'><a name='weekly'>Every Week at PHC</a></h1>
 	
-<table class='posts' width='100%' cellpadding=0 cellspacing=0>
-	<thead>
-		<!--<th align=left class='title'>Event</th>-->
-		<!--<th nowrap align=right>Views</th>-->
-		<!--<th nowrap align=right>Comments</th>-->
-		<!--<th align=left nowrap>Last Comment</th>-->
-	</thead>
+<table class='posts' width='100%' cellpadding=0 cellspacing=0 style='margin-top:-1.5em'>
 	<tbody>
 		<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
 		<tmpl_loop weekly>
 			<tr>
 				<td colspan=99>
-					<h3><tmpl_var day_name></h3>
+					<h3 style='margin-bottom:-1px'><tmpl_var day_name></h3>
 				</td>
 			</tr>
 			
 			<tmpl_loop list>		
 				<tr class='<tmpl_var post_flags>'>
-					<td width='65%' class='subject'>
+					<td nowrap class='subject'>
 						<!--<tmpl_if can_admin><a class='delete_post_link' href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>/delete' onclick='return confirm("Are you SURE you want to delete this post?")'><img src='/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>-->
-						<a href='%%bin%%/%%folder_name%%' class='title_link'>%%time%%</a> - %%clean_html%%
-						<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
-						<span class='tagline'><!--<span class='hidden'> - </span>--><!--<tmpl_var text>--></span>
+						<a href='%%bin%%/%%folder_name%%' class='title_link'>%%time%%</a>
 					</td>
-					<!--<td width='10%' nowrap class='num_views' valign=top align=right><tmpl_if num_views><tmpl_var num_views><tmpl_else>-</tmpl_if></td>-->
-					<!--<td width='10%' nowrap class='num_replies' valign=top align=right><tmpl_if num_replies><tmpl_var num_replies><tmpl_else>-</tmpl_if></td>-->
-					<!--<td width='15%' nowrap class='lastpost' valign=top >
-						<tmpl_if post_postid>
-							<span class='post'>
-								<a href='<tmpl_var post_url>'><tmpl_var post_subject></a><br>
-								<span class='by'><tmpl_var post_timestamp> | <tmpl_var post_poster_name></span>
-							</span>
-						<tmpl_else>-</tmpl_if>
-					</td>-->
+					<td class=title>
+						- %%short_text%%
+						<tmpl_if has_new><span class='new'>- Unread Comments: <span class='count'><tmpl_var new_count></span></span></tmpl_if>
+					</td>
 				</tr>
 			</tmpl_loop>
 		</tmpl_loop> 

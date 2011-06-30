@@ -93,6 +93,7 @@ package ThemePHC::Events;
 	my @DOW_NAMES_SHORT = qw/- Mon Tue Wed Thur Fri Sat Sun/;
 	my @DOW_LETTERS = qw/- M T W R F S S/;
 	my @MONTH_NAMES = qw/January Feburary March April May June July August September October November December/;
+	my @MONTH_NAMES_SHORT = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
 	
 	sub apply_mysql_schema
 	{
@@ -225,8 +226,10 @@ package ThemePHC::Events;
 		
 		my ($date,$time) = split/\s/, $x->datetime;
 		my ($h) = split/:/, $time;
-		$rs->{'hr_'.$h} = 1;
+		$rs->{'hr_'.($h+0)} = 1;
 		$rs->{date} = $date;
+		
+		#die Dumper $rs;
 		
 		return $rs;
 	}
@@ -505,6 +508,53 @@ package ThemePHC::Events;
 # 		}
 	}
 	
+	sub load_basic_events_data
+	{
+		my $self = shift;
+		if(!$EventsListCache)
+		{
+			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);
+			my $sql = "datetime >= NOW() OR is_weekly = 1";
+			#print STDERR "SQL=$sql\n";
+			my @events = PHC::Event->retrieve_from_sql($sql);
+			
+			my @weekly;
+			my @dated;
+			
+			#my $cur_dow = get_dow(EAS::Common::date());
+			foreach my $item (@events)
+			{
+				my $event = $self->merge_item_to_post($item,$can_admin);
+				next if !$event || $event->{deleted};
+				
+				$self->prep_event_hash($event);
+				
+				if($event->{item}->is_weekly)
+				{
+					push @weekly, $event;
+				}
+				else
+				{
+					push @dated, $event;
+				}
+			}
+			
+			@weekly = sort {$a->{item_weekday}  cmp $b->{item_weekday}  } @weekly;
+			@dated  = sort {$a->{item_datetime} cmp $b->{item_datetime} } @dated;
+			
+			# Group by week day
+			my $out_weekly = $self->process_weekly_event_list(\@weekly);
+			
+			$EventsListCache = {
+				weekly	=> $out_weekly,
+				dated	=> \@dated,
+			};
+		}
+		
+		return $EventsListCache;
+			 
+	}
+	
 	sub basic_view
 	{
 		my $self = shift;
@@ -521,40 +571,11 @@ package ThemePHC::Events;
 		$tmpl->param(can_admin=>$can_admin);
 		$tmpl->param(events_page => 1);
 		
-		my $sql = "datetime >= NOW() OR is_weekly = 1";
-		#print STDERR "SQL=$sql\n";
-		my @events = PHC::Event->retrieve_from_sql($sql);
-		
-		my @weekly;
-		my @dated;
-		
-		#my $cur_dow = get_dow(EAS::Common::date());
-		foreach my $item (@events)
-		{
-			my $event = $self->merge_item_to_post($item,$can_admin);
-			next if !$event || $event->{deleted};
-			
-			$self->prep_event_hash($event);
-			
-			if($event->{item}->is_weekly)
-			{
-				push @weekly, $event;
-			}
-			else
-			{
-				push @dated, $event;
-			}
-		}
-		
-		@weekly = sort {$a->{item_weekday}  cmp $b->{item_weekday}  } @weekly;
-		@dated  = sort {$a->{item_datetime} cmp $b->{item_datetime} } @dated;
-		
-		# Group by week day
-		my $out_weekly = $self->process_weekly_event_list(\@weekly);
+		my $events_data = $self->load_basic_events_data();
 		
 		#die Dumper $out_weekly, \@dated;
-		$tmpl->param(weekly => $out_weekly);
-		$tmpl->param(dated  => \@dated);
+		$tmpl->param(weekly => $events_data->{weekly});
+		$tmpl->param(dated  => $events_data->{dated});
 		
 		#$tmpl->param(weekly_widget => 1);
 		
@@ -670,6 +691,12 @@ package ThemePHC::Events;
 		my ($year,$mon,$day) = split/-/, $datestamp;
 		$event->{normal_datestamp} = (0+$mon)."/".(0+$day)."/".substr($year,-2,2);
 		$event->{timestamp} = $timestamp;
+		
+		$event->{month_name} = $MONTH_NAMES[$mon-1];
+		$event->{month_name_short} = $MONTH_NAMES_SHORT[$mon-1];
+		
+		$event->{year} = $year;
+		$event->{day} = $day;
 		
 		return $dow;
 	}

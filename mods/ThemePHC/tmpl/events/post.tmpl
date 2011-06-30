@@ -1,5 +1,5 @@
-<link href="/css/comments.css" rel="stylesheet" type="text/css" />
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<link href="%%appcore%%/mods/Boards/css/comments.css" rel="stylesheet" type="text/css" />
+<link href="%%appcore%%/mods/Boards/css/boards.css" rel="stylesheet" type="text/css" />
 
 <title><tmpl_var post_subject> - <tmpl_var board_title> - News and Events</title>
 <h1><tmpl_var post_subject></h1>
@@ -26,6 +26,8 @@
 	border: 		1px solid #c9ac93;
 	-moz-border-radius: 	4px;
 	padding:		5px;
+	
+	margin:			1em 0;
 }
 
 .event_data .val p { text-indent: 0 !important }
@@ -37,8 +39,8 @@
 	<div class='attribution'>
 		Posted on <span class='date'><tmpl_var post_timestamp></span> by <span class='name'><tmpl_var post_poster_name></span>
 	</div>
-	<h3><tmpl_var post_subject></h3>
-	<table class='event_data'>
+	<!--<h3><tmpl_var post_subject></h3>-->
+	<table class='event_data' width='100%' >
 		<tr class='what'>
 			<td class='key'>What?</td>
 			<td class='val'>
@@ -50,11 +52,13 @@
 		<tr class='when'>
 			<td class='key'>When?</td>
 			<td class='val'>
-				<tmpl_if event_is_weekly>
-					Every Week on %%day_name%% at %%time%%
-				<tmpl_else>
-					%%day_name%%, %%normal_datestamp%% at %%time%%
-				</tmpl_if>
+				<p>
+					<tmpl_if event_is_weekly>
+						Every Week on %%day_name%% at %%time%%
+					<tmpl_else>
+						%%day_name%%, %%normal_datestamp%% at %%time%%
+					</tmpl_if>
+				</p>
 			</td>
 		</tr>
 		
@@ -96,7 +100,6 @@
 	
 	
 </div>
-
 
 <div class='post_text <tmpl_if replies>has_replies</tmpl_if>'>
 	<tmpl_var event_page_details>

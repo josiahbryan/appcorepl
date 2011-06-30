@@ -129,8 +129,8 @@
 						<div class=nav-sibs>
 							<ul>
 								<tmpl_loop nav_sibs>
-									<li>
-										<a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a>
+									<li <tmpl_if current>class='current'</tmpl_if>>
+										<a href='%%url%%'>%%title%%</a>
 									</li>
 								</tmpl_loop>
 							</ul>
