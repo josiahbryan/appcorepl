@@ -90,7 +90,11 @@ package AppCore::Web::Request;
 	}
 	
 	
-	sub next_path	{shift->{'_PATH_INFO'}->[0]}
+	sub next_path	{
+		my $self = shift;
+		my $count = shift || 0;
+		return $self->{'_PATH_INFO'}->[$count];
+	}
 	
 	sub path_info { return @{shift->{'_PATH_INFO'}}; }
 

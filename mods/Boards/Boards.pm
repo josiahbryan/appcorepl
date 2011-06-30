@@ -1522,6 +1522,7 @@ package Boards;
 		my $self = shift;
 		my $text = shift;
 		$text = AppCore::Web::Common->html2text($text);
+		print STDERR "guess_subject: text: [$text]\n";
 		#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
 		my $idx = index($text,"\n");
 		my $len = $idx > -1 && $idx < $SUBJECT_LENGTH ? $idx : $SUBJECT_LENGTH;

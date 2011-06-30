@@ -643,7 +643,7 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
-		
+		$html =~ s/<p>\s*\n\s*(\w)/$1/g;
 		$html =~ s/<(script|style)[^\>]*?>(.|\n)*?<\/(script|style)>//g;
 		$html =~ s/<!--(.|\n)*?-->//g;
 		$html =~ s/<br>([^\n])/<br>\n$1/gi;
@@ -666,6 +666,9 @@ package AppCore::Web::Common;
 		$html =~ s/’/'/g;
 		$html =~ s/“/"/g;
 		$html =~ s/”/"/g;
+		$html =~ s/&#39;/'/g;
+		
+		
 		
 		return $html;
 	}

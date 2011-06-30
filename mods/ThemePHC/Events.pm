@@ -152,14 +152,56 @@ package ThemePHC::Events;
 			return $r->error("Not Allowed","Sorry, you're not allowed to post in here.") if !$can_admin;
 		}
 		## XXX TODO
-		#elsif(!$sub_page)
-		#{
-		#}
+		elsif(!$sub_page || ($sub_page eq 'events' && !$req->next_path(1)))
+		{
+			return $class->basic_view($req,$r);
+		}
 		
-		$req->unshift_path('events');
+		$req->unshift_path('events') unless $sub_page eq 'events';
 		#die Dumper $req;
 		
 		return $class->SUPER::board_page($req,$r);
+	}
+	
+	sub new_post_hook
+	{
+		my $self = shift;
+		my $tmpl = shift;
+		my $board = shift;
+		$tmpl->param(event_at_phc => 1);
+		$tmpl->param(hr_12 => 1);
+		$tmpl->param(date => (split /\s/, date())[0]);
+	}
+	
+# 	sub load_post 
+# 	{
+# 		my $class = shift;
+# 		my ($post,$section_name,$board_folder_name) = @_;
+
+	sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
+	{
+		my $self = shift;
+		
+		my ($post, $req) = @_;
+		
+		my $rs = $self->SUPER::load_post(@_);
+		
+		# Apply text changes here
+		#$rs->{post_text} = $tmpl->output;
+		
+		my $x = PHC::Event->retrieve($post->data->get('itemid'));
+		$rs->{type_event} = 1;
+		$rs->{'event_'.$_} = $x->get($_) foreach $x->columns;
+		
+		$post->{item} = $x;
+		$self->prep_event_hash($post);
+		
+		foreach my $prep_key (qw/time same_day day_name normal_datestamp timestamp/)
+		{
+			$rs->{$prep_key} = $post->{$prep_key};
+		}
+	
+		return $rs;
 	}
 	
 	sub load_post_edit_form
@@ -180,6 +222,11 @@ package ThemePHC::Events;
 		$rs->{type_event} = 1;
 		$rs->{'event_'.$_} = $x->get($_) foreach $x->columns;
 		$rs->{'dow'.$x->weekday} = 1;
+		
+		my ($date,$time) = split/\s/, $x->datetime;
+		my ($h) = split/:/, $time;
+		$rs->{'hr_'.$h} = 1;
+		$rs->{date} = $date;
 		
 		return $rs;
 	}
@@ -213,15 +260,16 @@ package ThemePHC::Events;
 		
 		if($args->{is_weekly} eq 'yes')
 		{
-			my @split = split/\s/, $args->{datetime};
-			shift @split if @split == 2;
-			$args->{datetime} = '0000-00-00 '.(shift @split);
+# 			my @split = split/\s/, $args->{datetime};
+# 			shift @split if @split == 2;
+# 			$args->{datetime} = '0000-00-00 '.(shift @split);
 		}
 		
+		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
 		
-		my $x = PHC::Event->create({
+		my $ref = {
 			postid		=> $post->id,
-			contact_userid	=> $args->{contact_userid},
+			contact_userid	=> AppCore::User->by_field(email => $args->{contact_email}),
 			event_text	=> $post->text,
 			is_weekly	=> $args->{is_weekly} eq 'yes' ? 1:0,
 			datetime	=> $args->{datetime},
@@ -229,7 +277,11 @@ package ThemePHC::Events;
 			at_phc		=> $args->{at_phc} eq 'yes' ? 1:0,
 			location	=> $args->{location},
 			location_map_link => $args->{map_link},
-		});
+		};
+		
+		#die Dumper $ref, $post, $args;
+		
+		my $x = PHC::Event->create($ref);
 		
 		#$post->data->set('type','event'); # TODO is this still needed?
 		$post->data->set('itemid',$x->id);
@@ -246,6 +298,8 @@ package ThemePHC::Events;
 # 			$post->update;
 # 		}
 		
+		
+		print STDERR "Created event $x, postid $post\n";
 		return $post;
 	}
 	
@@ -286,10 +340,12 @@ package ThemePHC::Events;
 		
 		if($args->{is_weekly} eq 'yes')
 		{
-			my @split = split/\s/, $args->{datetime};
-			shift @split if @split == 2;
-			$args->{datetime} = '0000-00-00 '.(shift @split);
+# 			my @split = split/\s/, $args->{datetime};
+# 			shift @split if @split == 2;
+# 			$args->{datetime} = '0000-00-00 '.(shift @split);
 		}
+		
+		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
 		
 		my $x = PHC::Event->retrieve($post->data->get('itemid'));
 		
@@ -365,7 +421,7 @@ package ThemePHC::Events;
 		# Send the CRUD actions to the superclass, which in turn, will call our various hooks, above, for our logic
 		if($sub_page eq 'edit' || $sub_page eq 'new' || $sub_page eq  'post')
 		{
-			$self->SUPER::main_page(@_);
+			$self->board_page(@_);
 		}
 		
 # 		elsif($sub_page eq 'delete')

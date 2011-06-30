@@ -1,4 +1,4 @@
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
+<!--<link href="/css/boards.css" rel="stylesheet" type="text/css" />-->
 
 <title>Reply to "<tmpl_var post_subject>" - Bulletin Boards</title>
 <h1>Reply to "<tmpl_var post_subject></h1>
@@ -7,23 +7,24 @@
 <tmpl_var board_nav>
 
 
-<script type="text/javascript" src="/fckeditor/fckeditor.js"></script>
+<script src='%%appcore%%/ckeditor/ckeditor.js' index="0"></script>
 <script>
 function win_onload()
 {
 
-	var oFCKeditor = new FCKeditor('age') ;
-	oFCKeditor.BasePath = '/fckeditor/' ;
-	oFCKeditor.ToolbarSet = 'JBlog';
-	oFCKeditor.Height = "300px" ;
+// 	var oFCKeditor = new FCKeditor('age') ;
+// 	oFCKeditor.BasePath = '/fckeditor/' ;
+// 	oFCKeditor.ToolbarSet = 'JBlog';
+// 	oFCKeditor.Height = "300px" ;
+// 	
+// 	oFCKeditor.ReplaceTextarea();
+
 	
-	oFCKeditor.ReplaceTextarea();
 	
-	<tmpl_if enable_autosave>setTimeout(autosave,30 * 1000);</tmpl_if>
 
 }
 
-global.onload(win_onload);
+//global.onload(win_onload);
 </script>
 
 <tmpl_if reply_text>
@@ -48,7 +49,7 @@ global.onload(win_onload);
 					<!--<tmpl_if user_display>readonly style='background:rgb(220,220,220)'</tmpl_if>-->
 					<input type=text name=poster_name onfocus='select()' value='<tmpl_var user_display escape=html>' size=30> 
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					<!--<script>var e= $x('name');if(e)e.focus()</script>-->
+					<!--<sxcript>var e= $x('name');if(e)e.focus()</script>-->
 				</td>
 			</tr>
 			<tr class='email'>
@@ -58,19 +59,34 @@ global.onload(win_onload);
 				</td>
 			</tr>
 			
-			<tr class='subject'>
+			<!--<tr class='subject'>
 				<td>Subject:</td> <td><input type=text name=subject id=subject value="<tmpl_var subject escape=html>" size=65>
 				
 				</td>
-			</tr>
-			<tr class='zip'>
+			</tr>-->
+		<!--	<tr class='zip'>
 				<td valign=top>Comment:</td> <td><textarea rows=8 cols=65 id=comment name=comment></textarea>
 				</td>
 				
-			</tr>
+			</tr>-->
 			<tr class='age'>
 				<td valign=top>Comment:</td> <td><textarea rows=8 cols=65 id=age name=age><tmpl_var comment></textarea>
-				<script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>
+				<!--<sxcript type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>-->
+				<script>
+				//CKEDITOR.basePath = '%%appcore%%/ckeditor/'; 
+				CKEDITOR.replace( 'age', {
+					//baseHref: '%%appcore%%/ckeditor/',
+					extraPlugins : 'autogrow',
+					width: '96%',
+					//skin: 'office2003'
+					skin: 'kama',
+					disableNativeSpellChecker: false,
+					removePlugins: 'elementspath,scayt,contextmenu',
+					toolbar: 'Basic',
+					//skin: 'v2'
+				});
+				
+				</script>
 				</td>
 				
 			</tr>

@@ -211,7 +211,7 @@ package ThemePHC::Missions;
 		#{
 		#}
 		
-		return $class->SUPER::forum_page($req,$r);
+		return $class->SUPER::board_page($req,$r);
 	}
 	
 	sub forum_list_hook
