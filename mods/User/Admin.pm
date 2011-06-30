@@ -35,7 +35,7 @@ package User::Admin;
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $self->binpath;
 		my $modpath = $self->modpath;
-		my $appcore = join('/', $AppCore::Config::WWW_ROOT);
+		my $appcore = join('/', AppCore::Config->get("WWW_ROOT"));
 		
 		my @pages = AppCore::User->retrieve_from_sql('1 order by first, last');
 		

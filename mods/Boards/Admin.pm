@@ -35,7 +35,7 @@ package Boards::Admin;
 		my $tmpl = $self->get_template('list.tmpl');
 		my $binpath = $self->binpath;
 		my $modpath = $self->modpath;
-		my $appcore = join('/', $AppCore::Config::WWW_ROOT);
+		my $appcore = join('/', AppCore::Config->get("WWW_ROOT"));
 		
 		my @pages = Boards::Board->retrieve_from_sql('1 order by title'); #search(enabled => 1);
 		
@@ -113,7 +113,7 @@ package Boards::Admin;
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		$tmpl->param(users => AppCore::User->tmpl_select_list($obj->managerid));
-		$tmpl->param(fb_app_id	  => $AppCore::Config::FB_APP_ID);
+		$tmpl->param(fb_app_id	  => AppCore::Config->get("FB_APP_ID"));
 		$tmpl->param(fb_redir_url => $self->get_facebook_redir_url($boardid));
 		
 		#$view->output($tmpl);
@@ -147,9 +147,9 @@ package Boards::Admin;
 			print STDERR "Authenticated FB code $code, now requesting access_token\n";
 				
 			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
-				. 'client_id='     . $AppCore::Config::FB_APP_ID
+				. 'client_id='     . AppCore::Config->get("FB_APP_ID")
 				.'&redirect_uri='  . $self->get_facebook_redir_url($boardid)
-				.'&client_secret=' . $AppCore::Config::FB_APP_SECRET
+				.'&client_secret=' . AppCore::Config->get("FB_APP_SECRET")
 				.'&code=' . $code;
 			
 			my $response = LWP::Simple::get($token_url);

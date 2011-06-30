@@ -125,7 +125,7 @@ package Content::Admin;
 		
 		$tmpl->param(page_title => AppCore::Common::guess_title($url));
 		$tmpl->param(page_content => '');
-		$tmpl->param(server_name => $AppCore::Config::WEBSITE_SERVER);
+		$tmpl->param(server_name => AppCore::Config->get("WEBSITE_SERVER"));
 		$tmpl->param(redir_list	=> $self->_redir_select_list());
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
@@ -196,7 +196,7 @@ package Content::Admin;
 		$tmpl->param(page_mobile_content => $page_obj->mobile_content);
 		$tmpl->param(page_mobile_alt_url => $page_obj->mobile_alt_url);
 		$tmpl->param(page_acl => $page_obj->acl);
-		$tmpl->param(server_name  => $AppCore::Config::WEBSITE_SERVER);
+		$tmpl->param(server_name  => AppCore::Config->get("WEBSITE_SERVER"));
 		
 		$tmpl->param(redir_list	=> $self->_redir_select_list($page_obj->redirect_url));
 		

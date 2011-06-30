@@ -7,7 +7,7 @@ package ThemePHC::VerseLookup;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::DBTBL_VERSECACHE || 'verse_ref_cache',
+		table	=> AppCore::Config->get("DBTBL_VERSECACHE") || 'verse_ref_cache',
 		
 		schema	=> 
 		[

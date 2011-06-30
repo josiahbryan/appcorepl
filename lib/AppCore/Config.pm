@@ -1,5 +1,4 @@
-## This file must start with 'package AppCore::Config;' and end with a '1' and a newline 
-package AppCore::Config;
+package AppCore::Config::Default;
 BEGIN
 {
 	$DEFAULT_MODULE = '/';
@@ -208,4 +207,27 @@ BEGIN
 	
 };
 
+package AppCore::Config;
+sub get 
+{
+	shift if $_[0] eq __PACKAGE__;
+	my $var = shift;
+	
+	#print STDERR "get: $var\n";
+	my $pkg = "AppCore::Config::MBL";
+	my $value = ${*{"$pkg\::$var"}};
+	
+	if(!defined $value)
+	{
+		#print STDERR "get: $var - checking base\n";
+		$value = ${*{"AppCore\::Config\::Default\::$var"}};;
+		
+		#print STDERR "get: $var - checking base - got '$value'\n";
+	}
+	
+	#print STDERR "get: $var - got '$value'\n";
+	return $value;
+};
+
 1;
+

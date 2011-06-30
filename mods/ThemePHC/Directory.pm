@@ -16,7 +16,7 @@ package PHC::Directory::Family;
 	{
 		# Cheating a bit...
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::PHC_DIRECTORY_DBTBL || 'directory',
+		table	=> AppCore::Config->get("PHC_DIRECTORY_DBTBL") || 'directory',
 		
 		schema	=> 
 		[
@@ -67,7 +67,7 @@ package PHC::Directory::Child;
 	{
 		# Cheating a bit...
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::PHC_DIRECTORY_DBTBL || 'directory_kids',
+		table	=> AppCore::Config->get("PHC_DIRECTORY_DBTBL") || 'directory_kids',
 		
 		schema	=> 
 		[
@@ -263,7 +263,7 @@ package PHC::Directory;
 		#print STDERR "load_directory: Cache miss for key '$cache_key'\n";
 		
 			
-		my $www_path = $AppCore::Config::WWW_DOC_ROOT;
+		my $www_path = AppCore::Config->get("WWW_DOC_ROOT");
 		
 		my @fams;
 		if($search)
@@ -312,13 +312,13 @@ package PHC::Directory;
 				if($fam->{photo_num} != '?')
 				{
 					
-					my $photo_file = $AppCore::Config::WWW_ROOT.'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
-					$fam->{large_photo} = $AppCore::Config::WWW_ROOT.'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
+					my $photo_file = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
+					$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
 					#print STDERR "Primary photo: $photo_file\n";
 					if(! -f $www_path.$photo_file)
 					{
-						$photo_file = $AppCore::Config::WWW_ROOT.'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
-						$fam->{large_photo} = $AppCore::Config::WWW_ROOT.'/mods/ThemePHC/dir_photos/dsc_'.$fam->{photo_num}.'.jpg';
+						$photo_file = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
+						$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_'.$fam->{photo_num}.'.jpg';
 						#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
 					}
 					if(!-f $photo_file)
@@ -402,7 +402,7 @@ package PHC::Directory;
 		my $image_size_cache = '/tmp/phc-directory-imagedata.storable';
 		my $image_data = -f $image_size_cache ? retrieve($image_size_cache) : {};
 		
-		my $root = ${AppCore::Config::WWW_DOC_ROOT}.${AppCore::Config::WWW_ROOT};
+		my $root = AppCore::Config->get('WWW_DOC_ROOT').AppCore::Config->get('WWW_ROOT');
 		
 		my $self = shift;
 		my $output_file = shift || $root.'/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf';
@@ -414,7 +414,7 @@ package PHC::Directory;
 		# Load template and apply data
 		my $tmpl = AppCore::Web::Common::load_template(${root}.'/mods/ThemePHC/tmpl/directory/sheet.tmpl');
 		
-		my $doc_root = ${AppCore::Config::WWW_DOC_ROOT};
+		my $doc_root = AppCore::Config->get('WWW_DOC_ROOT');
 		foreach my $entry (@directory)
 		{
 			$entry->{doc_root} = $doc_root;
@@ -523,10 +523,10 @@ package ThemePHC::Directory::UserActionHook;
 			
 			my $user = $args->{user};
 			
-			my $url = join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, 'admin/users/edit')."?userid=$user#groups";
+			my $url = join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), 'admin/users/edit')."?userid=$user#groups";
 			print STDERR __PACKAGE__.": User signup, emailing admin with URL $url\n";
 			
-			AppCore::Common->send_email([@AppCore::Config::ADMIN_EMAILS],"User Approval for Directory Needed: ".$user->display,
+			AppCore::Common->send_email(AppCore::Config->get('ADMIN_EMAILS'),"User Approval for Directory Needed: ".$user->display,
 			
 			"A user has signed in for the first time or signed up, or activated their account. ($event) You'll need to log in and approve them for Family Directory access in the User Admin section. Here's the link right to that user:\n\n\t$url");
 		}
@@ -535,7 +535,7 @@ package ThemePHC::Directory::UserActionHook;
 			# Send user an email to let them know they've been added if its the directory group
 			if($args->{group} == $DIRECTORY_GROUP)
 			{
-				my $url = join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, 'connect/directory');
+				my $url = join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), 'connect/directory');
 				print STDERR __PACKAGE__.": User added to directory group ($DIRECTORY_GROUP), emailing user URL $url\n";
 				
 				#my $user = $args->{user};
@@ -602,7 +602,7 @@ package ThemePHC::Directory;
 		
 		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
 		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
-		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		my $new_binpath = AppCore::Config->get("DISPATCHER_URL_PREFIX") . $req->page_path; # this should work...
 		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
 		$self->binpath($new_binpath);
 		
@@ -893,7 +893,7 @@ package ThemePHC::Directory;
 		elsif($sub_page eq 'pdf')
 		{
 			# Just send file
-			return $r->output_file(${AppCore::Config::WWW_DOC_ROOT} . ${AppCore::Config::WWW_ROOT} . '/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf','application/pdf');
+			return $r->output_file(AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT') . '/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf','application/pdf');
 		}
 		else
 		{

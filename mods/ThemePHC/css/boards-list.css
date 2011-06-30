@@ -1,5 +1,5 @@
 /* Reset table cell font size */
-td { font-size: 68.75% }
+.pagebody td { font-size: 68.75% }
 
 /* Style for new post form */
 .newpost { 

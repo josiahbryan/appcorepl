@@ -42,7 +42,7 @@ package ThemeBasic;
 		}
 		
 		# load_template() automatically adds this template parameter in to your template:
-		#$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
+		#$tmpl->param(modpath => join('/', AppCore::Config->get("WWW_ROOT"), 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl->output);

@@ -50,7 +50,7 @@ package Boards::SpamLog;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_SPAMLOG || 'boards_spamlog',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_SPAMLOG") || 'boards_spamlog',
 		
 		schema	=> 
 		[
@@ -71,7 +71,7 @@ package Boards::TextFilter;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_TEXTFILTERS || 'boards_textfilters',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_TEXTFILTERS") || 'boards_textfilters',
 		
 		schema	=> 
 		[
@@ -127,7 +127,7 @@ package Boards::VideoProvider;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_VIDEOPROVIDERS || 'boards_videoproviders',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_VIDEOPROVIDERS") || 'boards_videoproviders',
 		
 		schema	=> 
 		[
@@ -197,7 +197,7 @@ package Boards::Group;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_GROUP || 'board_groups',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_GROUP") || 'board_groups',
 		
 		schema	=> 
 		[
@@ -216,7 +216,7 @@ package Boards::Post::Tag;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_TAGS || 'board_post_tags',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_TAGS") || 'board_post_tags',
 		
 		schema	=> 
 		[
@@ -244,7 +244,7 @@ package Boards::Post::Tag::Pair;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_TAGPAIR || 'board_post_tag_pairs',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_TAGPAIR") || 'board_post_tag_pairs',
 		
 		class_title	=> 'Tag Pair List',
 		class_noun	=> 'Tag Pair',
@@ -265,7 +265,7 @@ package Boards::Post::Like;
 {
 	use base 'AppCore::DBI';
 	
-	my $table = $AppCore::Config::BOARDS_DBTBL_POSTLIKES || 'board_post_likes';
+	my $table = AppCore::Config->get("BOARDS_DBTBL_POSTLIKES") || 'board_post_likes';
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
@@ -338,7 +338,7 @@ package Boards::Post;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_POST || 'board_posts',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_POST") || 'board_posts',
 		
 		schema	=> 
 		[
@@ -571,7 +571,7 @@ package Boards::Board;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::BOARDS_DBTBL_GROUP || 'boards',
+		table	=> AppCore::Config->get("BOARDS_DBTBL_GROUP") || 'boards',
 		
 		schema	=> 
 		[

@@ -38,7 +38,7 @@ package User::ActionHook;
 	use base 'AppCore::DBI';
 	__PACKAGE__->meta(
 	{
-		table	=> $AppCore::Config::USER_ACTIONHOOK_DBTABLE || 'user_actionhooks',
+		table	=> AppCore::Config->get("USER_ACTIONHOOK_DBTABLE") || 'user_actionhooks',
 		
 		schema	=> 
 		[
@@ -204,9 +204,9 @@ package User;
 			print STDERR "Authenticated FB code $code, now requesting access_token\n";
 				
 			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
-				. 'client_id='     . $AppCore::Config::FB_APP_ID
+				. 'client_id='     . AppCore::Config->get("FB_APP_ID")
 				.'&redirect_uri='  . $self->get_facebook_redir_url()
-				.'&client_secret=' . $AppCore::Config::FB_APP_SECRET
+				.'&client_secret=' . AppCore::Config->get("FB_APP_SECRET")
 				.'&code=' . $code;
 			
 			my $response = LWP::Simple::get($token_url);
@@ -279,13 +279,13 @@ package User;
 					my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
 					my $photo = LWP::Simple::get($photo_url);
 					my $local_photo_url = "/mods/" . __PACKAGE__ . "/user_photos/user". $user_obj->id .".jpg";
-					my $file_path = $AppCore::Config::APPCORE_ROOT . $local_photo_url;
+					my $file_path = AppCore::Config->get("APPCORE_ROOT") . $local_photo_url;
 					if(open(PHOTO, '>' . $file_path))
 					{
 						print PHOTO $photo;
 						close(PHOTO);
 						
-						$user_obj->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
+						$user_obj->photo(AppCore::Config->get("WWW_ROOT") . $local_photo_url);
 						
 						print STDERR "Downloaded user photo to $file_path.\n";
 					}
@@ -318,7 +318,7 @@ package User;
 					{
 						$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user_obj});
 						
-						my $url_from = $AppCore::Config::WELCOME_URL; # if !$url_from  || $url_from =~ /\/(login|logout)/;
+						my $url_from = AppCore::Config->get("WELCOME_URL"); # if !$url_from  || $url_from =~ /\/(login|logout)/;
 						print STDERR "Authenticated ".AppCore::Common->context->user->display." with facebook token $token, redirecting to $url_from\n";
 						return $r->redirect($url_from);
 					}
@@ -368,7 +368,7 @@ package User;
 			$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>AppCore::Common->context->user});
 			
 			my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
-			$url_from = $AppCore::Config::WELCOME_URL if !$url_from  || $url_from =~ /\/(login|logout)/;
+			$url_from = AppCore::Config->get("WELCOME_URL") if !$url_from  || $url_from =~ /\/(login|logout)/;
 			print STDERR "Authenticated ".AppCore::Common->context->user->display.", redirecting to $url_from\n";
 			return $r->redirect($url_from);
 		}
@@ -414,7 +414,7 @@ package User;
 		$tmpl->param(user      => $req->{user});
 		$tmpl->param(was_loggedin => $req->{was_loggedin});
 		$tmpl->param(sent_pass    => $req->{sent_pass});
-		$tmpl->param(fb_app_id	  => $AppCore::Config::FB_APP_ID);
+		$tmpl->param(fb_app_id	  => AppCore::Config->get("FB_APP_ID"));
 		$tmpl->param(fb_redir_url => $self->get_facebook_redir_url());
 		#$tmpl->param(auth_requested => $req->{auth_requested});
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
@@ -443,9 +443,9 @@ package User;
 		#print STDERR MY_LINE()."auth($sub_page): mark\n";
 
 
-		my $name_short = $AppCore::Config::WEBSITE_NAME;
-		my $name_noun  = $AppCore::Config::WEBSITE_NOUN;
-		my @admin_emails = @AppCore::Config::ADMIN_EMAILS;
+		my $name_short = AppCore::Config->get("WEBSITE_NAME");
+		my $name_noun  = AppCore::Config->get("WEBSITE_NOUN");
+		my @admin_emails = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
 
 		if($sub_page eq 'post')
 		{
@@ -470,7 +470,7 @@ package User;
 				AppCore::AuthUtils->authenticate($user,$pass);
 				
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
-				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
+				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
 				
 					$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
 			}
@@ -483,7 +483,7 @@ package User;
 				AppCore::AuthUtil->authenticate($email,$pass);
 				
 				AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
-				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . ($AppCore::Config::WELCOME_URL ? "Where to go from here:\n\n    ".join('/', $AppCore::Config::WEBSITE_SERVER, $AppCore::Config::DISPATCHER_URL_PREFIX, $AppCore::Config::WELCOME_URL):""));
+				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
 				
 				$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user_ref});
 			}
@@ -495,7 +495,7 @@ package User;
 				print STDERR MY_LINE()."auth($sub_page): mark: signup_ok\n";
 				#my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 				#$url_from = AppCore::Common->context->http_bin.'/welcome' if !$url_from;
-				my $url_from = $AppCore::Config::WELCOME_URL;
+				my $url_from = AppCore::Config->get("WELCOME_URL");
 				return $r->redirect($url_from);
 			}
 		}
@@ -537,9 +537,9 @@ package User;
 		my $sub_page = $req->next_path;
 		
 		#print STDERR "auth($sub_page): ".Dumper($req,$page);
-		my $name_short = $AppCore::Config::WEBSITE_NAME;
-		my $name_noun  = $AppCore::Config::WEBSITE_NOUN;
-		my @admin_emails = @AppCore::Config::ADMIN_EMAILS;
+		my $name_short = AppCore::Config->get("WEBSITE_NAME");
+		my $name_noun  = AppCore::Config->get("WEBSITE_NOUN");
+		my @admin_emails = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
 		
 		if($sub_page eq 'post')
 		{
@@ -600,7 +600,7 @@ package User;
 			my $for_user = $req->{userid};
 			if($for_user)
 			{
-				if($for_user != $user->id && !$user->check_acl($AppCore::Config::ADMIN_ACL))
+				if($for_user != $user->id && !$user->check_acl(AppCore::Config->get("ADMIN_ACL")))
 				{
 					return $r->error("Not Administrator","Sorry, you must be an administrator to change the settings for another user other than you rown account.");
 				}

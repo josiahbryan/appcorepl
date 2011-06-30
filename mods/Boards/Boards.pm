@@ -129,7 +129,7 @@ package Boards::VideoProvider::Vimeo;
 			my $self = shift;
 			my $code = shift;
 			my $url = "http://www.vimeo.com/$code";
-			return ($url, $AppCore::Config::WWW_ROOT."/images/blank.gif", $code);
+			return ($url, AppCore::Config->get("WWW_ROOT")."/images/blank.gif", $code);
 			# Return a 'blank' image for the thumbnail here because we use javascript in-page to find the thumbnail 
 			# URL after the page is loaded. If one felt like it, you could instead call out to vimeo in this sub 
 			# and cache the resulting thumbnail URL for later. But for now, this implementation works fine with in-page
@@ -301,7 +301,7 @@ package Boards;
 		
 		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
 		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
-		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		my $new_binpath = AppCore::Config->get("DISPATCHER_URL_PREFIX") . $req->page_path; # this should work...
 		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
 		$self->binpath($new_binpath);
 		
@@ -448,7 +448,7 @@ package Boards;
 			my @groups = Boards::Group->search(hidden=>0);
 			@groups = sort {$a->sort_key cmp $b->sort_key} @groups;
 			
-			my $appcore = $AppCore::Config::WWW_ROOT;
+			my $appcore = AppCore::Config->get("WWW_ROOT");
 			
 			foreach my $g (@groups)
 			{
@@ -884,8 +884,8 @@ package Boards;
 		
 		# Get the current paging location
 		my $idx = $req->{idx} || 0;
-		my $len = $req->{len} || $AppCore::Config::BOARDS_POST_PAGE_LENGTH;
-		$len = $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH if $len > $AppCore::Config::BOARDS_POST_PAGE_MAX_LENGTH;
+		my $len = $req->{len} || AppCore::Config->get("BOARDS_POST_PAGE_LENGTH");
+		$len = AppCore::Config->get("BOARDS_POST_PAGE_MAX_LENGTH") if $len > AppCore::Config->get("BOARDS_POST_PAGE_MAX_LENGTH");
 		
 		# Find the total number of posts in this board
 		my $find_max_index_sth = $dbh->prepare_cached("select count(b.postid) as count from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0");
@@ -1061,8 +1061,8 @@ package Boards;
 		}
 		
 		
-		my $short_len             = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
-		my $last_post_subject_len = $AppCore::Config::BOARDS_LAST_POST_SUBJ_LENGTH || $LAST_POST_SUBJ_LENGTH;
+		my $short_len             = AppCore::Config->get("BOARDS_SHORT_TEXT_LENGTH")     || $SHORT_TEXT_LENGTH;
+		my $last_post_subject_len = AppCore::Config->get("BOARDS_LAST_POST_SUBJ_LENGTH") || $LAST_POST_SUBJ_LENGTH;
 		
 		my $ref_name = ref $post;
 		#print STDERR "Refname of post is '$ref_name', value '$post'\n";
@@ -1094,7 +1094,7 @@ package Boards;
 # 		my @cols = $post->columns;
 # 		$b->{$_} = $post->get($_). "" foreach @cols; #$post->columns;
 		$b->{bin}         = $bin;
-		$b->{appcore}     = $AppCore::Config::WWW_ROOT;
+		$b->{appcore}     = AppCore::Config->get("WWW_ROOT");
 		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
 		
@@ -1804,10 +1804,9 @@ package Boards;
 #     $abs_url
 #     
 # Cheers!};
-# 			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-# 			           @AppCore::Config::ADMIN_EMAILS : 
-# 			          ($AppCore::Config::WEBMASTER_EMAIL);
-# 			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
+#			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+#			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
+# 			AppCore::EmailQueue->send_email([@list],"[AppCore::Config->get("WEBSITE_NAME")] Post Edited: '".$post->subject."' in forum '".$board->title."'",$email_body);
 		
 			if($req->output_fmt eq 'json')
 			{
@@ -1917,7 +1916,7 @@ package Boards;
 		my $post = shift;
 		my $args = shift;
 		
-		return if !$AppCore::Config::BOARDS_ENABLE_FB_NOTIFY || ($post->isa('Boards::Post') && (!$post->boardid->fb_sync_enabled || $post->data->get('user_said_no_fb')));
+		return if !AppCore::Config->get("BOARDS_ENABLE_FB_NOTIFY") || ($post->isa('Boards::Post') && (!$post->boardid->fb_sync_enabled || $post->data->get('user_said_no_fb')));
 		
 		if($action eq 'new_post' ||
 		   $action eq 'new_comment')
@@ -1959,9 +1958,9 @@ package Boards;
 			my $board = $post->boardid;
 			
 			my $abs_url = $self->module_url("$board_folder/$folder_name" . ($action eq 'new_comment' ? "#c".$post->id:""),1);
-			my $short_abs_url = $AppCore::Config::BOARDS_ENABLE_TINYURL_SHORTNER ? LWP::Simple::get("http://tinyurl.com/api-create.php?url=${abs_url}") : $abs_url;
+			my $short_abs_url = AppCore::Config->get("BOARDS_ENABLE_TINYURL_SHORTNER") ? LWP::Simple::get("http://tinyurl.com/api-create.php?url=${abs_url}") : $abs_url;
 			
-			my $short_len = $AppCore::Config::BOARDS_SHORT_TEXT_LENGTH     || $SHORT_TEXT_LENGTH;
+			my $short_len = AppCore::Config->get("BOARDS_SHORT_TEXT_LENGTH")     || $SHORT_TEXT_LENGTH;
 			my $short = AppCore::Web::Common->html2text($post->text);
 			
 			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
@@ -1985,7 +1984,7 @@ package Boards;
 			
 			my $photo = $post->poster_photo ? $post->poster_photo :
 			            $post->posted_by ? $post->posted_by->photo : "";
-			$photo = $AppCore::Config::WEBSITE_SERVER . $photo if $photo =~ /\//;
+			$photo = AppCore::Config->get("WEBSITE_SERVER") . $photo if $photo =~ /\//;
 			
 			my $form = 
 			{
@@ -2028,6 +2027,8 @@ package Boards;
 		my $post = shift;
 		my $args = shift;
 		
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		
 		#print STDERR "notify_via_email stacktrace:\n"; 
 		#AppCore::Common::print_stack_trace();
 		
@@ -2052,14 +2053,13 @@ Here's a link to that page:
     
 Cheers!};
 			
-			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-				   @AppCore::Config::ADMIN_EMAILS : 
-				  ($AppCore::Config::WEBMASTER_EMAIL);
+			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
 			
 			# Dont email the person that just posted this :-)
 			@list = grep { $_ ne $post->poster_email } @list;
 			
-			AppCore::EmailQueue->send_email([@list],"[$AppCore::Config::WEBSITE_NAME] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
+			AppCore::EmailQueue->send_email([@list],"[".AppCore::Config->get("WEBSITE_NAME")."] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
 		}
 		elsif($action eq 'new_comment')
 		{
@@ -2070,23 +2070,23 @@ Cheers!};
 			my $comment = $post;
 			my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."#c" . $comment->id;
 			
+			my $server = 
 			my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
 
     }.AppCore::Web::Common->html2text($comment->text).qq{
 
 Here's a link to that page: 
-    ${AppCore::Config::WEBSITE_SERVER}$comment_url
+    ${server}$comment_url
     
 Cheers!};
 			#
 			AppCore::EmailQueue->reset_was_emailed;
 			
 			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
-			my $title = $AppCore::Config::WEBSITE_NAME; 
+			my $title = AppCore::Config->get("WEBSITE_NAME"); 
 			
-			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-				   @AppCore::Config::ADMIN_EMAILS : 
-				  ($AppCore::Config::WEBMASTER_EMAIL);
+			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
 			
 			my $email_subject = "[$title] ".$comment->poster_name." commented on '".$comment->top_commentid->subject."'";
 			
@@ -2132,14 +2132,14 @@ Cheers!};
 			AppCore::EmailQueue->reset_was_emailed;
 			
 			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
-			my $title = $AppCore::Config::WEBSITE_NAME; 
+			my $title = AppCore::Config->get("WEBSITE_NAME"); 
 			
 			# Notify User
 			my $email_subject = "[$title $noun] ".$like->name." likes your $noun '".$like->postid->subject."'";
 			my $email_body = $like->name." likes your $noun '".$like->postid->subject."\n\n\t".
 					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
 					"Here's a link to that page:\n".
-					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
+					"\t${server}$comment_url\n\n".
 					"Cheers!";
 			
 			my $user = AppCore::Common->context->user;
@@ -2147,15 +2147,14 @@ Cheers!};
 			AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
 			
 			# Notify Webmaster
-			my @list = @AppCore::Config::ADMIN_EMAILS ? 
-				   @AppCore::Config::ADMIN_EMAILS : 
-				  ($AppCore::Config::WEBMASTER_EMAIL);
+			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
 			
 			$email_subject = "[$title $noun] ".$like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
 			$email_body = $like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."\n\n\t".
 					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
 					"Here's a link to that page:\n".
-					"\t${AppCore::Config::WEBSITE_SERVER}$comment_url\n\n".
+					"\t${server}$comment_url\n\n".
 					"Cheers!";
 			
 			# Dont email the person that just posted this :-)

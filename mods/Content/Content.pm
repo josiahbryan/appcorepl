@@ -171,14 +171,14 @@ package Content;
 		my $r    = shift;
 		
 		# Reset current theme
-		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
+		Content::Page::Controller->theme(AppCore::Config->get("THEME_MODULE"));
 		
 		my @url = split /\//, join('/', $req->page_path, $req->path);
 		
 		@url = '/' if !@url;
 		
 		# Basic sanity check
-		@url = @url[0..$AppCore::Config::MAX_URL_DEPTH] if @url > $AppCore::Config::MAX_URL_DEPTH;
+		@url = @url[0..AppCore::Config->get("MAX_URL_DEPTH")] if @url > AppCore::Config->get("MAX_URL_DEPTH");
 		
 		# reset page path and path info
 		$req->page_path(join '/', @url);
@@ -227,7 +227,7 @@ package Content;
 				
 				if(!$page_obj->check_acl)
 				{
-					return $r->error("Authentication Required","Error: You dont have the necessary clearance to access <b>".$page_obj->url."</b><br><h3>You can <a href='$AppCore::Config::LOGIN_URL'>log in</a> or <a href='/user/signup'>signup</a> if you have not done so already.</h3>"); 
+					return $r->error("Authentication Required","Error: You dont have the necessary clearance to access <b>".$page_obj->url."</b><br><h3>You can <a href='".AppCore::Config->get("LOGIN_URL")."'>log in</a> or <a href='/user/signup'>signup</a> if you have not done so already.</h3>"); 
 				}
 				
 				

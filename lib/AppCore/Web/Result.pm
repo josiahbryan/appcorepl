@@ -118,7 +118,7 @@ package AppCore::Web::Result;
 		
 		if(!$user || $user->id !=1)
 		{
-			#AppCore::Web::Common::send_email([$AppCore::Config::WEBMASTER_EMAIL],"[AppCore Error] Error: $title","Error '$title' in ".AppCore::Web::Common::get_full_url().".\n\n$text",1,$from);
+			#AppCore::Web::Common::send_email([AppCore::Config->get('WEBMASTER_EMAIL')],"[AppCore Error] Error: $title","Error '$title' in ".AppCore::Web::Common::get_full_url().".\n\n$text",1,$from);
 		}
 		
 		AppCore::Web::Common::error($title,
@@ -126,10 +126,10 @@ package AppCore::Web::Result;
 			#." <br><br><b>We are still working hard to finish this website. If you notice any of these missing pages, please email <a href='mailto:webmaster\@productiveconcepts.com'>webmaster\@productiveconcepts.com</a> and let us know. Thanks!</b>" 
 			:
 			$code == 500? "An error occured:<br><pre>$text</pre>" : "$text").
-			"<p>For help with this error, please email <a href='mailto:$AppCore::Config::WEBMASTER_EMAIL"
+			"<p>For help with this error, please email <a href='mailto:".AppCore::Config->get('WEBMASTER_EMAIL')
 				."?subject=[AppCore] ".AppCore::Web::Common::encode_entities($title)
 				."&body=When I went to ".AppCore::Web::Common::encode_entities(AppCore::Web::Common::get_full_url()).", I received this error: "
-				.AppCore::Web::Common::encode_entities($text)."'>$AppCore::Config::WEBMASTER_EMAIL</a>. "
+				.AppCore::Web::Common::encode_entities($text)."'>".AppCore::Config->get('WEBMASTER_EMAIL')."</a>. "
 				."Sorry for the trouble!</p><p><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a></p>",
 		);
 	}
@@ -187,7 +187,7 @@ package AppCore::Web::Result;
 		
 		if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
 		{	
-			if($AppCore::Config::ENABLE_CSSX_COMBINE)
+			if(AppCore::Config->get('ENABLE_CSSX_COMBINE'))
 			{
 				my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
 				$out =~ s/<a:cssx[^\>]+>//gi;
@@ -195,10 +195,10 @@ package AppCore::Web::Result;
 				#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
 				
 				my $file = _process_multi_cssx($self,$tmpl,1,@files);
-				my $full_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $full_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
 				my $css = read_file($full_file);
 				
-				if($AppCore::Config::ENABLE_INPAGE_CSS_COMBINE)
+				if(AppCore::Config->get('ENABLE_INPAGE_CSS_COMBINE'))
 				{
 					$css .= _combine_inpage_css(\$out);
 				}
@@ -214,7 +214,7 @@ package AppCore::Web::Result;
 		
 		#timemark("cssx combine");
 		
-		if($AppCore::Config::ENABLE_JS_COMBINE && $out =~ /<script.*?src=['"][^'"]+['"]/i)
+		if(AppCore::Config->get('ENABLE_JS_COMBINE') && $out =~ /<script.*?src=['"][^'"]+['"]/i)
 		{	
 			my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
 			
@@ -239,14 +239,14 @@ package AppCore::Web::Result;
 		
 		#timemark("js combine");
 		
-		if($AppCore::Config::ENABLE_JS_REORDER && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
+		if(AppCore::Config->get('ENABLE_JS_REORDER') && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
 		{
 			my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/g;
 			$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
 			my $block = join("\n\n/********************/\n\n", @scripts);
 			
-			if($AppCore::Config::ENABLE_JS_REORDER_YUI &&
-			   $AppCore::Config::USE_YUI_COMPRESS)
+			if(AppCore::Config->get('ENABLE_JS_REORDER_YUI') &&
+			   AppCore::Config->get('USE_YUI_COMPRESS'))
 			{
 				my $tmp_file = "/tmp/yuic-".md5_hex($block).".js";
 				if(-f $tmp_file)
@@ -255,7 +255,7 @@ package AppCore::Web::Result;
 				}
 				else
 				{
-					my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+					my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 					if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 					{
 						print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
@@ -266,7 +266,7 @@ package AppCore::Web::Result;
 						my $tmp_file_pre = "/tmp/yuic.$$.js";
 						AppCore::Common->write_file($tmp_file_pre, $block);
 						
-						my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+						my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
 						my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
 						print STDERR "YUI Compress command: '$cmd'\n";
 						system($cmd);
@@ -290,54 +290,57 @@ package AppCore::Web::Result;
 		
 		#timemark("js reorder");
 		
-		if($AppCore::Config::ENABLE_CDN_IMG && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_IMG') && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<img src=(['"])(\/[^'"]+)(['"])/"<img src=$1".cdn_url($2)."$3"/segi;
 		}
 		
 		#timemark("cdn - img");
 		
-		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_JS') && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='".cdn_url($1)."'"/segi;
 		}
 		
 		#timemark("cdn - js");
 		
-		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())
 		{
 			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
 		}
 		
 		#timemark("cdn - css");
 		
-		if($AppCore::Config::ENABLE_CDN_MACRO)
+		if(AppCore::Config->get('ENABLE_CDN_MACRO'))
 		{
 			if(_can_cdn_for_fqdn())
 			{
+				print STDERR "CDN Macro - FQDN\n";
 				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi; #egi;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi; #egi;
 			}
 			else
 			{
-				$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/segi;
-				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/segi;
+				print STDERR "CDN Macro - NONFQDN\n";
+				$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/gi;
+				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/gi;
 			}
 		}
 		 
 		
-		if($AppCore::Config::GA_INSERT_TRACKER && 
-		   $AppCore::Config::GA_ACCOUNT_ID)
+		my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
+		if(AppCore::Config->get('GA_INSERT_TRACKER') && $ga_id)
 		{
+			 
 			my $ga = qq#
 		
 <script type="text/javascript">
 
   var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '$AppCore::Config::GA_ACCOUNT_ID']);
+  _gaq.push(['_setAccount', '$ga_id']);
   _gaq.push(['_trackPageview']);
 #;
-			if($AppCore::Config::GA_SET_USER_VAR)
+			if(AppCore::Config->get('GA_SET_USER_VAR'))
 			{
 				my $user = AppCore::Common->context->user;
 				my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
@@ -372,7 +375,7 @@ package AppCore::Web::Result;
 		my @css = $$out =~ /<style(?:\s*type="text\/css")?>((?:\n|.)+?)<\/style>/g;
 		$$out =~ s/<style(?:\s*type="text\/css")?>(?:\n|.)+?<\/style>//g;
 		
-		if($AppCore::Config::USE_YUI_COMPRESS)
+		if(AppCore::Config->get('USE_YUI_COMPRESS'))
 		{
 			my $block = join '', @css;
 			my $tmp_file = "/tmp/yuic-".md5_hex($block).".css";
@@ -382,7 +385,7 @@ package AppCore::Web::Result;
 			}
 			else
 			{
-				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
 					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
@@ -393,7 +396,7 @@ package AppCore::Web::Result;
 					my $tmp_file_pre = "/tmp/yuic.$$.css";
 					AppCore::Common->write_file($tmp_file_pre, $block);
 					
-					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
 					my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
 					print STDERR "YUI Compress command: '$cmd'\n";
 					system($cmd);
@@ -426,22 +429,26 @@ package AppCore::Web::Result;
 		return "url('data:$mime;base64,$base64')";
 	}
 	
-	our $CDNIndex = @AppCore::Config::CDN_HOSTS;
+	our $CDNIndex = 0;
 	my $CdnDataCache;
 	sub cdn_url
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $url_part = shift;
 		my $url_wrap = shift || 0;
-		#return "url(\"$url_part\")" if !@AppCore::Config::CDN_HOSTS && $url_wrap;
-		return $url_part if !@AppCore::Config::CDN_HOSTS;
+		my $NumCdnHosts = scalar @{ AppCore::Config->get('CDN_HOSTS') || [] };
 		
-		my $cdn_mode = $AppCore::Config::CDN_MODE || 'hash';
-		#print STDERR "cdn_url($url_part): \$cdn_mode: $cdn_mode [$AppCore::Config::CDN_MODE]\n";
+		return "url(\"$url_part\")" if !$NumCdnHosts && $url_wrap;
+		return $url_part if !$NumCdnHosts;
+		
+		
+		
+		my $cdn_mode = AppCore::Config->get('CDN_MODE') || 'hash';
+		#print STDERR "cdn_url($url_part): \$cdn_mode: $cdn_mode [AppCore::Config->get('CDN_MODE')]\n";
 		if($cdn_mode eq 'rr')
 		{
 			$CDNIndex ++;
-			$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
+			$CDNIndex = 0 if $CDNIndex >= $NumCdnHosts;
 			#print STDERR "cdn_url($url_part): [rr] Round-robin index: $CDNIndex\n";
 		}
 		elsif($cdn_mode eq 'mod')
@@ -459,16 +466,17 @@ package AppCore::Web::Result;
 			$sum+=hex($part3); 
 			$sum+=hex($part4);
 			
-			$CDNIndex = $sum % scalar(@AppCore::Config::CDN_HOSTS);
+			$CDNIndex = $sum % $NumCdnHosts;
 			#print STDERR "cdn_url($url_part): [mod] Modula-derived index: $CDNIndex\n";
 		}
 		elsif($cdn_mode eq 'hash')
 		{
+			my $hash_file = AppCore::Config->get('CDN_HASH_FILE');
 			my $hash = $CdnDataCache;
-			my $mtime = (stat($AppCore::Config::CDN_HASH_FILE))[9];
+			my $mtime = (stat($hash_file))[9];
 			if(!$hash || $mtime > $hash->{mtime})
 			{
-				$hash = $CdnDataCache = -f $AppCore::Config::CDN_HASH_FILE ? Storable::lock_retrieve($AppCore::Config::CDN_HASH_FILE) : {};
+				$hash = $CdnDataCache = -f $hash_file ? Storable::lock_retrieve($hash_file) : {};
 				$hash->{mtime} = $mtime;
 			}
 			my $cache_miss = 0;
@@ -476,7 +484,7 @@ package AppCore::Web::Result;
 			if($idx < 0)
 			{
 				$CDNIndex ++;
-				$CDNIndex = 0 if $CDNIndex >= @AppCore::Config::CDN_HOSTS;
+				$CDNIndex = 0 if $CDNIndex >= $NumCdnHosts;
 				#print STDERR "cdn_url($url_part): [hash] NO CACHED INDEX, USING $CDNIndex\n";
 				$cache_miss = 1;
 			}
@@ -487,22 +495,24 @@ package AppCore::Web::Result;
 			}
 			
 			$hash->{$url_part} = $CDNIndex;
-			#print STDERR "cdn_url($url_part): [hash] Hash file: '$AppCore::Config::CDN_HASH_FILE'\n";
+			#print STDERR "cdn_url($url_part): [hash] Hash file: 'AppCore::Config->get('CDN_HASH_FILE')'\n";
 			if($cache_miss || 
-				($AppCore::Config::CDN_HASH_FORCEWRITE_COUNT > 0 && 
-					(++ $CdnDataCache->{use_count} % $AppCore::Config::CDN_HASH_FORCEWRITE_COUNT) == 0
+				(AppCore::Config->get('CDN_HASH_FORCEWRITE_COUNT') > 0 && 
+					(++ $CdnDataCache->{use_count} % AppCore::Config->get('CDN_HASH_FORCEWRITE_COUNT')) == 0
 				)
 			  )
 			{
-				Storable::lock_store($hash, $AppCore::Config::CDN_HASH_FILE);
-				$hash->{mtime} = (stat($AppCore::Config::CDN_HASH_FILE))[9];
+				Storable::lock_store($hash, $hash_file);
+				$hash->{mtime} = (stat($hash_file))[9];
 			}
 		}
 
-		my $server = $AppCore::Config::CDN_HOSTS[$CDNIndex];
+		my $server = AppCore::Config->get('CDN_HOSTS')->[$CDNIndex];
 		#print STDERR "cdn_url($url_part): Decided on server $server, #$CDNIndex\n";
 		
 		my $final_url = join('', 'http://', $server, $url_part);
+		
+		print STDERR "cdn_url: $url_part -> $final_url\n";
 		
 		return "url(\"$final_url\")" if $url_wrap;
 		return $final_url;
@@ -510,10 +520,10 @@ package AppCore::Web::Result;
 	
 	sub _can_cdn_for_fqdn
 	{
-		if($AppCore::Config::ENABLE_CDN_FQDN_ONLY)
+		if(AppCore::Config->get('ENABLE_CDN_FQDN_ONLY'))
 		{
 			$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
-			my $srv = $AppCore::Config::WEBSITE_SERVER;
+			my $srv = AppCore::Config->get('WEBSITE_SERVER');
 			$srv =~ s/^https?:\/\///g;
 			my $flag = $ENV{HTTP_HOST} eq $srv ? 1:0;
 			#print STDERR "_can_cdn_for_fqdn: srv: $srv, current: $ENV{HTTP_HOST}, flag: $flag\n";
@@ -529,7 +539,7 @@ package AppCore::Web::Result;
 		my $text = read_file($src);
 		$text =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi;
 		
-		if($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_CSSX_URL') && _can_cdn_for_fqdn())
 		{
 			$text =~ s/url\(['"](\/[^\"\)]+)["']?\)/'"'.cdn_url($1).'"'/segi;
 		}
@@ -548,10 +558,10 @@ package AppCore::Web::Result;
 		#my $mobile = AppCore::Common->context->x('IsMobile');
 		
 		my $md5 = md5_hex(join '', @files) . '.js'; # ($mobile ? '-m' : ''). '.css';
-		my $jsx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
-		my $jsx_file = $AppCore::Config::WWW_DOC_ROOT . $jsx_url;
+		my $jsx_url  = join('/', AppCore::Config->get('WWW_ROOT'), 'cssx', $md5);
+		my $jsx_file = AppCore::Config->get('WWW_DOC_ROOT') . $jsx_url;
 		
-		#my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		#my $orig_file = AppCore::Config->get('WWW_DOC_ROOT') . $src_file;
 		
 		my $need_rebuild = 0;
 		if(!-f $jsx_file)
@@ -564,7 +574,7 @@ package AppCore::Web::Result;
 			foreach my $file (@files)
 			{
 				next if $file =~ /^https?:/;
-				my $disk_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $disk_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
 				if((stat($disk_file))[9] > $cache_mod)
 				{
 					$need_rebuild = 1;
@@ -580,7 +590,7 @@ package AppCore::Web::Result;
 			{
 				next if $file =~ /^https?:/;
 				
-				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $orig_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
 				print STDERR "Recompiling JS File $orig_file -> $jsx_file\n";
 				my $text = _read_source_js($tmpl,$orig_file);
 				
@@ -592,29 +602,29 @@ package AppCore::Web::Result;
 			print CSSX join "\n", @js_buffer;
 			close(CSSX);
 			
-# 			if($AppCore::Config::USE_CSS_TIDY && 
-# 			-f $AppCore::Config::USE_CSS_TIDY)
+# 			if(AppCore::Config->get('USE_CSS_TIDY') && 
+# 			-f AppCore::Config->get('USE_CSS_TIDY'))
 # 			{
 # 				my $tmp_file = "/tmp/csstidy.$$.css";
-# 				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
-# 				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+# 				my $args = AppCore::Config->get('CSS_TIDY_SETTINGS') || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+# 				my $tidy = AppCore::Config->get('USE_CSS_TIDY');
 # 				my $cmd = "$tidy $jsx_file $args $tmp_file";
 # 				print STDERR "Tidy command: '$cmd'\n";
 # 				system($cmd);
 # 				system("mv -f $tmp_file $jsx_file");
 # 			}
 # 			
-			if($AppCore::Config::USE_YUI_COMPRESS)
+			if(AppCore::Config->get('USE_YUI_COMPRESS'))
 			{
 				my $tmp_file = "/tmp/yuic.$$.js";
-				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
 					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 				}
 				else
 				{
-					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
 					my $cmd = "$comp $jsx_file $args -o $tmp_file";
 					print STDERR "YUI Compress command: '$cmd'\n";
 					system($cmd);
@@ -625,7 +635,7 @@ package AppCore::Web::Result;
 		
 		return $jsx_url if $just_filename;
 		
-		if($AppCore::Config::ENABLE_CDN_JS && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_JS') && _can_cdn_for_fqdn())
 		{
 			$jsx_url = cdn_url($jsx_url);
 		}
@@ -644,15 +654,21 @@ package AppCore::Web::Result;
 		my $text = read_file($src);
 		$text =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi;
 		
-		if($AppCore::Config::ENABLE_CSSX_IMAGE_URI ||
-		   ($mobile && $AppCore::Config::ENABLE_CSSX_MOBILE_IMAGE_URI))
+		if(AppCore::Config->get('ENABLE_CSSX_IMAGE_URI') ||
+		   ($mobile && AppCore::Config->get('ENABLE_CSSX_MOBILE_IMAGE_URI')))
 		{
-# 			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\);/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1") . ";\n\t\t\/* Original Image: $1 *\/"/segi;
-			$text =~ s/url\(["']?(\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/data_url("$AppCore::Config::WWW_DOC_ROOT\/$1")/segi;
+			my $doc_root = AppCore::Config->get('WWW_DOC_ROOT');
+# 			$text =~ s/url\("(\/[^\"]+\.(?:gif|png|jpg))"\);/data_url("AppCore::Config->get('WWW_DOC_ROOT')\/$1") . ";\n\t\t\/* Original Image: $1 *\/"/segi;
+			$text =~ s/url\(["']?(\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/data_url("$doc_root\/$1")/segi;
 		}
-		elsif($AppCore::Config::ENABLE_CDN_CSSX_URL && _can_cdn_for_fqdn())
+		elsif(AppCore::Config->get('ENABLE_CDN_CSSX_URL') && _can_cdn_for_fqdn())
 		{
+			#print STDERR "_read_source_css: $src, doing cssx url corrections\n";
 			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/cdn_url($1,1)/segi;
+		}
+		else
+		{
+			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/url("$1")/segi;
 		}
 		
 		return $text;
@@ -669,10 +685,10 @@ package AppCore::Web::Result;
 		my $mobile = AppCore::Common->context->x('IsMobile');
 		
 		my $md5 = md5_hex(join '', @files) . ($mobile ? '-m' : ''). '.css';
-		my $cssx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
-		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
+		my $cssx_url  = join('/', AppCore::Config->get('WWW_ROOT'), 'cssx', $md5);
+		my $cssx_file = AppCore::Config->get('WWW_DOC_ROOT') . $cssx_url;
 		
-		#my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		#my $orig_file = AppCore::Config->get('WWW_DOC_ROOT') . $src_file;
 		
 		my $need_rebuild = 0;
 		if(!-f $cssx_file)
@@ -684,7 +700,7 @@ package AppCore::Web::Result;
 			my $cache_mod = (stat($cssx_file))[9];
 			foreach my $file (@files)
 			{
-				my $disk_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $disk_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
 				if((stat($disk_file))[9] > $cache_mod)
 				{
 					$need_rebuild = 1;
@@ -698,14 +714,15 @@ package AppCore::Web::Result;
 			my @css_buffer;
 			foreach my $file (@files)
 			{
-				my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $file;
+				my $doc_root = AppCore::Config->get('WWW_DOC_ROOT');
+				my $orig_file = $doc_root . $file;
 				print STDERR "Recompiling CSSX File $orig_file -> $cssx_file\n";
 				my $text = _read_source_css($tmpl,$orig_file,$mobile);
 				
 				# Note: @imports are not processed in included CSS files in order to prevent recursion problems
-				if($AppCore::Config::ENABLE_CSSX_IMPORT)
+				if(AppCore::Config->get('ENABLE_CSSX_IMPORT'))
 				{
-					$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1",$mobile)/segi;
+					$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$doc_root\/$1",$mobile)/segi;
 				}
 				
 				push @css_buffer, $text;
@@ -716,29 +733,29 @@ package AppCore::Web::Result;
 			print CSSX join "\n", @css_buffer;
 			close(CSSX);
 			
-			if($AppCore::Config::USE_CSS_TIDY && 
-			-f $AppCore::Config::USE_CSS_TIDY)
+			if(AppCore::Config->get('USE_CSS_TIDY') && 
+			-f AppCore::Config->get('USE_CSS_TIDY'))
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
-				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
-				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+				my $args = AppCore::Config->get('CSS_TIDY_SETTINGS') || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+				my $tidy = AppCore::Config->get('USE_CSS_TIDY');
 				my $cmd = "$tidy $cssx_file $args $tmp_file";
 				print STDERR "Tidy command: '$cmd'\n";
 				system($cmd);
 				system("mv -f $tmp_file $cssx_file");
 			}
 			
-			if($AppCore::Config::USE_YUI_COMPRESS)
+			if(AppCore::Config->get('USE_YUI_COMPRESS'))
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
-				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
+				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
 					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 				}
 				else
 				{
-					my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+					my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
 					my $cmd = "$comp $cssx_file $args -o $tmp_file";
 					print STDERR "YUI Compress command: '$cmd'\n";
 					system($cmd);
@@ -749,7 +766,7 @@ package AppCore::Web::Result;
 		
 		return $cssx_url if $just_filename;
 		
-		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())
 		{
 			$cssx_url = cdn_url($cssx_url);
 		}
@@ -771,9 +788,10 @@ package AppCore::Web::Result;
 		# Otherwise, compile new ver
 		
 		my $md5 = md5_hex($src_file).'.css';
-		my $cssx_url  = join('/', $AppCore::Config::WWW_ROOT, 'cssx', $md5);
-		my $cssx_file = $AppCore::Config::WWW_DOC_ROOT . $cssx_url;
-		my $orig_file = $AppCore::Config::WWW_DOC_ROOT . $src_file;
+		my $doc_root  = AppCore::Config->get('WWW_DOC_ROOT');
+		my $cssx_url  = join('/', AppCore::Config->get('WWW_ROOT'), 'cssx', $md5);
+		my $cssx_file = $doc_root . $cssx_url;
+		my $orig_file = $doc_root . $src_file;
 		
 		my $mobile = AppCore::Common->context->x('IsMobile');
 		
@@ -783,9 +801,9 @@ package AppCore::Web::Result;
 			my $text = _read_source_css($tmpl,$orig_file,$mobile);
 			
 			# Note: @imports are not processed in included CSS files in order to prevent recursion problems
-			if($AppCore::Config::ENABLE_CSSX_IMPORT)
+			if(AppCore::Config->get('ENABLE_CSSX_IMPORT'))
 			{
-				$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$AppCore::Config::WWW_DOC_ROOT\/$1",$mobile)/segi;
+				$text =~ s/\@import url\("([^\"]+)"\);/"\/* Included from: $1 *\/\n"._read_source_css($tmpl,"$doc_root\/$1",$mobile)/segi;
 			}
 			
 			open(CSSX,">$cssx_file") || die "Cannot open $cssx_file for writing: $!";
@@ -793,23 +811,23 @@ package AppCore::Web::Result;
 			print CSSX $text;
 			close(CSSX);
 			
-			if($AppCore::Config::USE_CSS_TIDY && 
-			-f $AppCore::Config::USE_CSS_TIDY)
+			if(AppCore::Config->get('USE_CSS_TIDY') && 
+			-f AppCore::Config->get('USE_CSS_TIDY'))
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
-				my $args = $AppCore::Config::CSS_TIDY_SETTINGS || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
-				my $tidy = $AppCore::Config::USE_CSS_TIDY;
+				my $args = AppCore::Config->get('CSS_TIDY_SETTINGS') || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
+				my $tidy = AppCore::Config->get('USE_CSS_TIDY');
 				my $cmd = "$tidy $cssx_file $args $tmp_file";
 				print STDERR "Tidy command: '$cmd'\n";
 				system($cmd);
 				system("mv -f $tmp_file $cssx_file");
 			}
 			
-			if($AppCore::Config::USE_YUI_COMPRESS)
+			if(AppCore::Config->get('USE_YUI_COMPRESS'))
 			{
 				my $tmp_file = "/tmp/csstidy.$$.css";
-				my $comp = $AppCore::Config::USE_YUI_COMPRESS;
-				my $args = $AppCore::Config::YUI_COMPRESS_SETTINGS || '';
+				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
+				my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
 				my $cmd = "$comp $cssx_file $args -o $tmp_file";
 				print STDERR "YUI Compress command: '$cmd'\n";
 				system($cmd);
@@ -817,7 +835,7 @@ package AppCore::Web::Result;
 			}
 		}
 		
-		if($AppCore::Config::ENABLE_CDN_CSS && _can_cdn_for_fqdn())
+		if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())
 		{
 			$cssx_url = cdn_url($cssx_url);
 		}
@@ -874,7 +892,7 @@ package AppCore::Web::Result;
 		
 		#AppCore::Common::print_stack_trace();
 		#print STDERR "DEBUG: AUTOLOAD() [$node] ACCESS $name\n"; # if $debug;
-		
+		return if !$node || !ref $node;		
 		return $node->x($name,@_);
 	}
 	

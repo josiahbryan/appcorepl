@@ -172,7 +172,7 @@ package AppCore::AuthUtil;
 			my %hash = @_;
 			$extra = '&' . join('&', map { $_ => url_encode($hash{$_}) } sort keys %hash );
 		}
-		my $url = $AppCore::Config::LOGIN_URL.'?url_from='.url_encode(get_full_url()).$extra;
+		my $url = AppCore::Config->get("LOGIN_URL").'?url_from='.url_encode(get_full_url()).$extra;
 		redirect($url);
 	}
 };

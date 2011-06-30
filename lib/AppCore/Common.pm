@@ -75,7 +75,7 @@ package AppCore::Common;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
 	
-	sub SYS_PATH_BASE    { $AppCore::Config::APPCORE_ROOT }
+	sub SYS_PATH_BASE    { AppCore::Config->get("APPCORE_ROOT") }
 	sub SYS_PATH_MODULES { SYS_PATH_BASE . '/modules' }
 	sub SYS_PACKAGE_BASE { 'AppCore::Web::Module' }
 	

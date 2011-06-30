@@ -18,7 +18,7 @@ package Admin::ModuleAdminEntry;
 		class_noun	=> 'Admin Module Entry',
 		class_title	=> 'Admin Module List',
 		
-		table		=> $AppCore::Config::PAGE_DBTABLE || 'admin_module_entries',
+		table		=> AppCore::Config->get("PAGE_DBTABLE") || 'admin_module_entries',
 		
 		schema	=>
 		[

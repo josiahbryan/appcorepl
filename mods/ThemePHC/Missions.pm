@@ -16,7 +16,7 @@ package PHC::Missions;
 	__PACKAGE__->meta(
 	{
 		@Boards::DbSetup::DbConfig,
-		table	=> $AppCore::Config::PHC_MISSIONS || 'missions',
+		table	=> AppCore::Config->get("PHC_MISSIONS") || 'missions',
 		
 		schema	=> 
 		[
@@ -294,7 +294,7 @@ package ThemePHC::Missions;
 			#my $thumbnail_filename = "photo".$m->id."-small.$ext";
 			my $written_filename = "photo".$m->id.".$ext";
 			my $www_path = "missionary_photos";
-			my $file_path = $AppCore::Config::WWW_DOC_ROOT.$AppCore::Config::WWW_ROOT."/$www_path";
+			my $file_path = AppCore::Config->get("WWW_DOC_ROOT").AppCore::Config->get("WWW_ROOT")."/$www_path";
 			
 			my $abs = "$file_path/$written_filename";
 			
@@ -373,7 +373,7 @@ package ThemePHC::Missions;
 		
 		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
 		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
-		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		my $new_binpath = AppCore::Config->get("DISPATCHER_URL_PREFIX") . $req->page_path; # this should work...
 		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
 		$self->binpath($new_binpath);
 		

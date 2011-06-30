@@ -23,10 +23,10 @@ package AppCore::DBI;
 	#use AppCore::PersistantUserPref;
 	
 	
-	sub DEFAULT_DB()   { $AppCore::Config::DB_NAME || 'appcore'}
-	sub DEFAULT_HOST() { $AppCore::Config::DB_HOST || 'localhost' };
-	sub DEFAULT_USER() { $AppCore::Config::DB_USER || 'root'};
-	sub DEFAULT_PASS() { $AppCore::Config::DB_PASS || '' };
+	sub DEFAULT_DB()   { AppCore::Config->get("DB_NAME") || 'appcore'}
+	sub DEFAULT_HOST() { AppCore::Config->get("DB_HOST") || 'localhost' };
+	sub DEFAULT_USER() { AppCore::Config->get("DB_USER") || 'root'};
+	sub DEFAULT_PASS() { AppCore::Config->get("DB_PASS") || '' };
 	
 	
 	# Required for Class::DBI compat

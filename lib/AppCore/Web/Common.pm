@@ -330,7 +330,7 @@ package AppCore::Web::Common;
 		#$$textref =~ s/\${if:([^\}]+)}/_rewrite_if_macro($1)/segi;
 		#$$textref =~ s/\${(end|\/)if}/<\/tmpl_if>/gi;
 		
-		if($AppCore::Config::ENABLE_TMPL2JQ_MACRO)
+		if(AppCore::Config->get("ENABLE_TMPL2JQ_MACRO"))
 		{
 			$$textref =~ s/\${tmpl2jq:([^\}]+)}/_tmpl2jq($1)/segi;
 		}
@@ -428,7 +428,8 @@ package AppCore::Web::Common;
 		use Data::Dumper;
 		
 		# Always properly replace %%appcore%% regardless of the variable defenition in the $tmpl
-		$file =~ s/%%appcore%%/$AppCore::Config::WWW_ROOT/gi;
+		my $www_root = AppCore::Config->get("WWW_ROOT");
+		$file =~ s/%%appcore%%/$www_root/gi;
 		
 		# Handle arbitrary variable replacements in the filename
 		$file =~ s/%%([^\%]+)%%/$tmpl->param($1)/segi if $tmpl && $file =~ /%%/;
@@ -436,7 +437,7 @@ package AppCore::Web::Common;
 		# Intelligently prepend the document root if this is an absolute filename relative to $WWW_DOC_ROOT
 		if($file =~ /^\/appcore/i)
 		{
-			$file = $AppCore::Config::WWW_DOC_ROOT . $file;
+			$file = AppCore::Config->get("WWW_DOC_ROOT") . $file;
 		}
 		
 		if($tmpl && !-f $file)

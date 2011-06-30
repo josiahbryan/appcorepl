@@ -243,7 +243,7 @@ package AppCore::Web::Module;
 		my @parts = split /::/, $pkg;
 		my $first_pkg = shift @parts;
 		
-		my $tmp = join('/', $AppCore::Config::WWW_ROOT, 'mods', $first_pkg);
+		my $tmp = join('/', AppCore::Config->get("WWW_ROOT"), 'mods', $first_pkg);
 		$ModpathCache{$pkg} = $tmp;
 		
 		return $tmp;
@@ -265,7 +265,7 @@ package AppCore::Web::Module;
 		$pkg = lc $pkg;
 		$pkg =~ s/::/\//g;
 		
-		my $tmp = join('/', $AppCore::Config::DISPATCHER_URL_PREFIX, $pkg);
+		my $tmp = join('/', AppCore::Config->get("DISPATCHER_URL_PREFIX"), $pkg);
 		$BinpathCache{$pkg} = $tmp;
 		
 		return $tmp;
@@ -315,7 +315,7 @@ package AppCore::Web::Module;
 		if($file !~ /^\// && -f $abs_file)
 		{
 			my $tmpl = AppCore::Web::Common::load_template($abs_file);
-			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
+			$tmpl->param(appcore => join('/', AppCore::Config->get("WWW_ROOT")));
 			$tmpl->param(modpath => $self->modpath);
 			$tmpl->param(binpath => $self->binpath);
 			my $user = AppCore::Common->context->user;
@@ -352,7 +352,7 @@ package AppCore::Web::Module;
 		my $url = join('/', $pkg->binpath, $suffix);
 		if($include_server)
 		{
-			return $AppCore::Config::WEBSITE_SERVER . $url;
+			return AppCore::Config->get("WEBSITE_SERVER") . $url;
 		}
 		
 		return $url;

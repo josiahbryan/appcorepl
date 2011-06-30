@@ -355,7 +355,7 @@ package ThemeBryanBlogs;
 		
 		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
 		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
-		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		my $new_binpath = AppCore::Config->get("DISPATCHER_URL_PREFIX") . $req->page_path; # this should work...
 		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
 		$self->binpath($new_binpath);
 		

@@ -10,7 +10,7 @@ package Content::Page;
 		class_noun	=> 'Page',
 		class_title	=> 'Page Database',
 		
-		table		=> $AppCore::Config::PAGE_DBTABLE || 'pages',
+		table		=> AppCore::Config->get("PAGE_DBTABLE") || 'pages',
 		
 		schema	=>
 		[
@@ -90,7 +90,7 @@ package Content::Page::Type;
 		class_noun	=> 'Page Type',
 		class_title	=> 'Page Type Database',
 		
-		table		=> $AppCore::Config::PAGETYPE_DBTABLE || 'page_types',
+		table		=> AppCore::Config->get("PAGETYPE_DBTABLE") || 'page_types',
 		
 		schema	=>
 		[
@@ -286,7 +286,7 @@ package Content::Page::Controller;
 # 		}
 # 		if(!$CurrentTheme)
 		{
-			$CurrentTheme = $AppCore::Config::THEME_MODULE;
+			$CurrentTheme = AppCore::Config->get("THEME_MODULE");
 		}
 		if(!$CurrentTheme)
 		{
@@ -425,7 +425,7 @@ package Content::Page::ThemeEngine::View;
 	__PACKAGE__->meta({
 		class_noun	=> 'View Code',
 		
-		table		=> $AppCore::Config::THEMES_DBTABLE || 'theme_views',
+		table		=> AppCore::Config->get("THEMES_DBTABLE") || 'theme_views',
 		
 		schema	=>
 		[
@@ -479,7 +479,7 @@ package Content::Page::ThemeEngine;
 	__PACKAGE__->meta({
 		class_noun	=> 'Theme Engine',
 		
-		table		=> $AppCore::Config::THEMES_DBTABLE || 'themes',
+		table		=> AppCore::Config->get("THEMES_DBTABLE") || 'themes',
 		
 		schema	=>
 		[
@@ -903,7 +903,7 @@ package Content::Page::ThemeEngine;
 		$self->auto_apply_params($tmpl,$page_obj);
 		
 		# load_template() automatically adds this template parameter in to your template:
-		#$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', __PACKAGE__));
+		#$tmpl->param(modpath => join('/', AppCore::Config->get("WWW_ROOT"), 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl); #->output);
@@ -1020,8 +1020,8 @@ package Content::Page::ThemeEngine;
 		
 		if($tmpl)
 		{
-			$tmpl->param(appcore => join('/', $AppCore::Config::WWW_ROOT));
-			$tmpl->param(modpath => join('/', $AppCore::Config::WWW_ROOT, 'mods', $pkg));
+			$tmpl->param(appcore => join('/', AppCore::Config->get("WWW_ROOT")));
+			$tmpl->param(modpath => join('/', AppCore::Config->get("WWW_ROOT"), 'mods', $pkg));
 			$tmpl->param($_ => $self->{params}->{$_}) foreach keys %{$self->{params}};
 			$tmpl->param(mainnav      => $self->load_nav); 
 			

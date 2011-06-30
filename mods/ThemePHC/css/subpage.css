@@ -41,6 +41,8 @@ label { cursor: pointer }
 	height: 143px;
 }
 
+
+
 #header #header-shadow
 {
 	background-image: url("%%modpath%%/images/header-shadow2.png");

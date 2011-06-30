@@ -16,8 +16,8 @@ package AppCore::User;
 		class_noun	=> 'Users',
 		class_title	=> 'Users Database',
 		
-		db		=> $AppCore::Config::USERS_DBNAME,
-		table		=> $AppCore::Config::USERS_DBTABLE,
+		db		=> AppCore::Config->get("USERS_DBNAME"),
+		table		=> AppCore::Config->get("USERS_DBTABLE"),
 		
 		schema	=>
 		[
@@ -35,7 +35,7 @@ package AppCore::User;
 			{	field	=> 'first',		type	=> 'varchar(255)' },
 			{	field	=> 'last',		type	=> 'varchar(255)' },
 			{	field	=> 'display',		type	=> 'varchar(255)' },
-			# Path relative to $AppCore::Config::WWW_DOC_ROOT for the users image
+			# Path relative to AppCore::Config->get("WWW_DOC_ROOT") for the users image
 			# However, I recommend using the 'get_photo' method to get an appropriate-sized photo (get_photo handles resizing and caching as necessary)
 			{	field	=> 'photo',		type	=> 'varchar(255)' },
 			{	field	=> 'location',		type	=> 'varchar(255)' },
@@ -311,7 +311,7 @@ package AppCore::User;
 		my $name = shift;
 		return $group_name_cache{$name} if exists $group_name_cache{$name};
 		
-		my $q_name = AppCore::DBI->dbh($AppCore::Config::USERS_DBNAME)->prepare('select `groupid` from `user_groups` where `name`=?');
+		my $q_name = AppCore::DBI->dbh(AppCore::Config->get("USERS_DBNAME"))->prepare('select `groupid` from `user_groups` where `name`=?');
 		my $res = $q_name->execute($name);
 		
 		if($res)
@@ -339,7 +339,7 @@ package AppCore::User;
 		
 		return $user_acl_cache{$userid} if exists $user_acl_cache{$userid};
 	
-		my $q_acls = AppCore::DBI->dbh($AppCore::Config::USERS_DBNAME)->prepare('select groupid from `user_group_list` where userid=?');
+		my $q_acls = AppCore::DBI->dbh(AppCore::Config->get("USERS_DBNAME"))->prepare('select groupid from `user_group_list` where userid=?');
 		$q_acls->execute($userid);
 		
 		#die Dumper $sid;
@@ -567,7 +567,7 @@ package AppCore::User::Group;
 		class_noun	=> 'Groups',
 		class_title	=> 'Group Database',
 		
-		db		=> $AppCore::Config::USERS_DBNAME,
+		db		=> AppCore::Config->get("USERS_DBNAME"),
 		table		=> 'user_groups',
 		
 		schema	=>
@@ -632,7 +632,7 @@ package AppCore::User::GroupList;
 		class_noun	=> 'User/Group Connection',
 		class_title	=> 'User/Group Connection Database',
 		
-		db		=> $AppCore::Config::USERS_DBNAME,
+		db		=> AppCore::Config->get("USERS_DBNAME"),
 		table		=> 'user_group_list',
 		
 		schema	=>
@@ -661,7 +661,7 @@ package AppCore::User::PrefOption;
 		class_noun	=> 'Preference Option',
 		class_title	=> 'Preference Option Database',
 		
-		db		=> $AppCore::Config::USERS_DBNAME,
+		db		=> AppCore::Config->get("USERS_DBNAME"),
 		table		=> 'user_pref_opts',
 		
 		schema	=>
@@ -770,7 +770,7 @@ package AppCore::User::Preference;
 		class_noun	=> 'Preference',
 		class_title	=> 'Preference Choice Database',
 		
-		db		=> $AppCore::Config::USERS_DBNAME,
+		db		=> AppCore::Config->get("USERS_DBNAME"),
 		table		=> 'user_prefs',
 		
 		schema	=>

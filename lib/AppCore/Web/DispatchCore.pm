@@ -70,7 +70,7 @@ package AppCore::Web::DispatchCore;
 		#print STDERR "(PID $$) [".$ENV{REMOTE_ADDR}."] [FATAL] $text\n";
 		
 		print "Content-Type: text/html\n\n";
-		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:$AppCore::Config::WEBMASTER_EMAIL'>$AppCore::Config::WEBMASTER_EMAIL</a>.</p>";
+		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:".AppCore::Config->get("WEBMASTER_EMAIL")."'>".AppCore::Config->get("WEBMASTER_EMAIL")."</a>.</p>";
 		exit;
 		
 		
@@ -145,7 +145,7 @@ package AppCore::Web::DispatchCore;
 		AppCore::Common->context->mobile_flag($is_mobile);
 		
 		# Reset current theme incase it gets changed
-		Content::Page::Controller->theme($AppCore::Config::THEME_MODULE);
+		Content::Page::Controller->theme(AppCore::Config->get("THEME_MODULE"));
 		
 		# Mudge path info and extract the request app name from the path
 		my $path = $ENV{PATH_INFO};
@@ -160,25 +160,25 @@ package AppCore::Web::DispatchCore;
 		$path =~ s/^\///g;
 		
 		# Redirect frontpage to a dedicated mobile landing
-		if($AppCore::Config::MOBILE_REDIR &&
-		   $AppCore::Config::MOBILE_URL   &&
+		if(AppCore::Config->get("MOBILE_REDIR") &&
+		   AppCore::Config->get("MOBILE_URL")   &&
 		   $is_mobile &&
 		  !$path)
 		{
-			AppCore::Web::Common->redirect($AppCore::Config::MOBILE_URL);
+			AppCore::Web::Common->redirect(AppCore::Config->get("MOBILE_URL"));
 		}
 		
 		# httpd.conf's rewrite rules should not have sent us this request if the file existed,
 		# so we assume here that it doesn't exist in htdocs root and do our logic accordingly.
 		if($path eq 'favicon.ico' &&
-		   $AppCore::Config::USE_THEME_FAVICON)
+		   AppCore::Config->get("USE_THEME_FAVICON"))
 		{
 			# If $USE_THEME_FAVICON is any other value than 1, assume its a filename
-			my $file = $AppCore::Config::USE_THEME_FAVICON ne '1' ?
-			           $AppCore::Config::USE_THEME_FAVICON : $path;
+			my $file = AppCore::Config->get("USE_THEME_FAVICON") ne '1' ?
+			           AppCore::Config->get("USE_THEME_FAVICON") : $path;
 			
 			# Tell the webserver to redirect - that way, we allow the server to check for not-modified (and return status 304), etc
-			AppCore::Web::Common->redirect(join('/', $AppCore::Config::WWW_ROOT, 'modules', $AppCore::Config::THEME_MODULE, $file),{expire_days=>31});
+			AppCore::Web::Common->redirect(join('/', AppCore::Config->get("WWW_ROOT"), 'modules', AppCore::Config->get("THEME_MODULE"), $file),{expire_days=>31});
 		}
 		
 		if($path eq 'iepngfix.htc')
@@ -188,7 +188,7 @@ package AppCore::Web::DispatchCore;
 		
 		my $orig_path = $path;
 		
-		$path = $AppCore::Config::DEFAULT_MODULE if !$path;
+		$path = AppCore::Config->get("DEFAULT_MODULE") if !$path;
 		
 		my $app = $path;
 		$app =~ s/^(.*?)(?:\/(.*))$/$1/;
@@ -320,7 +320,7 @@ package AppCore::Web::DispatchCore;
 				my $user = AppCore::Common->context->user;
 				
 				
-				#send_email($AppCore::Config::WEBMASTER_EMAIL,'[AppCore Error] '.get_full_url(),"$err\n----------------------------------\n".AppCore::Common::get_stack_trace()."\n----------------------------------\nURL:  ".get_full_url()."\nUser: ".($user ? $user->display : "(no user logged in)\n"),1,$user ? eval '$user->compref->email' || "noemail-empid-$user\@noemail.error" : 'notloggedin@nouser.error' );
+				#send_email(AppCore::Config->get("WEBMASTER_EMAIL"),'[AppCore Error] '.get_full_url(),"$err\n----------------------------------\n".AppCore::Common::get_stack_trace()."\n----------------------------------\nURL:  ".get_full_url()."\nUser: ".($user ? $user->display : "(no user logged in)\n"),1,$user ? eval '$user->compref->email' || "noemail-empid-$user\@noemail.error" : 'notloggedin@nouser.error' );
 				
 				#AppCore::Session->save();
 				error("Internal Server Error",$err);

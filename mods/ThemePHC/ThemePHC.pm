@@ -137,6 +137,7 @@ package ThemePHC;
 			$tmpl->param(events_dated  => $event_data->{dated});
 			$tmpl->param(events_weekly => $event_data->{weekly});
 			
+			# Give it just the next three events
 			$tmpl->param(events_dated_three  => [ @{ $event_data->{dated} }[0..2] ]);
 			
 			

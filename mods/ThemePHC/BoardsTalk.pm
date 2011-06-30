@@ -158,13 +158,14 @@ package ThemePHC::BoardsTalk;
 		
 		my $folder = $post->folder_name;
 		
+		my $server = $AppCore::Config->get('WEBSITE_SERVER');
 		my $text = "Dear Friends,\n\n".
 			$body.
 			"\n\nPastor Bryan".
 			"\n\n-----\n".qq{
 
 Here's a link to this $noun posted on the PHC Website:
-    ${AppCore::Config::WEBSITE_SERVER}/connect/talk/$folder
+    ${server}/connect/talk/$folder
     
 Cheers!
 };

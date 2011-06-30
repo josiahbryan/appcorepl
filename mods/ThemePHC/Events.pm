@@ -383,7 +383,7 @@ package ThemePHC::Events;
 		
 		# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
 		# (but %%modpath%% will return /ThemeBryanBlogs for resources such as images)
-		my $new_binpath = $AppCore::Config::DISPATCHER_URL_PREFIX . $req->page_path; # this should work...
+		my $new_binpath = AppCore::Config->get("DISPATCHER_URL_PREFIX") . $req->page_path; # this should work...
 		#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath'\n";
 		$self->binpath($new_binpath);
 		
@@ -686,6 +686,7 @@ package ThemePHC::Events;
 		$event->{time} = "$hr:$min$ap";
 		$event->{same_day} = $cur_dow == $dow;
 		$event->{day_name} = $DOW_NAMES[$dow];
+		$event->{day_name_short} = $DOW_NAMES_SHORT[$dow];
 		$event->{text} = ThemePHC::VerseLookup->tag_verses($event->{text});
 		
 		my ($year,$mon,$day) = split/-/, $datestamp;
