@@ -87,8 +87,8 @@
 										<strong>%%month_name_short%%</strong>
 										%%day%%
 									</h5>
-									<h3 class='event-title'>%%short_text%%</h3>
-									<p>%%day_name%% at %%time%%</p>
+									<h3 class='event-title'>%%subject%%</h3>
+									<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
 								</a>
 							</li>
 							</tmpl_loop>
@@ -325,16 +325,17 @@
 <script src='%%modpath%%/js/frontpage.js'></script>
 <script>
 // Load the subpage logo inorder to get it into the user's cache before they actually click a subpage
-window.onload = function() {
+$(function(){
 	setTimeout(function()
 	{
 		var img = $('<img/>');
 		img.attr('src','${CDN:%%modpath%%/images/mainlogo-300px-bcrop-sm.png}');
 		img.get(0).onload = function() { img.css('display','none'); };
 		img.appendTo($(document.body));
+		//console.debug(img.get(0).src);
 		
 	}, 1000);
-};
+});
 </script>
 </body>
 </frontpage>

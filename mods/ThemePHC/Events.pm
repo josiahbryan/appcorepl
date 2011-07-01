@@ -22,7 +22,9 @@ package PHC::Event;
 			{ field	=> 'event_text',		type => 'text' },
 			{ field	=> 'page_details',		type => 'text' },
 			{ field => 'is_weekly',			type => 'int(1)'},
-			{ field	=> 'datetime',			type => 'datetime' },
+			{ field	=> 'datetime',			type => 'datetime'},
+			{ field	=> 'end_time',			type => 'time' },
+			{ field => 'show_endtime',		type => 'int(1)', null=>0, default=>0 },
 			{ field => 'weekday',			type => 'int'},
 			{ field => 'at_phc',			type => 'int(1)'},
 			{ field => 'location',			type => 'text'},
@@ -197,7 +199,7 @@ package ThemePHC::Events;
 		$post->{item} = $x;
 		$self->prep_event_hash($post);
 		
-		foreach my $prep_key (qw/time same_day day_name normal_datestamp timestamp/)
+		foreach my $prep_key (qw/time same_day day_name normal_datestamp timestamp end_time/)
 		{
 			$rs->{$prep_key} = $post->{$prep_key};
 		}
@@ -225,9 +227,15 @@ package ThemePHC::Events;
 		$rs->{'dow'.$x->weekday} = 1;
 		
 		my ($date,$time) = split/\s/, $x->datetime;
-		my ($h) = split/:/, $time;
-		$rs->{'hr_'.($h+0)} = 1;
 		$rs->{date} = $date;
+		
+		my ($hr,$min,$sec) = split/:/, $time;
+		$rs->{'hr_'.($hr+0)} = 1;
+		$rs->{min} = $min;
+		
+		my ($end_hr,$end_min) = split/:/, $x->end_time;
+		$rs->{'hr2_'.($end_hr+0)} = 1;
+		$rs->{end_min} = $end_min;
 		
 		#die Dumper $rs;
 		
@@ -251,8 +259,6 @@ package ThemePHC::Events;
 		
 		#die Dumper ($args);
 			
-		my $post = $self->SUPER::create_new_thread($board,$args);
-		
 		# TODO implement
 		#$self->import_uploaded_image($post,$filename,'upload');
 		
@@ -269,14 +275,24 @@ package ThemePHC::Events;
 		}
 		
 		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
+		$args->{end_time} = $args->{end_hour}.':'.$args->{end_min}.':00';
+		
+		$args->{comment} = $args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":"").' - '.$args->{subject};  
+		
+		my $post = $self->SUPER::create_new_thread($board,$args);
 		
 		my $ref = {
 			postid		=> $post->id,
 			contact_userid	=> AppCore::User->by_field(email => $args->{contact_email}),
-			event_text	=> $post->text,
+			event_text	=> $args->{subject},
 			is_weekly	=> $args->{is_weekly} eq 'yes' ? 1:0,
 			datetime	=> $args->{datetime},
+			end_time	=> $args->{end_time},
+			show_endtime	=> $args->{show_endtime},
 			weekday		=> $args->{weekday},
+			page_details	=> $args->{page_details},
+			contact_email	=> $args->{contact_email},
+			contact_name	=> $args->{contact_name},
 			at_phc		=> $args->{at_phc} eq 'yes' ? 1:0,
 			location	=> $args->{location},
 			location_map_link => $args->{map_link},
@@ -314,32 +330,37 @@ package ThemePHC::Events;
 		
 		#die Dumper $args;
 		
+		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
+		$args->{end_time} = $args->{end_hour}.':'.$args->{end_min}.':00';
+		
+		$args->{comment} = $args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":"").' - '.$args->{subject};
+		
 		$self->SUPER::post_edit_save($post,$args);
 		
-		if($args->{fake_folder_override} eq 'yes')
-		{
-			my $text = AppCore::Web::Common->html2text($args->{subject_override});
-			$text =~ s/[\r\n]/ /g;
-					
-			# limit the length only to the width of the sql field, no arbitrary limits here :-)
-			my $new_subject = substr($text,0,250). (length($text) > 250 ? '...' : '');;
-			$post->subject($new_subject) if $post->subject ne $new_subject;
-			#die Dumper $new_subject;
-			
-		
-			my $fake_it = $self->to_folder_name($post->subject);
-			if($fake_it ne $post->folder_name && Boards::Post->by_field(folder_name => $fake_it))
-			{
-				$fake_it .= '_'.$post->id;
-			}
-			
-			#die "overriding folder name to [$fake_it]";
-			
-			$post->folder_name($fake_it) if $fake_it ne $post->folder_name;
-			
-			$post->update if $post->is_changed;
-			
-		}
+# 		if($args->{fake_folder_override} eq 'yes')
+# 		{
+# 			my $text = AppCore::Web::Common->html2text($args->{subject_override});
+# 			$text =~ s/[\r\n]/ /g;
+# 					
+# 			# limit the length only to the width of the sql field, no arbitrary limits here :-)
+# 			my $new_subject = substr($text,0,250). (length($text) > 250 ? '...' : '');;
+# 			$post->subject($new_subject) if $post->subject ne $new_subject;
+# 			#die Dumper $new_subject;
+# 			
+# 		
+# 			my $fake_it = $self->to_folder_name($post->subject);
+# 			if($fake_it ne $post->folder_name && Boards::Post->by_field(folder_name => $fake_it))
+# 			{
+# 				$fake_it .= '_'.$post->id;
+# 			}
+# 			
+# 			#die "overriding folder name to [$fake_it]";
+# 			
+# 			$post->folder_name($fake_it) if $fake_it ne $post->folder_name;
+# 			
+# 			$post->update if $post->is_changed;
+# 			
+# 		}
 		
 		if($args->{is_weekly} eq 'yes')
 		{
@@ -348,15 +369,15 @@ package ThemePHC::Events;
 # 			$args->{datetime} = '0000-00-00 '.(shift @split);
 		}
 		
-		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
 		
 		my $x = PHC::Event->retrieve($post->data->get('itemid'));
 		
-		$x->contact_userid($args->{contact_userid});
-		$x->contact_email($args->{contact_email});
-		$x->contact_name($args->{contact_name});
-		
-		$x->event_text(			$post->text);
+		$x->contact_userid(		AppCore::User->by_field(email => $args->{contact_email}));
+		$x->contact_email(		$args->{contact_email});
+		$x->contact_name(		$args->{contact_name});
+		$x->end_time(			$args->{end_time});
+		$x->show_endtime(		$args->{show_endtime});
+		$x->event_text(			$args->{subject});
 		$x->page_details(		$args->{page_details});
 		$x->is_weekly(			$args->{is_weekly} eq 'yes' ? 1:0);
 		$x->fake_folder_override(	$args->{fake_folder_override} eq 'yes' ? 1:0);
@@ -646,6 +667,25 @@ package ThemePHC::Events;
 		return $b;
 	}
 	
+	sub human_time 
+	{
+		my $timestamp = shift;
+		$timestamp = '12:00:00' if $timestamp eq '00:00:00';
+			
+		my ($hr,$min,$sec) = split /:/, $timestamp;
+		
+		my $ap = 'am';
+		if($hr >= 12)
+		{
+			$hr -= 12;
+			$ap = 'pm';
+			$hr = 12 if !$hr;
+		}
+		$hr +=0;
+		
+		return "$hr:$min$ap";
+	}
+	
 	sub prep_event_hash
 	{
 		my $self = shift;
@@ -670,20 +710,8 @@ package ThemePHC::Events;
 		
 		my ($datestamp,$timestamp) = split /\s/, $item->datetime;
 		
-		$timestamp = '12:00:00' if $timestamp eq '00:00:00';
-		
-		my ($hr,$min,$sec) = split /:/, $timestamp;
-		
-		my $ap = 'am';
-		if($hr >= 12)
-		{
-			$hr -= 12;
-			$ap = 'pm';
-			$hr = 12 if !$hr;
-		}
-		$hr +=0;
-			
-		$event->{time} = "$hr:$min$ap";
+		$event->{time} = human_time($timestamp);
+		$event->{end_time} = human_time($item->end_time);
 		$event->{same_day} = $cur_dow == $dow;
 		$event->{day_name} = $DOW_NAMES[$dow];
 		$event->{day_name_short} = $DOW_NAMES_SHORT[$dow];

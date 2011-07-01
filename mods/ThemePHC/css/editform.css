@@ -21,7 +21,9 @@
 	text-align: center;
 }
 
-.editform .textinput
+.editform .textinput,
+.editform .text,
+.editform input[type="text"]
 {
 	border: 1px solid rgb(80,80,80);
 	/*-moz-border-radius: 3px;*/
@@ -33,7 +35,9 @@
 	box-shadow: 0 0 3px #000;
 }
 
-.editform .textinput:focus
+.editform .textinput:focus,
+.editform .text:focus,
+.editform input[type="text"]:focus
 {
 	background: #fff67c;
 	border: 1px solid #8e8500; 

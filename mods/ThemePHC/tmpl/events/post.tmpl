@@ -44,7 +44,7 @@
 		<tr class='what'>
 			<td class='key'>What?</td>
 			<td class='val'>
-				<tmpl_var post_text>
+				%%subject%%
 			</td>
 		</tr>
 		
@@ -52,13 +52,14 @@
 		<tr class='when'>
 			<td class='key'>When?</td>
 			<td class='val'>
-				<p>
-					<tmpl_if event_is_weekly>
-						Every Week on %%day_name%% at %%time%%
-					<tmpl_else>
-						%%day_name%%, %%normal_datestamp%% at %%time%%
+				<tmpl_if event_is_weekly>
+					Every Week on %%day_name%% at %%time%%
+				<tmpl_else>
+					%%day_name%%, %%normal_datestamp%% at %%time%%
+					<tmpl_if event_show_endtime>
+					until %%end_time%%
 					</tmpl_if>
-				</p>
+				</tmpl_if>
 			</td>
 		</tr>
 		

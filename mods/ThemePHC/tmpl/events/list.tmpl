@@ -165,31 +165,14 @@ td.title
 							<strong>%%month_name_short%%</strong>
 							%%day%%
 						</h5>
-						<h3 class='event-title'>%%short_text%%</h3>
-						<p>%%day_name%% at %%time%%</p>
+						<h3 class='event-title'>%%subject%%</h3>
+						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
 					</a>
 				</li>
 				</tmpl_loop>
 			</ul>
 		</div>
 		
-		<!--<table class='posts' width='100%' cellpadding=0 cellspacing=0>
-			<tbody>
-				<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
-				<tmpl_loop dated>
-					<tr class='<tmpl_var post_flags>'>
-						<td class=title>
-							<h2>%%short_text%%</h2>
-							<center>
-								<a href='%%bin%%/%%pageid%%/<tmpl_var folder_name>/<tmpl_var fake_folder_name>' class='title_link'>
-									%%day_name_short%%, %%normal_datestamp%% at %%time%%
-								</a>
-							</center>
-						</td>
-					</tr>
-				</tmpl_loop> 
-			</tbody>
-		</table>-->
 	<tmpl_else>
 		<h3>Sorry, no upcomming special events listed!</h3>
 	</tmpl_if>

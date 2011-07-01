@@ -138,7 +138,7 @@ img.ui-datepicker-trigger
 			<tr>
 				<td>Time:</td>
 					<td>
-						<select name=hour id=hour>
+						<select name=hour id=hour onchange='update_end_time()'>
 							<option <tmpl_if hr_0 >selected</tmpl_if> value=0 >12 Midnight
 							<option <tmpl_if hr_1 >selected</tmpl_if> value=1 > 1 am
 							<option <tmpl_if hr_2 >selected</tmpl_if> value=2 > 2 am
@@ -167,15 +167,82 @@ img.ui-datepicker-trigger
 						</select>
 						:
 						<input type=text name=min id=min title='Minutes' value="<tmpl_if min>%%min%%<tmpl_else>00</tmpl_if>" size=3><br>
-							
-							
+					</td>
+			</tr>
 			<tr>
-				<td valign=top nowrap>Description:</td>
+				<td valign=top>Ends at:</td>
+					<td>
+						<input type=checkbox name=show_endtime value=1 id=show_endtime <tmpl_if event_show_endtime>checked</tmpl_if> onchange='update_show_endtime()'><label for=show_endtime> Show Ending Time</label>
+						<br>
+						<script>
+							disable_update_end_time = false;
+							function update_end_time()
+							{
+								if(disable_update_end_time)
+									return;
+								var elm = $('#hour').get(0);
+								var endElm = $('#end_hour').get(0);
+								if(!elm || !endElm)
+									return;
+								var idx = elm.selectedIndex;
+								var endIdx = idx + 1;
+								if(endIdx > 23)
+									endIdx = 1;
+								endElm.selectedIndex = endIdx;
+								$('#end_min').get(0).value = $('#min').get(0).value;
+								
+							}
+							function update_show_endtime()
+							{
+								var show = $('#show_endtime').get(0).checked;
+								$('#end_min').attr('disabled',show ? false:true);
+								$('#end_hour').attr('disabled',show ? false:true);
+							}
+							$(function(){
+								update_end_time();
+								update_show_endtime();
+							});
+						</script>
+						<select name=end_hour id=end_hour onclick='disable_update_end_time=true'>
+							<option <tmpl_if hr2_0 >selected</tmpl_if> value=0 >12 Midnight
+							<option <tmpl_if hr2_1 >selected</tmpl_if> value=1 > 1 am
+							<option <tmpl_if hr2_2 >selected</tmpl_if> value=2 > 2 am
+							<option <tmpl_if hr2_3 >selected</tmpl_if> value=3 > 3 am
+							<option <tmpl_if hr2_4 >selected</tmpl_if> value=4 > 4 am
+							<option <tmpl_if hr2_5 >selected</tmpl_if> value=5 > 5 am
+							<option <tmpl_if hr2_6 >selected</tmpl_if> value=6 > 6 am
+							<option <tmpl_if hr2_7 >selected</tmpl_if> value=7 > 7 am
+							<option <tmpl_if hr2_8 >selected</tmpl_if> value=8 > 8 am
+							<option <tmpl_if hr2_9 >selected</tmpl_if> value=9 > 9 am
+							<option <tmpl_if hr2_10>selected</tmpl_if> value=10>10 am
+							<option <tmpl_if hr2_11>selected</tmpl_if> value=10>11 am
+							<option <tmpl_if hr2_12>selected</tmpl_if> value=12>12 Noon
+							<option <tmpl_if hr2_13>selected</tmpl_if> value=13> 1 pm
+							<option <tmpl_if hr2_14>selected</tmpl_if> value=14> 2 pm
+							<option <tmpl_if hr2_15>selected</tmpl_if> value=15> 3 pm
+							<option <tmpl_if hr2_16>selected</tmpl_if> value=16> 4 pm
+							<option <tmpl_if hr2_17>selected</tmpl_if> value=17> 5 pm
+							<option <tmpl_if hr2_18>selected</tmpl_if> value=18> 6 pm
+							<option <tmpl_if hr2_19>selected</tmpl_if> value=19> 6 pm
+							<option <tmpl_if hr2_20>selected</tmpl_if> value=20> 7 pm
+							<option <tmpl_if hr2_21>selected</tmpl_if> value=21> 8 pm
+							<option <tmpl_if hr2_22>selected</tmpl_if> value=22>10 pm
+							<option <tmpl_if hr2_23>selected</tmpl_if> value=23>11 pm
+							<option value= 0>12 Midnight
+						</select>
+						:
+						<input type=text name=end_min id=end_min title='Minutes' value="<tmpl_if end_min>%%end_min%%<tmpl_else>00</tmpl_if>" size=3>
+						
+					</td>
+			</tr>
+			<tr>
+				<td valign=top nowrap>Event Title:</td>
 				<td>
-					<span style='font-size:.85em;color:rgb(100,100,100)'>This description is shown on the main page and on the calendar - its better to make this shorter rather than very long. Try to keep it around 10 - 30 words.</span><br>
+					<input type='text' class='textinput' id=subject name=subject value='<tmpl_var post_subject escape=html>' size=45><br> 
+					<span style='font-size:.85em;color:rgb(100,100,100)'>This description is shown on the main page and on the calendar.</span><br>
 					<!--<textarea style='display:none' rows=2 cols=55 id=comment name=comment><tmpl_var post_text></textarea>-->
-					<textarea rows=2 cols=55 id=comment name=comment><tmpl_var event_event_text></textarea>
-					<script type="text/javascript">var e=$('#age').get(0);if(e){e.focus();e.select()}</script>
+					<!--<textarea rows=2 cols=55 id=comment name=comment><tmpl_var event_event_text></textarea>-->
+					<script type="text/javascript">var e=$('#subject').get(0);if(e){e.focus();e.select()}</script>
 				</td>
 
 			</tr>
@@ -278,19 +345,19 @@ $(function()
 // 
 // 	oFCKeditor2.ReplaceTextarea();
 
-	CKEDITOR.replace( 'comment', {
-		//baseHref: '%%appcore%%/ckeditor/',
-		extraPlugins : 'autogrow',
-		width: '96%',
-		//skin: 'office2003'
-		skin: 'kama',
-		toolbar: 'Basic',
-		height: '40px',
-		disableNativeSpellChecker: false,
-		removePlugins: 'elementspath,scayt,contextmenu',
-
-		//skin: 'v2'
-	});
+// 	CKEDITOR.replace( 'comment', {
+// 		//baseHref: '%%appcore%%/ckeditor/',
+// 		extraPlugins : 'autogrow',
+// 		width: '96%',
+// 		//skin: 'office2003'
+// 		skin: 'kama',
+// 		toolbar: 'Basic',
+// 		height: '40px',
+// 		disableNativeSpellChecker: false,
+// 		removePlugins: 'elementspath,scayt,contextmenu',
+// 
+// 		//skin: 'v2'
+// 	});
 	
 	CKEDITOR.replace( 'page_details', {
 		//baseHref: '%%appcore%%/ckeditor/',
