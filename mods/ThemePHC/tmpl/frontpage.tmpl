@@ -79,11 +79,15 @@
 							<tmpl_loop events_dated_three>
 							<li>
 								<a href='/connect/events/%%folder_name%%'>
+									<!-- FF Parser Error Fix!-->
+									<!--<h5>
+										<strong></strong>
+									</h5>-->
 									<h5>
 										<strong>%%month_name_short%%</strong>
 										%%day%%
 									</h5>
-									<h3 class='event-title'>%%subject%%</h3>
+									<h3 class='event-title'>%%short_text%%</h3>
 									<p>%%day_name%% at %%time%%</p>
 								</a>
 							</li>

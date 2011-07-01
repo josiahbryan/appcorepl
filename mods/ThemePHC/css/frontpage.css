@@ -457,8 +457,11 @@ body
 .event_list h3.event-title
 {
 	color: black;
-	padding: 2px 35px 2px 10px;
+	padding: 2px 35px 2px 0px;
 	margin: 0;
+	width: 90%;
+	height: 1.25em;
+	overflow: hidden;
 }
 
 .event_list p
@@ -493,6 +496,7 @@ body
 	padding: 5px 0 0 0;
 	border-top: 2px solid black;
 	border-bottom: 2px solid black;
+	font-size: 10px;
 }
 
 .event_list .readmore a 
@@ -501,6 +505,13 @@ body
 	display: block;
 	width: 100%;
 	padding: .5em;
+}
+
+
+.event_list a:active,
+.event_list a:focus
+{
+	outline: none;
 }
 
 .readmore a span
