@@ -157,10 +157,15 @@ td.title
 				<tmpl_loop dated>
 				<li>
 					<a href='/connect/events/%%folder_name%%'>
-						<!-- FF Parser Error Fix!-->
-						<!--<h5>
-							<strong></strong>
-						</h5>-->
+						<!-- FF Parser Error Fix - for some reason, duplicting the content of this <a> tag in a comment fixes the problem-->
+						<!--
+						<h5>
+							<strong>%%month_name_short%%</strong>
+							%%day%%
+						</h5>
+						<h3 class='event-title'>%%subject%%</h3>
+						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
+						-->
 						<h5>
 							<strong>%%month_name_short%%</strong>
 							%%day%%

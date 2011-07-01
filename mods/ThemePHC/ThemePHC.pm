@@ -35,6 +35,7 @@ package ThemePHC;
 	use ThemePHC::Missions;
 	use ThemePHC::Directory;
 	use ThemePHC::Events;
+	use ThemePHC::Videos;
 	
 	# Load the talk controller so it can update user prefs
 	use ThemePHC::BoardsTalk;
@@ -55,6 +56,7 @@ package ThemePHC;
 		ThemePHC::Missions->apply_mysql_schema();
 		ThemePHC::Directory->apply_mysql_schema();
 		ThemePHC::Events->apply_mysql_schema();
+		ThemePHC::Videos->apply_mysql_schema();
 	}
 	
 	sub load_nav_hook 
