@@ -315,13 +315,13 @@ package AppCore::Web::Result;
 		{
 			if(_can_cdn_for_fqdn())
 			{
-				print STDERR "CDN Macro - FQDN\n";
+				#print STDERR "CDN Macro - FQDN\n";
 				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi; #egi;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi; #egi;
 			}
 			else
 			{
-				print STDERR "CDN Macro - NONFQDN\n";
+				#print STDERR "CDN Macro - NONFQDN\n";
 				$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/gi;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/gi;
 			}
