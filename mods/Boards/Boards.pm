@@ -548,7 +548,7 @@ package Boards;
 	our %ControllerCache;
 	sub clear_cached_dbobjects
 	{
-		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
+		#print STDERR __PACKAGE__.": Clearing cached data...\n";
 		%BoardDataCache = ();
 		%PostDataCache = ();
 		@TextFilters = ();

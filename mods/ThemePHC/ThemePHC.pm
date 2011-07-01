@@ -106,11 +106,17 @@ package ThemePHC;
 		
 		if($view_code eq 'home')
 		{
+			#timemark
+			
 			$tmpl = $self->load_template('frontpage.tmpl');
+			
+			#timemark('load tmpl');
 			
 			# Load list of posts using the Boards controller
 			# bootstrap() should cache the module object reference, so we don't use up more memory than needed
 			my $controller = AppCore::Web::Module->bootstrap('Boards');
+			
+			#timemark('boostrap boards');
 			
 			# If we dont specify, it assumes '/themephc'
 			$controller->binpath('/boards'); 
@@ -119,8 +125,13 @@ package ThemePHC;
 			# frontpage.tmpl will include the relevant video scripts template
 			$controller->apply_video_providers($tmpl);
 			
+			#timemark('apply vid providers');
+			
 			# Board '1' is the prayer/praise/talk board
 			my $data = $controller->load_post_list(Boards::Board->retrieve(1));
+			
+			#timemark('load post list');
+			
 			$tmpl->param('talk_'.$_ => $data->{$_}) foreach keys %$data;
 			
 			# Used by the list of slides on the right - note forced stringification required below.
@@ -129,16 +140,25 @@ package ThemePHC;
 # 			use Data::Dumper;
 # 			die Dumper $data;
 
+			#timemark('boards done');
+
 			# Load list of upcoming events
 			$controller = AppCore::Web::Module->bootstrap('ThemePHC::Events');
 			$controller->binpath('/connect/events');
 			
+			#timemark('boostrap events');
+			
 			my $event_data = $controller->load_basic_events_data();
+			
+			#timemark('load events list');
+			
 			$tmpl->param(events_dated  => $event_data->{dated});
 			$tmpl->param(events_weekly => $event_data->{weekly});
 			
 			# Give it just the next three events
 			$tmpl->param(events_dated_three  => [ @{ $event_data->{dated} }[0..2] ]);
+			
+			#timemark('events done');
 			
 			
 			# TODO: Load recent videos 

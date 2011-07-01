@@ -402,7 +402,7 @@ package ThemePHC::Events;
 	our $EventsListCache = 0;
 	sub clear_cached_dbobjects
 	{
-		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
+		#print STDERR __PACKAGE__.": Clearing cached data...\n";
 		$EventsListCache = 0;
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
@@ -636,7 +636,7 @@ package ThemePHC::Events;
 		my @keys = keys %$b;
 		#$b->{'post_'.$_} = $b->{$_} foreach @keys;
 		#$b->{'board_folder_name'} = $BOARD_FOLDER;
-		my $post_resultset = $self->SUPER::load_post($post,{});
+		my $post_resultset = $self->SUPER::load_post($post,{},1); # 1 = dont count view
 		$b->{$_} = $post_resultset->{$_} foreach keys %$post_resultset;
 			
 		$b->{'item_'.$_}  = $item->get($_),"" foreach $item->columns; # TODO which line is needed??

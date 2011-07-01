@@ -2529,6 +2529,20 @@ package $opts->{pkg};
 		push @CacheClearHooks, $hook_pkg;
 	}
 	
+	my $db_modtime_sth; 
+	sub setup_modtime_sth
+	{
+		$db_modtime_sth = AppCore::DBI->dbh('information_schema')->prepare("select sum(UPDATE_TIME) as checksum from TABLES where TABLE_TYPE = 'BASE TABLE' and TABLE_SCHEMA!='mysql'");
+	}
+	
+	setup_modtime_sth();
+	
+	sub db_modtime
+	{
+		$db_modtime_sth->execute;
+		return $db_modtime_sth->fetchrow_hashref->{checksum};
+	}
+
 	
 };
 1;
