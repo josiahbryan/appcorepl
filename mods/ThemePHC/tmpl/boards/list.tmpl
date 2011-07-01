@@ -318,7 +318,7 @@
 					window.PagingNextIndex = data.next_idx;
 					
 					// Update the number at the top of the page
-					$("#idx2").html(data.idx2);
+					$(".idx2").html(data.idx2);
 					
 					// If we've reached the end, update the DOM
 					if(!data.next_idx)
@@ -425,6 +425,14 @@ $(function() {
 	
 	$('textarea').autogrow();
 });
+
+function tmplIfHelper(str)
+{
+	//console.debug(str);
+	var isEmpty = (!str || 0 === (''+str).length);
+	return !isEmpty;
+}
+
 </script>
 
 <tmpl_include inc-reply-scripts.tmpl>

@@ -56,9 +56,9 @@ BEGIN
 	$WEBSITE_SERVER = 'http://beta.mypleasanthillchurch.org';
 	
 	# Emails to send new user notifications to, etc
-	@ADMIN_EMAILS = qw/
+	$ADMIN_EMAILS = [qw/
 		josiahbryan@gmail.com
-	/;
+	/];
 	
 	$ADMIN_ACL = [qw/ADMIN Pastor/];
 	
@@ -150,13 +150,13 @@ BEGIN
 	# Make sure to include the initial (main) host (if reasonable)
 	# because this saves 20-150ms on DNS lookup time
 	
-	@CDN_HOSTS = qw/
+	$CDN_HOSTS = [qw/
 		beta.mypleasanthillchurch.org
 		cdn1.mypleasanthillchurch.org
 		cdn2.mypleasanthillchurch.org
 		cdn3.mypleasanthillchurch.org
 		
-	/; 
+	/]; 
 	#	
 	#	cdn4.mypleasanthillchurch.org
 	#	cdn5.mypleasanthillchurch.org
@@ -168,20 +168,20 @@ BEGIN
 	$EMAIL_ENABLE_DEBUG_FOOTER = 1;
 	$EMAIL_DEFAULT_FROM = 'PHC Notifications <notifications@mypleasanthillchurch.org>';
 	
-	%EMAIL_FROM_OVERRIDES = (
+	$EMAIL_FROM_OVERRIDES = {
 		'PHC Online <phconline@josiahbryan.com>'	=> 'notifications@mypleasanthillchurch.org',
-	);
+	};
 	
-	%EMAIL_DOMAIN_CONFIG = map { lc $_ => 1 } qw/
+	$EMAIL_DOMAIN_CONFIG = { map { lc $_ => 1 } qw/
 		mypleasanthillchurch.org
 		gmail.com
 		productiveconcepts.com
-	/;
+	/};
 	
-	%EMAIL_MX_OVERRIDES = (
+	$EMAIL_MX_OVERRIDES = {
 		'mypleasanthillchurch.org'	=> ['ASPMX.L.GOOGLE.COM.'],
 		'productiveconcepts.com'	=> ['impcotechnologies.com.inbound15.mxlogicmx.net.'],
-	);
+	};
 	
 	
 	###########################################

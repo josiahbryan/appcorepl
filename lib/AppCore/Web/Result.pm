@@ -326,6 +326,10 @@ package AppCore::Web::Result;
 				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/gi;
 			}
 		}
+		else
+		{
+			#print STDERR "CDN Macro - Disabled\n";
+		}
 		 
 		
 		my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
@@ -438,6 +442,7 @@ package AppCore::Web::Result;
 		my $url_wrap = shift || 0;
 		my $NumCdnHosts = scalar @{ AppCore::Config->get('CDN_HOSTS') || [] };
 		
+		#print STDERR "cdn_url: Input: '$url_part'\n";
 		return "url(\"$url_part\")" if !$NumCdnHosts && $url_wrap;
 		return $url_part if !$NumCdnHosts;
 		
@@ -512,7 +517,7 @@ package AppCore::Web::Result;
 		
 		my $final_url = join('', 'http://', $server, $url_part);
 		
-		print STDERR "cdn_url: $url_part -> $final_url\n";
+		#print STDERR "cdn_url: $url_part -> $final_url\n";
 		
 		return "url(\"$final_url\")" if $url_wrap;
 		return $final_url;

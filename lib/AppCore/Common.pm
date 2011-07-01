@@ -25,7 +25,8 @@ package AppCore::Common;
 		rpad 
 		min 
 		max
-		commify 
+		commify
+		trim_spaces 
 		
 		called_from 
 		print_stack_trace
@@ -105,6 +106,14 @@ package AppCore::Common;
 	
 	sub min{my($a,$b)=@_;$a<$b?$a:$b}
 	sub max{my($a,$b)=@_;$a>$b?$a:$b}
+	
+	sub trim_spaces
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $tmp = shift;
+		$tmp =~ s/(^\s+|\s+$)//g;
+		return $tmp;
+	}
 	
 	sub nice_date
 	{

@@ -197,8 +197,9 @@ sub update_board
 				
 				# Try to guess if HTML is really just text
 				$msg = text2html($msg) if !might_be_html($msg);
+				$msg = trim_spaces($msg);
 				
-				if($post->text ne $msg)
+				if(trim_spaces($post->text) ne $msg)
 				{
 					$post->text($msg);
 					$post->updated_time($fb_time);
@@ -206,6 +207,8 @@ sub update_board
 					
 					my $url = $AppCore::Config::WEBSITE_SERVER . "/boards/".$board->folder_name."/".$post->folder_name;
 					print "Updated post text from facebook - # $post - '".$post->subject."' - $url\n";
+					print STDERR "DEBUG[A]: [".$post->text."]\n";
+					print STDERR "DEBUG[B]: [".$msg."]\n";
 				}
 			
 			}
@@ -362,32 +365,25 @@ sub download_user_photo
 	my $photo = LWP::Simple::get($poster_photo_url);
 	my $local_photo_url = "/mods/User/user_photos/". ($user && $user->id ? "user". $user->id : "fb".md5_hex($fb_id)).".jpg";
 	my $file_path = $AppCore::Config::APPCORE_ROOT . $local_photo_url;
-	if(open(PHOTO, '>' . $file_path))
+		
+	if(!open(PHOTO, '>' . $file_path))
 	{
-		print PHOTO $photo;
-		close(PHOTO);
-		
-		if($user && $user->id)
-		{
-			$user->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
-			$user->update;
-		}
-		
-		print "Downloaded user photo to $file_path.\n";
-		
-		$poster_photo_url = $AppCore::Config::WWW_ROOT . $local_photo_url;
+		print STDERR "Unable to write to $file_path: $!";
+		return $poster_photo_url;
 	}
-	else
+	print PHOTO $photo;
+	close(PHOTO);
+	
+	if($user && $user->id)
 	{
-		print STDERR "Error saving photo to $file_path: $!";
-		
-		if($user && $user->id)
-		{
-			$user->photo($poster_photo_url);
-			$user->update;
-		}
+		$user->photo($AppCore::Config::WWW_ROOT . $local_photo_url);
+		$user->update;
 	}
 	
+	print "Downloaded user photo to $file_path.\n";
+	
+	$poster_photo_url = $AppCore::Config::WWW_ROOT . $local_photo_url;
+
 	return $poster_photo_url;
 }
 

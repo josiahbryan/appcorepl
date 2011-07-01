@@ -392,16 +392,17 @@ package AppCore::Web::Common;
 		
 		if(!$typecast || $typecast eq 'num')
 		{
-			return $unless ? "{{if this.data?this.data.$var<=0:1}}" : "{{if this.data?this.data.$var>0:0}}";
+			return $unless ? "{{if this.data?this.data.$var<=0:$var<=0}}" : "{{if this.data?this.data.$var>0:$var>0}}";
 		}
 		elsif($typecast eq 'str')
 		{
-			return $unless ? "{{if this.data?!this.data.$var:1}}" : "{{if this.data?!!this.data.$var:0}}";
+			#return $unless ? "{{if this.data?!this.data.$var:1}}" : "{{if this.data?!!this.data.$var:0)}}";
+			return $unless ? "{{if this.data?!this.data.$var:!$var}}" : "{{if this.data?!!this.data.$var:$var}}";
 		}
 		elsif($typecast eq 'list')
 		{
 			#return "{{if ".($unless?"!":"")."($var.length)}}";
-			return $unless ? "{{if this.data?$var.length<=0:1}}" : "{{if this.data?this.data.$var.length:0}}";
+			return $unless ? "{{if this.data?$var.length<=0:$var.length<=0}}" : "{{if this.data?this.data.$var.length:$var.length}}";
 		}
 	}
 	

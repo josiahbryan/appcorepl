@@ -65,7 +65,7 @@ package AppCore::EmailQueue;
 		#print STDERR "send_email(): list=".join(',',@$list),", subject=$subject, high_import_flag=$high_import_flag, text=[$text]\n";
 		#print STDERR "send_email(): CATCH ALL: Sending to jbryan only.\n";
 		#$list = ['jbryan@productiveconcepts.com'];
-		if(AppCore::Config->get("EMAIL_ENABLE_DEBUG_FOOTER"))
+		if(AppCore::Config->get('EMAIL_ENABLE_DEBUG_FOOTER'))
 		{
 			my $host = `hostname`;
 			$host =~ s/[\r\n]//g;
@@ -80,11 +80,11 @@ Server: $host
 .($ENV{HTTP_REFERER} ? "Referer: $ENV{HTTP_REFERER}\n":"")
 		}
 		
-		$from ||= AppCore::Config->get("EMAIL_DEFAULT_FROM") || AppCore::Config->get("WEBMASTER_EMAIL");
+		$from ||= AppCore::Config->get('EMAIL_DEFAULT_FROM') || AppCore::Config->get('WEBMASTER_EMAIL');
 		#print "From:$from\nTo:$to\nSubj:$subject\nText:$text\n";
 		#print_stack_trace();
 	
-		my $email_tmp_dir = AppCore::Config->get("EMAIL_TMP_DIR") || '/tmp';
+		my $email_tmp_dir = AppCore::Config->get('EMAIL_TMP_DIR') || '/tmp';
 		
 		my @msg_refs;
 		
@@ -182,7 +182,7 @@ Server: $host
 
 		$domain = lc $domain;
 		
-		my $prof = AppCore::Config->get("EMAIL_DOMAIN_CONFIG")->{$domain};
+		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
 		if(!$prof)
 		{
 			$self->sentflag(1);
@@ -308,7 +308,7 @@ Server: $host
 		my $res = Net::DNS::Resolver->new;
 		my @mx = mx($res, $domain);
 		@mx = ($domain) if !@mx;
-		if(my $mx_list = AppCore::Config->get("EMAIL_MX_OVERRIDES")->{$domain})
+		if(my $mx_list = AppCore::Config->get('EMAIL_MX_OVERRIDES')->{$domain})
 		{
 			@mx = @$mx_list;
 		}
