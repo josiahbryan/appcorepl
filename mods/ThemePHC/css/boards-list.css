@@ -231,7 +231,7 @@ img.loading,
 }
 
 /* Styling for the video play link */
-.postlist td a.video-play-link {
+.postlist a.video-play-link {
 	display: block;
 	position: relative;
 	width: 120px;
@@ -241,14 +241,14 @@ img.loading,
 }
 
 /* Styling for the video thumnail image */
-.postlist td a.video-play-link img {
+.postlist a.video-play-link img {
 	display: block;
 	position: absolute;
 	z-index: 1;
 }
 
 /* TODO: Adapt overlay for IE 6 */
-.postlist td a.video-play-link span {
+.postlist a.video-play-link span {
 	display: block;
 	position: absolute;
 	background: url(%%modpath%%/images/play-icon-48px.png) no-repeat center;
@@ -259,7 +259,7 @@ img.loading,
 }
 
 /* Add a dropshadow to the video play links */
-.postlist td a.video-play-link,
+.postlist a.video-play-link,
 iframe.video-iframe {
 	-webkit-box-shadow: 0px 0px 9px #364a90;
 	-moz-box-shadow: 0px 0px 9px #364a90;
@@ -267,16 +267,16 @@ iframe.video-iframe {
 }
 
 /* Add margin to the video play links */
-.postlist td a.video-play-link {
+.postlist a.video-play-link {
 	margin: 10 0;
 }
 
 /* Make sure the iframe doesnt overflow the borders */
-.postlist td a.video-play-link iframe { z-index: -1; }
+.postlist a.video-play-link iframe { z-index: -1; }
 
 /* Remove the dotted outline around the video link*/
-.postlist td a.video-play-link:active, 
-.postlist td a.video-play-link:focus { outline: 0; }
+.postlist a.video-play-link:active, 
+.postlist a.video-play-link:focus { outline: 0; }
 
 /* Styling for horizontal rules in posts */
 .postlist td hr {

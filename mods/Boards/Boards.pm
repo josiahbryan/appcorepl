@@ -1219,6 +1219,7 @@ package Boards;
 	{
 		my $self = shift;
 		my $text = shift;
+		my $return_first = shift || 0;
 		
 		# Make sure it's loaded...
 		$self->load_video_providers;
@@ -1236,13 +1237,15 @@ package Boards;
 				
 				#my ($code) = $url =~ /v=(.+?)\b/;
 				#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
-				$text .= qq{
+				my $attach = qq{
 					<hr size=1 class='post-attach-divider'>
 					<a href='$link_url' class='video-play-link $provider_class' videoid='$videoid'>
 					<img src="$thumb_url" border=0 id='$provider_class-$videoid'>
 					<span class='overlay'></span>
 					</a>
 				};
+				return $attach if $return_first;
+				$text .= $attach; 
 			}
 		}
 		

@@ -47,6 +47,8 @@ package ThemePHC::Videos;
 	
 	use Content::Page;
 	
+	use Boards::Data;
+	
 	use JSON qw/decode_json/;
 	use LWP::Simple qw/get/;
 	
@@ -413,11 +415,11 @@ package ThemePHC::Videos;
 			$r->body($tmpl->output);
 			return;
 		}
-# 		elsif(!$sub_page || $sub_page eq 'raw' || $sub_page eq 'basic')
-# 		{
-# 			return $self->basic_view($req,$r);
-# 		}
-# 		elsif($sub_page)
+		elsif(!$sub_page || $sub_page eq 'raw' || $sub_page eq 'basic')
+		{
+			return $self->basic_view($req,$r);
+		}
+		elsif($sub_page)
 		{
 			return $self->board_page($req,$r);
 		}
@@ -478,23 +480,42 @@ package ThemePHC::Videos;
 		
 		my $board = $VIDEOS_BOARD;
 		
-		my $tmpl = $self->get_template($self->config->{list_tmpl} || 'videos/list.tmpl');
-		#$tmpl->param(pageid => $section_name);
-		#$tmpl->param(board_nav => $class->macro_board_nav());
+		#my $tmpl = $self->get_template($self->config->{list_tmpl} || 'videos/list.tmpl');
+		my $tmpl = $self->get_template('videos/list.tmpl');
+		
 		$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
 		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);
 		$tmpl->param(can_admin=>$can_admin);
 		$tmpl->param(videos_page => 1);
 		
-		my $videos_data = $self->load_video_list();
+		my $output = $self->load_post_list($board, {idx=>$req->idx, len=>$req->len || 25 });
 		
-		#die Dumper $out_weekly, \@dated;
-		#$tmpl->param(weekly => $videos_data->{weekly});
-		$tmpl->param(list => $videos_data->{list});
+		foreach my $post (@{$output->{posts}})
+		{
+			$post->{video_attach} = $self->create_video_links($post->{text},1);
+		}
 		
-		#$tmpl->param(weekly_widget => 1);
+		#$tmpl->param(board_nav => $controller->macro_board_nav());
+		#$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
+		#$tmpl->param(user_email_md5 => md5_hex($user->email)) if $user && $user->id;
+		#$tmpl->param(boards_indent_multiplier => $INDENT_MULTIPLIER);
 		
-		#return $r->output($tmpl);
+		my $tmpl_incs = $self->config->{tmpl_incs} || {};
+		#use Data::Dumper;
+		#die Dumper $tmpl_incs;
+		foreach my $key (keys %$tmpl_incs)
+		{
+			$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+		}
+		
+		# Since a theme has the option to inline a new post form in the post template,
+		# provide the controller a method to hook into the template variables from here as well
+		$self->new_post_hook($tmpl,$board);
+		
+		$tmpl->param($_ => $output->{$_}) foreach keys %$output;
+		
+		$self->apply_video_providers($tmpl);
+		
 		my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 		return $r;
 	}
@@ -505,8 +526,77 @@ package ThemePHC::Videos;
 		my $vimeo_url = 'http://vimeo.com/api/v2/user5527613/videos.json';
 		
 		my $json = LWP::Simple::get($vimeo_url);
-		my $list = decode_json($json);
+		my $list = decode_json($json) || [];
 		
+		my $user = AppCore::User->retrieve(1); # Josiah
+		
+		foreach my $vdat (@$list)
+		{
+			my $post_text = "<span class=title>$vdat->{title}</span><span class=filler>: </span><span class=url>$vdat->{url}</span><span class=filler> - </span><span class=description>$vdat->{description}</span>";
+			my $post = Boards::Post->by_field(external_source => 'Vimeo', external_id => $vdat->{id}, deleted => 0);
+			if(!$post)
+			{
+				# Create a set of arguments for create_new_thread()
+				my $data = {
+					poster_name	=> 'PHC AV Team',
+					poster_photo	=> 'https://graph.facebook.com/180929095286122/picture', # Picture for PHC FB Page
+					poster_email	=> 'josiahbryan@gmail.com',
+					comment		=> $post_text,
+					subject		=> $vdat->{title}, 
+				};
+				
+				# Use Boards to create a new thread
+				$post = $self->create_new_thread($VIDEOS_BOARD, $data, $user);
+				
+				$post->timestamp($vdat->{upload_date});
+				$post->updated_time($vdat->{upload_date});
+				
+				# Flag it as from Vimeo and store the Vimeo Video ID for future reference
+				$post->external_source('Vimeo');
+				$post->external_id($vdat->{id});
+				$post->external_url($vdat->{url});
+				
+				$post->post_class('video');
+				
+				$post->data->set($_, $vdat->{$_}) foreach qw/title description url duration/;
+				$post->data->update;
+				
+				$post->update;
+			
+				#$post_is_new = 1;
+				
+				my $url = AppCore::Config->get('WEBSITE_SERVER') . "/learn/videos/" . $post->folder_name;
+				print "Created post from Vimeo - # $post - '".$post->subject."' - $url\n";
+			}
+			else
+			{
+				my $changed = 0;
+				foreach my $key (qw/title description url duration/)
+				{
+					if($vdat->{$_} ne $post->data->get($_))
+					{
+						$post->data->set($_, $vdat->{$_});
+						$changed = 1; 
+					}
+				}
+				
+				if($changed)
+				{
+					$post->text($post_text);
+					$post->subject($vdat->{title});
+					$post->update;
+					
+					my $url = AppCore::Config->get('WEBSITE_SERVER') . "/learn/videos/" . $post->folder_name;
+					print "Updated Video Post - # $post - '".$post->subject."' - $url\n";
+				}
+				
+# 				$post->timestamp($vdat->{upload_date});
+# 				$post->updated_time($vdat->{upload_date});
+# 				$post->update;
+				
+				
+			}
+		}
 # 
 # 
 # {

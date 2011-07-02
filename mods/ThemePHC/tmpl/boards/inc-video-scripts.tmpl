@@ -1,3 +1,8 @@
+<script>
+	// Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
+	loaderGif = '${CDN:%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif}';
+</script>
+	
 <tmpl_loop video_provider_list>
 	<script id="%%provider_class%%-tmpl" type="text/x-jquery-tmpl">
 		%%iframe_tmpl%%

@@ -162,8 +162,27 @@ package ThemePHC;
 			
 			#timemark('events done');
 			
+			# Load most recent video
+			my $data = $controller->load_post_list(Boards::Board->by_field(folder_name => 'videos'), {idx=>0, len=>1});  # Load only one video
 			
-			# TODO: Load recent videos 
+			# Extract the Vimeo Video ID from the URL in the text
+			my $post = $data->{posts}->[0];
+			my ($code) = $post->{text} =~ /vimeo\.com\/(\d+)/;
+			
+			# Clean up the subject
+			my $subj = $post->{subject};
+			$subj =~ s/"([^\"]+)"/<span class='ldquo'>&#8220;<\/span>$1<span class='rdquo'>&#8221;<\/span>/g;
+			$subj =~ s/^PHC Sunday (Morning|Evening) Sermon - //g;
+			
+			# Add the code and subject to template
+			$tmpl->param(recent_videoid => $code);
+			$tmpl->param(recent_vidtitle => $subj);
+			
+			# Remove the date from the subject and also add to template (used to title the block in an <h1> tag above the iframe)
+			$subj =~ s/- [\d-]+$//g;
+			$tmpl->param(recent_vidtitle_nodate => $subj);
+			
+						
 		}
 		elsif($view_code eq 'admin')
 		{

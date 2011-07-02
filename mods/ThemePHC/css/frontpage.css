@@ -177,6 +177,39 @@ body
 	/*display: none;*/
 }
 
+/* Make curley quotes more "curley" by using a serifed font */
+.ldquo, .rdquo
+{
+	font-family: Constantia, Times Roman, Serif;
+}
+
+.videos-watch-more 
+{
+	float: right;
+	padding-right: 35px;
+	padding-top: 140px;
+	margin-left: -135px;
+}
+
+.ask-pastor 
+{
+	float: left;
+	padding-left: 35px;
+	padding-top: 140px;
+	margin-right: -135px;
+	display: none;
+}
+
+.videos-watch-more a, 
+.ask-pastor a
+{
+	color: white;
+	text-shadow: rgb(8,8,8) 0px 0px 8px;
+	text-decoration: none;
+	font-size: 16px;
+}
+
+
 .block-item h3
 {
 	margin: 4em;

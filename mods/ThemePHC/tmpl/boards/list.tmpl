@@ -282,7 +282,7 @@
 			data: 
 			{
 				idx: window.PagingNextIndex,
-				len: %%len%%,
+				len: <tmpl_if len>%%len%%<tmpl_else>10</tmpl_if>,
 				output_fmt: 'json'
 			},
 			success: function(data)
@@ -362,7 +362,7 @@
 	// on database values, we DONT want to trigger a recompress (takes >950ms or so) just because we have a new
 	// post or whatever. The 'flag='dynamic...'' is just to prevent the server compressor from grabbing this
 	// script block because it only grabs script blocks with certain attributes and ingores others.
-	window.PagingNextIndex = %%next_idx%%;
+	window.PagingNextIndex = <tmpl_if next_idx>%%next_idx%%<tmpl_else>0</tmpl_if>;
 	</script>
 	
 	<script>

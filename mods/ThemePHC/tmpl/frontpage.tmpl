@@ -65,8 +65,16 @@
 			</div>
 			<div class='block-item bluebg' id='block-video'>
 				<center>
-					<!--<iframe src="http://player.vimeo.com/video/22211666?byline=0&amp;portrait=0" width="400" height="300" frameborder="0" class='vimeo-video'></iframe>-->
-					 <h3>Still working on Video...</h3>
+					<div class='videos-watch-more'>
+						<a href='/learn/watch'>See More Videos &raquo;</a>
+					</div>
+					<h1 style='margin-top:.35em;margin-bottom:0'>%%recent_vidtitle_nodate%%</h1>
+					<iframe src="http://player.vimeo.com/video/%%recent_videoid%%?byline=0&amp;portrait=0" frameborder="0" class='vimeo-video' style='width:347;height:260'></iframe>
+					
+					<div class='ask-pastor'>
+						<a href='/learn/ask_pastor'>&laquo; Ask Pastor a Question</a>
+					</div>
+					 <!--<h3>Still working on Video...</h3>-->
 					 <!--<img src='%%modpath%%/images/photos/pic6.jpg'>-->
 				</center>
 			</div>
@@ -281,7 +289,8 @@
 			<div class='sidebar-link-block'>
 				<a href='/learn/watch' class='link-block' id='link-video' block-suffix='video'>
 					<span class='title'>Watch Current Message</span><br/>
-					<span class='subtitle'>"Our Marvelous Messiah" - Apr 10</span>
+					<!--<span class='subtitle'>"Our Marvelous Messiah" - Apr 10</span>-->
+					<span class='subtitle'>%%recent_vidtitle%%</span>
 				</a>
 			</div>
 

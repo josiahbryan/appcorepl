@@ -1,0 +1,86 @@
+<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+<h1>Videos</h1>
+<title>Videos</title>
+
+<style>
+.postlist {
+	list-style: none;
+}
+.postlist li
+{
+	margin: 0;
+}
+
+.postlist hr
+{
+	display: none;
+}
+
+.postlist a.video-play-link
+{
+	display: none !important;
+}
+
+.postlist .vid a.video-play-link
+{
+	display: block !important;
+	float: left; 
+	margin-right: 10px;
+	margin-top:5px;
+	/*margin-top: -90px;
+	margin-right: 10px;*/
+}
+
+.postlist p
+{
+	text-indent:0;
+}
+
+.postlist p .title,
+.postlist p .filler,
+.postlist p .url
+{
+	display: none;
+}
+
+div.fc{ clear:both; }
+
+.loadmore
+{
+	border-top: 1px solid rgb(80,80,80);
+	margin-top: .5em;
+	padding-top: .5em;
+	text-align:center;
+}
+
+.loadmore a{
+	/*color: black;*/
+	
+}
+</style>
+
+<ul class=postlist>
+	<tmpl_loop posts>
+	<li>
+		<div class='vid'>
+			%%video_attach%%
+		</div>
+		<h3>%%subject%% <span class=hardlink><a href='/learn/videos/%%folder_name%%'>#</a></span></h3>
+		<p class='html'>
+			%%text%%
+		</p>
+		<div class=fc>
+	</li>
+	</tmpl_loop>
+</ul>
+
+<tmpl_if next_idx>
+	<!--<tr class='loadmore'>
+		<td colspan=2 align=center>-->
+	<div class=loadmore>
+		<a href='/learn/videos/?idx=%%next_idx%%&len=%%len%%' id="load_more_bottom">Next page of videos...</a>
+	</div>
+</tmpl_if>
+				
+${inc:/appcore/mods/ThemePHC/tmpl/boards/inc-video-scripts.tmpl}
+<script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
