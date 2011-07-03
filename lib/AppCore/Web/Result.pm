@@ -258,7 +258,7 @@ package AppCore::Web::Result;
 					my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 					if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 					{
-						print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+						#print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 					}
 					else
 					{
@@ -392,7 +392,7 @@ package AppCore::Web::Result;
 				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
-					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+					#print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 				}
 				else
 				{
@@ -625,7 +625,7 @@ package AppCore::Web::Result;
 				my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
 				if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
 				{
-					print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+					#print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
 				}
 				else
 				{
@@ -673,7 +673,7 @@ package AppCore::Web::Result;
 		}
 		else
 		{
-			$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/url("$1")/segi;
+			#$text =~ s/url\(['"](\/[^\"\)]+\.(?:gif|png|jpg))["']?\)/url("$1")/segi;
 		}
 		
 		return $text;

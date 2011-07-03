@@ -19,6 +19,7 @@ my @deps = qw/
 	Net::DNS
 	Geo::Coder::Yahoo
 	Spreadsheet::ParseExcel
+	Clone::More
 /;
 
 foreach my $dep (@deps)
