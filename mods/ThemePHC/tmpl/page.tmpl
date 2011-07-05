@@ -225,9 +225,12 @@
 				}
 			}
 			
+			var disableFloat = false;
 			function fixFloaters() {
 				//return;
 				//var rowRef = $("tr.loadmore");
+				if(disableFloat)
+					return;
 				var scrollTop = $(window).scrollTop(); // + $(window).height();
 				var fudge = 0; // amount by which to fudge the detection
 				
@@ -237,9 +240,53 @@
 				}
 			}
 			
-			$(window).bind('scroll', fixFloaters);
+			function setCookie(name,value,days) {
+				if (days) {
+					var date = new Date();
+					date.setTime(date.getTime()+(days*24*60*60*1000));
+					var expires = "; expires="+date.toGMTString();
+				}
+				else var expires = "";
+				document.cookie = name+"="+value+expires+"; path=/";
+			}
 			
-			setTimeout(fixFloaters, 100);
+			function getCookie(name) {
+				var nameEQ = name + "=";
+				var ca = document.cookie.split(';');
+				for(var i=0;i < ca.length;i++) {
+					var c = ca[i];
+					while (c.charAt(0)==' ') c = c.substring(1,c.length);
+					if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+				}
+				return null;
+			}
+			
+			function deleteCookie(name) {
+				setCookie(name,"",-1);
+			}
+
+			$('.no_float').live('click',function() {
+				disableFloat = true;
+				for(var i=0;i<fixedList.length;i++)
+				{
+					markUnfixed(fixedList[i]);
+				}
+				$('.no_float_wrap').hide();
+				setCookie('phc.nofloat','true',30);
+				return false;
+			});
+			
+			disableFloat = getCookie('phc.nofloat') == 'true';
+			if(disableFloat)
+			{
+				$('.no_float_wrap').hide();
+			}
+			else
+			{
+				$(window).bind('scroll', fixFloaters);
+				
+				setTimeout(fixFloaters, 100);
+			}
 		});
 		</script>
 		

@@ -16,6 +16,10 @@
 	box-shadow: 0 0 8px white;
 }
 
+.nav_level2 td
+{
+	color: rgb(100,100,100);
+}
 
 .nav_level2 a 
 {
@@ -30,4 +34,10 @@
 .nav_level2 .current
 {
 	font-weight: bold;
+}
+
+.nav_level2 .return
+{
+	float:right;
+	/*margin-top: -1em;*/
 }
