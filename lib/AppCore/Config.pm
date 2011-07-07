@@ -178,6 +178,29 @@ BEGIN
 		productiveconcepts.com
 	/};
 	
+	$EMAIL_DOMAIN_CONFIG->{'mypleasanthillchurch.org'} =
+	{
+#		pkg     => 'Net::SMTP',
+# 		server  => 'localhost',
+# 		port    => 2500,	
+
+# 		pkg	=> 'Net::SMTP::TLS',
+# 		server	=> 'smtp.gmail.com',
+# 		port	=> 587,
+# 		user	=> 'notifications@mypleasanthillchurch.org',
+# 		pass	=> undef,
+	
+		pkg	=> 'Net::SMTP',
+		server	=> 'relay.dnsexit.com',
+		port	=> 25,
+		user	=> 'phcrelay',
+	};
+	
+	my $phc_email_pass_file = $WWW_DOC_ROOT . $WWW_ROOT . '/phc_email_pass.txt';
+	my $phc_email_pass = `cat $phc_email_pass_file` if -f $phc_email_pass_file;
+	$phc_email_pass =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
+	$EMAIL_DOMAIN_CONFIG->{'mypleasanthillchurch.org'}->{pass} = $phc_email_pass; 
+	
 	$EMAIL_MX_OVERRIDES = {
 		'mypleasanthillchurch.org'	=> ['ASPMX.L.GOOGLE.COM.'],
 		'productiveconcepts.com'	=> ['impcotechnologies.com.inbound15.mxlogicmx.net.'],

@@ -20,6 +20,7 @@ my @deps = qw/
 	Geo::Coder::Yahoo
 	Spreadsheet::ParseExcel
 	Clone::More
+	Authen::SASL
 /;
 
 foreach my $dep (@deps)

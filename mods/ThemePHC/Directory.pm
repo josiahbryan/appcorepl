@@ -32,16 +32,16 @@ package PHC::Directory::Family;
 			{ field => 'email',			type => 'varchar(255)' },
 			{ field => 'home',			type => 'varchar(255)' },
 			{ field	=> 'address',			type => 'varchar(255)' },
-			{ field	=> 'p_cell_dir',		type => 'int(1)', null =>0, default =>1 },
-			{ field	=> 'p_cell_onecall',		type => 'int(1)', null =>0, default =>1 },
-			{ field	=> 'p_email_dir',		type => 'int(1)', null =>0, default =>1 },
+			{ field	=> 'p_cell_dir',		type => 'int(1)', null =>0, default =>0 },
+			{ field	=> 'p_cell_onecall',		type => 'int(1)', null =>0, default =>0 },
+			{ field	=> 'p_email_dir',		type => 'int(1)', null =>0, default =>0 },
 			{ field => 'spouse',			type => 'varchar(255)' },
 			{ field => 'spouse_birthday',		type => 'varchar(255)' },
 			{ field => 'spouse_cell',		type => 'varchar(255)' },
 			{ field => 'spouse_email',		type => 'varchar(255)' },
-			{ field	=> 'p_spouse_cell_dir',		type => 'int(1)', null =>0, default =>1 },
-			{ field	=> 'p_spouse_cell_onecall',	type => 'int(1)', null =>0, default =>1 },
-			{ field	=> 'p_spouse_email_dir',	type => 'int(1)', null =>0, default =>1 },
+			{ field	=> 'p_spouse_cell_dir',		type => 'int(1)', null =>0, default =>0 },
+			{ field	=> 'p_spouse_cell_onecall',	type => 'int(1)', null =>0, default =>0 },
+			{ field	=> 'p_spouse_email_dir',	type => 'int(1)', null =>0, default =>0 },
 			{ field => 'anniversary',		type => 'varchar(255)' },
 			{ field => 'comments',			type => 'text' },
 			{ field	=> 'display',			type => 'varchar(255)' },
@@ -50,7 +50,7 @@ package PHC::Directory::Family;
 			
 			{ field	=> 'lat',			type => 'float' },
 			{ field	=> 'lng',			type => 'float' },
-			{ field => 'deleted',			type => 'int', null =>0, default=>1 },
+			{ field => 'deleted',			type => 'int', null =>0, default=>0 },
 			
 			{ field => 'admin_notes',		type => 'text' },
 		],	
@@ -312,12 +312,12 @@ package PHC::Directory;
 				if($fam->{photo_num} != '?')
 				{
 					
-					my $photo_file = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
+					my $photo_file      = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
 					$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
 					#print STDERR "Primary photo: $photo_file\n";
 					if(! -f $www_path.$photo_file)
 					{
-						$photo_file = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
+						$photo_file         = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
 						$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_'.$fam->{photo_num}.'.jpg';
 						#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
 					}
@@ -335,6 +335,13 @@ package PHC::Directory;
 						{
 							#print "No photo num at all: $name";
 						}
+					}
+					
+					if(-f $www_path.$fam->{large_photo} && 
+					  !-f $www_path.$photo_file)
+					{
+						print STDERR "Resizing $www_path.$fam->{large_photo} (160x120) to $www_path.$photo_file\n";
+						system("convert ${www_path}$fam->{large_photo} -resize 160x120 ${www_path}$photo_file");
 					}
 					
 					$fam->{photo} = $photo_file ? $photo_file: '';
@@ -383,6 +390,8 @@ package PHC::Directory;
 			};
 #		}
 		
+		#use Data::Dumper;
+		#die Dumper $result;
 		$DirectoryData->{cache}->{$cache_key} = $result;
 		
 		return $result;
@@ -747,6 +756,18 @@ package ThemePHC::Directory;
 			
 			my $tmpl = $self->get_template('directory/edit.tmpl');
 			
+			if($entry->userid && $entry->userid->id)
+			{
+				$entry->email($entry->userid->email) if !$entry->email;
+				$entry->update if $entry->is_changed;
+			}
+			
+			if($entry->spouse_userid && $entry->spouse_userid->id)
+			{
+				$entry->spouse_email($entry->spouse_userid->email) if !$entry->spouse_email;
+				$entry->update if $entry->is_changed;
+			}
+			
 			$tmpl->param($_ => $entry->get($_)) foreach $entry->columns;
 			
 			my @kids = PHC::Directory::Child->search(familyid => $entry->id);
@@ -794,9 +815,11 @@ package ThemePHC::Directory;
 			my $entry = PHC::Directory::Family->retrieve($fam);
 			if(!$entry)
 			{
+				# Only insert new family if Admin test passes
 				if($admin)
 				{
 					$entry = PHC::Directory::Family->insert({ last => $req->last });
+					print STDERR "Debug: Created new directory family ID $entry\n";
 				}
 				else
 				{
@@ -807,6 +830,7 @@ package ThemePHC::Directory;
 			my $can_edit = $admin || $entry->userid == $user || $entry->spouse_userid == $user;
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
 			
+			# Anyone can edit these columns (anyone, well, anyone who has permission)
 			my @cols = qw/
 				first
 				last
@@ -829,26 +853,33 @@ package ThemePHC::Directory;
 				comments
 			/;
 			
+			# Add in admin-only columns
 			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
 			if($admin)
 			{
 				push @cols, qw/userid spouse_userid photo_num admin_notes/;
 			}
 			
+			# Update family data fields
 			foreach my $col (@cols)
 			{
 				#print STDERR "Checking col: $col\n";
 				$entry->set($col, $req->$col) if defined $req->$col;
 			}
 			
+			# Update display string
 			my $name = $entry->first;
 			$name .= ' & '.$entry->spouse if $entry->spouse;
 			$name .= ' '.$entry->last;
+			$entry->display($name) if $name ne $entry->display;
 			
-			$entry->display if $name ne $entry->display;
+# 			use Data::Dumper;
+# 			print STDERR "Data dump:\n";
+# 			print STDERR Dumper $entry;
 			
 			$entry->update;
 			
+			# Update existing kids names/bdays
 			my @kids = PHC::Directory::Child->search(familyid => $entry->id);
 			if(@kids)
 			{
@@ -864,13 +895,93 @@ package ThemePHC::Directory;
 				}
 			}
 			
+			# Add new child if needed
 			if($req->{name_new})
 			{
+				print STDERR "Debug: Adding new child: '$req->{name_new}'\n";
 				PHC::Directory::Child->insert({
 					familyid	=> $entry->id,
 					display 	=> $req->{name_new},
 					birthday	=> $req->{bday_new},
 				});
+			}
+			
+			# Create update primary user account/email
+			if(my $email = $entry->email)
+			{
+				my $user = $entry->userid;
+				if($user && $user->id)
+				{
+					# Sync emails
+					if($user->email ne $email)
+					{
+						print STDERR "Debug: Primary email changed: '$email' (acnt $user)\n";
+						$user->email($email);
+						$user->update;
+					}
+					
+					$user->first($entry->first) if $user->first ne $entry->first;
+					$user->first($entry->last) if $user->last ne $entry->last;
+					
+					my $disp = $entry->first.' '.$entry->last;
+					$user->display($disp) if $user->display ne $disp;
+					
+					$user->update if $user->is_changed;
+				}
+				else
+				{
+					# create new user entry, empty password
+					$user = AppCore::User->insert({ 
+						user	=> $email,
+						email	=> $email,
+						first	=> $entry->first,
+						last	=> $entry->last,
+						pass	=> '', # can set pass on first login
+						});
+					$entry->userid($user);
+					$entry->update;
+					
+					print STDERR "Debug: Created new primary account for email '$email' (acnt $user)\n";
+				}
+			}
+			
+			# Create/update spouse user account/email
+			if($entry->spouse &&
+			   $entry->spouse_email)
+			{
+				my $email = $entry->spouse_email;
+				my $user  = $entry->spouse_userid;
+				if($user && $user->id)
+				{
+					# Sync emails
+					if($user->email ne $email)
+					{
+						print STDERR "Debug: Spouse email changed: '$email' (acnt $user)\n";
+						$user->email($email);
+					}
+					
+					$user->first($entry->spouse) if $user->first ne $entry->spouse;
+					$user->first($entry->last) if $user->last ne $entry->last;
+					
+					my $disp = $entry->spouse.' '.$entry->last;
+					$user->display($disp) if $user->display ne $disp;
+					
+					$user->update if $user->is_changed;
+				}
+				else
+				{
+					# create new user entry, empty password
+					$user = AppCore::User->insert({ 
+						user	=> $email,
+						email	=> $email,
+						first	=> $entry->spouse,
+						last	=> $entry->last,
+						pass	=> '', # can set pass on first login
+						});
+					$entry->spouse_userid($user);
+					$entry->update;
+					print STDERR "Debug: Created new spouse account for email '$email' (acnt $user)\n";
+				}
 			}
 			
 			if($req->output_fmt eq 'json')
@@ -945,6 +1056,9 @@ package ThemePHC::Directory;
 					$entry->{$_} = add_areacode($entry->{$_},765) foreach qw/cell spouse_cell home/;
 				}
 			}
+			
+			#use Data::Dumper;
+			#die Dumper $directory_data;
 			
 			if($req->output_fmt eq 'json')
 			{

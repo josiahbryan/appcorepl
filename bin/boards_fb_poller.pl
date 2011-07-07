@@ -178,7 +178,7 @@ sub update_board
 			
 			$post_is_new = 1;
 			
-			my $url = $AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
+			my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
 			print "Created post from facebook - # $post - '".$post->subject."' - $url\n";
 		}
 		
@@ -205,7 +205,7 @@ sub update_board
 					$post->updated_time($fb_time);
 					$post->update;
 					
-					my $url = $AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
+					my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
 					print "Updated post text from facebook - # $post - '".$post->subject."' - $url\n";
 					print STDERR "DEBUG[A]: [".$post->text."]\n";
 					print STDERR "DEBUG[B]: [".$msg."]\n";
@@ -333,7 +333,7 @@ sub update_board
 				}
 				$cmt->update;
 				
-				my $url = $AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";
+				my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";
 				print "Created comment# $cmt on post# '".$post->subject."' (top post: '".$cmt->top_commentid->subject."') - $url\n";
 			}
 			
@@ -364,7 +364,7 @@ sub download_user_photo
 	
 	my $photo = LWP::Simple::get($poster_photo_url);
 	my $local_photo_url = "/mods/User/user_photos/". ($user && $user->id ? "user". $user->id : "fb".md5_hex($fb_id)).".jpg";
-	my $file_path = $AppCore::Config->get('APPCORE_ROOT') . $local_photo_url;
+	my $file_path = AppCore::Config->get('APPCORE_ROOT') . $local_photo_url;
 		
 	if(!open(PHOTO, '>' . $file_path))
 	{
@@ -376,13 +376,13 @@ sub download_user_photo
 	
 	if($user && $user->id)
 	{
-		$user->photo($AppCore::Config->get('WWW_ROOT') . $local_photo_url);
+		$user->photo(AppCore::Config->get('WWW_ROOT') . $local_photo_url);
 		$user->update;
 	}
 	
 	print "Downloaded user photo to $file_path.\n";
 	
-	$poster_photo_url = $AppCore::Config->get('WWW_ROOT') . $local_photo_url;
+	$poster_photo_url = AppCore::Config->get('WWW_ROOT') . $local_photo_url;
 
 	return $poster_photo_url;
 }

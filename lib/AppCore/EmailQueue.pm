@@ -7,6 +7,8 @@ package AppCore::EmailQueue;
 	use Net::Domain qw(hostdomain);
 	use Net::SMTP;
 	
+	use Net::SMTP::TLS; # required for relaying thru google
+	
 	use MIME::Lite;
 
 	__PACKAGE__->meta({
@@ -183,6 +185,7 @@ Server: $host
 		$domain = lc $domain;
 		
 		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
+		
 		if(!$prof)
 		{
 			$self->sentflag(1);
@@ -192,8 +195,24 @@ Server: $host
 			return;
 		}
 		
+# 		$prof = 
+# 		{
+# # 			pkg     => 'Net::SMTP',
+# # 			server  => 'localhost',
+# # 			port    => 2500,	
+# 			pkg	=> 'Net::SMTP::TLS',
+# 			server	=> 'smtp.gmail.com',
+# 			port	=> 587,
+# 	#		user	=> 'PHC Notifications Robot <notifications@mypleasanthillchurch.org>',
+# 			user	=> 'notifications@mypleasanthillchurch.org',
+# 			pass	=> 'Notify1125',
+# 		} if $domain eq 'mypleasanthillchurch.org';
+		
 		# If config says its allowed (a true value) but no config, assume direct relay
 		$prof = { server => 'localhost' } if !ref $prof;
+		
+		#print STDERR "Debug: Profile domain: $domain, using server: '$prof->{server}'\n";
+		
 		
 		my $pkg = $prof->{pkg};
 		if(!$pkg && $prof->{server} ne 'localhost')
@@ -235,12 +254,22 @@ Server: $host
 		
 		eval{
 		
-			$smtp = $pkg->new($prof->{server}, 
-				Port=> $prof->{port} || 25, 
-				#User=> $prof->{user} || 'notifications', 
-				#Password => $prof->{pass} || 'Notify1125',
-				Hello	=> $domain,
-				Debug => $DEBUG); # connect to an SMTP server
+			#print STDERR "Debug: Pkg: $pkg, server: $prof->{server}, port: $prof->{port}, user: $prof->{user}, pass: $prof->{pass}, domain: $domain\n";
+			my %args = (
+				Port  => $prof->{port} || 25,
+				Hello => $domain,
+				Debug => $DEBUG
+			);
+			#if($pkg eq 'Net::SMTP::TLS')
+			{
+				$args{User} = $prof->{user} || 'notifications';
+				$args{Password} = $prof->{pass} || 'Notify1125';
+			}
+			#use Data::Dumper;
+			#print Dumper \%args;
+				
+			$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
+			#print STDERR "Result: '$smtp'\n";
 		};
 		
 		if(!$smtp || $@)
@@ -256,7 +285,19 @@ Server: $host
 		$self->result("OK: Sent thru ".$prof->{server}.":".($prof->{port}||25)." via $pkg");
 		$self->update;
 
-		$smtp->auth($prof->{user},$prof->{pass}) if $smtp->can('auth') && $prof->{user};
+		if($smtp->can('auth') && $prof->{user})
+		{
+			print STDERR "[DEBUG] Authenticating as user '$prof->{user}', password '$prof->{pass}'\n" if $DEBUG;
+			if(!$smtp->auth($prof->{user},$prof->{pass}))
+			{
+				$self->sentflag(1);
+				$self->result("Error logging into mail server: ".$smtp->message().($@? " ($@)":""));
+				print STDERR "Msg $self: ".$self->result."\n";
+				$self->update;
+				
+				return;
+			}
+		}
 		
 		my $required_from = $prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain;
 		print STDERR "[DEBUG] Domain: '$domain', To: ".$self->msg_to.", From: ".$self->msg_from.", Server: $prof->{server}:$prof->{port}, Req: $required_from\n" if $DEBUG;
@@ -270,7 +311,7 @@ Server: $host
 		my $data = $self->msg;
 		if($data =~ /^#file:(.*)$/)
 		{
-			print STDERR "Debug: Reading file $1\n";
+			print STDERR "Debug: Reading file $1\n" if $DEBUG;
 			my $file = $1;
 			open(FILE,"<$file");
 			while($_ = <FILE>)
