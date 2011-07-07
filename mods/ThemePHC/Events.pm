@@ -4,8 +4,7 @@ package PHC::Event;
 {
 	use base 'AppCore::DBI';
 	
-	# TODO Write Groups module!!!!!!!!
-	#use ThemePHC::Groups;
+	use ThemePHC::Groups; 
 	
 	__PACKAGE__->meta(
 	{
@@ -34,6 +33,8 @@ package PHC::Event;
 			{ field => 'deleted',			type => 'int' },
 		],	
 	});
+	
+	#__PACKAGE__->add_constructor(by_group => 'groupid=? and deleted!=1 order by is_weekly, datetime');
 }
 
 package ThemePHC::Events;
@@ -146,7 +147,7 @@ package ThemePHC::Events;
 	sub board_page
 	{
 		my $class = shift;
-		my ($req,$r) = @_;
+		my ($req,$r,$board) = @_;
 		
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'new' || $sub_page eq 'post')
@@ -160,10 +161,11 @@ package ThemePHC::Events;
 			return $class->basic_view($req,$r);
 		}
 		
-		$req->unshift_path('events') unless $sub_page eq 'events';
+		# Not needed now
+		#$req->unshift_path('events') unless $sub_page eq 'events';
 		#die Dumper $req;
 		
-		return $class->SUPER::board_page($req,$r);
+		return $class->SUPER::board_page($req,$r,$board);
 	}
 	
 	sub new_post_hook
@@ -445,7 +447,7 @@ package ThemePHC::Events;
 		# Send the CRUD actions to the superclass, which in turn, will call our various hooks, above, for our logic
 		if($sub_page eq 'edit' || $sub_page eq 'new' || $sub_page eq  'post')
 		{
-			$self->board_page(@_);
+			$self->board_page($req,$r,$EVENTS_BOARD);
 		}
 		
 # 		elsif($sub_page eq 'delete')
@@ -486,7 +488,7 @@ package ThemePHC::Events;
 		}
 		elsif($sub_page)
 		{
-			return $self->board_page($req,$r);
+			return $self->board_page($req,$r,$EVENTS_BOARD);
 		}
 # 		elsif(!$sub_page)
 # 		{
@@ -532,10 +534,20 @@ package ThemePHC::Events;
 	sub load_basic_events_data
 	{
 		my $self = shift;
-		if(!$EventsListCache)
+		my $group = shift || 0;
+		
+		my $key = $group ? 'group:'.$group->id : 'all';
+		
+		$EventsListCache = {} if !$EventsListCache;
+		if(!$EventsListCache->{$key})
 		{
 			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);
 			my $sql = "datetime >= NOW() OR is_weekly = 1";
+			
+			if($group)
+			{
+				$sql = "($sql) AND groupid=". ($group->id+0);
+			}
 			#print STDERR "SQL=$sql\n";
 			my @events = PHC::Event->retrieve_from_sql($sql);
 			
@@ -566,13 +578,13 @@ package ThemePHC::Events;
 			# Group by week day
 			my $out_weekly = $self->process_weekly_event_list(\@weekly);
 			
-			$EventsListCache = {
+			$EventsListCache->{$key} = {
 				weekly	=> $out_weekly,
 				dated	=> \@dated,
 			};
 		}
 		
-		return $EventsListCache;
+		return $EventsListCache->{$key};
 			 
 	}
 	

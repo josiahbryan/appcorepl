@@ -1,0 +1,295 @@
+<title>PHC Groups</title> 
+<h1>PHC Groups</h1>
+<!--%macro::sub_nav()%-->
+
+
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+
+.dir-body 
+{
+	display: block;
+	page: main;
+	counter-reset: page 1;
+	
+}
+
+.dir-body, .dir-body td
+{
+	font-family: Bergamo, Georgia, serif;
+}
+
+
+.photo
+{
+	max-width: 10em;
+	max-height: 8em;
+	border: .25px solid black;
+}
+.photo_cell
+{
+	width: 10em;
+	padding-top: .5em;
+}
+.info_cell
+{
+	padding-top: .5em;
+	padding-left: .5em;
+}
+
+.no_photo
+{
+	border: 1px solid black;
+	background: rgb(220,220,220);
+	font-weight: bold;
+	font-size: 2em;
+}
+
+tr.name
+{
+	font-weight: bold;
+}
+
+div.incomplete
+{
+	border: .1px solid black;
+	color: green;
+}
+
+tr.address td
+{
+	/*border-bottom: .1px solid black;*/ 
+}
+
+tr.name td
+{
+	/*border-top: .1px solid black;*/
+}
+
+table.kids
+{
+	border-spacing: 0;
+}
+
+table.kids td.bday
+{
+	padding-left: .5em;
+	/*font-size: .85em;*/
+	color: rgb(80,80,80);
+}
+
+table.entry td
+{
+	font-size: .85em;
+}
+
+table.entry td.key
+{
+	color: rgb(80,80,80);
+	font-size: .75em;
+	width: 1%;
+	white-space:nowrap;
+}
+
+
+.admin_notes td
+{
+	padding-top: .5em;
+}
+
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+td.load-done,
+td.loading
+{
+	background: rgb(230,230,230);
+	/*border: 1px solid rgb(100,100,100);*/
+	-moz-border-radius: 3px;
+	padding: .5em;
+	margin-top: 1em;
+	font-size: .75em;
+	font-weight: bold;
+	text-align: center;
+	color: rgb(80,80,80);
+}
+
+tr.loadmore a
+{
+	text-decoration: none;
+	/*font-weight: normal;*/
+	color: #364a90;
+}
+
+<tmpl_unless is_mobile>
+div.dlinfo
+{
+	width: 13.25em;
+	margin-right: -15em;
+	margin-top: -4em;
+	padding: .5em;
+	float: right;
+	background: #E6E6E6;
+	-moz-border-radius: 3px;
+}
+	
+div.dlinfo td.text
+{
+	font-size: .8em;
+}
+
+div.dlinfo td.text img
+{
+	background: white;
+	padding: .5em;
+	border: 1px solid rgb(230,230,230);
+	-moz-border-radius: 3px;
+	
+	margin-top: .2em;
+	margin-bottom: .4em;
+	
+	display: block;
+	text-align: center;
+	
+}
+</tmpl_unless>
+
+</style>
+
+	<!--
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%/sermons?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%/sermons?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%/sermons?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%/sermons?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Entries</span>
+		</span>
+	</div>
+	-->
+
+	<!--<div class='dlinfo'>
+		<table>
+			<tr>
+				<td class=text valign=top>
+					<tmpl_unless is_mobile><center><a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'><img src='%%modpath%%/images/pdf.gif' border=0></a></center></tmpl_unless>
+					<b>Did you know?</b> You can download a <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>printable version of the directory</a>! Just <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>click here</a> to download and print off your own 22-page full-color copy!
+				</td>
+			</tr>
+		</table>
+	</div>
+	-->
+	<style>
+		.edit
+		{
+			float: right;
+			
+		}
+		
+		.edit a
+		{
+			text-decoration: none;
+			font-weight: normal;
+			color: #364a90;
+		}
+	</style>
+	
+	<form action='%%binpath%%' method=GET class='searchform'>
+		<table class='entry' width='100%' class=search-results>
+			<tr>
+				<td align=center>
+					<hr size=1>
+					<div style='margin-top:1.1em;margin-bottom:1em'>
+						Search: <input type=text name=search value='%%search%%' class='search_field' size=<tmpl_if search>16<tmpl_else>20</tmpl_if>> <tmpl_if search><input type=button class='clear_search' value='X'></tmpl_if> <input type=submit value='Search'>
+					</div>
+					<tmpl_if is_admin>
+						<hr size=1>
+						<div style='margin-top:1em'>
+							<a href='%%binpath%%/new'>Add a new group...</a>
+						</div>
+					</tmpl_if>
+				</td>
+			</tr>
+		</table>
+		<script>
+		$(function() {
+			var field = $('.search_field').get(0);
+			if(field) //&& field.value != '')
+			{
+				field.focus();
+				field.select();
+			}
+			
+			$('.clear_search').live('click',function() {
+// 				$('.search_field').get(0).value = '';
+// 				$('.searchform').submit();
+				document.location.href = '%%binpath%%';
+			
+			});
+		});
+		
+		</script>
+	</form>
+	
+	<table class='entry' width='100%' class=search-results>
+		<tr class='search-footer'></tr>
+	</table>
+	
+	<table class='entry' width='100%' class=dir-body>
+		<tmpl_loop entries>
+			<tr class='group'>
+				<td colspan=2>
+					<!--<h3><a href='%%bin%%/%%folder_name'>%%title%%</a></h3>-->
+					<h3><a href='%%bin%%/%%folder_name%%'>%%title%%</a></h3>
+					<div class=diz>
+						%%description%%
+					</div>
+				</td>
+			</tr>
+		</tmpl_loop>
+		<tmpl_unless search>
+			<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
+		</tmpl_unless>
+	</table>
+	
+	<tmpl_if search>
+		<tmpl_unless entries>
+			<hr size=1>
+			<center>
+			<h2 style='margin:2em'>Sorry, no entries match "<i><tmpl_var search escape=html></i>"</h2>
+			</center>
+		</tmpl_unless>
+	</tmpl_if>
+

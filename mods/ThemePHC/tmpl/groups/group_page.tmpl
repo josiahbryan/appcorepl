@@ -1,0 +1,325 @@
+<h1>%%group_title%%</h1>
+
+<style>
+/* ... */
+</style>
+
+<div class=diz>
+	%%group_description%%
+</div>
+
+<div class='event_list'>
+	<style>
+	.posts { margin-top:-.5em;<tmpl_unless weekly_widget>border-bottom:none</tmpl_unless>}
+	h1.event-list-header
+	{
+		/*background-image: url(/images/jib3.png) !important;*/
+		background-image: none!important;
+		background-position: 0 -8px !important;
+		/*background-color: white !important;*/
+		/*padding-left: 70px !important;*/
+		padding-left: 5px !important;
+		/*margin-bottom: -1em;*/
+		margin-top: .5em;
+	}
+	h1 a{border:0 !important}
+	
+	td.subject,
+	td.title
+	{
+		background: #e9eeff;
+		border-bottom: 1px solid #c7cddf;
+		border-top: 1px solid white;
+		padding: .5em .25em;
+	}
+	
+	.posts td a
+	{
+		text-decoration: none;
+		color: black;
+	}
+	
+	
+	.event_list h1, .event_list h2, .event_list h3, .event_list h4, .event_list h5, .event_list h6, .event_list h7, .event_list p, .event_list form, .event_list ul, .event_list ol, .event_list li, .event_list blockquote { /* resets most browser styles to enhance cross-browser compatibility */
+		margin: 0;
+		padding: 0;
+	}
+	
+	
+	/*.event_list a:visited,
+	.event_list a:active,
+	.event_list a:hover*/
+	.event_list a
+	{
+		text-decoration: none;
+		/*color: black;*/
+		
+	}
+	
+	.event_list a:active,
+	.event_list a:focus
+	{
+		outline: none;
+	}
+	
+	.event_list h5
+	{
+		background: url("%%modpath%%/images/calendar_background.jpg") no-repeat scroll 0 0 transparent;
+		color: #A09F9F !important;
+		display: block;
+		float: left;
+		font-size: 1.4em;
+		height: 41px;
+		margin: 0 15px 0px 10px;
+		padding: 2px 0 0;
+		text-align: center;
+		width: 41px;
+	}	
+	
+	.event_list h5 strong
+	{
+		color: #FFFFFF;
+		display: block;
+		font-size: 0.6em;
+		text-transform: uppercase;
+	}
+	
+	.event_list h3.event-title
+	{
+		color: black;
+		/*padding: 2px 35px 2px 10px;*/
+		margin: 0;
+		border: 0;
+		width: 90%;
+		height: 1.25em;
+		overflow: hidden;
+	}
+	
+	.event_list p
+	{
+		color: #6C6C6C !important;
+		padding: 0 35px 0px 10px;
+		text-indent: 0;
+		margin-top: -5px;
+		margin: 0;
+	}
+	
+	.event_list ul
+	{
+		margin: 0;
+		padding: 0;
+	}
+	
+	.event_list li
+	{
+		background-color: #FFFFFF;
+		/*background: red;*/
+		border-bottom: 1px dotted black;
+		font-size: 1.5em;
+		list-style-type: none;
+		text-align: left;
+		padding-bottom: 10px;
+		margin-top: 10px;
+	}
+	
+	.event_list 
+	{
+		background: white;
+		/*padding: 5px 0 0 0;*/
+		/*border-top: 2px solid black;
+		border-bottom: 2px solid black;*/
+		font-size: 10px;
+	}
+	
+	
+	</style>
+		
+	<h3>Events</h3>
+	<ul>
+		<tmpl_loop events_dated>
+			<tmpl_if folder_name>
+				<li>
+					<a href='/connect/events/%%folder_name%%'>
+						<!-- FF Parser Error Fix!-->
+						<!--
+						<h5>
+							<strong>%%month_name_short%%</strong>
+							%%day%%
+						</h5>
+						<h3 class='event-title'>%%subject%%</h3>
+						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
+						-->
+						<h5>
+							<strong>%%month_name_short%%</strong>
+							%%day%%
+						</h5>
+						<h3 class='event-title'>%%subject%%</h3>
+						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
+					</a>
+				</li>
+			</tmpl_if>
+		</tmpl_loop>
+		<li class='readmore'>
+			<a href='/connect/events'>
+				<span>See More...</span>
+			</a>
+		</li>
+	</ul>
+</div>
+
+<div class=posts>
+	<h3>Posts</h3>
+	
+	<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
+	<style>
+	/* Add padding to photo for coloring */
+	.postlist tr.talktype-ePrayerAlert td.photo,
+	.postlist tr.talktype-pray td.photo,
+	.postlist tr.talktype-praise td.photo, 
+	.postlist tr.talktype-talk td.photo,
+	.postlist .newpost td.photo-cell
+	{
+		padding-left: 5px;
+	}
+	
+	/*** Pray ***/
+	
+	.postlist tr.talktype-pray,
+	.postlist tr.talktype-ePrayerAlert
+	{
+		background: #fcfeb3;
+		
+	}
+	
+	.postlist tr.talktype-ePrayerAlert td.data,
+	.postlist tr.talktype-ePrayerAlert td.photo,
+	.postlist tr.talktype-pray td.data,
+	.postlist tr.talktype-pray td.photo
+	{
+		border-top: 1px solid white;
+		border-bottom: 1px solid #e3e684;
+	}
+	
+	.postlist span.talktype-pray,
+	.postlist span.talktype-ePrayerAlert
+	{
+		color: #636439;
+		font-weight: bold;
+	}
+	
+	/* Prayer Comments */
+	.postlist tr.talktype-pray .comment_text_wrap,
+	.postlist tr.talktype-ePrayerAlert .comment_text_wrap 
+	{
+		border-top: 1px solid #fdffc5;
+		border-bottom: 1px solid #d7d999;
+	}
+	.postlist tr.talktype-pray .indent-odd,
+	.postlist tr.talktype-ePrayerAlert .indent-odd {
+		background: #e8eaa5 !important;
+	}
+	.postlist tr.talktype-pray .indent-even,
+	.postlist tr.talktype-ePrayerAlert .indent-even {
+		background: #e4e6a2 !important;
+	}
+	
+	/*** Praise ***/
+	
+	.postlist tr.talktype-praise
+	{
+		background: #d9ffd2;
+		
+	}
+	
+	.postlist tr.talktype-praise td.data,
+	.postlist tr.talktype-praise td.photo
+	{
+		border-top:    1px solid white;
+		border-bottom: 1px solid #bfe1b9;
+	}
+	
+	.postlist span.talktype-praise
+	{
+		color: #556452;
+		font-weight: bold;
+	}
+	
+	/* Praise Comments */
+	.postlist tr.talktype-praise .comment_text_wrap
+	{
+		border-top: 1px solid #e2ffdd;
+		border-bottom: 1px solid #b5d5af;
+	}
+	.postlist tr.talktype-praise .indent-odd {
+		background: #d0f3c9 !important;
+	}
+	.postlist tr.talktype-praise .indent-even {
+		background: #c7eac1 !important;
+	}
+	
+	/*** Talk ***/
+	.postlist tr.talktype-talk
+	{
+		background: rgb(235,235,235);
+		
+	}
+	
+	.postlist tr.talktype-talk td.data,
+	.postlist tr.talktype-talk td.photo
+	{
+		border-top:    1px solid white;
+		border-bottom: 1px solid rgb(200,200,200);
+	}
+	
+	.postlist span.talktype-talk
+	{
+		color: rgb(100,100,100);
+		font-weight: bold;
+	}
+	
+	/* Talk Comments */
+	.postlist tr.talktype-talk .comment_text_wrap
+	{
+		border-top: 1px solid rgb(245,245,245);
+		border-bottom: 1px solid rgb(140,140,140);
+	}
+	.postlist tr.talktype-talk .indent-odd {
+		background: rgb(210,210,210) !important;
+	}
+	.postlist tr.talktype-talk .indent-even {
+		background: rgb(190,190,190) !important;
+	}
+	
+	
+	</style>
+	
+	<table class='postlist' width='100%' align=center cellspacing=0 style='border-top:1px solid rgb(80,80,80);border-left:1px solid rgb(180,180,180)'>
+		<tbody>
+			<tr class='loadmore'>
+				<td colspan=2 align=center>
+					<a href='/connect/talk/new'>Post something here...</a>
+				</td>
+			</tr>
+				
+			<tmpl_if talk_posts>
+				<tmpl_loop posts_posts>
+					${inc:/appcore/mods/ThemePHC/tmpl/boards/inc-postrow-talkpage.tmpl}
+				</tmpl_loop>
+			<tmpl_else>
+				<td colspan=2>
+					<h2 style='padding:2em'>No posts here yet!</h2>
+				</td>
+			</tmpl_if>
+			
+			<tmpl_if posts_next_idx>
+				<tr class='loadmore'>
+					<td colspan=2 align=center>
+						<a href='/connect/talk#num0' id="load_more_bottom">See more posts ...</a>
+					</td>
+				</tr>
+			</tmpl_if>
+		</tbody>
+	</table>
+	
+	${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-video-scripts.tmpl}
+</div>

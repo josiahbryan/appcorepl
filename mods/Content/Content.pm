@@ -76,6 +76,7 @@ package Content;
 			{
 				my $ctrl = AppCore::Web::Module->bootstrap('Boards');
 				$ctrl->binpath('');
+				$req->push_page_path($req->shift_path); # put the user onto the end of the page path
 				return $ctrl->user_page($req,$r,$user);
 			}
 			

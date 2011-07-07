@@ -198,7 +198,7 @@ package ThemePHC::Missions;
 	sub board_page
 	{
 		my $class = shift;
-		my ($req,$r) = @_;
+		my ($req,$r,$board) = @_;
 		
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'new' || $sub_page eq 'post')
@@ -211,7 +211,7 @@ package ThemePHC::Missions;
 		#{
 		#}
 		
-		return $class->SUPER::board_page($req,$r);
+		return $class->SUPER::board_page($req,$r,$board);
 	}
 	
 	sub forum_list_hook
@@ -440,7 +440,12 @@ package ThemePHC::Missions;
 		}
 		elsif($sub_page)
 		{
-			return $self->board_page($req,$r);
+			my $board = $self->get_board_from_req($req);
+			if(!$board)
+			{
+				return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
+			}
+			return $self->board_page($req,$r,$board);
 		}
 		elsif(!$sub_page)
 		{

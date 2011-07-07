@@ -36,6 +36,7 @@ package ThemePHC;
 	use ThemePHC::Directory;
 	use ThemePHC::Events;
 	use ThemePHC::Videos;
+	use ThemePHC::Groups;
 	
 	# Load the talk controller so it can update user prefs
 	use ThemePHC::BoardsTalk;
@@ -53,10 +54,14 @@ package ThemePHC;
 		AppCore::DBI->mysql_schema_update($_) foreach @db_objects;
 		
 		# Make sure missions and other sub modules are in sync
-		ThemePHC::Missions->apply_mysql_schema();
-		ThemePHC::Directory->apply_mysql_schema();
-		ThemePHC::Events->apply_mysql_schema();
-		ThemePHC::Videos->apply_mysql_schema();
+		my @sub_mods = qw{
+			ThemePHC::Missions
+			ThemePHC::Directory
+			ThemePHC::Events
+			ThemePHC::Videos
+			ThemePHC::Groups
+		};
+		$_->apply_mysql_schema foreach @sub_mods;
 	}
 	
 	sub load_nav_hook 

@@ -435,7 +435,13 @@ package Boards;
 		}
 		elsif($sub_page)
 		{
-			return $self->board_page($req,$r);
+			my $board = $self->get_board_from_req($req);
+			if(!$board)
+			{
+				return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
+			}
+		
+			return $self->board_page($req,$r,$board);
 		}
 		else
 		{
@@ -490,6 +496,25 @@ package Boards;
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
 		}
+	}
+	
+	sub get_board_from_req
+	{
+		my $self = shift;
+		my $req = shift;
+		
+		my $folder_name = $req->shift_path;
+		
+		my $board = Boards::Board->by_field(folder_name => $folder_name);
+		if(!$board)
+		{
+			$! = $@ = 'No such board';
+			return undef;
+		}
+		
+		$req->push_page_path($folder_name);
+		
+		return $board;
 	}
 	
 	sub macro_board_nav
@@ -601,6 +626,8 @@ package Boards;
 			{
 				return $r->error("No Such User", "Sorry, the user you requested does not exist");	
 			}
+			
+			$req->push_page_path($req->shift_path); # put the user onto the end of the page path
 		}
 		
 		if(!$user)
@@ -636,9 +663,9 @@ package Boards;
 		#my ($section_name,$folder_name,$skin,$r,$page,$req,$path) = @_;
 		my $req = shift;
 		my $r = shift;
-		my $board = shift || undef;
+		my $board = shift; 
 		
-		my $folder_name = $req->shift_path;
+		my $folder_name = $board->folder_name; 
 		
 		# Make sure we are being accessed thru a Content::Page object if one exists with "our name on it", so to speak
 		if(!$req->{page_obj})
@@ -657,15 +684,6 @@ package Boards;
 					return $r->redirect($new_url);
 				}
 			}
-		}
-		
-		
-		$req->push_page_path($folder_name);
-		
-		$board = Boards::Board->by_field(folder_name => $folder_name) if !$board;
-		if(!$board)
-		{
-			return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
 		}
 		
 		my $controller = $self->get_controller($board);

@@ -150,7 +150,7 @@ package ThemePHC::Videos;
 	sub board_page
 	{
 		my $class = shift;
-		my ($req,$r) = @_;
+		my ($req,$r,$board) = @_;
 		
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'new' || $sub_page eq 'post')
@@ -164,10 +164,11 @@ package ThemePHC::Videos;
 			return $class->basic_view($req,$r);
 		}
 		
-		$req->unshift_path('videos') unless $sub_page eq 'videos';
+		# Not needed now I think...
+		#$req->unshift_path('videos') unless $sub_page eq 'videos';
 		#die Dumper $req;
 		
-		return $class->SUPER::board_page($req,$r);
+		return $class->SUPER::board_page($req,$r,$board);
 	}
 	
 	sub new_post_hook
@@ -390,7 +391,7 @@ package ThemePHC::Videos;
 		# Send the CRUD actions to the superclass, which in turn, will call our various hooks, above, for our logic
 		if($sub_page eq 'edit' || $sub_page eq 'new' || $sub_page eq  'post')
 		{
-			$self->board_page($req,$r);
+			$self->board_page($req,$r,$VIDEOS_BOARD);
 		}
 		
 # 		elsif($sub_page eq 'delete')
@@ -421,7 +422,7 @@ package ThemePHC::Videos;
 		}
 		elsif($sub_page)
 		{
-			return $self->board_page($req,$r);
+			return $self->board_page($req,$r,$VIDEOS_BOARD);
 		}
 	}
 	
