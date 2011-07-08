@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use CPAN;
-# Also follow http://www.cyberciti.biz/tips/rhel-centos-fedora-apache2-fastcgi-php-configuration.html to setup FastCGI (not the PHP part tho)
+# Also follow http://www.cyberciti.biz/tips/rhel-centos-fedora-apache2-fastcgi-php-configuration.html to setup FastCGI (not the PHP part though)
 system("yum install -y mysql mysql-devel mysql-client mysql-server");
 my @deps = qw/
 	HTML::Template
@@ -21,9 +21,14 @@ my @deps = qw/
 	Spreadsheet::ParseExcel
 	Clone::More
 	Authen::SASL
+	Net::SMTP::TLS
+	Net::SMTP::SSL
+	Crypt::SSLeay
+	LWP::Protocol::https	
 /;
 
 foreach my $dep (@deps)
 {
+	print "Installing: $dep\n";
 	CPAN::install($dep);
 }

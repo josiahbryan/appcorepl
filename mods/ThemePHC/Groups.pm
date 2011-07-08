@@ -347,7 +347,8 @@ package ThemePHC::Groups;
 			#my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
 			#$tmpl->param(is_admin => $admin);
 			
-			$tmpl->param(users => AppCore::User->tmpl_select_list($group->userid,1));
+			$tmpl->param(manager_list => AppCore::User->tmpl_select_list($group->managerid,1));
+			$tmpl->param(new_members => AppCore::User->tmpl_select_list(0,1));
 			#$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($group->spouse_userid,1));
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
@@ -421,11 +422,11 @@ package ThemePHC::Groups;
 				push @cols, qw/managerid member_approval_required access_members_only listed_publicly/;
 			}
 			
-			# Update family data fields
+			# Update data fields
 			foreach my $col (@cols)
 			{
-				#print STDERR "Checking col: $col\n";
-				$group->set($col, $req->$col) if defined $req->$col;
+				#print STDERR "Checking col: $col ($req->{$col})\n";
+				$group->set($col, $req->{$col}) if defined $req->{$col};
 			}
 			
 			
@@ -433,7 +434,7 @@ package ThemePHC::Groups;
 # 			print STDERR "Data dump:\n";
 # 			print STDERR Dumper $group;
 			
-# 			$group->update;
+ 			$group->update;
 			
 			# Update existing kids names/bdays
 			my @members = PHC::Group::Member->search(groupid => $group->id);
@@ -459,11 +460,11 @@ package ThemePHC::Groups;
 					groupid		=> $group->id,
 					userid		=> $req->{new_member_userid},
 					role		=> $req->{role_new},
-					is_admin	=> $req->{admin_new},
+					is_admin	=> $req->{admin_new} ? 1:0,
 				});
 			}
 			
-			if(!$group->boardid || !$group->boardid->Board)
+			if(!$group->boardid || !$group->boardid->id)
 			{
 				my $boards_group = Boards::Group->find_or_create({ title=> 'PHC Groups' }); 
 				my $board = Boards::Board->create({
@@ -479,7 +480,7 @@ package ThemePHC::Groups;
 			}
 			else
 			{
-				foreach my $key (qw/managerid folder_name title/)
+				foreach (qw/managerid folder_name title/)
 				{
 					$group->boardid->set($_, $group->get($_))
 						     if $group->boardid->get($_) ne

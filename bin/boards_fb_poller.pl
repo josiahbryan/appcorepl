@@ -125,8 +125,14 @@ sub update_board
 	my $board = shift;
 	my $feed_url = shift;
 	
-	my $json = get($feed_url);
-	my $feed_hash = decode_json($json);
+	use LWP::Simple;
+	my $json = LWP::Simple::get($feed_url);
+	die "Error getting $feed_url: $@" if $@;
+	my $feed_hash;
+	
+	eval { $feed_hash = decode_json($json); };
+	die "Error parsing json: $@\nJSON: $json\nFeed URL: $feed_url\nScript stopped" if $@;
+	
 	my $feed_list = $feed_hash->{data};
 	
 	my $board_controller = $controller->get_controller($board);

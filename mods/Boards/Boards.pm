@@ -680,8 +680,11 @@ package Boards;
 				if($page->url ne $cur_url)
 				{
 					my $new_url = $page->url.($req->path?"/".join('/',$req->path_info):"").($ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '');
-					print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
-					return $r->redirect($new_url);
+					if(get_full_url() ne $new_url)
+					{
+						print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
+						return $r->redirect($new_url);
+					}
 				}
 			}
 		}

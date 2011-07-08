@@ -190,7 +190,7 @@ Server: $host
 		{
 			$self->sentflag(1);
 			$self->result("Error: Domain $domain not in list of allowed domains to send from");
-			print STDERR "Msg $self: ".$self->result."\n";
+			print STDERR "Msg $self: ".$self->result." (from:".$self->msg_from.")\n";
 			$self->update;
 			return;
 		}
