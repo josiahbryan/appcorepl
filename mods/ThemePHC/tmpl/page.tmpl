@@ -216,12 +216,14 @@
 				if(rowTop < scrollTop && navRef.css('position') != 'fixed')
 				{
 					markFixed(navRef);
+					$('#no_float_wrap').show();
 				}
 				else
 				if(navRef.origTop > scrollTop)
 				{
 					//console.debug(navRef.attr('className')+": mark1: "+navRef.css('position'));
 					markUnfixed(navRef);
+					$('#no_float_wrap').hide();
 				}
 			}
 			
