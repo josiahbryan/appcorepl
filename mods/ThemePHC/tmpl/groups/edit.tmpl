@@ -55,40 +55,71 @@
 			<td>Contact Person:</td> <td><input type=text name=contact_person class='textinput' value='%%contact_person%%' size=40></td>
 		</tr>
 		<tr>
-			<td>Contact Email:</td> <td><input type=text name=contact_email class='textinput' value='%%contact_email%%' size=40></td>
+			<td>Contact Email:</td> <td><input type=text name=email class='textinput' value='%%email%%' size=40></td>
 		</tr>
 		<tr>
-			<td>Contact Phone:</td> <td><input type=text name=contact_phone class='textinput' value='%%contact_phone%%' size=10></td>
+			<td>Contact Phone:</td> <td><input type=text name=phone class='textinput' value='%%phone%%' size=10></td>
 		</tr>
 		
 		
 		<tr><td colspan=2><hr size=1></td></tr>
 		<tr>
 			<td colspan=2>
-			<h3>Members</h3>
+			<h3>Members</h3><a name='members'>&nbsp;</a>
+			<style>
+			.delete_member_link 
+			{
+				color: white;
+				background: rgb(170,170,170);
+				display: block;
+				padding: 3px 6px;
+				-moz-border-radius: 3px;
+				/*font-weight: bold;*/
+				text-transform: uppercase;
+				text-decoration: none;
+			}
+			.delete_member_link:hover
+			{
+				background: black;
+				color: yellow;
+			}
+			.editform td .person_name { color: black; }
+			.editform tr.odd td
+			{
+				background: rgb(200,200,200);
+			}
+			.editform tr.odd td.full_cell_control
+			{
+				background: inherit;
+			}
+			</style>
 			<table class='editform kids-tbl' width=100%>
 				<thead>
-					<th>Person</th>
-					<th>Role</th>
-					<th>Is Admin?</th>
+					<th align=left>Person</th>
+					<th align=left>Role</th>
+					<th align=center>Admin?</th>
+					<th>&nbsp;</th>
 				</thead>
 				<tbody>
 					<tmpl_loop members>
-						<tr>
-							<td>
+						<tr <tmpl_if odd_flag>class=odd</tmpl_if>>
+							<td class=person_name>
 								<b>%%member_name%%</b>
 							</td>
-							<td>
+							<td class='full_cell_control'>
 								<input type=text class='textinput' name='role_%%memberid%%' value='%%role%%' size=20>
 							</td>
-							<td>
+							<td align=center>
 								<input type=checkbox class='textinput' name='admin_%%memberid%%' value='1' <tmpl_if is_admin>checked</tmpl_if> id='admin_%%memberid%%'>
 							</td>
+							<td align=center class='full_cell_control'>
+								<a href='%%delete_url%%' class='delete_member_link' title='Delete this member from this group' onclick='return confirm("Are you SURE you want to delete this person from this group?")'>x</a>
+							</a>
 						</tr>
 					</tmpl_loop>
 					<tr>
 						<td>
-							<select name='new_member_userid'>
+							<select name='new_member_userid' id='new_member_userid'>
 								<tmpl_loop new_members>
 									<option value='%%value%%'>%%text%%</option>
 								</tmpl_loop>
@@ -97,9 +128,10 @@
 						<td>
 							<a name='add_another'><input type=text class='textinput' id='role_new' name='role_new' value='' size=20></a>
 						</td>
-						<td>
+						<td align=center>
 							<input type=checkbox class='textinput' name='admin_new' value='1' id='admin_new'>
 						</td>
+						<td>&nbsp;</td>
 					</tr>
 					<tr>
 						<td colspan=2>
@@ -133,7 +165,7 @@ $(document).ready(function() {
 	
 	if(window.location.hash.indexOf("add_another")>0)
 	{
-		$('#role_new').get(0).focus();
+		$('#new_member_userid').get(0).focus();
 	}
 /*	else
 	if(window.location.hash.indexOf("admin_notes")>0)

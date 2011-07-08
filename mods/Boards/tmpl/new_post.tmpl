@@ -37,17 +37,17 @@
 
 				</td>
 			</tr>
-			<!--<tr class='zip' style='display:none'>
-				<td colspan=2><textarea rows=8 cols=85 id=comment name=comment></textarea>
+			<tr class='zip' style='display:none'>
+				<td colspan=2><textarea rows=8 cols=85 id=bot_trap name=bot_trap></textarea>
 				</td>
 
-			</tr>-->
+			</tr>
 			<tr class='age'>
-				<td colspan=2><textarea rows=8 cols=85 id=age name=age><tmpl_var post_text></textarea>
+				<td colspan=2><textarea rows=8 cols=85 id=comment name=comment><tmpl_var post_text></textarea>
 				<!--<_script type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>-->
 				<script>
 				//CKEDITOR.basePath = '%%appcore%%/ckeditor/'; 
-				CKEDITOR.replace( 'age', {
+				CKEDITOR.replace( 'comment', {
 					//baseHref: '%%appcore%%/ckeditor/',
 					extraPlugins : 'autogrow',
 					width: '96%',
@@ -85,7 +85,7 @@
 // function win_onload()
 // {
 // 
-// 	var oFCKeditor = new FCKeditor('age') ;
+// 	var oFCKeditor = new FCKeditor('comment') ;
 // 	oFCKeditor.BasePath = '/fckeditor/' ;
 // 	oFCKeditor.ToolbarSet = 'JBlog';
 // 	oFCKeditor.Height = "300px" ;

@@ -102,7 +102,7 @@ package AppCore::User;
 				value	=> $item->id,
 				text	=> $item->display, #$item->last.', '.$item->first,
 				#hint	=> $item->description,
-				selected => $item->id == $curid,
+				selected => defined $curid && $item->id == $curid,
 			}
 		}
 		return \@list;

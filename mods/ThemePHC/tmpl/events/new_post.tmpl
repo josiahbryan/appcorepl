@@ -60,7 +60,7 @@ img.ui-datepicker-trigger
 }
 </style>
 
-<form action='<tmpl_var post_url>' ENCTYPE="multipart/form-data" method=POST style='display:inline;border:0;padding:0;margin:0' name=item>
+<form action='%%post_url%%' ENCTYPE="multipart/form-data" method=POST style='display:inline;border:0;padding:0;margin:0' name=item>
 	<input type=hidden name=postid value="<tmpl_var post_postid>">
 
 	<input type=hidden name=poster_name value='<tmpl_var user_display escape=html>'>
@@ -247,6 +247,14 @@ img.ui-datepicker-trigger
 
 			</tr>
 			<tr>
+				<td>PHC Group:</td> <td>
+					<select name='groupid'>
+						<tmpl_loop group_list>
+							<option value='%%value%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
+						</tmpl_loop>
+					</select>
+				</td>
+			</tr>
 			<tr>
 				<td valign=top>More Details:</td>
 				<td>

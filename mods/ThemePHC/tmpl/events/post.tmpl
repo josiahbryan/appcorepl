@@ -121,7 +121,7 @@
 			<tmpl_loop replies>
 				<div class=comment_text style='margin-left:<tmpl_var indent_css>em;margin-right:<tmpl_var indent_css>em;'>
 					<a name='c<tmpl_var postid>'><span class=timestamp><tmpl_var timestamp></span></a>: <br>
-					<tmpl_if can_admin><a class='admin_link' href='%%delete_url%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'><img src='%%appcore%%/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>
+					<tmpl_if can_admin><a class='admin_link' href='%%delete_base%%?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'><img src='%%appcore%%/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>
 					<blockquote><span class=text><tmpl_var text></span>
 					<span class=meta> <span class=person>-- <tmpl_var poster_name></span></span> <span class='irl'>(<a href='%%reply_to_url%%/%%folder_name%%'>Reply <b>...</b></a>)</span></blockquote>
 				</div>

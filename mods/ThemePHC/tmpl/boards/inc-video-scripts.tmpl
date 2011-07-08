@@ -16,7 +16,7 @@
 
 
 <script type="text/javascript">
-window.VideoProviderList = %%video_provider_list_json%%;
+window.VideoProviderList = <tmpl_if video_provider_list_json>%%video_provider_list_json%%<tmpl_else>[]</tmpl_if>;
 $(function() {
 	// Add in-page video player to links marked 'video-play-link'. They should be something like:
 	// 	<a href='$url' class='video-play-link' videoid='$code'>

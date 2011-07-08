@@ -696,6 +696,9 @@ package Boards;
 		#$tmpl->param(can_upload=>1) if ($_ = AppCore::Common->context->user) && $_->check_acl($UPLOAD_ACL);
 		
 		my $bin = $self->binpath;
+		my $page_path = $req->page_path;
+		
+		#die Dumper $req, $bin, $page_path;
 		
 		if($sub_page eq 'post')
 		{
@@ -715,7 +718,7 @@ package Boards;
 				return $r->output_data("application/json", $json);
 			}
 			
-			return $r->redirect("$bin/$folder_name");
+			return $r->redirect($page_path);
 		}
 		elsif($sub_page eq 'new')
 		{
@@ -725,13 +728,13 @@ package Boards;
 			$tmpl->param('folder_'.$folder_name => 1);
 			$tmpl->param(short_noun => $controller->config->{short_noun} || 'Boards');
 			$tmpl->param(long_noun  => $controller->config->{long_noun}  || 'Bulletin Boards');
-			$tmpl->param(post_url => "$bin/$folder_name/post");
+			$tmpl->param(post_url => "$page_path/post");
 			
 			#die $controller;
 			$controller->new_post_hook($tmpl,$board);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push('New Post',"$bin/$folder_name/new",0);
+			$view->breadcrumb_list->push('New Post',"$page_path/new",0);
 			$view->output($tmpl);
 			return $r;
 		}
@@ -761,6 +764,7 @@ package Boards;
 			foreach my $b (@output_list)
 			{
 				$b->{bin}         = $bin;
+				$b->{pp}	  = $page_path;
 				$b->{folder_name} = $folder_name;
 				$b->{can_admin}   = $can_admin;
 			}
@@ -786,7 +790,7 @@ package Boards;
 				$post->update;
 			}
 			
-			return $r->redirect("$bin/$folder_name");
+			return $r->redirect($page_path);
 			
 		}
 		elsif($sub_page)
@@ -829,7 +833,7 @@ package Boards;
 			$controller->apply_video_providers($tmpl);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push($board->title,"$bin/$folder_name",0);
+			$view->breadcrumb_list->push($board->title,$page_path,0);
 			$view->output($tmpl);
 			return $r;
 		}
@@ -1200,10 +1204,10 @@ package Boards;
 		$b->{approx_time_ago}  = approx_time_ago($b->{timestamp});
 		$b->{pretty_timestamp} = pretty_timestamp($b->{timestamp});
 		
-		my $reply_to_url   = "$bin/$board_folder_name/$folder_name/reply_to";
-		my $delete_base    = "$bin/$board_folder_name/$folder_name/delete";
-		my $like_url       = "$bin/$board_folder_name/$folder_name/like";
-		my $unlike_url     = "$bin/$board_folder_name/$folder_name/unlike";
+		my $reply_to_url   = "$bin/$folder_name/reply_to";
+		my $delete_base    = "$bin/$folder_name/delete";
+		my $like_url       = "$bin/$folder_name/like";
+		my $unlike_url     = "$bin/$folder_name/unlike";
 		
 		$b->{reply_to_url} = $reply_to_url;
 		$b->{delete_base}  = $delete_base;
@@ -1671,6 +1675,8 @@ package Boards;
 		my $folder_name = $req->shift_path;
 		$req->push_page_path($folder_name);
 		
+		#die Dumper $req, $req->page_path."", $self->binpath."";
+		
 		#my ($section_name,$folder_name,$board_folder_name,$skin,$r,$page,$req,$path) = @_;
 		
 		#print STDERR "\$section_name=$section_name,\$folder_name=$folder_name,\$board_folder_name=$board_folder_name\n";
@@ -1687,6 +1693,8 @@ package Boards;
 		
 		my $sub_page = $req->shift_path;
 		
+		my $page_path = $req->page_path;
+		
 		#$tmpl->param(can_upload=>1) if ($_ = AppCore::Common->context->user) && $_->check_acl($UPLOAD_ACL);
 		
 		my $bin = $self->binpath;
@@ -1694,7 +1702,7 @@ package Boards;
 		if($sub_page eq 'post')
 		{
 			my $comment     = $controller->create_new_comment($board,$post,$req);
-			my $comment_url = "$bin/$board_folder_name/$folder_name#c" . $comment->id;
+			my $comment_url = "$page_path#c" . $comment->id;
 			
 			$controller->send_notifications('new_comment',$comment);
 			
@@ -1723,7 +1731,7 @@ package Boards;
 			$r->error("Error Loading Form",$@) if $@;
 			#$r->error("No Such Post","Sorry, the parent comment you gave appears to be invalid.");
 			
-			$tmpl->param(post_url => "$bin/$board_folder_name/$folder_name/post");
+			$tmpl->param(post_url => "$page_path/post");
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			$view->breadcrumb_list->push('Reply',"$bin/$folder_name/$sub_page",0);
@@ -1742,7 +1750,7 @@ package Boards;
 			
 			if($type eq 'comment')
 			{
-				return $r->redirect("$bin/$board_folder_name/$folder_name");
+				return $r->redirect($page_path);
 			}
 			else
 			{
@@ -1760,7 +1768,7 @@ package Boards;
 			
 			if($type eq 'comment')
 			{
-				return $r->redirect("$bin/$board_folder_name/$folder_name");
+				return $r->redirect($page_path);
 			}
 			else
 			{
@@ -1778,7 +1786,7 @@ package Boards;
 			
 			if($type eq 'comment')
 			{
-				return $r->redirect("$bin/$board_folder_name/$folder_name");
+				return $r->redirect($page_path);
 			}
 			else
 			{
@@ -1800,10 +1808,10 @@ package Boards;
 			my $edit_resultset = $controller->load_post_edit_form($post);
 			$tmpl->param($_ => $edit_resultset->{$_}) foreach keys %$edit_resultset;
 			
-			$tmpl->param(post_url => "$bin/$board_folder_name/$folder_name/save");
+			$tmpl->param(post_url => "$page_path/save");
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push('Edit Post',"$bin/$folder_name/edit",0);
+			$view->breadcrumb_list->push('Edit Post',"$page_path/edit",0);
 			$view->output($tmpl);
 			return $r;
 		}
@@ -1840,7 +1848,10 @@ package Boards;
 			}
 			else
 			{
-				$r->redirect("$bin/$board_folder_name/".$post->folder_name);
+				# TODO this could cause problems with subclasses ...
+				my $url = "$bin/$board_folder_name/".$post->folder_name;
+				#die Dumper $url;
+				$r->redirect($url);
 			}
 				
 		}
@@ -1858,6 +1869,7 @@ package Boards;
 			if($req->output_fmt ne 'json' && $post->top_commentid && $post->top_commentid->id)
 			{
 				#print STDERR "Top post, need redir, bin:$bin, binpath:".$self->binpath."\n";
+				# TODO This could cause problems with subclasses ...
 				$r->redirect("$bin/$board_folder_name/".$post->top_commentid->folder_name."#c".$post->id);
 			}
 			
@@ -1887,8 +1899,8 @@ package Boards;
 				}
 				
 				my $view = Content::Page::Controller->get_view('sub',$r);
-				$view->breadcrumb_list->push($board->title,"$bin/".$board->folder_name,0);
-				$view->breadcrumb_list->push($post->subject,"$bin/".$board->folder_name."/".$post->folder_name,0);
+				$view->breadcrumb_list->push($board->title,"$bin/".$board->folder_name,0); # TODO This could cause problems with subclasses
+				$view->breadcrumb_list->push($post->subject,$page_path,0);
 				$view->output($tmpl);
 				return $r;
 			}
@@ -2201,6 +2213,8 @@ Cheers!};
 		my $user = AppCore::Common->context->user;
 		Boards::SpamLog->insert({
 			userid		=> $user,
+			ip_address	=> $ENV{REMOTE_ADDR},
+			user_agent	=> $ENV{HTTP_USER_AGENT},
 			subroutine	=> $sub,
 			spam_method	=> $method,
 			text		=> $text,

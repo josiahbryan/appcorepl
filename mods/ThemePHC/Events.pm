@@ -162,7 +162,12 @@ package ThemePHC::Events;
 		}
 		
 		# Not needed now
-		#$req->unshift_path('events') unless $sub_page eq 'events';
+		#$req->shift_path if $sub_page eq 'events';
+		if($sub_page eq 'events')
+		{
+			$req->shift_path;
+			return $r->redirect($class->binpath .'/'. $req->next_path); 
+		}
 		#die Dumper $req;
 		
 		return $class->SUPER::board_page($req,$r,$board);
@@ -176,6 +181,7 @@ package ThemePHC::Events;
 		$tmpl->param(event_at_phc => 1);
 		$tmpl->param(hr_12 => 1);
 		$tmpl->param(date => (split /\s/, date())[0]);
+		$tmpl->param(group_list => PHC::Group->tmpl_select_list(undef,1));
 	}
 	
 # 	sub load_post 
@@ -239,6 +245,8 @@ package ThemePHC::Events;
 		$rs->{'hr2_'.($end_hr+0)} = 1;
 		$rs->{end_min} = $end_min;
 		
+		$rs->{group_list} = PHC::Group->tmpl_select_list($x->groupid,1);
+		
 		#die Dumper $rs;
 		
 		return $rs;
@@ -295,6 +303,7 @@ package ThemePHC::Events;
 			page_details	=> $args->{page_details},
 			contact_email	=> $args->{contact_email},
 			contact_name	=> $args->{contact_name},
+			groupid		=> $args->{groupid},
 			at_phc		=> $args->{at_phc} eq 'yes' ? 1:0,
 			location	=> $args->{location},
 			location_map_link => $args->{map_link},
@@ -377,6 +386,7 @@ package ThemePHC::Events;
 		$x->contact_userid(		AppCore::User->by_field(email => $args->{contact_email}));
 		$x->contact_email(		$args->{contact_email});
 		$x->contact_name(		$args->{contact_name});
+		$x->groupid(			$args->{groupid});
 		$x->end_time(			$args->{end_time});
 		$x->show_endtime(		$args->{show_endtime});
 		$x->event_text(			$args->{subject});

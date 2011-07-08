@@ -43,6 +43,38 @@ package PHC::Group;
 	__PACKAGE__->has_many(members => 'PHC::Group::Member');
 	__PACKAGE__->add_constructor(load_all => 'deleted!=1 and listed_publicly!=0 order by group_type, title');
 	__PACKAGE__->add_constructor(search_like => '(title like ? or tagline like ? or description like ? or group_type like ? or contact_person like ?) and deleted!=1 and listed_publicly!=0 order by group_type, title');
+	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $curid = ref $cur ? $cur->id : $cur;
+		my $include_invalid = shift || 0;
+		
+		my @all = $pkg->retrieve_from_sql('1 order by title'); #`last`, `first`');
+		my @list;
+		if($include_invalid)
+		{
+			push @list, { 
+				value 		=> undef,
+				text		=> '(None)',
+				selected	=> !$curid,
+			};
+		}
+		my $max = 60;
+		foreach my $item (@all)
+		{
+			my $title = substr($item->title,0,$max).(length($item->title) > $max ? '...':'');
+			push @list, {
+				value	=> $item->id,
+				text	=> $title, #$item->last.', '.$item->first,
+				#hint	=> $item->description,
+				selected => defined $curid && $item->id == $curid,
+			}
+		}
+		return \@list;
+	}
+	
 };
 
 package PHC::Group::Member;
@@ -57,8 +89,8 @@ package PHC::Group::Member;
 		
 		schema	=> 
 		[
-			{ field	=> 'groupid',		type => 'int',	linked => 'PHC::Group' },
 			{ field => 'memberid',		type => 'int', @AppCore::DBI::PriKeyAttrs },
+			{ field	=> 'groupid',		type => 'int',	linked => 'PHC::Group' },
 			{ field	=> 'userid',		type => 'int',	linked => 'AppCore::User' },
 			{ field => 'role',		type => 'varchar(255)' },
 			
@@ -290,6 +322,21 @@ package ThemePHC::Groups;
 		return $controller;
 	}
 	
+	sub can_edit_group
+	{
+		my $self = shift;
+		my $group = shift;
+		my $user = AppCore::Common->context->user;
+		my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
+		my $can_edit = $admin || $group->managerid == $user;
+		if(!$can_edit && $user)
+		{
+			my $mem = PHC::Group::Member->by_field(userid => $user, groupid => $group);
+			$can_edit = 1 if $mem && $mem->is_admin;
+		}
+		return $can_edit;
+	}
+	
 	sub main_page
 	{
 		my $self = shift;
@@ -313,33 +360,42 @@ package ThemePHC::Groups;
 			
 			return $r->redirect($self->binpath);
 		}
+		elsif($sub_page eq 'delete_member')
+		{
+			my $mbr = PHC::Group::Member->retrieve($req->memberid);
+			return $r->error("No Such Member","Sorry, the member ID you gave does not exist") if !$mbr;
+			
+			my $group = $mbr->groupid;
+			return $r->error("Invalid Member","Member ID not associated with any group") if !$group || !$group->id;
+			
+			return $r->error("Permission Denied","Sorry, you don't have permission to edit this group") if !$self->can_edit_group($group);
+			
+			$mbr->delete;
+			
+			return $r->redirect($self->binpath.'/edit?groupid='.$group->id.'#members');
+		}
 		elsif($sub_page eq 'edit')
 		{
 			my $fam = $req->groupid;
 			
-			my $user = AppCore::Common->context->user;
-			
 			my $group = PHC::Group->retrieve($fam);
 			return $r->error("No Such Group","Sorry, the group ID you gave does not exist") if !$group;
-			
-			my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
-			my $can_edit = $admin || $group->managerid == $user;
-			if(!$can_edit && $user)
-			{
-				my $mem = PHC::Group::Member->by_field(userid => $user, groupid => $group);
-				$can_edit = 1 if $mem && $mem->is_admin;
-			}
-			return $r->error("Permission Denied","Sorry, you don't have permission to edit this group") if !$can_edit;
+			return $r->error("Permission Denied","Sorry, you don't have permission to edit this group") if !$self->can_edit_group($group);
 			
 			my $tmpl = $self->get_template('groups/edit.tmpl');
 			
 			$tmpl->param($_ => $group->get($_)) foreach $group->columns;
 			
+			my $del_url_base = $self->module_url('/delete_member?memberid=');
+			
 			my @members = PHC::Group::Member->search(groupid => $group->id);
+			my $count = 0;
 			foreach my $mbr (@members)
 			{
 				$mbr->{$_} = $mbr->get($_) foreach $mbr->columns;
 				$mbr->{member_name} = $mbr->userid->display if $mbr->userid;
+				$mbr->{odd_flag} = ++ $count % 2 == 0;
+				$mbr->{delete_url} = $del_url_base.$mbr->id;
 			}
 			$tmpl->param(members => \@members);
 			
@@ -348,7 +404,7 @@ package ThemePHC::Groups;
 			#$tmpl->param(is_admin => $admin);
 			
 			$tmpl->param(manager_list => AppCore::User->tmpl_select_list($group->managerid,1));
-			$tmpl->param(new_members => AppCore::User->tmpl_select_list(0,1));
+			$tmpl->param(new_members => AppCore::User->tmpl_select_list(undef,1));
 			#$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($group->spouse_userid,1));
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
@@ -456,12 +512,14 @@ package ThemePHC::Groups;
 			if($req->{new_member_userid})
 			{
 				print STDERR "Debug: Adding new member: '$req->{name_new}'\n";
-				PHC::Group::Member->insert({
+				my $args = {
 					groupid		=> $group->id,
 					userid		=> $req->{new_member_userid},
 					role		=> $req->{role_new},
 					is_admin	=> $req->{admin_new} ? 1:0,
-				});
+				};
+				print STDERR "New member data: ".Dumper($args);
+				PHC::Group::Member->insert($args); 
 			}
 			
 			if(!$group->boardid || !$group->boardid->id)
@@ -500,7 +558,7 @@ package ThemePHC::Groups;
 			}
 			else
 			{
-				return $r->redirect($self->binpath.'#'.$group->id);
+				return $r->redirect($self->binpath.'/'.$group->folder_name);
 			}
 			
 		}
@@ -637,13 +695,20 @@ package ThemePHC::Groups;
 			# Note forced stringification required below.
 			$tmpl->param('posts_approx_time' => ''.approx_time_ago($data->{first_ts}));
 			
+			# For videos linked in posts...
+			$self->apply_video_providers($tmpl);
+		
 			# Load events
-			my $events_data = ThemePHC::Events->load_basic_events_data($group);
+			$self->{event_controller} = AppCore::Web::Module->bootstrap('ThemePHC::Events') if !$self->{event_controller};
+			my $event_controller = $self->{event_controller};
+			
+			my $events_data = $event_controller->load_basic_events_data($group);
 		
 			#die Dumper $out_weekly, \@dated;
 			$tmpl->param(events_weekly => $events_data->{weekly});
 			$tmpl->param(events_dated  => $events_data->{dated});
-		
+			
+			
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			#$view->breadcrumb_list->push('Groups Home',$self->module_url(),0);
 			$view->breadcrumb_list->push($group->title,$self->module_url('/'.$group->folder_name),0);

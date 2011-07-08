@@ -270,11 +270,11 @@ package AppCore::Web::Result;
 						my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
 						print STDERR "YUI Compress command: '$cmd'\n";
 						system($cmd);
-						unlink($tmp_file_pre);
 						
 						if( -f $tmp_file )
 						{
 							$block = AppCore::Common->read_file($tmp_file);
+							unlink($tmp_file_pre);
 						}
 						else
 						{

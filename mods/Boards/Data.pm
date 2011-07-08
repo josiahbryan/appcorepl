@@ -56,6 +56,9 @@ package Boards::SpamLog;
 		[
 			{ field => 'lineid',			type => 'int', @Boards::DbSetup::PriKeyAttrs },
 			{ field	=> 'userid',			type => 'int',	linked => 'AppCore::User' },
+			{ field => 'timestamp',			type => 'timestamp' },
+			{ field	=> 'ip_address',		type => 'varchar(255)' },
+			{ field	=> 'user_agent',		type => 'varchar(255)' },
 			{ field	=> 'subroutine',		type => 'varchar(255)' },
 			{ field	=> 'spam_method',		type => 'varchar(255)' },
 			{ field	=> 'text',			type => 'text' },
