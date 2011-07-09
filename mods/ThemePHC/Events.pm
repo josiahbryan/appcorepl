@@ -339,12 +339,24 @@ package ThemePHC::Events;
 		my $post = shift;
 		my $args = shift;
 		
+		
+		$args->{date} = '0000-00-00' if !$args->{date};
+		$args->{end_hour} = '00' if !$args->{end_hour};
+		$args->{end_min} = '00' if !$args->{end_min};
+		$args->{min} = '00' if !$args->{min};
+		$args->{hour} = '12' if !$args->{hour};
+		
+		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.rpad($args->{min}).':00';
+		$args->{end_time} = $args->{end_hour}.':'.rpad($args->{end_min}).':00';
+		
+		$args->{subject} = $args->{event_text};
+		$args->{comment} = 
+			($args->{is_weekly} ? 
+				('Every '.$DOW_NAMES[$args->{weekday}].' at '.$args->{hour}.':'.$args->{min}) : 
+				($args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":""))
+			).' - '.$args->{subject};
+		
 		#die Dumper $args;
-		
-		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
-		$args->{end_time} = $args->{end_hour}.':'.$args->{end_min}.':00';
-		
-		$args->{comment} = $args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":"").' - '.$args->{subject};
 		
 		$self->SUPER::post_edit_save($post,$args);
 		
@@ -389,7 +401,7 @@ package ThemePHC::Events;
 		$x->groupid(			$args->{groupid});
 		$x->end_time(			$args->{end_time});
 		$x->show_endtime(		$args->{show_endtime});
-		$x->event_text(			$args->{subject});
+		$x->event_text(			$args->{event_text});
 		$x->page_details(		$args->{page_details});
 		$x->is_weekly(			$args->{is_weekly} eq 'yes' ? 1:0);
 		$x->fake_folder_override(	$args->{fake_folder_override} eq 'yes' ? 1:0);
@@ -400,6 +412,8 @@ package ThemePHC::Events;
 		$x->location_map_link(		$args->{map_link});
 		
 		$x->update;
+		
+		#die Dumper $x;
 	
 		return $post;
 		
@@ -567,6 +581,12 @@ package ThemePHC::Events;
 			#my $cur_dow = get_dow(EAS::Common::date());
 			foreach my $item (@events)
 			{
+				if($item->event_text =~ /</)
+				{
+					$item->event_text(AppCore::Web::Common->html2text($item->event_text));
+					$item->update;
+				}
+				
 				my $event = $self->merge_item_to_post($item,$can_admin);
 				next if !$event || $event->{deleted};
 				

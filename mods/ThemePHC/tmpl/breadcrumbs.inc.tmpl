@@ -32,13 +32,11 @@
 							</td>
 						</tmpl_if>
 						<td nowrap>
-							<div class='no_float_wrap'>
-								<span id='no_float_wrap'>
-									<tmpl_if nav_url_from>
-										&nbsp; | &nbsp;
-									</tmpl_if>
-									<a href='#' class='no_float'>Don't Float</a>
-								</span>
+							<div id='no_float_wrap' style='display:none'>
+								<tmpl_if nav_url_from>
+									&nbsp; | &nbsp;
+								</tmpl_if>
+								<a href='#' class='no_float'>Don't Float</a>
 							</div>
 						</td>
 					</tr>

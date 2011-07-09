@@ -158,9 +158,9 @@ img.ui-datepicker-trigger
 							<option <tmpl_if hr_16>selected</tmpl_if> value=16> 4 pm
 							<option <tmpl_if hr_17>selected</tmpl_if> value=17> 5 pm
 							<option <tmpl_if hr_18>selected</tmpl_if> value=18> 6 pm
-							<option <tmpl_if hr_19>selected</tmpl_if> value=19> 6 pm
-							<option <tmpl_if hr_20>selected</tmpl_if> value=20> 7 pm
-							<option <tmpl_if hr_21>selected</tmpl_if> value=21> 8 pm
+							<option <tmpl_if hr_19>selected</tmpl_if> value=19> 7 pm
+							<option <tmpl_if hr_20>selected</tmpl_if> value=20> 8 pm
+							<option <tmpl_if hr_21>selected</tmpl_if> value=21> 9 pm
 							<option <tmpl_if hr_22>selected</tmpl_if> value=22>10 pm
 							<option <tmpl_if hr_23>selected</tmpl_if> value=23>11 pm
 							<option value= 0>12 Midnight
@@ -223,9 +223,9 @@ img.ui-datepicker-trigger
 							<option <tmpl_if hr2_16>selected</tmpl_if> value=16> 4 pm
 							<option <tmpl_if hr2_17>selected</tmpl_if> value=17> 5 pm
 							<option <tmpl_if hr2_18>selected</tmpl_if> value=18> 6 pm
-							<option <tmpl_if hr2_19>selected</tmpl_if> value=19> 6 pm
-							<option <tmpl_if hr2_20>selected</tmpl_if> value=20> 7 pm
-							<option <tmpl_if hr2_21>selected</tmpl_if> value=21> 8 pm
+							<option <tmpl_if hr2_19>selected</tmpl_if> value=19> 7 pm
+							<option <tmpl_if hr2_20>selected</tmpl_if> value=20> 8 pm
+							<option <tmpl_if hr2_21>selected</tmpl_if> value=21> 9 pm
 							<option <tmpl_if hr2_22>selected</tmpl_if> value=22>10 pm
 							<option <tmpl_if hr2_23>selected</tmpl_if> value=23>11 pm
 							<option value= 0>12 Midnight
@@ -238,7 +238,7 @@ img.ui-datepicker-trigger
 			<tr>
 				<td valign=top nowrap>Event Title:</td>
 				<td>
-					<input type='text' class='textinput' id=subject name=subject value='<tmpl_var post_subject escape=html>' size=45><br> 
+					<input type='text' class='textinput' id=event_text name=event_text value='<tmpl_var event_event_text escape=html>' size=45><br> 
 					<span style='font-size:.85em;color:rgb(100,100,100)'>This description is shown on the main page and on the calendar.</span><br>
 					<!--<textarea style='display:none' rows=2 cols=55 id=comment name=comment><tmpl_var post_text></textarea>-->
 					<!--<textarea rows=2 cols=55 id=comment name=comment><tmpl_var event_event_text></textarea>-->

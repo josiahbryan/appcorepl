@@ -279,11 +279,7 @@
 			});
 			
 			disableFloat = getCookie('phc.nofloat') == 'true';
-			if(disableFloat)
-			{
-				$('.no_float_wrap').hide();
-			}
-			else
+			if(!disableFloat)
 			{
 				$(window).bind('scroll', fixFloaters);
 				

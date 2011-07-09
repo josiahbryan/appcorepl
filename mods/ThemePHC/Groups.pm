@@ -404,7 +404,7 @@ package ThemePHC::Groups;
 			#$tmpl->param(is_admin => $admin);
 			
 			$tmpl->param(manager_list => AppCore::User->tmpl_select_list($group->managerid,1));
-			$tmpl->param(new_members => AppCore::User->tmpl_select_list(undef,1));
+			$tmpl->param(new_members  => AppCore::User->tmpl_select_list(undef,1));
 			#$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($group->spouse_userid,1));
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
@@ -414,18 +414,19 @@ package ThemePHC::Groups;
 		}
 		elsif($sub_page eq 'new')
 		{
-			AppCore::AuthUtil->require_auth(['ADMIN','Pastor']);
+			AppCore::AuthUtil->require_auth($MGR_ACL);
 			
 			my $tmpl = $self->get_template('groups/edit.tmpl');
 			
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
 			$tmpl->param(is_admin => $admin);
 			
-			$tmpl->param(users => AppCore::User->tmpl_select_list(undef,1));
-			$tmpl->param(spouse_users => AppCore::User->tmpl_select_list(undef,1));
+			$tmpl->param(manager_list => AppCore::User->tmpl_select_list(undef,1));
+			$tmpl->param(new_members  => AppCore::User->tmpl_select_list(undef,1));
+			$tmpl->param(listed_publicly => 1);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push('New Family',$self->module_url('/new'),0);
+			$view->breadcrumb_list->push('New Group',$self->module_url('/new'),0);
 			$view->output($tmpl);
 			return $r;
 			
@@ -704,7 +705,7 @@ package ThemePHC::Groups;
 			
 			my $events_data = $event_controller->load_basic_events_data($group);
 		
-			#die Dumper $out_weekly, \@dated;
+			#die Dumper $events_data;
 			$tmpl->param(events_weekly => $events_data->{weekly});
 			$tmpl->param(events_dated  => $events_data->{dated});
 			
