@@ -1,52 +1,12 @@
 <title>%%group_title%% - Groups</title>
-<h1 class=title>%%group_title%%</h1>
 
-<style>
-.tagline
-{
-	font-weight: bold;
-	border-bottom: 1px solid rgb(200,200,200);
-	padding-bottom:.5em;
-	margin-top: 1em;
-}
-
-div.description { margin: .5em 0}
-		
-h3.event_list_title
-{
-	margin-top: 2em;
-}
-
-.links 
-{ 
-	float: right;
-	margin-top: -2em;
-	margin-right: .4em;
-}
-		
-</style>
-
-<div class='links'>
-	<a href='%%binpath%%/edit?groupid=%%group_groupid%%'>Edit Group</a>
-</div>
-
-<tmpl_if group_tagline>
-	<div class=tagline>
-		%%group_tagline%%
-	</div>
-</tmpl_if>
-
-<tmpl_if group_description>
-	<div class=description>
-		%%group_description%%
-	</div>
-</tmpl_if>
 
 
 <tmpl_if events_dated>
-	<h3 class='event_list_title'>Upcoming Events</h3>
+	
 		
 	<div class='event_list'>
+		<h1 class='event_list_title'>Upcoming Events</h1>
 		<style>
 		.posts { margin-top:-.5em;<tmpl_unless weekly_widget>border-bottom:none</tmpl_unless>}
 		h1.event-list-header
@@ -166,7 +126,18 @@ h3.event_list_title
 			/*padding: 5px 0 0 0;*/
 			/*border-top: 2px solid black;
 			border-bottom: 2px solid black;*/
-			font-size: 10px;
+			font-size: 8px;
+			
+			/*float: right;
+			margin-right: -20em;*/
+			
+			width: 20.5em;
+			margin-right: -22.5em;
+			/*margin-top: -4em;*/
+			padding: .5em;
+			float: right;
+			background: #E6E6E6;
+			-moz-border-radius: 3px;
 		}
 		
 		
@@ -204,6 +175,51 @@ h3.event_list_title
 		</ul>
 	</div>
 </tmpl_if>
+
+
+<h1 class=title>%%group_title%%</h1>
+
+<style>
+.tagline
+{
+	font-weight: bold;
+	border-bottom: 1px solid rgb(200,200,200);
+	padding-bottom:.5em;
+	margin-top: 1em;
+}
+
+div.description { margin: .5em 0}
+		
+/*h3.event_list_title
+{
+	margin-top: 2em;
+}*/
+
+.links 
+{ 
+	float: right;
+	margin-top: -2em;
+	margin-right: .4em;
+}
+		
+</style>
+
+<div class='links'>
+	<a href='%%binpath%%/edit?groupid=%%group_groupid%%'>Edit Group</a>
+</div>
+
+<tmpl_if group_tagline>
+	<div class=tagline>
+		%%group_tagline%%
+	</div>
+</tmpl_if>
+
+<tmpl_if group_description>
+	<div class=description>
+		%%group_description%%
+	</div>
+</tmpl_if>
+
 
 
 <style>
@@ -268,161 +284,6 @@ td.title
 </tmpl_if>
 	
 
+<h3 class='posts_list_title' style='margin-top:1.5em'>Bulletin Board</h3>
+${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/list.tmpl}
 
-
-<h3>Posts</h3>
-<div class=posts>
-	
-	<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>
-	<style>
-	/* Add padding to photo for coloring */
-	.postlist tr.talktype-ePrayerAlert td.photo,
-	.postlist tr.talktype-pray td.photo,
-	.postlist tr.talktype-praise td.photo, 
-	.postlist tr.talktype-talk td.photo,
-	.postlist .newpost td.photo-cell
-	{
-		padding-left: 5px;
-	}
-	
-	/*** Pray ***/
-	
-	.postlist tr.talktype-pray,
-	.postlist tr.talktype-ePrayerAlert
-	{
-		background: #fcfeb3;
-		
-	}
-	
-	.postlist tr.talktype-ePrayerAlert td.data,
-	.postlist tr.talktype-ePrayerAlert td.photo,
-	.postlist tr.talktype-pray td.data,
-	.postlist tr.talktype-pray td.photo
-	{
-		border-top: 1px solid white;
-		border-bottom: 1px solid #e3e684;
-	}
-	
-	.postlist span.talktype-pray,
-	.postlist span.talktype-ePrayerAlert
-	{
-		color: #636439;
-		font-weight: bold;
-	}
-	
-	/* Prayer Comments */
-	.postlist tr.talktype-pray .comment_text_wrap,
-	.postlist tr.talktype-ePrayerAlert .comment_text_wrap 
-	{
-		border-top: 1px solid #fdffc5;
-		border-bottom: 1px solid #d7d999;
-	}
-	.postlist tr.talktype-pray .indent-odd,
-	.postlist tr.talktype-ePrayerAlert .indent-odd {
-		background: #e8eaa5 !important;
-	}
-	.postlist tr.talktype-pray .indent-even,
-	.postlist tr.talktype-ePrayerAlert .indent-even {
-		background: #e4e6a2 !important;
-	}
-	
-	/*** Praise ***/
-	
-	.postlist tr.talktype-praise
-	{
-		background: #d9ffd2;
-		
-	}
-	
-	.postlist tr.talktype-praise td.data,
-	.postlist tr.talktype-praise td.photo
-	{
-		border-top:    1px solid white;
-		border-bottom: 1px solid #bfe1b9;
-	}
-	
-	.postlist span.talktype-praise
-	{
-		color: #556452;
-		font-weight: bold;
-	}
-	
-	/* Praise Comments */
-	.postlist tr.talktype-praise .comment_text_wrap
-	{
-		border-top: 1px solid #e2ffdd;
-		border-bottom: 1px solid #b5d5af;
-	}
-	.postlist tr.talktype-praise .indent-odd {
-		background: #d0f3c9 !important;
-	}
-	.postlist tr.talktype-praise .indent-even {
-		background: #c7eac1 !important;
-	}
-	
-	/*** Talk ***/
-	.postlist tr.talktype-talk
-	{
-		background: rgb(235,235,235);
-		
-	}
-	
-	.postlist tr.talktype-talk td.data,
-	.postlist tr.talktype-talk td.photo
-	{
-		border-top:    1px solid white;
-		border-bottom: 1px solid rgb(200,200,200);
-	}
-	
-	.postlist span.talktype-talk
-	{
-		color: rgb(100,100,100);
-		font-weight: bold;
-	}
-	
-	/* Talk Comments */
-	.postlist tr.talktype-talk .comment_text_wrap
-	{
-		border-top: 1px solid rgb(245,245,245);
-		border-bottom: 1px solid rgb(140,140,140);
-	}
-	.postlist tr.talktype-talk .indent-odd {
-		background: rgb(210,210,210) !important;
-	}
-	.postlist tr.talktype-talk .indent-even {
-		background: rgb(190,190,190) !important;
-	}
-	
-	
-	</style>
-	
-	<table class='postlist' width='100%' align=center cellspacing=0 >
-		<tbody>
-			<tr class='loadmore'>
-				<td colspan=2 align=center>
-					<a href='/connect/talk/new'>Post something here...</a>
-				</td>
-			</tr>
-				
-			<tmpl_if talk_posts>
-				<tmpl_loop posts_posts>
-					${inc:/appcore/mods/ThemePHC/tmpl/boards/inc-postrow-talkpage.tmpl}
-				</tmpl_loop>
-			<tmpl_else>
-				<td colspan=2>
-					<h2 style='padding:2em'>No posts here yet!</h2>
-				</td>
-			</tmpl_if>
-			
-			<!--<tmpl_if posts_next_idx>
-				<tr class='loadmore'>
-					<td colspan=2 align=center>
-						<a href='/connect/talk#num0' id="load_more_bottom">See more posts ...</a>
-					</td>
-				</tr>
-			</tmpl_if>-->
-		</tbody>
-	</table>
-	
-	${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-video-scripts.tmpl}
-</div>

@@ -30,7 +30,27 @@
 			<td valign=top>Description:</td> <td><textarea cols=40 rows=4 name=description>%%description%%</textarea></td>
 		</tr>
 		<tr>
-			<td>Group Type:</td> <td><input type=text name=group_type class='textinput' value='%%group_type%%' size=40></td>
+			<!--<td>Group Type:</td> <td><input type=text name=group_type class='textinput' value='%%group_type%%' size=40></td>-->
+			<td valign=top>Group Type:</td> 
+			<td>
+				<tmpl_loop group_types>
+					<input type=radio name='group_type' value='%%value%%' id='group_type_%%counter%%' <tmpl_if selected>checked</tmpl_if>><label for='group_type_%%counter%%' style='color:black'> <b>%%text%%</b></label><br>
+				</tmpl_loop>
+				<hr size=1>
+				<!--<center>Add New:</center>-->
+				<input type=radio name='group_type' value='_' id='group_type_new'><label for='group_type_new'> </label>
+					<input type=text name=group_type_new id='group_type_new_input' class='textinput' value='' size=20>
+				<script>
+				$(function() {
+					$('#group_type_new_input').bind('focus', function()
+					{
+						$('#group_type_new').attr("checked",true);
+						this.focus();
+					});
+				});
+				</script>
+				
+			</td>
 		</tr>
 		<tr>
 			<td colspan=2><input type=checkbox name=listed_publicly class='textinput' value='1' <tmpl_if listed_publicly>checked</tmpl_if> id=listed_publicly><label for=listed_publicly> Listed Publicly</label></td>

@@ -75,6 +75,38 @@ package PHC::Group;
 		return \@list;
 	}
 	
+	sub distinct_group_types
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $sel_flag = shift || 0;
+		
+		my $distinct_sth = $pkg->db_Main->prepare_cached('select distinct group_type from '.$pkg->table.' where group_type<>"" and group_type is not null');
+		$distinct_sth->execute;
+		
+		my @rows;
+		my $max = 60;
+		my $counter = 0;
+		while(my $str = $distinct_sth->fetchrow)
+		{
+			if(!$sel_flag)
+			{
+				push @rows, $str;
+				next;
+			}
+			
+			my $title = substr($str,0,$max).(length($str) > $max ? '...':'');
+			push @rows, {
+				value	=> $str,
+				text	=> $title,
+				selected => defined $cur && $str eq $cur ? 1:0,
+				counter => $counter ++,
+			};
+		}
+		
+		return \@rows;
+	}
+	
 };
 
 package PHC::Group::Member;
@@ -267,11 +299,11 @@ package ThemePHC::Groups;
 					$kid->{$_} = $kid_obj->get($_)."" foreach $kid_obj->columns;
 					push @kid_list, $kid;
 				}
-				$fam->{kids} = \@kid_list;
+				$fam->{members} = \@kid_list;
 			}
 			else
 			{
-				$fam->{kids} = [];
+				$fam->{members} = [];
 			}
 			
 			push @output_list, $fam;
@@ -399,6 +431,8 @@ package ThemePHC::Groups;
 			}
 			$tmpl->param(members => \@members);
 			
+			$tmpl->param(group_types => PHC::Group->distinct_group_types($group->group_type,1)); # 1 = return in a 'tmpl_select_list' format
+			
 			# Not worrying about admin because user must be an "amin of this group" to edit
 			#my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
 			#$tmpl->param(is_admin => $admin);
@@ -421,6 +455,7 @@ package ThemePHC::Groups;
 			my $admin = $user && $user->check_acl($MGR_ACL) ? 1:0;
 			$tmpl->param(is_admin => $admin);
 			
+			$tmpl->param(group_types  => PHC::Group->distinct_group_types(undef,1)); # 1 = return in a 'tmpl_select_list' format
 			$tmpl->param(manager_list => AppCore::User->tmpl_select_list(undef,1));
 			$tmpl->param(new_members  => AppCore::User->tmpl_select_list(undef,1));
 			$tmpl->param(listed_publicly => 1);
@@ -461,6 +496,11 @@ package ThemePHC::Groups;
 			
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this group") if !$can_edit;
 			
+			if($req->group_type eq '_')
+			{
+				$req->{group_type} = $req->{group_type_new};
+			}
+			
 			# Anyone can edit these columns (anyone, well, anyone who has permission)
 			my @cols = qw/
 				folder_name
@@ -476,7 +516,7 @@ package ThemePHC::Groups;
 			# Add in admin-only columns
 			if($admin)
 			{
-				push @cols, qw/managerid member_approval_required access_members_only listed_publicly/;
+				push @cols, qw/managerid member_approval_required access_members_only listed_publicly group_type/;
 			}
 			
 			# Update data fields
@@ -539,12 +579,14 @@ package ThemePHC::Groups;
 			}
 			else
 			{
+				my $board = $group->boardid;
 				foreach (qw/managerid folder_name title/)
 				{
-					$group->boardid->set($_, $group->get($_))
-						     if $group->boardid->get($_) ne
-							         $group->get($_);
+					$board->set($_, $group->get($_))
+						     if $board->get($_) ne
+							$group->get($_);
 				}
+				$board->update if $board->is_changed;
 			}
 			
 			if($req->output_fmt eq 'json')
@@ -674,14 +716,17 @@ package ThemePHC::Groups;
 		my $user = AppCore::Common->context->user;
 		my $sub_page = $req->next_path;
 		
-		if($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit')
+		my $post = Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page);
+		#print STDERR __PACKAGE__."::group_page: sub_page:'$sub_page', post: $post\n";
+		
+		if($sub_page eq 'new_event' || $sub_page eq 'post_event' || $sub_page eq 'edit_event')
+		{
+			# TODO wrap these actions and make event handlers for these actions
+		}
+		elsif($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $post)
 		{
 			# Board actions - TODO test and see if more actiosn need to be routed
 			$self->SUPER::board_page($req,$r,$group->boardid);
-		}
-		elsif($sub_page eq 'new_event' || $sub_page eq 'post_event' || $sub_page eq 'edit_event')
-		{
-			# TODO wrap these actions and make event handlers for these actions
 		}
 		else
 		{
@@ -690,8 +735,36 @@ package ThemePHC::Groups;
 			$tmpl->param('group_'.$_ => $group->get($_)) foreach $group->columns;
 			
 			# Load posts
-			my $data = $self->load_post_list($group->boardid);
+			my $data = $self->load_post_list($group->boardid, $req);
+			if($req->output_fmt eq 'json')
+			{
+				# http://beta.mypleasanthillchurch.org/connect/groups/?first_ts=2011-07-15+11%3A09%3A30&output_fmt=json&mode=poll_new_posts
+				my $json = encode_json($data);
+				return $r->output_data("application/json", $json);
+				#return $r->output_data("text/plain", $json);
+			}
+			
+			my $board = $group->boardid;
+			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
 			$tmpl->param('posts_'.$_ => $data->{$_}) foreach keys %$data;
+			$tmpl->param($_ => $data->{$_}) foreach keys %$data; # since we are using Board's list.tmpl, they expect the params with now prefix
+			$tmpl->param(boards_indent_multiplier => $Boards::INDENT_MULTIPLIER);
+			my $tmpl_incs = $self->config->{tmpl_incs} || {};
+			#use Data::Dumper;
+			#die Dumper $tmpl_incs;
+			foreach my $key (keys %$tmpl_incs)
+			{
+				$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+			}
+			
+			$tmpl->param(boards_list_as_widget => 1);
+			
+			# Since a theme has the option to inline a new post form in the post template,
+			# provide the controller a method to hook into the template variables from here as well
+			$self->new_post_hook($tmpl,$board);
+			
+			
+			#die Dumper $data;
 			
 			# Note forced stringification required below.
 			$tmpl->param('posts_approx_time' => ''.approx_time_ago($data->{first_ts}));

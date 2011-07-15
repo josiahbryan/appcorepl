@@ -284,10 +284,26 @@ package ThemePHC::Events;
 # 			$args->{datetime} = '0000-00-00 '.(shift @split);
 		}
 		
-		$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
-		$args->{end_time} = $args->{end_hour}.':'.$args->{end_min}.':00';
+		$args->{date} = '0000-00-00' if !$args->{date};
+                $args->{end_hour} = '00' if !$args->{end_hour};
+                $args->{end_min} = '00' if !$args->{end_min};
+                $args->{min} = '00' if !$args->{min};
+                $args->{hour} = '12' if !$args->{hour};
+
+                $args->{datetime} = $args->{date}.' '.$args->{hour}.':'.rpad($args->{min}).':00';
+                $args->{end_time} = $args->{end_hour}.':'.rpad($args->{end_min}).':00';
+
+                $args->{subject} = $args->{event_text};
+                $args->{comment} =
+                        ($args->{is_weekly} ?
+                                ('Every '.$DOW_NAMES[$args->{weekday}].' at '.$args->{hour}.':'.$args->{min}) :
+                                ($args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":""))
+                        ).' - '.$args->{subject};
+	
+		#$args->{datetime} = $args->{date}.' '.$args->{hour}.':'.$args->{min}.':00';
+		#$args->{end_time} = $args->{end_hour}.':'.$args->{end_min}.':00';
 		
-		$args->{comment} = $args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":"").' - '.$args->{subject};  
+		#$args->{comment} = $args->{datetime}.($args->{show_endtime} ? "-$args->{end_time}":"").' - '.$args->{subject};  
 		
 		my $post = $self->SUPER::create_new_thread($board,$args);
 		
@@ -298,7 +314,7 @@ package ThemePHC::Events;
 			is_weekly	=> $args->{is_weekly} eq 'yes' ? 1:0,
 			datetime	=> $args->{datetime},
 			end_time	=> $args->{end_time},
-			show_endtime	=> $args->{show_endtime},
+			show_endtime	=> $args->{show_endtime} ?1:0,
 			weekday		=> $args->{weekday},
 			page_details	=> $args->{page_details},
 			contact_email	=> $args->{contact_email},

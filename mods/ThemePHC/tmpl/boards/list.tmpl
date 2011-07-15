@@ -7,13 +7,15 @@
 	</tmpl_if>
 	<!--<a_cssx src="%%appcore%%/js/jquery.qtip.min.css"/>-->
 	
-	<title><tmpl_var board_title> - Bulletin Boards</title>
-	
-	<!-- Board Title -->
-	<h1 class='page_title'><tmpl_var board_title></h1>
-	<!--<h1>
-	%%binpath%%/%%board_folder_name%%/post
-	</h1>-->
+	<tmpl_unless boards_list_as_widget>
+		<title><tmpl_var board_title> - Bulletin Boards</title>
+		
+		<!-- Board Title -->
+		<h1 class='page_title'><tmpl_var board_title></h1>
+		<!--<h1>
+		%%binpath%%/%%board_folder_name%%/post
+		</h1>-->
+	</tmpl_unless>
 	
 	<script>
 	// Using the ${CDN:...} macro so that the URL matches the <img> pre-catching tag at the bottom of the page
@@ -426,17 +428,19 @@ $(function() {
 	$('textarea').autogrow();
 });
 
-function tmplIfHelper(str)
-{
-	//console.debug(str);
-	var isEmpty = (!str || 0 === (''+str).length);
-	return !isEmpty;
-}
+// function tmplIfHelper(str)
+// {
+// 	//console.debug(str);
+// 	var isEmpty = (!str || 0 === (''+str).length);
+// 	return !isEmpty;
+// }
 
 </script>
 
-<tmpl_include inc-reply-scripts.tmpl>
-<tmpl_include inc-video-scripts.tmpl>	
+${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-reply-scripts.tmpl}
+${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-video-scripts.tmpl}
+<!--<xtmpl_include inc-reply-scripts.tmpl>
+<xtmpl_include inc-video-scripts.tmpl>-->	
 
 <script type="text/javascript" src="%%appcore%%/js/jquery-autogrow.js" index="50"></script>
 <script type="text/javascript" src="%%appcore%%/js/jquery-scrollto.js" index="50"></script>

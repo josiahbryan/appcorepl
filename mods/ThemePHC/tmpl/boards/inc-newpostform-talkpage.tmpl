@@ -2,9 +2,9 @@
 							
 							<table width=100%>
 								<tr>
-									<td valign=top class=photo-cell>
+									<!--<td valign=top class=photo-cell>
 										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
-									</td>
+									</td>-->
 									<td valign=top class=content colspan=2>
 										<textarea class="expandText" name="comment" id="newpost_text"></textarea>
 									</td>
@@ -39,6 +39,7 @@
 								<tr>
 									<td colspan=3>
 										<div class='ident' id='postas_display'>
+											<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
 											Posting as <b>%%user_display%%</b>
 											<input value='%%user_display%%' name='poster_name' type=hidden>
 											<input value='%%user_email%%' name='poster_email' type=hidden>
