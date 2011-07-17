@@ -7,7 +7,9 @@ package AppCore::EmailQueue;
 	use Net::Domain qw(hostdomain);
 	use Net::SMTP;
 	
-	use Net::SMTP::TLS; # required for relaying thru google
+# 	BEGIN {
+# 		eval('use Net::SMTP::TLS');# || warn "Unable to load Net::SMTP::TLS - Might not be able to send email thru GMail: $@" ; # required for relaying thru google
+# 	}
 	
 	use MIME::Lite;
 
@@ -255,6 +257,7 @@ Server: $host
 		eval{
 		
 			#print STDERR "Debug: Pkg: $pkg, server: $prof->{server}, port: $prof->{port}, user: $prof->{user}, pass: $prof->{pass}, domain: $domain\n";
+			eval('use '.$pkg) || die "Unable to load $pkg - Unable to send email thru $prof->{server}: $@" ; # required for relaying thru google
 			my %args = (
 				Port  => $prof->{port} || 25,
 				Hello => $domain,
