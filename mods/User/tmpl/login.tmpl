@@ -1,5 +1,5 @@
-<title>Login to PHC</title>
-<h1>Login to the PHC Website</h1>
+<title>Login to %%website_name%%</title>
+<h1>Login to %%website_name%%</h1>
 
 <tmpl_if sent_pass>
 	<div class='ffjc-warning'>
@@ -38,6 +38,7 @@
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
 	
 		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			<tmpl_if fb_app_id>
 			<tr>
 				<td colspan=3 valign=top>
 					<center>
@@ -54,6 +55,7 @@
 					<center><h3 style='margin:0'>Or, you can log in directly with your email and password</h3></center>
 				</td>
 			</tr>
+			</tmpl_if>
 			<tr>
 				<td>Your E-Mail:</td> <td style='padding-right:1.5em'>
 					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43 tabindex=1>

@@ -10,7 +10,20 @@ package AppCore::Web::Module;
 	use AppCore::Common;
 	
 	# Required to access Content::Page::Controller->theme->remap_template()
-	use Content::Page;
+	my $ThemeEngineLoaded;
+	BEGIN { 
+		undef $@;
+		eval('use Content::Page');
+		if($@)
+		{
+			$ThemeEngineLoaded = 0;
+			warn "Unable to load Content::Page - won't be able to use Content::Page::Controller->theme->remap_template(): $@";
+		}
+		else
+		{
+			$ThemeEngineLoaded = 1;
+		}
+	}; 
 	
 	require Exporter;
 	use vars qw/@ISA @EXPORT/;
@@ -284,7 +297,7 @@ package AppCore::Web::Module;
 		
 		
 		# Give the current theme an opportunity to remap the template into something different if desired
-		my $abs_file = Content::Page::Controller->theme->remap_template($pkg,$file);
+		my $abs_file = $ThemeEngineLoaded ? Content::Page::Controller->theme->remap_template($pkg,$file) : undef;
 		#print STDERR "get_template: 0: $abs_file\n";
 		if(!$abs_file || !-f $abs_file)
 		{
@@ -321,11 +334,12 @@ package AppCore::Web::Module;
 			my $user = AppCore::Common->context->user;
 			$tmpl->param(is_admin => $user && $user->check_acl(['ADMIN']));
 			$tmpl->param(is_mobile => AppCore::Common->context->mobile_flag);
+			$tmpl->param(website_name => AppCore::Config->get('WEBSITE_NAME'));
 			return $tmpl;
 		}
 		else
 		{
-			print STDERR "Template file didnt exist: $abs_file\n";
+			print STDERR __PACKAGE__."::get_template(): Template file didnt exist: $abs_file\n";
 		}
 		
 		# Check the superclass(es) for templates if their are any superclasses...

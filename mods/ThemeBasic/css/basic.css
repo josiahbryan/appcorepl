@@ -5,3 +5,15 @@ body
 	background-color: white;
 	color: black;
 }
+
+h1.website_name
+{
+	font-size: 3em;
+	border-bottom: 1px solid black;
+}
+
+h1.website_name a
+{
+	color: black;
+	text-decoration: none;
+}

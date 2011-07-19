@@ -45,7 +45,7 @@ package ThemeBasic;
 		#$tmpl->param(modpath => join('/', AppCore::Config->get("WWW_ROOT"), 'mods', __PACKAGE__));
 		
 		#$r->output($page_obj->content);
-		$r->output($tmpl->output);
+		$r->output($tmpl);
 	};
 	
 };

@@ -750,17 +750,22 @@ package Content::Page::ThemeEngine;
 				my $subnav = $self->load_subnav($page_obj);
 				$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
 				
-				my $page_tmpl = $self->load_template('page.tmpl');
-				if($page_tmpl)
+				eval
 				{
-					$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
-					$pgdat->{page_content} = $page_tmpl->output;
-				}
+					my $page_tmpl = $self->load_template('page.tmpl');
+					if($page_tmpl)
+					{
+						$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+						$pgdat->{page_content} = $page_tmpl->output;
+					}	
+				};
 				
 				$PageDataCache{$pageid} = $pgdat;
 			}
 			
 			$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+			
+			#die Dumper $pgdat if $0 =~ /mrmp/;
 			
 			return 1;
 		}
@@ -996,7 +1001,7 @@ package Content::Page::ThemeEngine;
 			}
 			else
 			{
-				print STDERR "Template file didnt exist: $tmp_file_name\n";
+				print STDERR __PACKAGE__."::load_template(): [1] Template file didnt exist: $tmp_file_name\n";
 			}
 		}
 		
@@ -1009,7 +1014,7 @@ package Content::Page::ThemeEngine;
 			}
 			else
 			{
-				print STDERR "Template file didnt exist: $tmp_file_name\n";
+				print STDERR __PACKAGE__."::load_template(): [2] Template file didnt exist: $tmp_file_name\n";
 			}
 		}
 		
@@ -1028,6 +1033,7 @@ package Content::Page::ThemeEngine;
 			my $user = AppCore::Common->context->user;
 			$tmpl->param(is_admin  => $user && $user->check_acl(['ADMIN']));
 			$tmpl->param(is_mobile => AppCore::Common->context->mobile_flag);
+			$tmpl->param(website_name => AppCore::Config->get('WEBSITE_NAME'));
 		}
 	
 		return $tmpl;

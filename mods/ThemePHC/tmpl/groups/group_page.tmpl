@@ -1,113 +1,9 @@
 <title>%%group_title%% - Groups</title>
 
 
-
-<tmpl_if events_dated>
-	
-		
-	<div class='event_list'>
-		<h1 class='event_list_title'>Upcoming Events</h1>
-		<style>
-		.posts { margin-top:-.5em;<tmpl_unless weekly_widget>border-bottom:none</tmpl_unless>}
-		h1.event-list-header
-		{
-			/*background-image: url(/images/jib3.png) !important;*/
-			background-image: none!important;
-			background-position: 0 -8px !important;
-			/*background-color: white !important;*/
-			/*padding-left: 70px !important;*/
-			padding-left: 5px !important;
-			/*margin-bottom: -1em;*/
-			margin-top: .5em;
-		}
-		h1 a{border:0 !important}
-		
-		td.subject,
-		td.title
-		{
-			background: #e9eeff;
-			border-bottom: 1px solid #c7cddf;
-			border-top: 1px solid white;
-			padding: .5em .25em;
-		}
-		
-		.posts td a
-		{
-			text-decoration: none;
-			color: black;
-		}
-		
-		
-		.event_list h1, .event_list h2, .event_list h3, .event_list h4, .event_list h5, .event_list h6, .event_list h7, .event_list p, .event_list form, .event_list ul, .event_list ol, .event_list li, .event_list blockquote { /* resets most browser styles to enhance cross-browser compatibility */
-			margin: 0;
-			padding: 0;
-		}
-		
-		
-		/*.event_list a:visited,
-		.event_list a:active,
-		.event_list a:hover*/
-		.event_list a
-		{
-			text-decoration: none;
-			/*color: black;*/
-			
-		}
-		
-		.event_list a:active,
-		.event_list a:focus
-		{
-			outline: none;
-		}
-		
-		.event_list h5
-		{
-			background: url("%%modpath%%/images/calendar_background.jpg") no-repeat scroll 0 0 transparent;
-			color: #A09F9F !important;
-			display: block;
-			float: left;
-			font-size: 1.4em;
-			height: 41px;
-			margin: 0 15px 0px 10px;
-			padding: 2px 0 0;
-			text-align: center;
-			width: 41px;
-		}	
-		
-		.event_list h5 strong
-		{
-			color: #FFFFFF;
-			display: block;
-			font-size: 0.6em;
-			text-transform: uppercase;
-		}
-		
-		.event_list h3.event-title
-		{
-			color: black;
-			/*padding: 2px 35px 2px 10px;*/
-			margin: 0;
-			border: 0;
-			width: 90%;
-			height: 1.25em;
-			overflow: hidden;
-		}
-		
-		.event_list p
-		{
-			color: #6C6C6C !important;
-			padding: 0 35px 0px 10px;
-			text-indent: 0;
-			margin-top: -5px;
-			margin: 0;
-		}
-		
-		.event_list ul
-		{
-			margin: 0;
-			padding: 0;
-		}
-		
+<tmpl_unless is_mobile>
+	${inc:%%appcore%%/mods/ThemePHC/tmpl/groups/inc-eventlist-dated.tmpl}
+	<style>
 		.event_list li
 		{
 			background-color: #FFFFFF;
@@ -117,7 +13,9 @@
 			list-style-type: none;
 			text-align: left;
 			padding-bottom: 10px;
-			margin-top: 10px;
+			padding-top: 8px;
+			overflow: hidden;
+
 		}
 		
 		.event_list 
@@ -139,43 +37,9 @@
 			background: #E6E6E6;
 			-moz-border-radius: 3px;
 		}
-		
-		
-		</style>
-			
-		<ul>
-			<tmpl_loop events_dated>
-				<tmpl_if folder_name>
-					<li>
-						<a href='/connect/events/%%folder_name%%'>
-							<!-- FF Parser Error Fix!-->
-							<!--
-							<h5>
-								<strong>%%month_name_short%%</strong>
-								%%day%%
-							</h5>
-							<h3 class='event-title'>%%subject%%</h3>
-							<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
-							-->
-							<h5>
-								<strong>%%month_name_short%%</strong>
-								%%day%%
-							</h5>
-							<h3 class='event-title'>%%subject%%</h3>
-							<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
-						</a>
-					</li>
-				</tmpl_if>
-			</tmpl_loop>
-			<!--<li class='readmore'>
-				<a href='/connect/events'>
-					<span>See More...</span>
-				</a>
-			</li>-->
-		</ul>
-	</div>
-</tmpl_if>
 
+	</style>
+</tmpl_unless>
 
 <h1 class=title>%%group_title%%</h1>
 
@@ -195,7 +59,7 @@ div.description { margin: .5em 0}
 	margin-top: 2em;
 }*/
 
-.links 
+.board_admin_link
 { 
 	float: right;
 	margin-top: -2em;
@@ -204,7 +68,7 @@ div.description { margin: .5em 0}
 		
 </style>
 
-<div class='links'>
+<div class='board_admin_link'>
 	<a href='%%binpath%%/edit?groupid=%%group_groupid%%'>Edit Group</a>
 </div>
 
@@ -255,6 +119,13 @@ td.title
 
 </style>
 
+<tmpl_if is_mobile>
+	
+	${inc:%%appcore%%/mods/ThemePHC/tmpl/groups/inc-eventlist-dated.tmpl}
+	
+</tmpl_if>
+
+
 <tmpl_if events_weekly>
 	<h3 class='event-list-header'><a name='weekly'>Every Week</a></h3>
 		
@@ -283,7 +154,10 @@ td.title
 	</table>
 </tmpl_if>
 	
-
-<h3 class='posts_list_title' style='margin-top:1.5em'>Bulletin Board</h3>
+<tmpl_if is_mobile>
+	<h1>Bulletin Board</h2>
+<tmpl_else>
+	<h3 class='posts_list_title' style='margin-top:1.5em'>Bulletin Board</h3>
+</tmpl_if>
 ${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/list.tmpl}
 

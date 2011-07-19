@@ -1,9 +1,13 @@
 <html>
 <head>
-<title>%%page_title%%</title>
-<link href="%%modpath%%/css/basic.css" rel="stylesheet" type="text/css" />
+	<title><tmpl_if page_title>%%page_title%% - </tmpl_if>%%website_name%%</title>
+	<link href="%%modpath%%/css/basic.css" rel="stylesheet" type="text/css" />
+	<link href='%%appcore%%/jquery-ui/css/smoothness/jquery-ui-1.8.12.custom.css' rel="stylesheet" type="text/css">
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js'></script>
+	<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js'></script>
 </head>
 <body>
-%%page_content%%
+	<h1 class=website_name><a href='/'>%%website_name%%</a></h1>
+	%%page_content%%
 </body>
 </html>

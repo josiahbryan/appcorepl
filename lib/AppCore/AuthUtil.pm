@@ -92,6 +92,13 @@ package AppCore::AuthUtil;
 		
 		shift if $_[0] eq __PACKAGE__;
 		
+		if(!AppCore::User->retrieve(1)) # No first user, assume no users created - yes, a hack!
+		{
+			AppCore::User->insert({user=>'admin',email=>AppCore::Config->get('WEBMASTER_EMAIL'),display=>'Administrator',pass=>'admin'});
+		}
+		
+		
+		
 		my $args = $ctx->http_args || {};
 		
 		my $user = shift; # || $args->{user};

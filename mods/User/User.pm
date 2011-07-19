@@ -318,7 +318,8 @@ package User;
 					{
 						$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user_obj});
 						
-						my $url_from = AppCore::Config->get("WELCOME_URL"); # if !$url_from  || $url_from =~ /\/(login|logout)/;
+						my $url_from = AppCore::Web::Common->url_decode(getcookie('login.url_from')); # in case they use FB to login....
+						$url_from = AppCore::Config->get("WELCOME_URL") if !$url_from  || $url_from =~ /\/(login|logout)/;
 						print STDERR "Authenticated ".AppCore::Common->context->user->display." with facebook token $token, redirecting to $url_from\n";
 						return $r->redirect($url_from);
 					}
@@ -370,6 +371,7 @@ package User;
 			my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 			$url_from = AppCore::Config->get("WELCOME_URL") if !$url_from  || $url_from =~ /\/(login|logout)/;
 			print STDERR "Authenticated ".AppCore::Common->context->user->display.", redirecting to $url_from\n";
+			setcookie('login.url_from',''); # delete cookie
 			return $r->redirect($url_from);
 		}
 		
@@ -410,6 +412,8 @@ package User;
 		
 		my $tmpl = $self->get_template('login'.($mobile?'-mobile' : '').'.tmpl');
 		#$tmpl->param(challenge => AppCore::AuthUtil->get_challenge());
+		setcookie('login.url_from',$url_from); # in case they use FB to login....
+		
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		$tmpl->param(was_loggedin => $req->{was_loggedin});
@@ -419,7 +423,6 @@ package User;
 		#$tmpl->param(auth_requested => $req->{auth_requested});
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';
-		
 		
 		$view->breadcrumb_list->push('Home',"/",0);
 		$view->breadcrumb_list->push('Login',"/user/login",0);
@@ -655,6 +658,7 @@ package User;
 			$tmpl->param(opts => \@all_options);
 			$tmpl->param(url_from => $req->{url_from}) if $req->url_from;
 			$tmpl->param('user_'.$_ => $user->get($_)) foreach $user->columns;
+			$tmpl->param(for_user => $for_user);
 			
 			$view->breadcrumb_list->push('Home',"/",0);
 			$view->breadcrumb_list->push('Settings',"/user/settings",0);

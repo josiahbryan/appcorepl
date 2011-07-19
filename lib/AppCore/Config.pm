@@ -1,4 +1,4 @@
-package AppCore::Config::Default;
+package AppCore::Config;
 BEGIN
 {
 	$DEFAULT_MODULE = '/';
@@ -227,26 +227,14 @@ BEGIN
 	# Inorder to sync with Facebook you must:
 	# 1. Configure your $FB_APP_ID (above) and $FB_APP_SECRET (above)
 	# 2. Go to the Boards Admin in the 'Admin' module in AppCore, edit the board(s) you want to sync, and get the access token (link on the edit page) for each board.
-	
-};
+};	
 
-package AppCore::Config;
 sub get 
 {
 	shift if $_[0] eq __PACKAGE__;
 	my $var = shift;
 	
-	#print STDERR "get: $var\n";
-	my $pkg = "AppCore::Config::MBL";
-	my $value = ${*{"$pkg\::$var"}};
-	
-	if(!defined $value)
-	{
-		#print STDERR "get: $var - checking base\n";
-		$value = ${*{"AppCore\::Config\::Default\::$var"}};;
-		
-		#print STDERR "get: $var - checking base - got '$value'\n";
-	}
+	$value = ${*{"AppCore\::Config\::$var"}};;
 	
 	#print STDERR "get: $var - got '$value'\n";
 	return $value;

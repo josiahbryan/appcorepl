@@ -15,6 +15,8 @@ my $last_mod = undef;
 
 while(my $q = CGI::Fast->new)
 {
+	$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
+	
 	REPROCESS_MODTIME:
 	my $mod = undef;
 	eval

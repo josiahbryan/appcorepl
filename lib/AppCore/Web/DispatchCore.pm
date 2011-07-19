@@ -236,7 +236,8 @@ package AppCore::Web::DispatchCore;
 		
 		my $url = get_full_url;
 		#print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /(res\/|forms\/validate)/;
-		print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $url\n" unless $url =~ /poll/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
+		#print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] $ENV{HTTP_HOST}${url}\n" unless $url =~ /poll/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
+		print STDERR "[".($ctx_ref->user ? $ctx_ref->user->user.'@' : '' ).$ENV{REMOTE_ADDR}."] ${url}\n" unless $url =~ /poll/ || $ENV{HTTP_USER_AGENT} =~ /Googlebot/;
 		# || $ENV{REMOTE_ADDR} eq '10.0.1.60'; # netmon ip
 		
 		# Reset modpath and binpath caches on each request
@@ -373,7 +374,7 @@ package AppCore::Web::DispatchCore;
 		if (index(lc($ENV{HTTP_USER_AGENT}),'windows')>0) {
 			$is_mobile=0;
 		}
-	return $is_mobile;
+		return $is_mobile;
 	}
 	
 	sub isiphone {

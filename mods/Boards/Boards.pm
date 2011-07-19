@@ -116,6 +116,8 @@ package Boards::VideoProvider::Vimeo;
 				// This handles the thumbnail callback from vimeo - grabs the url, sets it on the image and resizes the image accordingly
 				function showThumb(data)
 				{
+					if(!data[0])
+						return;
 					$("#video-vimeo-" + data[0].id)
 						.attr('src',data[0].thumbnail_small)
 						.animate({width:120,height:90},1);

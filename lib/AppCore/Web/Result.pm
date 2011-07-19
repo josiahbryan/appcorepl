@@ -184,184 +184,190 @@ package AppCore::Web::Result;
 		# the rest of the content on the pagge
 		
 		#timemark("tmpl2jq");
-		
-		if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
-		{	
-			if(AppCore::Config->get('ENABLE_CSSX_COMBINE'))
-			{
-				my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
-				$out =~ s/<a:cssx[^\>]+>//gi;
-				#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
-				#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
-				
-				my $file = _process_multi_cssx($self,$tmpl,1,@files);
-				my $full_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
-				my $css = read_file($full_file);
-				
-				if(AppCore::Config->get('ENABLE_INPAGE_CSS_COMBINE'))
-				{
-					$css .= _combine_inpage_css(\$out);
-				}
-				
-				$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
-				
-			}
-			else
-			{
-				$out =~ s/<a:cssx src="([^\"]+)"[^\>]+>/_process_cssx($self,$tmpl,$1)/segi;
-			}
-		}
-		
-		#timemark("cssx combine");
-		
-		if(AppCore::Config->get('ENABLE_JS_COMBINE') && $out =~ /<script.*?src=['"][^'"]+['"]/i)
-		{	
-			my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
-			
-			my %hash = @files;
-			
-			use Data::Dumper;
-			# Sort scripts by their 'index' attribute
-			my @sorted_files = grep { defined $hash{$_} ? $hash{$_} != 0 : 1 } sort { $hash{$a} <=> $hash{$b} } keys %hash;
-			my @zeros = grep { defined $hash{$_} && $hash{$_} == 0 } keys %hash;
-			
-			#die Dumper \%hash;
-			
-			$out =~ s/<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?><\/script>//gi;
-			
-			my $js_link;
-			$js_link = _process_multi_js($self,$tmpl,0,@sorted_files) if @sorted_files;
-			$js_link = join "\n", $js_link, map { "<script src='$_' index=0></script>" } @zeros;
-			my $tmp = "\t$js_link\n</body>";
-			$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
-			
-		}
-		
-		#timemark("js combine");
-		
-		if(AppCore::Config->get('ENABLE_JS_REORDER') && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
+		if($out =~ /<html/)
 		{
-			my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/g;
-			$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
-			my $block = join("\n\n/********************/\n\n", @scripts);
 			
-			if(AppCore::Config->get('ENABLE_JS_REORDER_YUI') &&
-			   AppCore::Config->get('USE_YUI_COMPRESS'))
-			{
-				my $tmp_file = "/tmp/yuic-".md5_hex($block).".js";
-				if(-f $tmp_file)
+			if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
+			{	
+				if(AppCore::Config->get('ENABLE_CSSX_COMBINE'))
 				{
-					$block = AppCore::Common->read_file($tmp_file);
+					my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
+					$out =~ s/<a:cssx[^\>]+>//gi;
+					#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
+					#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
+					
+					my $file = _process_multi_cssx($self,$tmpl,1,@files);
+					my $full_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
+					my $css = read_file($full_file);
+					
+					if(AppCore::Config->get('ENABLE_INPAGE_CSS_COMBINE'))
+					{
+						$css .= _combine_inpage_css(\$out);
+					}
+					
+					$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
+					
 				}
 				else
 				{
-					my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
-					if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
-					{
-						#print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
-					}
-					else
-					{
-						print STDERR "Compressing in-page scripts to cache $tmp_file with YUI Compress...\n";
-						my $tmp_file_pre = "/tmp/yuic.$$.js";
-						AppCore::Common->write_file($tmp_file_pre, $block);
-						
-						my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
-						my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
-						print STDERR "YUI Compress command: '$cmd'\n";
-						system($cmd);
-						
-						if( -f $tmp_file )
-						{
-							$block = AppCore::Common->read_file($tmp_file);
-							unlink($tmp_file_pre);
-						}
-						else
-						{
-							print STDERR "Error running compressor for URL ".AppCore::Web::Common->get_full_url().": '$tmp_file' never created!\n";
-						}
-					}
+					$out =~ s/<a:cssx src="([^\"]+)"[^\>]+>/_process_cssx($self,$tmpl,$1)/segi;
 				}
 			}
 			
-			my $tmp = "<script>$block</script>\n</body>";
-			$out.=$tmp if ! ($out =~ s/<\/body>/$tmp/gi);
-		}
-		
-		#timemark("js reorder");
-		
-		if(AppCore::Config->get('ENABLE_CDN_IMG') && _can_cdn_for_fqdn())
-		{
-			$out =~ s/<img src=(['"])(\/[^'"]+)(['"])/"<img src=$1".cdn_url($2)."$3"/segi;
-		}
-		
-		#timemark("cdn - img");
-		
-		if(AppCore::Config->get('ENABLE_CDN_JS') && _can_cdn_for_fqdn())
-		{
-			$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='".cdn_url($1)."'"/segi;
-		}
-		
-		#timemark("cdn - js");
-		
-		if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())
-		{
-			$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
-		}
-		
-		#timemark("cdn - css");
-		
-		if(AppCore::Config->get('ENABLE_CDN_MACRO'))
-		{
-			if(_can_cdn_for_fqdn())
+			#timemark("cssx combine");
+			
+			if(AppCore::Config->get('ENABLE_JS_COMBINE') && $out =~ /<script.*?src=['"][^'"]+['"]/i)
+			{	
+				my @files = $out =~ /<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?/gi;
+				
+				my %hash = @files;
+				
+				use Data::Dumper;
+				# Sort scripts by their 'index' attribute
+				my @sorted_files = grep { defined $hash{$_} ? $hash{$_} != 0 : 1 } sort { $hash{$a} <=> $hash{$b} } keys %hash;
+				my @zeros = grep { defined $hash{$_} && $hash{$_} == 0 } keys %hash;
+				
+				#die Dumper \%hash;
+				
+				$out =~ s/<script[^\>]+src=['"]([^'"]+)['"](?:.*?index=['"]([+-]?\d+)['"])?><\/script>//gi;
+				
+				my $js_link;
+				$js_link = _process_multi_js($self,$tmpl,0,@sorted_files) if @sorted_files;
+				$js_link = join "\n", $js_link, map { "<script src='$_' index=0></script>" } @zeros;
+				my $tmp = "\t$js_link\n</body>";
+				$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+				
+			}
+			
+			#timemark("js combine");
+			
+			if(AppCore::Config->get('ENABLE_JS_REORDER') && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
 			{
-				#print STDERR "CDN Macro - FQDN\n";
-				$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi; #egi;
-				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi; #egi;
+				my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/g;
+				$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
+				my $block = join("\n\n/********************/\n\n", @scripts);
+				
+				if(AppCore::Config->get('ENABLE_JS_REORDER_YUI') &&
+				AppCore::Config->get('USE_YUI_COMPRESS'))
+				{
+					my $tmp_file = "/tmp/yuic-".md5_hex($block).".js";
+					if(-f $tmp_file)
+					{
+						$block = AppCore::Common->read_file($tmp_file);
+					}
+					else
+					{
+						my $comp = AppCore::Config->get('USE_YUI_COMPRESS');
+						if($comp =~ /\s([^\s]+\.jar)/ && !-f $1)
+						{
+							#print STDERR "Unable to find YUI, not compressing. (Looked in $1)\n";
+						}
+						else
+						{
+							print STDERR "Compressing in-page scripts to cache $tmp_file with YUI Compress...\n";
+							my $tmp_file_pre = "/tmp/yuic.$$.js";
+							AppCore::Common->write_file($tmp_file_pre, $block);
+							
+							my $args = AppCore::Config->get('YUI_COMPRESS_SETTINGS') || '';
+							my $cmd = "$comp $tmp_file_pre $args -o $tmp_file";
+							print STDERR "YUI Compress command: '$cmd'\n";
+							system($cmd);
+							
+							if( -f $tmp_file )
+							{
+								$block = AppCore::Common->read_file($tmp_file);
+								unlink($tmp_file_pre);
+							}
+							else
+							{
+								print STDERR "Error running compressor for URL ".AppCore::Web::Common->get_full_url().": '$tmp_file' never created!\n";
+							}
+						}
+					}
+				}
+				
+				my $tmp = "<script>$block</script>\n</body>";
+				$out.=$tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+				#my $result = $out =~ s/<\/body>/$tmp/gi;
+				#print STDERR "ENABLE_JS_REORDER: Result: '$result'\n$out";
+				#$out .= $tmp if !$result;
+			}
+			
+			#timemark("js reorder");
+			
+			if(AppCore::Config->get('ENABLE_CDN_IMG') && _can_cdn_for_fqdn())
+			{
+				$out =~ s/<img src=(['"])(\/[^'"]+)(['"])/"<img src=$1".cdn_url($2)."$3"/segi;
+			}
+			
+			#timemark("cdn - img");
+			
+			if(AppCore::Config->get('ENABLE_CDN_JS') && _can_cdn_for_fqdn())
+			{
+				$out =~ s/<script src=['"](\/[^'"]+)['"]/"<script src='".cdn_url($1)."'"/segi;
+			}
+			
+			#timemark("cdn - js");
+			
+			if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())
+			{
+				$out =~ s/<link href=['"](\/[^'"]+)['"]/"<link href='".cdn_url($1)."'"/segi;
+			}
+			
+			#timemark("cdn - css");
+			
+			if(AppCore::Config->get('ENABLE_CDN_MACRO'))
+			{
+				if(_can_cdn_for_fqdn())
+				{
+					#print STDERR "CDN Macro - FQDN\n";
+					$out =~ s/\${CDN(?:\:([^\}]+))?}/cdn_url($1)/segi; #egi;
+					$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/cdn_url($1)/segi; #egi;
+				}
+				else
+				{
+					#print STDERR "CDN Macro - NONFQDN\n";
+					$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/gi;
+					$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/gi;
+				}
 			}
 			else
 			{
-				#print STDERR "CDN Macro - NONFQDN\n";
-				$out =~ s/\${CDN(?:\:([^\}]+))?}/$1/gi;
-				$out =~ s/\$\(CDN(?:\:([^\)]+))?\)/$1/gi;
-			}
-		}
-		else
-		{
-			#print STDERR "CDN Macro - Disabled\n";
-		}
-		 
-		
-		my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
-		if(AppCore::Config->get('GA_INSERT_TRACKER') && $ga_id)
-		{
-			 
-			my $ga = qq#
-		
-<script type="text/javascript">
-
-  var _gaq = _gaq || [];
-  _gaq.push(['_setAccount', '$ga_id']);
-  _gaq.push(['_trackPageview']);
-#;
-			if(AppCore::Config->get('GA_SET_USER_VAR'))
-			{
-				my $user = AppCore::Common->context->user;
-				my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
-				$ga .= qq{  _gaq.push(['_setVar','$uid']);};
+				#print STDERR "CDN Macro - Disabled\n";
 			}
 			
-  			$ga .= qq#
-  (function() {
-    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-  })();
+			
+			my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
+			if(AppCore::Config->get('GA_INSERT_TRACKER') && $ga_id)
+			{
+				
+				my $ga = qq#
+			
+<script type="text/javascript">
+
+var _gaq = _gaq || [];
+_gaq.push(['_setAccount', '$ga_id']);
+_gaq.push(['_trackPageview']);
+#;
+				if(AppCore::Config->get('GA_SET_USER_VAR'))
+				{
+					my $user = AppCore::Common->context->user;
+					my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
+					$ga .= qq{  _gaq.push(['_setVar','$uid']);};
+				}
+				
+				$ga .= qq#
+(function() {
+var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
 
 </script>
 #;
-			my $tmp = "$ga\n</body>";
-			$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+				my $tmp = "$ga\n</body>";
+				$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+			}
 		}
 		#
 		#timemark("cdn - macro");

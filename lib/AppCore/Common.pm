@@ -1,6 +1,23 @@
 # Package: AppCore::Common
 # Common routines, EAS include path initalization, mysql schema updates, useful constants, and more.
-use AppCore::Config;
+BEGIN
+{
+	my $config = $ENV{APPCORE_CONFIG};
+	#use AppCore::Config;
+	if($config)
+	{
+		print STDERR "$0: Loading AppCore config from $config\n";
+		eval('require "'.$config.'"');
+		die "Error loading config: $@" if $@;
+	}
+	else
+	{
+		$config = 'AppCore::Config';
+		print STDERR "$0: Loading DEFAULT AppCore config from $config\n";
+		eval('use '.$config);
+		die "Error loading config: $@" if $@;
+	}
+}
 
 package AppCore::Common;
 {

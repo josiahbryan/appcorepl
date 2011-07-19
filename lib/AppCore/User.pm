@@ -709,8 +709,8 @@ package AppCore::User::PrefOption;
 		$opts->{datatype}    = 'bool' if !$opts->{datatype};
 		$opts->{default_value} = '1'  if  $opts->{datatype} eq 'bool' && !defined $opts->{default_value};
 		
-# 		use Data::Dumper;
-# 		die Dumper $opts;
+ 		#use Data::Dumper;
+ 		#die Dumper $opts; # if $0 =~ /mrmp/;
 		my $self = undef;
 		undef $@;
 		eval
@@ -722,9 +722,10 @@ package AppCore::User::PrefOption;
 			my @keys = qw/module_name description datatype default_value acl/;
 			foreach my $key (@keys)
 			{
-				if( $opts->{datatype} eq 'string' ? $self->get($key) ne $opts->{$key} : $self->get($key) != $opts->{$key})
+				#if( $opts->{datatype} eq 'string' ? $self->get($key) ne $opts->{$key} : $self->get($key) != $opts->{$key})
+				if( $self->get($key) ne $opts->{$key} )
 				{
-					$self->$key($opts->{$key})
+					$self->$key($opts->{$key});
 				} 
 			}
 			$self->update if $self->is_changed;
