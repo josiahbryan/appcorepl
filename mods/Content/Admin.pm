@@ -125,7 +125,7 @@ package Content::Admin;
 		
 		$tmpl->param(page_title => AppCore::Common::guess_title($url));
 		$tmpl->param(page_content => '');
-		$tmpl->param(server_name => AppCore::Config->get("WEBSITE_SERVER"));
+		$tmpl->param(server_name => AppCore::Config->get('WEBSITE_SERVER'));
 		$tmpl->param(redir_list	=> $self->_redir_select_list());
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
@@ -196,14 +196,35 @@ package Content::Admin;
 		$tmpl->param(page_mobile_content => $page_obj->mobile_content);
 		$tmpl->param(page_mobile_alt_url => $page_obj->mobile_alt_url);
 		$tmpl->param(page_acl => $page_obj->acl);
-		$tmpl->param(server_name  => AppCore::Config->get("WEBSITE_SERVER"));
+		$tmpl->param(server_name  => AppCore::Config->get('WEBSITE_SERVER'));
 		
 		$tmpl->param(redir_list	=> $self->_redir_select_list($page_obj->redirect_url));
 		
 		my $cur_theme = Content::Page::ThemeEngine->theme_for_controller();
 		$tmpl->param(themes     => Content::Page::ThemeEngine->tmpl_select_list($page_obj->themeid && $page_obj->themeid->themeid ? $page_obj->themeid : $cur_theme));
 		$tmpl->param(view_codes => Content::Page::ThemeEngine::View->tmpl_select_list($page_obj->view_code ? $page_obj->view_code : 'sub', $cur_theme));
-		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list($page_obj->typeid && $page_obj->typeid->id ? $page_obj->typeid : Content::Page::Type->default_type));
+		
+		my $type = $page_obj->typeid && $page_obj->typeid->id ? $page_obj->typeid : Content::Page::Type->default_type;
+		$tmpl->param(page_types => Content::Page::Type->tmpl_select_list($type));
+		
+		if($type)
+		{
+			my $values = $page_obj->get_extended_data;
+			my $fields = $type->get_custom_fields || [];
+			foreach my $field (@$fields)
+			{
+				$field->{value} = $values->{$field->{field}};
+				$field->{'type_'.lc($field->{type})} = 1;
+				$field->{title} = guess_title($field->{field}) if !$field->{title};
+				$field->{hint} = $field->{description} if !$field->{hint};
+			}
+			
+			$tmpl->param(page_type_fields => $fields);
+			$tmpl->param(typeid => $type->id);
+			$tmpl->param(typeid_name => $type->name);
+		}
+		
+		
 		
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
@@ -661,7 +682,24 @@ package Content::Admin;
 		$page_obj->mobile_content($req->mobile_content);
 		$page_obj->redirect_url($req->redirect_url);
 		$page_obj->acl($req->acl);
+		
+		my $type = $page_obj->typeid;
+		$type = Content::Page::Type->retrieve($type) if !ref $type;
+		if($type)
+		{
+			my $values = $page_obj->get_extended_data || {};
+			my $fields = $type->get_custom_fields || [];
+			foreach my $field (@$fields)
+			{
+				my $key = $field->{field};
+				$values->{$key} = $req->{'opt_'.$key};
+			}
+			
+			$page_obj->set_extended_data($values);
+		}
+		
 		$page_obj->update;
+		
 		
 		print STDERR "Admin: Updated pageid $pageid - \"$title\"\n";
 		

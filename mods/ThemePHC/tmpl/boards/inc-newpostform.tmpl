@@ -1,11 +1,11 @@
 						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
 							
-							<table width=100%>
+							<table width='100%'>
 								<tr>
 									<!--<td>
 										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
 									</td>-->
-									<td class=content colspan=2>
+									<td class='content' colspan='2'>
 										<textarea class="expandText" name="comment"></textarea>
 									</td>
 								<tmpl_if user_display>
@@ -24,17 +24,17 @@
 								</tr>
 								<tmpl_else>
 									<tr>
-										<td align=right>Name:</td>
-										<td><input class='text' value='%%user_display%%' name='poster_name' size=15></td>
+										<td align='right'>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' id='newpost_poster_name' size=15></td>
 									
-										<td rowspan=2>
+										<td rowspan='2'>
 											<div class='controls'>
 												<button type='submit' class='button'>Post</button>
 											</div>
 										</td>
 									</tr>
 									<tr>
-										<td align=right>Email:</td>
+										<td align='right'>Email:</td>
 										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
 									</tr>
 								</tmpl_if>

@@ -102,7 +102,7 @@
 											%%day%%
 										</h5>
 										<h3 class='event-title'>%%subject%%</h3>
-										<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
+										<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if> <tmpl_if time_until>(in %%time_until%%)</tmpl_if></p>
 									</a>
 								</li>
 							</tmpl_if>
@@ -294,7 +294,7 @@
 
 			
 			<div class='sidebar-link-block'>
-				<a href='/learn/watch' class='link-block' id='link-video' block-suffix='video'>
+				<a href='/learn/videos' class='link-block' id='link-video' block-suffix='video'>
 					<span class='title'>Watch Current Message</span><br/>
 					<!--<span class='subtitle'>"Our Marvelous Messiah" - Apr 10</span>-->
 					<span class='subtitle'>%%recent_vidtitle%%</span>

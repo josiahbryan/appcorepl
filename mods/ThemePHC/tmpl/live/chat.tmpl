@@ -1,0 +1,82 @@
+<html>
+	<head>
+		<title>PHC Live Feed Chat Frame</title>
+		
+		<!--<link href="%%modpath%%/css/subpage.css" rel="stylesheet" type="text/css" />-->
+		<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico"/>
+		
+		<link href='%%appcore%%/jquery-ui/css/smoothness/jquery-ui-1.8.12.custom.css' rel="stylesheet" type="text/css">
+		<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js'></script>
+		
+		<!-- This stylesheet applies to all browsers -->
+		<a:cssx src="%%modpath%%/css/subpage.css"/>
+		
+		<style>
+			body {
+				margin:0;
+				padding:0;
+				border:0;
+				overflow: hidden;
+				overflow-y: auto;
+				background: white;
+			}
+		</style>
+	</head>
+	
+	
+	<!-- Moved the chat code into an iframe because it messes with the live feed:
+				What happens:
+				1. User visits page
+				2. Ustream feed loads
+				3. User makes a post in chat
+				4. Somehow, the post's insertion into the DOM causes the Ustream feed to RE-INITALIZE, triggering any preroll ads to re-play again
+				
+				Note that subsequent comments in the chat don't trigger a reload of the feed, just the first comment on page load.
+				It doesn't help to put the ustream feed in an iframe - chat still bugs it. However, with the chat code itself in the iframe,
+				somehow that keeps it from bothering the ustream feed.
+			-->
+	
+	<body>			
+			${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/list.tmpl}
+			<style>
+			.postlist tr.newpost td.data { padding: 0 }
+			.postlist tr.newpost td.data table {
+				border-bottom: 1px solid rgb(230,230,230);
+				/*padding-bottom: */
+				margin-bottom: 10px;
+				
+			}
+			
+			.postlist tr.newpost td.data textarea {
+				font-family: "lucida grande",tahoma,verdana,arial,sans-serif;
+				/*font-size: 68.75%;*/
+				font-size: 1em;
+			}
+			
+			
+			/*.postlist { margin-top: -3px }*/
+			.postlist td.photo {
+				padding: 2px 4px 10px 3;
+				width: 18px;
+			}
+			.postlist td.data {
+				line-height: 13px;
+				padding-top: 0px;
+			}
+			
+			.postlist .post-placeholder .user_photo {
+				width: 16px;
+				height: 16px;
+			}
+			
+			textarea.hinted { color: rgb(100,100,100) !important }
+
+			.postlist .post_actions .timestamp {
+				white-space: nowrap;
+			}
+			
+			</style>
+			
+			<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js' index="-100"></script>
+	</body>
+</html>

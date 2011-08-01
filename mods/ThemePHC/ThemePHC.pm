@@ -37,6 +37,8 @@ package ThemePHC;
 	use ThemePHC::Events;
 	use ThemePHC::Videos;
 	use ThemePHC::Groups;
+	use ThemePHC::Search;
+	use ThemePHC::LivePage;
 	
 	# Load the talk controller so it can update user prefs
 	use ThemePHC::BoardsTalk;
@@ -60,6 +62,7 @@ package ThemePHC;
 			ThemePHC::Events
 			ThemePHC::Videos
 			ThemePHC::Groups
+			ThemePHC::Search
 		};
 		$_->apply_mysql_schema foreach @sub_mods;
 	}
@@ -229,6 +232,15 @@ package ThemePHC;
  			{
  				# Repmap the list.tmpl from Boards into our template folder 
  				$abs_file = $class->get_template_path('boards/'.$file);
+ 			}
+ 		}
+ 		elsif($pkg eq 'User')
+ 		{
+ 			if($file eq 'signup.tmpl' ||
+ 			   $file eq 'forgot_pass.tmpl')
+ 			{
+ 				# Repmap the list.tmpl from Boards into our template folder 
+ 				$abs_file = $class->get_template_path('user/'.$file);
  			}
  		}
  		

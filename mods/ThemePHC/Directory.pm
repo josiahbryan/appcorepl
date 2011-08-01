@@ -90,6 +90,43 @@ package PHC::Directory::Child;
 	});
 };
 
+
+
+package PHC::SearchHook::Directory;
+{
+	use ThemePHC::Search;
+	use base 'PHC::SearchHook';
+	__PACKAGE__->register();
+	
+	use AppCore::Web::Common;
+	
+	use Content::Page;
+	
+	sub search_hook
+	{
+		my ($class,$event,$args) = @_;
+		
+		if($event eq 'autocomplete' || $event eq 'search')
+		{
+			my $like = '%' . $args->{term} . '%';
+			my @fams = PHC::Directory::Family->search_like($like,$like,$like,$like,$like,$like);
+			
+			my @results = map 
+			{
+				{
+					title	 => $_->display,
+					body	 => html2text($_->display),
+					url	 => '/connect/directory?search='.$_->last,
+					timestamp => $_->timestamp,
+				}
+			} @fams;
+			
+			my $ref = \@results;
+			return $ref;
+		}
+	}
+};
+
 package PHC::Directory;
 {
 	# To cache the data in the spreadsheet so we dont have to parse it every reqyest

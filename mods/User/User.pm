@@ -201,13 +201,14 @@ package User;
 			# We're at step 1 - They've accepted us, now we have to get the access_token
 			
 			my $code = $req->code;
-			print STDERR "Authenticated FB code $code, now requesting access_token\n";
 				
 			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
 				. 'client_id='     . AppCore::Config->get("FB_APP_ID")
 				.'&redirect_uri='  . $self->get_facebook_redir_url()
 				.'&client_secret=' . AppCore::Config->get("FB_APP_SECRET")
 				.'&code=' . $code;
+			
+			print STDERR "Authenticated FB code $code, now requesting access_token from $token_url\n";
 			
 			my $response = LWP::Simple::get($token_url);
 			
@@ -319,16 +320,16 @@ package User;
 						$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user_obj});
 						
 						my $url_from = AppCore::Web::Common->url_decode(getcookie('login.url_from')); # in case they use FB to login....
-						$url_from = AppCore::Config->get("WELCOME_URL") if !$url_from  || $url_from =~ /\/(login|logout)/;
+						$url_from = AppCore::Config->get('WELCOME_URL') if !$url_from  || $url_from =~ /\/(login|logout)/;
 						print STDERR "Authenticated ".AppCore::Common->context->user->display." with facebook token $token, redirecting to $url_from\n";
 						return $r->redirect($url_from);
 					}
-					else
+					else  # Can't authenticate  
 					{
 						return $r->error("Facebook API Error","Unable to connect facebook data to local account.");
 					}
 				}
-				else
+				else # can't find email in data from FB
 				{
 					# Error getting user data, show error msg
 					return $r->error("Facebook API Error","Problem getting user data:<br><code>$user_json</code>");
@@ -339,8 +340,6 @@ package User;
 				# Error getting token, show error msg
 				return $r->error("Facebook API Error","Problem getting access token - make sure \$FB_APP_ID and \$FB_APP_SECRET are correct in appcore/conf/appcore.conf.<br><code>$response</code>");
 			}
-
-			
 		}
 		else
 		{
@@ -380,15 +379,16 @@ package User;
 		# Fell thru from auth attempt, so check to see if it has a user but no password
 		if($action eq 'authenticate')
 		{
-			print STDERR "auth fall thru: mark1\n";
+			#print STDERR "auth fall thru: mark1\n";
 			my $user = AppCore::User->by_field(user=>$req->{user});
+			$user = AppCore::User->by_field(email=>$req->{user}) if !$user;
 			if($user && !$user->pass)
 			{
 				my $url = $self->module_url($SIGNUP_ACTION) . '?user='.AppCore::Common->url_encode($user->user);
 				print STDERR "auth fall thru: mark2: $url\n";
 				return $r->redirect($url);
 			}
-			print STDERR "auth fall thru: mark3\n";
+			#print STDERR "auth fall thru: mark3\n";
 		}
 			
 		
@@ -404,7 +404,7 @@ package User;
 			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1');
 		}
 		
-		#print STDERR "auth tmpl output\n";	
+		print STDERR "auth tmpl output\n";	
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		
@@ -523,7 +523,7 @@ package User;
 		$tmpl->param(email_exists => 1) if $sub_page eq 'post';
 		
 		$view->breadcrumb_list->push('Home',"/",0);
-		$view->breadcrumb_list->push('Signup',"",0);
+		$view->breadcrumb_list->push('Signup',".",0);
 		#$r->output($tmpl);
 		$view->output($tmpl);
 		
@@ -580,7 +580,7 @@ package User;
 		
 		$view->breadcrumb_list->push('Home',"/",0);
 		$view->breadcrumb_list->push('Login',"/user/login",0);
-		$view->breadcrumb_list->push('Forgot Pass',"",0);
+		$view->breadcrumb_list->push('Forgot Pass',".",0);
 		$view->output($tmpl);
 		
 		return $r;

@@ -165,6 +165,17 @@ package AppCore::Web::Result;
 			}
 		}
 		
+# 		if(!$title)
+# 		{
+# 			my @h1tags = $out=~/<h1>(.*?)<\/h1>/g;
+# 			#$title = $1 if !$title;
+# 			use Data::Dumper;
+# 			die Dumper \@h1tags;
+# 			#@h1tags = grep { !/\$/ } @h1tags;
+# 			$title = shift @h1tags;
+# 		}
+		#die Dumper $title;
+		
 		my $ctype = 'text/html';
 		if(index($out,'<content_type')>-1)
 		{
@@ -191,21 +202,26 @@ package AppCore::Web::Result;
 			{	
 				if(AppCore::Config->get('ENABLE_CSSX_COMBINE'))
 				{
-					my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
-					$out =~ s/<a:cssx[^\>]+>//gi;
-					#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
-					#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
-					
-					my $file = _process_multi_cssx($self,$tmpl,1,@files);
-					my $full_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
-					my $css = read_file($full_file);
-					
-					if(AppCore::Config->get('ENABLE_INPAGE_CSS_COMBINE'))
+					eval
 					{
-						$css .= _combine_inpage_css(\$out);
-					}
 					
-					$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
+						my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
+						$out =~ s/<a:cssx[^\>]+>//gi;
+						#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
+						#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
+						
+						my $file = _process_multi_cssx($self,$tmpl,1,@files);
+						my $full_file = AppCore::Config->get('WWW_DOC_ROOT') . $file;
+						my $css = read_file($full_file);
+						
+						if(AppCore::Config->get('ENABLE_INPAGE_CSS_COMBINE'))
+						{
+							$css .= _combine_inpage_css(\$out);
+						}
+						
+						$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
+					};
+					warn "Error parsing CSSX files: $@" if $@;
 					
 				}
 				else
@@ -286,7 +302,7 @@ package AppCore::Web::Result;
 					}
 				}
 				
-				my $tmp = "<script>$block</script>\n</body>";
+				my $tmp = "<script><!--//--><![CDATA[//><!--\n$block//--><!]]></script>\n</body>";
 				$out.=$tmp if ! ($out =~ s/<\/body>/$tmp/gi);
 				#my $result = $out =~ s/<\/body>/$tmp/gi;
 				#print STDERR "ENABLE_JS_REORDER: Result: '$result'\n$out";
@@ -340,11 +356,12 @@ package AppCore::Web::Result;
 			my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
 			if(AppCore::Config->get('GA_INSERT_TRACKER') && $ga_id)
 			{
-				
+				my $jq_flag = AppCore::Config->get('GA_USE_JQUERY');
+				my $jq_head = $jq_flag ? '$(function(){setTimeout(function(){' : '';
+				my $jq_footer = $jq_flag ? '}, 50)});' : ''; 
 				my $ga = qq#
 			
 <script type="text/javascript">
-
 var _gaq = _gaq || [];
 _gaq.push(['_setAccount', '$ga_id']);
 _gaq.push(['_trackPageview']);
@@ -357,11 +374,15 @@ _gaq.push(['_trackPageview']);
 				}
 				
 				$ga .= qq#
+$jq_head
+
 (function() {
 var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
 ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
 var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
 })();
+
+$jq_footer
 
 </script>
 #;
@@ -428,15 +449,27 @@ var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga
 	{  
 		shift if $_[0] eq __PACKAGE__;
 		my $file = shift;
-		my ($ext) = $file =~ /\.(\w+)$/;
-		my $mime = $ext eq 'png' ? 'image/png' :
-		           $ext eq 'gif' ? 'image/gif' : 
-		           $ext eq 'jpg' ? 'image/jpg' : 'image/unknown';
-		
-		my $contents = read_file($file);
-		my $base64   = encode_base64($contents); 
-		$base64 =~ s/\n//g;
-		return "url('data:$mime;base64,$base64')";
+		my $url;
+		undef $@;
+		eval
+		{
+			my ($ext) = $file =~ /\.(\w+)$/;
+			my $mime = $ext eq 'png' ? 'image/png' :
+				$ext eq 'gif' ? 'image/gif' : 
+				$ext eq 'jpg' ? 'image/jpg' : 'image/unknown';
+			
+			my $contents = read_file($file);
+			my $base64   = encode_base64($contents); 
+			$base64 =~ s/\n//g;
+			$url = "url('data:$mime;base64,$base64')";
+		};
+		if($@)
+		{
+			warn "Error creating data_url for file '$file': $@";
+			my $other_url = shift;
+			$url = cdn_url($other_url,1)
+		}
+		return $url;
 	}
 	
 	our $CDNIndex = 0;

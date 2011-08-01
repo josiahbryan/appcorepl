@@ -1,5 +1,5 @@
-<title>PHC Groups</title> 
-<h1>PHC Groups</h1>
+<title><tmpl_if page_title>%%page_title%%<tmpl_else>PHC Groups</tmpl_if></title> 
+<tmpl_unless page_content><h1>PHC Groups</h1></tmpl_unless>
 <!--%macro::sub_nav()%-->
 
 
@@ -22,15 +22,16 @@
 
 .dir-body 
 {
-	display: block;
+	/*display: block;
 	page: main;
-	counter-reset: page 1;
+	counter-reset: page 1;*/
+	/*margin-bottom: 1em !important;*/
 	
 }
 
 .dir-body, .dir-body td
 {
-	font-family: Bergamo, Georgia, serif;
+	/*font-family: Bergamo, Georgia, serif;*/
 }
 
 
@@ -90,6 +91,11 @@ table.kids td.bday
 	padding-left: .5em;
 	/*font-size: .85em;*/
 	color: rgb(80,80,80);
+}
+
+table.dir-body
+{
+	margin-bottom: 1em;
 }
 
 table.entry td
@@ -211,6 +217,12 @@ div.dlinfo td.text img
 		</table>
 	</div>
 	-->
+	<tmpl_if page_content>
+		<div class='content'>
+			%%page_content%%
+		</div>
+	</tmpl_if>
+	
 	<style>
 		.edit
 		{
@@ -267,7 +279,7 @@ div.dlinfo td.text img
 		<tr class='search-footer'></tr>
 	</table>
 	
-	<table class='entry' width='100%' class=dir-body>
+	<table class='entry dir-body' width='100%'>
 		<tmpl_loop entries>
 			<tr class='group'>
 				<td colspan=2>
@@ -279,9 +291,11 @@ div.dlinfo td.text img
 				</td>
 			</tr>
 		</tmpl_loop>
-		<tmpl_unless search>
-			<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
-		</tmpl_unless>
+		<tmpl_if next_idx>
+			<tmpl_unless search>
+				<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
+			</tmpl_unless>
+		</tmpl_if>
 	</table>
 	
 	<tmpl_if search>

@@ -211,6 +211,11 @@ package ThemePHC::Events;
 		{
 			$rs->{$prep_key} = $post->{$prep_key};
 		}
+		
+		if($x->groupid && $x->groupid->id && $x->groupid->folder_name)
+		{
+			return AppCore::Web::Common::redirect('/connect/groups/'.$x->groupid->folder_name);
+		}
 	
 		return $rs;
 	}
@@ -722,6 +727,7 @@ package ThemePHC::Events;
 		$b->{'event_'.$_} = $item->get($_)."" foreach $item->columns;
 		$b->{item} = $item;
 		$b->{post} = $post;
+		
 		return $b;
 	}
 	
@@ -764,6 +770,10 @@ package ThemePHC::Events;
 			
 			$dow = get_dow($item->datetime);
 			#print STDERR "Hard Event: dt=".$item->datetime.", dow=$dow\n";
+			
+			my $seconds = iso_date_to_seconds($item->datetime) - iso_date_to_seconds(date());
+			$event->{time_until} = approx_time_ago(undef, $seconds);
+			#die Dumper $event;
 		}
 		
 		my ($datestamp,$timestamp) = split /\s/, $item->datetime;

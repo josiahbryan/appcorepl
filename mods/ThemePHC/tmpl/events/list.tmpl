@@ -19,6 +19,7 @@
 </tmpl_unless>
 
 <style>
+
 .posts { margin-top:-.5em;<tmpl_unless weekly_widget>border-bottom:none</tmpl_unless>}
 h1.event-list-header
 {
@@ -171,7 +172,7 @@ td.title
 							%%day%%
 						</h5>
 						<h3 class='event-title'>%%subject%%</h3>
-						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if></p>
+						<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if> <tmpl_if time_until>(in %%time_until%%)</tmpl_if></p>
 					</a>
 				</li>
 				</tmpl_loop>

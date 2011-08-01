@@ -43,9 +43,25 @@
 			</td>
 			<td>
 				<div class=search>
-					<form action='#' method=GET>
+					<form action='/search' method=GET>
 						<input name="q" id="top-searchbox" maxlength="80" alt="Search" class="inputbox" type="text" size="80" value="Search..."  onblur="if(this.value=='') this.value='Search...';" onfocus="if(this.value=='Search...') this.value='';" />
 					</form>
+					<script>
+					if(typeof($( "#top-searchbox" ).autocomplete) == 'function')
+					{
+						$( "#top-searchbox" ).autocomplete({
+							source: "/search/autocomplete",
+							minLength: 2,
+							select: function( event, ui ) {
+	// 							alert( ui.item ?
+	// 								"Selected: " + ui.item.value + " aka " + ui.item.id :
+	// 								"Nothing selected, input was " + this.value );
+								if(ui.item)
+									document.location = ui.item.id;
+							}
+						}).get(0).setAttribute('autocomplete','off');
+					}
+					</script>
 				</div>
 				
 				<!--<a href='/?sitepref=mobile'>Mobile</a>-->

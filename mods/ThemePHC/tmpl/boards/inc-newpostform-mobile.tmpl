@@ -3,30 +3,31 @@
 							<table>
 								<tr>
 									<td>
-										<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%' align=left>
+										<img class='user_photo' src="http://www.gravatar.com/avatar/%%user_email_md5%%?d=$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50" userid='%%user_userid%%' align='left'/>
 									</td>
-									<td colspan=2>
+									<td colspan='2'>
 										<div class='content'>
 											<textarea class='expandText' style="width:200px;height:5em" class="expandText" name="text"></textarea>
 										</div>
 									</td>
-								<tmpl_if user_display>
-								<tr>
-									<td colspan=3>
-										<div class='ident' id='postas_display'>
-											Posting as <b>%%user_display%%</b>
-										</div>
-										<div class='controls'>
-											<button type='submit' class='button'>Post</button>
-										</div>
-									</td>
 								</tr>
+								<tmpl_if user_display>
+									<tr>
+										<td colspan=3>
+											<div class='ident' id='postas_display'>
+												Posting as <b>%%user_display%%</b>
+											</div>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+										</td>
+									</tr>
 								<tmpl_else>
 									<tr>
 										<td>Name:</td>
-										<td><input value='%%user_display%%' name='poster_name' size=15></td>
+										<td><input value='%%user_display%%' name='poster_name' size='15'/></td>
 									
-										<td rowspan=2>
+										<td rowspan='2'>
 											<div class='controls'>
 												<button type='submit' class='button'>Post</button>
 											</div>
@@ -34,7 +35,7 @@
 									</tr>
 									<tr>
 										<td>Email:</td>
-										<td><input value='%%user_email%%' name='poster_email' size=15></td>
+										<td><input value='%%user_email%%' name='poster_email' size='15'/></td>
 									</tr>
 								</tmpl_if>
 							</table>

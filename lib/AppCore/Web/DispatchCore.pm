@@ -69,8 +69,11 @@ package AppCore::Web::DispatchCore;
 		print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user."@" : "").$ENV{REMOTE_ADDR}."] [FATAL] $text\n";
 		#print STDERR "(PID $$) [".$ENV{REMOTE_ADDR}."] [FATAL] $text\n";
 		
+		my $email = AppCore::Config->get('WEBMASTER_EMAIL');
+		#print STDERR "Webmaster email: '$email'\n";
+		
 		print "Content-Type: text/html\n\n";
-		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:".AppCore::Config->get("WEBMASTER_EMAIL")."'>".AppCore::Config->get("WEBMASTER_EMAIL")."</a>.</p>";
+		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>";
 		exit;
 		
 		

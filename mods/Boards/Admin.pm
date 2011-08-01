@@ -286,6 +286,8 @@ package Boards::Admin;
 			$obj->set($col, $req->{$col}); # if defined $req->$col;
 		}
 		
+		$obj->fb_sync_enabled(0) if !$obj->fb_access_token;
+		
 		$obj->update;
 		
 		print STDERR "Admin: Updated board $boardid\n";

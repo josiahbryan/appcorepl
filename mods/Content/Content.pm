@@ -97,6 +97,7 @@ package Content;
 			my $url = get_full_url();
 			#$tmpl->param(bad_url => AppCore::Web::Common->encode_entities($url));
 			$tmpl->param(bad_url => $url);
+			$tmpl->param(WEBMASTER_EMAIL => AppCore::Config->get('WEBMASTER_EMAIL'));
 			
 			$view->output($tmpl);
 		}

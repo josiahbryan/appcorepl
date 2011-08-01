@@ -75,7 +75,9 @@
 		
 // 		console.debug(postData);
 // 		return false;
-		
+		formElm.comment.value = "";
+		formElm.comment.updateAutogrow();
+					
 		$("#post-placeholder").show();
 		
 		var errorFunc = function() 
@@ -105,12 +107,11 @@
 				}
 				else
 				{
+					$("#no_posts_msg").hide();
 					//alert(data);
 					//console.debug(data);
 					$("#post-tmpl").tmpl(data).insertAfter("#post-placeholder");
 					$("#post-placeholder").hide();
-					formElm.comment.value = "";
-					formElm.comment.updateAutogrow();
 					
 					// Update the polling script
 					window.PollingTimestamp = data.timestamp;
@@ -129,10 +130,10 @@
 	</script>
 		
 	<tmpl_if is_mobile>
-		<table class='postlist' align=center cellspacing=0 style='width:100%'>
+		<table class='postlist' align='center' cellspacing='0' style='width:100%'>
 			<tbody>
 				<tr class='post newpost'>
-					<td valign='top' class='data' colspan=2>
+					<td valign='top' class='data' colspan='2'>
 						<tmpl_if tmpl_inc_newpost_mobile>
 							${inc:%%tmpl_inc_newpost_mobile%%}
 						<tmpl_else>
@@ -143,7 +144,7 @@
 				<tmpl_if next_idx>
 					<tmpl_if len>
 						<tr class='post current_nums'>
-							<td colspan=2>
+							<td colspan='2'>
 								<div><span id='current_text'>
 										Showing posts %%idx1%% - <span class='idx2'>%%idx2%%</span> of <span class='max_idx'>%%max_idx%%</span> posts</span>
 									<!--<tmpl_if next_idx>
@@ -156,10 +157,10 @@
 				</tmpl_if>
 				<tr class='post post-placeholder' id='post-placeholder'>
 					<td valign='top' align='center' class='photo'>
-						<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}" userid='%%user_uiserid%%'>
+						<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}" userid='%%user_uiserid%%'/>
 					</td>
 					<td valign='top' class='data'>
-						<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
+						<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'/>
 					</td>
 				</tr>
 					
@@ -181,7 +182,7 @@
 			</tbody>
 		</table>
 	<tmpl_else>
-		<table class='postlist' width='100%' align=center cellspacing=0 style='margin-bottom:1em'>
+		<table class='postlist' width='100%' align='center' cellspacing='0' style='margin-bottom:1em'>
 			<tbody>
 				<tr class='post newpost'>
 					<!--<td valign='top' align='center' class='photo'>
@@ -213,7 +214,7 @@
 						<img class='user_photo' src="${CDN:/appcore/mods/User/images/male-fb-sq-50px.jpg}" userid='%%user_uiserid%%'>
 					</td>
 					<td valign='top' class='data'>
-						<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'>
+						<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif'/>
 					</td>
 				</tr>
 					
@@ -226,7 +227,7 @@
 						</tmpl_if>
 					</tmpl_loop>
 				<tmpl_else>
-					<td colspan=2>
+					<td colspan=2 id='no_posts_msg'>
 						<h2 style='padding:2em'>No posts here yet!</h2>
 					</td>
 				</tmpl_if>
@@ -452,5 +453,5 @@ ${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-video-scripts.tmpl}
      when the "empty image" icon is shown, *then* the gif animation. By putting this image down here, initially
      visible then hiding it as soon as its loaded, we force the browser to preload the image inorder to reduce
      or prevent such visual artifcats. -->
-<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' onload='this.style.display="none"'>
+<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' onload='this.style.display="none"'/>
 

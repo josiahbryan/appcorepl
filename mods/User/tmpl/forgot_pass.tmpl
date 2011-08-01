@@ -7,7 +7,7 @@
 
 <tmpl_if invalid_email>
 	<div class='ffjc-error'>
-		<b>No email address found!</b> Sorry, but the email address you entered was not found in our database. You may try again or visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to signup for your own PHC Online account.
+		<b>No email address found!</b> Sorry, but the email address you entered was not found in our database. You may try again or visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to signup for your own %%website_name%% account.
 	</div>
 </tmpl_if>
 
@@ -38,8 +38,3 @@
 	</div>
 	
 </form>
-
-
-<div class='ffjc-info' style='margin:2em'>
-If you are on the '<b>ePrayerAlert</b>' email list, <b>you're already all setup</b> - you just might not have <b>chosen</b> a password yet. Visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to confirm your name and choose a password!
-</div>

@@ -41,8 +41,9 @@ package PHC::Group;
 	});
 	
 	__PACKAGE__->has_many(members => 'PHC::Group::Member');
-	__PACKAGE__->add_constructor(load_all => 'deleted!=1 and listed_publicly!=0 order by group_type, title');
-	__PACKAGE__->add_constructor(search_like => '(title like ? or tagline like ? or description like ? or group_type like ? or contact_person like ?) and deleted!=1 and listed_publicly!=0 order by group_type, title');
+	__PACKAGE__->add_constructor(load_all => 'deleted!=1 and listed_publicly!=0 order by title');
+	__PACKAGE__->add_constructor(search_like => '(title like ? or tagline like ? or description like ? or group_type like ? or contact_person like ?) and deleted!=1 and listed_publicly!=0 order by title');
+	__PACKAGE__->add_constructor(search_like_group_type => '(group_type like ?) and deleted!=1 and listed_publicly!=0 order by title');
 	
 	sub tmpl_select_list
 	{
@@ -147,7 +148,13 @@ package ThemePHC::Groups;
 	use Content::Page;
 	
 	# Register our pagetype
-	__PACKAGE__->register_controller('PHC Group Pages','PHC Group Pages',1,1);  # 1 = uses page path,  1 = doesnt use content
+	__PACKAGE__->register_controller('PHC Group Pages','PHC Group Pages',1,1,   # 1 = uses page path,  1 = uses content
+		[
+			{ field => 'group_folder',	type	=> 'string',#	linked		=> 'PHC::Group', 
+				hint => 'Use either this field to set this page to a specific group, or the next field to show a list of groups for a specific type of group' },
+			{ field => 'group_type',	type	=> 'string',#	list_method	=> 'PHC::Group->admin_option_list', default => '', 
+				hint => 'Use this field to show a list of groups matching a specific group type, or the field above to show only a specific group.' }
+		]);
 	
 	use Data::Dumper;
 	#use DateTime;
@@ -195,7 +202,7 @@ package ThemePHC::Groups;
 		
 		## Redispatch thru the ::Module dispatcher which will handle calling main_page()
 		#return $self->dispatch($req, $r);
-		return $self->main_page($req,$r);
+		return $self->main_page($req,$r,$page_obj);
 		
 # 		# Get a view module from the template based on view code so the template can choose to dispatch a view to a different object if needed
 # 		my $view = $self->get_view($view_code,$r);
@@ -218,27 +225,32 @@ package ThemePHC::Groups;
 	sub load_groups_list
 	{
 		my $class = shift;
-		my $start = shift || 0;
-		my $search;
-		my $length;
-		if($start && !@_)
-		{
-			# One arg = assume first arg is a search string
-			$search = $start;
-			$start = 0;
-			$length = 0;
-		}
-		else
-		{
-			$search = '';
-			$length = shift; 
-		}
+		my $opts = shift || {};
 		
+		my $start = $opts->{start} || 0;
+		my $search = $opts->{search} || '';
+		my $length = $opts->{length} || 0;
+		my $group_type = $opts->{group_type} || '';
+		$group_type = 'Small Group' if lc $group_type eq 'small groups';
+			
+		
+# 		use Data::Dumper;
+# 		die Dumper $opts;
 		
 		my $cache_key = 'all';
 		
 		my $count = 0;
-		if($length > 0)
+		if($group_type)
+		{
+			$cache_key = 'group_type:'.$group_type;
+			$cache_key .= '/search:'.$search if $search;
+				
+		}
+		elsif($search && length($search) > 0)
+		{
+			$cache_key = 'search:'.$search;
+		}
+		elsif($length > 0)
 		{
 			$count = $GroupsListCache->{count};
 			if(!$count)
@@ -256,10 +268,6 @@ package ThemePHC::Groups;
 			
 			$cache_key = join '', $start, $length;
 		}
-		elsif($search && length($search) > 0)
-		{
-			$cache_key = 'search:'.$search;
-		}
 		
 		if($GroupsListCache->{cache}->{$cache_key})
 		{
@@ -267,20 +275,30 @@ package ThemePHC::Groups;
 			return $GroupsListCache->{cache}->{$cache_key};
 		} 
 			
-		#print STDERR "load_directory: Cache miss for key '$cache_key'\n";
+		print STDERR "load_groups_list: Cache miss for key '$cache_key'\n";
 		
 			
-		my $www_path = AppCore::Config->get("WWW_DOC_ROOT");
+ 		my $www_path = AppCore::Config->get('WWW_DOC_ROOT');
 		
 		my @fams;
 		if($search)
 		{
 			my $like = '%'.$search.'%';
 			@fams = PHC::Group->search_like($like,$like,$like,$like,$like);
+			
+			if($group_type)
+			{
+				@fams = grep { index($_->group_type,$group_type) > -1 } @fams;
+			}
+		}
+		elsif($group_type)
+		{
+			@fams = PHC::Group->search_like_group_type('%'.$group_type.'%');
+			#die Dumper \@fams;
 		}
 		else
 		{
-			@fams = PHC::Group->retrieve_from_sql('deleted!=1 and listed_publicly!=0 order by group_type, title '.($length>0 ? 'limit '.$start.', '.$length : ''));
+			@fams = PHC::Group->retrieve_from_sql('deleted!=1 and listed_publicly!=0 order by title '.($length>0 ? 'limit '.$start.', '.$length : ''));
 		}
 		
 		my @output_list;
@@ -289,7 +307,7 @@ package ThemePHC::Groups;
 			my $fam = {};
 			$fam->{$_} = $fam_obj->get($_)."" foreach $fam_obj->columns;
 			
-			my @kids = PHC::Group::Member->retrieve_from_sql('groupid='.$fam_obj->id); #.' order by birthday');
+			my @kids = PHC::Group::Member->retrieve_from_sql('groupid='.$fam_obj->id); 
 			if(@kids)
 			{
 				my @kid_list;
@@ -372,9 +390,24 @@ package ThemePHC::Groups;
 	sub main_page
 	{
 		my $self = shift;
-		my ($req,$r) = @_;
+		my ($req,$r,$page_obj) = @_;
 		
  		my $user = AppCore::Common->context->user;
+ 		
+ 		if($page_obj)
+ 		{
+ 			my $folder = $page_obj->get_extended_data->{group_folder};
+ 			if($folder)
+ 			{
+				
+				my $group = PHC::Group->by_field(folder_name => $folder);
+				return $r->error("No Such Group","Sorry, the group specified doesn't exist!") if !$group;
+				
+				#$req->push_page_path($req->shift_path);
+				
+				return $self->group_page($req,$r,$group);
+			}
+ 		}
 		
 		#my $sub_page = shift @$path;
 		my $sub_page = $req->next_path;
@@ -526,6 +559,23 @@ package ThemePHC::Groups;
 				$group->set($col, $req->{$col}) if defined $req->{$col};
 			}
 			
+			# Automatically fill in contact name/phone/email based on managerid if necessary
+			if($group->managerid && 
+				(!$group->contact_person || 
+				 !$group->contact_personid ||
+				 !$group->phone || 
+				 !$group->email))
+			{
+				$group->contact_person($group->managerid->display) if !$group->contact_person;
+				if($group->email && !$group->contact_personid)
+				{
+					$group->contact_personid(AppCore::User->by_field(email => $group->email));
+				}
+				$group->contact_personid($group->managerid) if !$group->contact_personid;
+				$group->email($group->contact_personid->email) if !$group->email;
+				$group->phone($group->contact_personid->phone) if !$group->phone;
+			}
+			
 			
 # 			use Data::Dumper;
 # 			print STDERR "Data dump:\n";
@@ -625,7 +675,7 @@ package ThemePHC::Groups;
 			$start =~ s/[^\d]//g;
 			$start = 0 if !$start || $start<0;
 			
-			my $length = 10;
+			my $length = 50;
 			
 			if($req->{search} && $req->output_fmt ne 'json')
 			{
@@ -634,7 +684,23 @@ package ThemePHC::Groups;
 			}
 			
 			#@directory = @directory[$start .. $start+$count];
-			my $directory_data = $self->load_groups_list($req->{search} ? $req->{search} : ($start, $length));
+			my $opts = {};
+			if($page_obj)
+			{
+				$opts->{group_type} = $page_obj->get_extended_data->{group_type}; 
+			}
+			
+			if($req->{search})
+			{
+				$opts->{search} = $req->{search};
+			}
+			else
+			{
+				$opts->{start} = $start;
+				$opts->{length} = $length;
+			}
+			
+			my $directory_data = $self->load_groups_list($opts);
 			
 # 			my $my_entry;
 # 			if($user)
@@ -693,6 +759,11 @@ package ThemePHC::Groups;
 			$tmpl->param(entries => \@directory);
 # 			use Data::Dumper;
 # 			die Dumper \@directory;
+
+			if($page_obj)
+			{
+				$tmpl->param('page_'.$_ => $page_obj->get($_)) foreach $page_obj->columns;
+			}
 			
 			#$r->output($tmpl);
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
@@ -712,6 +783,23 @@ package ThemePHC::Groups;
 			my $mem = PHC::Group::Member->by_field(userid => $user, groupid => $group);
 			return $r->error("Access Restricted","Sorry, but the administrator limited access to this group to only members. Sorry!") if !$mem;
 		}
+		
+		# Here we attempt to check to see if there is a Content::Page that lists our 'Group Type' -
+		# if there is, and we were NOT accessed thru that page (e.g. current URL does not start with that page's URL)
+		# then redirect to that page, appended with our group folder.
+		# This would happen if someone prepends our folder name to another page that doesn't list our group type or lists all groups
+		Content::Page->add_constructor(search_group_type => 'extended_data like ?') if !Content::Page->can('search_group_type');
+		my @search = Content::Page->search_group_type('%group_type":"%'.$group->group_type.'%"%');
+		if(my $page = shift @search)
+		{
+			my $url = $page->url;
+			# Note != to detect if it DOESN'T start with the page url
+			if(index($req->page_path,$url) != 0)
+			{
+				return $r->redirect("$url/". $group->folder_name);
+			}
+		}
+		
 		
 		my $user = AppCore::Common->context->user;
 		my $sub_page = $req->next_path;

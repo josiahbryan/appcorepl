@@ -105,13 +105,28 @@ package Boards::VideoProvider::Vimeo;
 			# the video metadata from Vimeo then extract the thumbnail URL from that and update the image dynamically.
 			extra_js	=> q|
 				// Get all Viemo video links and create a script request to Vimeo for the thumbnail URL
-				$('a.video-vimeo').each(function() {
+ 				$('a.video-vimeo').each(function() {
 					var th = $(this),
 					id = th.attr("videoid"),
 					url = "http://vimeo.com/api/v2/video/" + id + ".json?callback=showThumb",
 					id_img = "#video-vimeo-" + id;
 					$(id_img).before('<scr'+'ipt type="text/javascript" src="'+ url +'"></scr'+'ipt>');
 					//console.debug("found Vimeo video ID "+id);
+				});
+				$(function(){
+					setTimeout(function()
+					{
+						if(window.location.hash.indexOf("autoplay")>0 &&
+						$('a.video-vimeo').length == 1)
+						{
+							var link = $('a.video-play-link');
+							var func = window.VidPlay;
+							//console.debug("autoplay: found "+link.lengths+" links: "+link.get(0)+", func: "+func); 
+							link.playVideo = func;
+							link.playVideo();
+							//alert('trying to autoplay');
+						}
+					}, 100);
 				});
 				// This handles the thumbnail callback from vimeo - grabs the url, sets it on the image and resizes the image accordingly
 				function showThumb(data)
@@ -1043,6 +1058,7 @@ package Boards;
 			first_ts  => $data->{first_timestamp}, # Used for in-page polling dyanmic new content inlining
 			max_idx   => $max_idx,
 			can_admin => $can_admin,
+			fb_sync_enabled => $board->fb_sync_enabled,
 		};
 		
 		$controller->forum_page_hook($output,$board);
@@ -1393,6 +1409,8 @@ package Boards;
 		my $tmpl_incs = $controller->config->{tmpl_incs} || {};
 						
 		my %crossref = map { $_->{postid} => $_ } @tmp_list;
+		
+		my $ident_mult = AppCore::Common->context->mobile_flag ? $INDENT_MULTIPLIER / 2 : $INDENT_MULTIPLIER; 
 					
 		# Now we put all the comments with the parent posts
 		my @list;
@@ -1419,7 +1437,7 @@ package Boards;
 				my $id     = $data->{postid};
 				
 				$data->{indent}		= $indent;
-				$data->{indent_css}	= $indent * $INDENT_MULTIPLIER; # Arbitrary multiplier
+				$data->{indent_css}	= $indent * $ident_mult; # Arbitrary multiplier
 				$data->{indent_is_odd}	= $indent % 2 == 0;
 				
 				# Lookup the top-most post for this comment
@@ -1936,15 +1954,25 @@ package Boards;
 		my $object = shift;
 		my $args = shift;
 		
+		#print STDERR "[DEBUG] ${self}->send_notifications: action:'$action', object:'$object', args:".Dumper($args)."\n"; 
+		
 		# Actions:
 		# - new_post ($post_ref)
 		# - new_comment ($comment_ref, $comment_url)
 		# - new_like ($like_ref, $noun)
 		
+		my @errors;
 		foreach my $method (qw/notify_via_email notify_via_facebook/)
 		{
-			$self->$method($action, $object, $args);
+			#print STDERR "[DEBUG] ${self}->send_notifications: action:'$action': Running method '$method'\n";
+			push @errors, "$method: $!" if !$self->$method($action, $object, $args);
 		}
+		return @errors;
+	}
+	
+	sub facebook_notify_hook
+	{
+		# NOOP
 	}
 	
 	sub notify_via_facebook
@@ -1954,7 +1982,9 @@ package Boards;
 		my $post = shift;
 		my $args = shift;
 		
-		return if !AppCore::Config->get("BOARDS_ENABLE_FB_NOTIFY") || ($post->isa('Boards::Post') && (!$post->boardid->fb_sync_enabled || $post->data->get('user_said_no_fb')));
+		#print STDERR "[DEBUG] ${self}->notify_via_facebook: action:'$action', post:'$post'\n";
+		
+		$! = 'Config false or Not a Post or Board Sync Not Enabled or User Said No FB' and return 0 if !AppCore::Config->get('BOARDS_ENABLE_FB_NOTIFY') || ($post->isa('Boards::Post') && (!$post->boardid->fb_sync_enabled || $post->data->get('user_said_no_fb')));
 		
 		if($action eq 'new_post' ||
 		   $action eq 'new_comment')
@@ -1963,25 +1993,29 @@ package Boards;
 		
 			if(!$really_upload)
 			{
+				#print STDERR "[DEBUG] ${self}->notify_via_facebook: action:'$action': Not Really Upload, setting data on post, returning 1\n";
 				# Flag this post object for later processing by boards_fb_poller
 				$post->data->set('needs_uploaded',1);
 				$post->data->update;
 				return 1;
 			}
 			
+			#print STDERR "[DEBUG] ${self}->notify_via_facebook: action:'$action': Really upload\n";
+			
 			
 			require LWP::UserAgent;
  			require LWP::Simple;
  
-			my $board = $post->boardid;
+			my $board = $args->{board} || $post->boardid;
 			
 			my $fb_feed_id	    = $board->fb_feed_id;
 			my $fb_access_token = $board->fb_access_token;
 			
 			if(!$fb_feed_id || !$fb_access_token)
 			{
-				print STDERR "Unable to post notification for post# $post to Facebook - Feed ID or Access Token not found..\n";
-				return;
+				$! = "Unable to post notification for post# $post to Facebook - Feed ID or Access Token not found.";
+				print STDERR "$!\n";
+				return 0;
 			}
 				
 			my $notify_url = "https://graph.facebook.com/${fb_feed_id}/feed";
@@ -2038,6 +2072,14 @@ package Boards;
 				actions		=> qq|{"name": "View on the PHC Website", "link": "$abs_url"}|,
 			};
 			
+			$self->facebook_notify_hook($post, $form, 
+			{
+				abs_url => $abs_url,
+				short_abs_url => $short_abs_url,
+				short_text => $short_text,
+				quote => $quote,
+			});
+			
 			use Data::Dumper;
 			print STDERR "Facebook post data: ".Dumper($form);
 			
@@ -2055,7 +2097,14 @@ package Boards;
 			{
 				print STDERR "ERROR Posting to facebook, message: ".$response->status_line."\nAs String:".$response->as_string."\n";
 			}
+			
+			return 1;
 		}
+		
+		#print STDERR "[DEBUG] ${self}->notify_via_facebook: Action '$action' not handled\n";
+		
+		$! = 'FB Action \''.$action.'\' Not Handled';
+		return 0;
 	}
 	
 	sub notify_via_email
@@ -2098,6 +2147,8 @@ Cheers!};
 			@list = grep { $_ ne $post->poster_email } @list;
 			
 			AppCore::EmailQueue->send_email([@list],"[".AppCore::Config->get("WEBSITE_NAME")."] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
+			
+			return 1;
 		}
 		elsif($action eq 'new_comment')
 		{
@@ -2159,6 +2210,8 @@ Cheers!};
 						!AppCore::EmailQueue->was_emailed($board->managerid->email);
 						
 			AppCore::EmailQueue->reset_was_emailed;
+			
+			return 1;
 		}
 		elsif($action eq 'new_like')
 		{
@@ -2201,7 +2254,12 @@ Cheers!};
 				@list = grep { $_ ne $user->email} @list;
 			}
 			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
+			
+			return 1;
 		}
+		
+		$! = "Email action '$action' not handled";
+		return 0;
 	}
 	
 	sub log_spam
@@ -2287,6 +2345,14 @@ Cheers!};
 			#die "Sorry, you sound like a spam bot - go away. ($req->{comment})" if !$SPAM_OVERRIDE;
 			$self->log_spam($text,'links');
 			$@ = "Links aren't allowed, sorry";
+			return 1;
+		}
+		
+		### Method: 'Russian' - Ban russian characters
+		if($text =~/[итпрогамскюедвеь]/)
+		{
+			$self->log_spam($text,'russian');
+			$@ = "Please use only Engish on this website";
 			return 1;
 		}
 		

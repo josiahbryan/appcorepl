@@ -549,7 +549,7 @@ package AppCore::Common;
 	sub approx_time_ago
 	{
 		my $date = shift;
-		my $x = seconds_since($date);
+		my $x = shift || seconds_since($date);
 		my $orig = $x;
 		#print STDERR "[$orig] Start, x=$x\n";
 		my $unit = $x > 0 && $x < 2 ? 'second' : 'seconds';

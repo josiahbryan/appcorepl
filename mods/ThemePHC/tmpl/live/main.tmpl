@@ -1,0 +1,229 @@
+<script flag='dynamic_server_content'>
+<tmpl_if user_userid>
+window.USER_DISPLAY = "%%user_display%%";
+</tmpl_if>
+</script> 
+<script src='/appcore/mods/ThemePHC/js/live-extra.js'></script>
+
+<style>
+#tabs .ui-tabs-nav a
+{
+	outline: 0 !important;
+}
+
+#tabs-nav, #videos {
+	display: none;
+}
+
+#videostrip-top
+{
+	display: none;
+	width: 262px;
+	height: 32px;
+	overflow: hidden;
+	z-index: 99;
+	position: absolute;
+	/*top: 2px;*/
+	/*left: 200px;*/
+	margin-top: 12px;
+	margin-left: 218px;
+}
+
+.videostrip a {
+	text-decoration: none;
+}
+
+.videostrip a:active,
+.videostrip a:focus
+{
+	outline: 0;
+}
+#videos-content h1
+{
+	font-size: 1em;
+}
+#video-return-link
+{
+	display: none;
+	float: right;
+	margin-top: -1.75em;
+}
+#video-list ul,
+#video-list li {
+	list-style: none;
+	padding:0;
+	margin: 0;
+}
+#video-list ul {
+	margin-top: 5px;
+	width: 460px;
+	white-space: normal;
+}
+#video-list li img {
+	float: left;
+	margin: 0 5px;
+}
+
+#video-list li p {
+	text-indent: 0;
+	font-size: .85em;
+	color: rgb(80,80,80);
+	margin-bottom: 1em;
+	margin-left: 57px;
+	margin-top: 0;
+} 
+
+#video-list li img {
+	border: 1px solid black;
+}
+
+#video-list li a:hover {
+	background: rgb(220,220,220);
+}
+
+#video-title .title {
+	width: 350px;
+	overflow: hidden;
+}
+
+#vid-more-link {
+	padding-top: 1em;
+	border-top: 1px solid rgb(220,220,220);
+	margin-top: 1em;
+	padding-bottom: 1em;
+	text-align: center;
+	
+}
+
+.ui-tabs .ui-tabs-panel {
+	padding: .2em 0 0 1px;
+}
+
+</style>
+
+<!--http://api.ustream.tv/json/channel/phc-live-stream/getValueOf/status-->
+
+<table border=0 cellspacing=0 cellpadding=0 width=100% style='width:767px'>
+	<tr>
+		<td valign=top nowrap style='position: relative'>
+			<div class="videostrip" id="videostrip-top">
+				<tmpl_loop videos_posts>
+					<a href='/learn/videos/%%folder_name%%#autoplay' title='%%data_title%%' videoid="%%external_id%%">
+						<img src='%%data_thumbnail%%' width=33 height=25 border=0>
+					</a>
+				</tmpl_loop>
+			</div>
+			<div id="tabs">
+				<ul id="tabs-nav">
+					<li><a href="#live">Live Feed</a></li>
+					<li><a href="#videos">Video Library</a></li>
+				</ul>
+				<div id='live'>
+					<h1 style="display: none;">PHC Live Video Stream</h1>
+
+					<!--<iframe src='/appcore/mods/ThemePHC/livefeed.html' width='480' height='296' style='border:0'>
+					</iframe>-->
+					
+					<object classid="clsid:d27cdb6e-ae6d-11cf-96b8-444553540000" height="296" id="utv39192" width="480">
+				<param name="flashvars" value="autoplay=false&amp;brand=embed&amp;cid=8249750&amp;v3=1" />
+						<param name="allowfullscreen" value="true" />
+						<param name="allowscriptaccess" value="always" />
+						<param name="movie" value="http://www.ustream.tv/flash/viewer.swf" />
+						<embed allowfullscreen="true" allowscriptaccess="always" flashvars="autoplay=false&amp;brand=embed&amp;cid=8249750&amp;v3=1" height="296" id="utv39192" name="utv_n_475394" src="http://www.ustream.tv/flash/viewer.swf" type="application/x-shockwave-flash" width="480"></embed>
+					</object>
+				</div>
+				<div id='videos'>
+					<div id='videos-content' style='width:480px;height:296px'>
+						<h1 id='video-title'><div class=title>Video Library</div></h1>
+						<a href='#' id='video-return-link'>&laquo; Return to video list</a>
+						
+						<div id='video-list' class='videostrip' style='width:480px;height:271px;overflow:auto'>
+							<ul>
+								<tmpl_loop videos_posts>
+									<li>
+										<a href='/learn/videos/%%folder_name%%#autoplay' title='%%data_title%%' videoid="%%external_id%%">
+											<img src='%%data_thumbnail%%' width=48 height=36 border=0>
+											<h4>%%data_title%%</h4>
+											<p>%%data_description%%</p>
+										</a>
+									</li>
+								</tmpl_loop>
+							</ul>
+							<div id='vid-more-link'>
+								<a href='/learn/videos'>See more videos in the Video Archives ...</a>
+							</div>
+						</div>
+						
+						<div id='video-playbox'>
+						</div>
+						
+						<script>
+						$(".videostrip a").live("click",function(){
+							
+							var th = $(this),
+							    videoid = th.attr("videoid");
+							$("#tabs").tabs('select',1);
+							$("#video-playbox").html('<iframe src="http://player.vimeo.com/video/'+videoid+'?portrait=0&amp;autoplay=1" width="480" height="271" frameborder="0"></iframe>');
+							$("#video-playbox").show();
+							$("#video-title .title").html(th.attr('title'));
+							$("#video-return-link").show();
+							$("#video-list").hide();
+							return false;
+						});
+						$("#video-return-link").bind('click',function(){
+							$("#video-list").show();
+							$("#video-title .title").html("Video Library");
+							$("#video-playbox").hide();
+							$("#video-playbox").html('');
+							$("#video-return-link").hide();
+						});
+						</script>
+					</div>
+				</div>
+			</div>
+		</td>
+		<td valign=top width='100%' style='padding-left:3px'>
+			<h1 class='ui-tabs-nav ui-helper-clearfix ui-widget-header ui-corner-all' style='line-height: 24px;margin-top:3px'>
+				Discussions
+			</h1>
+		
+			<!-- Moved the chat code into an iframe because it messes with the live feed:
+				What happens:
+				1. User visits page
+				2. Ustream feed loads
+				3. User makes a post in chat
+				4. Somehow, the post's insertion into the DOM causes the Ustream feed to RE-INITALIZE, triggering any preroll ads to re-play again
+				
+				Note that subsequent comments in the chat don't trigger a reload of the feed, just the first comment on page load.
+				It doesn't help to put the ustream feed in an iframe - chat still bugs it. However, with the chat code itself in the iframe,
+				somehow that keeps it from bothering the ustream feed.
+			-->	
+				
+			<iframe src='%%binpath%%/chatframe' width='276' height='296' style='border:0'>
+			</iframe>
+		</td>
+	</tr>
+</table>
+
+<script>
+$(function() {
+	$("#videos").show();
+	$("#tabs").tabs()
+	$("#tabs-nav").show();
+	$("#videostrip-top").show();
+});
+</script>
+<noscript>
+	<!-- Re-enable the videos block in case the user has turned off javascript -->
+	<style>
+		/*#videos { 
+			display: block;
+		}*/
+	</style>
+</noscript>
+
+<!-- I don't have time to figure this one out right now - but some rules in the boards-list.css affect the jQuery tabs plugin styling,
+	specifically, the styling of the tabs themselves. Without boards-list.css, the tabs are much larger - with this stylesheet,
+	the tabs get styled down to a much "better looking" size. I'll figure the exact rule out later - for now, just including
+	the entire stylesheet. -->
+<a:cssx src="%%appcore%%/mods/ThemePHC/css/boards-list.css"/>

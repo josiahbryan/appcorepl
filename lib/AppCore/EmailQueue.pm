@@ -175,7 +175,7 @@ Server: $host
 				print STDERR "File $1 does not exist, not sending email.\n";
 				$self->sentflag(1);
 				$self->result("Error: File $1 doesn't exist");
-				print STDERR "Msg $self: ".$self->result."\n";
+				print STDERR "MsgID $self: ".$self->result."\n";
 				$self->update;
 				return;
 			}
@@ -192,7 +192,7 @@ Server: $host
 		{
 			$self->sentflag(1);
 			$self->result("Error: Domain $domain not in list of allowed domains to send from");
-			print STDERR "Msg $self: ".$self->result." (from:".$self->msg_from.")\n";
+			print STDERR "MsgID $self: ".$self->result." (from:".$self->msg_from.")\n";
 			$self->update;
 			return;
 		}
@@ -221,7 +221,7 @@ Server: $host
 		{
 			$self->sentflag(1);
 			$self->result("Error: Invalid config for $domain - no sender package in custom config");
-			print STDERR "Msg $self: ".$self->result."\n";
+			print STDERR "MsgID $self: ".$self->result."\n";
 			$self->update;
 			return;
 		}
@@ -279,7 +279,7 @@ Server: $host
 		{
 			$self->sentflag(1);
 			$self->result("Error: Unable to send: ".($@ ? $@ : "$pkg didn't connect for some reason"));
-			print STDERR "Msg $self: ".$self->result."\n";
+			print STDERR "MsgID $self: ".$self->result."\n";
 			$self->update;
 			return;
 		}
@@ -295,7 +295,7 @@ Server: $host
 			{
 				$self->sentflag(1);
 				$self->result("Error logging into mail server: ".$smtp->message().($@? " ($@)":""));
-				print STDERR "Msg $self: ".$self->result."\n";
+				print STDERR "MsgID $self: ".$self->result."\n";
 				$self->update;
 				
 				return;

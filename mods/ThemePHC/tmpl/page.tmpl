@@ -1,3 +1,4 @@
+<html>
 	<tmpl_if is_mobile>
 		<style>
 		.nav-subs-mobile
@@ -78,8 +79,8 @@
 		
 		</style>
 		<tmpl_if nav_sibs>
-		<div class=nav-subs-mobile>
-			<div class=wrap>
+		<div class='nav-subs-mobile'>
+			<div class='wrap'>
 				<center>
 				You are here:
 			
@@ -87,11 +88,11 @@
 						<a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a>
 				</tmpl_if></tmpl_loop>
 				
-				<div class=current-wrap>
+				<div class='current-wrap'>
 					
 					<a href='#' id='subnav-current' >More...</a>
 					
-					<div class=sub-menu id='subnav-menu'>
+					<div class='sub-menu' id='subnav-menu'>
 						<ul>
 							<tmpl_loop nav_sibs>
 								<li><a href='%%url%%' <tmpl_if current>class='current'</tmpl_if>>%%title%%</a></li>
@@ -105,7 +106,7 @@
 			</div>
 		</div>
 		</tmpl_if>
-		<div class=fc></div>
+		<div class='fc'></div>
 		
 		<script>
 			$("#subnav-current").live("click", function() {
@@ -118,7 +119,7 @@
 			});
 		</script>
 		
-		<div class=pagebody>
+		<div class='pagebody'>
 			%%page_content%%
 		</div>
 	<tmpl_else>
@@ -133,6 +134,25 @@
 										<a href='%%url%%'>%%title%%</a>
 									</li>
 								</tmpl_loop>
+								<li>
+									<form action='/search' method=GET>
+									<input name="q" style='width:100%;margin-top:.5em' id="nav-searchbox" maxlength="80" alt="Search" hint='Search...' class="inputbox" type="text" size="80" value="Search..."  onblur="if(this.value=='') this.value=this.getAttribute('hint');" onfocus="if(this.value==this.getAttribute('hint')) this.value='';" />
+									</form>
+									<script>
+									if(typeof($( "#nav-searchbox" ).autocomplete) == 'function')
+									{
+										$( "#nav-searchbox" ).autocomplete({
+											source: "/search/autocomplete",
+											minLength: 2,
+											select: function( event, ui ) {
+												if(ui.item)
+													document.location = ui.item.id;
+											}
+										}).get(0).setAttribute('autocomplete','off');
+									}
+									</script>
+									
+								</li>
 							</ul>
 						</div>
 					</td>
@@ -289,3 +309,4 @@
 		</script>
 		
 	</tmpl_if>
+</html>

@@ -5,6 +5,7 @@ use strict;
 package Content::Page;
 {
 	use base 'AppCore::DBI';
+	use JSON qw/decode_json encode_json/;
 	
 	__PACKAGE__->meta({
 		class_noun	=> 'Page',
@@ -44,10 +45,32 @@ package Content::Page;
 			{	field	=> 'extended_data',	type	=> 'text' }, # JSON-encoded attributes for extra Page::Type storage
 			{	field	=> 'show_in_menus',	type	=> 'int(1)' },
 			{	field	=> 'menu_index',	type	=> 'varchar(100)', default => 0 },
+			{	field	=> 'timestamp',		type	=> 'timestamp' },
 			
 		]	
 	
 	});
+	
+	
+	sub set_extended_data
+	{
+		my $self = shift;
+		my $ref = shift;
+		my $no_update = shift || 0;
+		my $data = encode_json($ref);
+		if($self->extended_data ne $data)
+		{
+			$self->extended_data($data);
+			$self->update unless $no_update;
+		}
+	}
+	
+	sub get_extended_data
+	{
+		my $self = shift;
+		return decode_json($self->extended_data || '{}'); 
+	}
+	
 	
 	sub apply_mysql_schema
 	{
@@ -328,6 +351,18 @@ package Content::Page::Controller;
 		my $r    = shift;
 		my $page_obj = shift;
 		
+		if(UNIVERSAL::isa($self,'AppCore::Web::Module'))
+		{
+			# Change the 'location' of the webmodule so the webmodule code thinks its located at this page path
+			# (but %%modpath%% will return the appros module for resources such as images)
+			my $new_binpath = AppCore::Config->get('DISPATCHER_URL_PREFIX') . $req->page_path; # this should work...
+			#print STDERR __PACKAGE__."->process_page: new binpath: '$new_binpath' ($self)\n";
+			$self->binpath($new_binpath);
+			
+			## Redispatch thru the ::Module dispatcher which will handle calling main_page()
+			return $self->dispatch($req, $r);
+		}
+		
 		# No view code will just return the BasicView derivitve which just uses the basic.tmpl template
 		my $themeid   = $page_obj ? $page_obj->themeid   : undef;
 		my $view_code = $page_obj ? $page_obj->view_code : undef;
@@ -353,8 +388,12 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 {
 	sub new
 	{
-		return bless { list=> [] }, shift;
+		my $class = shift;
+		my $view = shift;
+		return bless { list=> [], view=> $view }, $class;
 	};
+	
+	sub view { shift->{view} }
 	
 	sub last_crumb
 	{
@@ -403,11 +442,18 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 			};
 		}
 		
+		
 		warn __PACKAGE__."::push(): No 'title' in arguments" if !$ref->{title};
-		warn __PACKAGE__."::push(): No 'url' in arguments"   if !$ref->{url};
+		if(!$ref->{url})
+		{
+			AppCore::Common->print_stack_trace();
+			warn __PACKAGE__."::push(): No 'url' in arguments";
+		}
 		$ref->{current} = 0 if !defined $ref->{current};
 		
 		push @{$self->{list}}, $ref;
+		
+		return $self;
 	}
 	
 	sub pop
@@ -595,7 +641,7 @@ package Content::Page::ThemeEngine;
 		$self->{view_code} = $code;
 		$self->{response}  = $response;
 		$self->{params}    = {};
-		$self->{bc_list}   = Content::Page::ThemeEngine::BreadcrumbList->new(); 
+		$self->{bc_list}   = Content::Page::ThemeEngine::BreadcrumbList->new($self); 
 		return $self;
 	}
 	
@@ -728,14 +774,17 @@ package Content::Page::ThemeEngine;
 		my ($self,$tmpl,$page_obj) = @_;
 		if(blessed $page_obj && $page_obj->isa('Content::Page'))
 		{
+			my $ctx = AppCore::Common->context;
 			my $pageid = $page_obj->id;
-			my $pgdat = $PageDataCache{$pageid};
+			my $mobile = $ctx->mobile_flag;
+			my $key = join(':',$pageid,$mobile);
+			my $pgdat = $PageDataCache{$key};
 			if(!$pgdat)
 			{
-				my $user = AppCore::Common->context->user;
+				my $user = $ctx->user;
 				
 				# Substitute alternative content in case of mobile content
-				my $content = AppCore::Common->context->mobile_flag && $page_obj->mobile_content ?
+				my $content = $mobile && $page_obj->mobile_content ?
 					$page_obj->mobile_content :
 					$page_obj->content;
 				
@@ -744,7 +793,7 @@ package Content::Page::ThemeEngine;
 				$pgdat->{'page_'.$_}	= $page_obj->get($_) foreach $page_obj->columns;
 				$pgdat->{page_content}	= $content;
 				$pgdat->{page_title}	= AppCore::Web::Common::load_template($page_obj->title)->output if $page_obj->title   =~ /%%/;
-				$pgdat->{content_url}	= AppCore::Common->context->current_request->page_path;
+				$pgdat->{content_url}	= $ctx->current_request->page_path;
 				$pgdat->{can_edit}	= $user && $user->check_acl(['ADMIN']);
 				
 				my $subnav = $self->load_subnav($page_obj);
@@ -760,7 +809,7 @@ package Content::Page::ThemeEngine;
 					}	
 				};
 				
-				$PageDataCache{$pageid} = $pgdat;
+				$PageDataCache{$key} = $pgdat;
 			}
 			
 			$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
@@ -912,6 +961,8 @@ package Content::Page::ThemeEngine;
 		
 		#$r->output($page_obj->content);
 		$r->output($tmpl); #->output);
+		
+		return $r;
 	};
 	
 	sub auto_apply_params

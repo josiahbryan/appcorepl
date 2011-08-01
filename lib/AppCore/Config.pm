@@ -43,8 +43,8 @@ BEGIN
 	$WEBMASTER_EMAIL = 'josiahbryan@gmail.com';
 	
 	# Prefunctory at best...does what it says...
-	$MOBILE_REDIR = 1;
-	$MOBILE_URL = '/m';
+# 	$MOBILE_REDIR = 1;
+# 	$MOBILE_URL = '/m';
 	
 	# Names use for user correspondance and other system-generated user-facing pages/content
 	$WEBSITE_NAME = 'PHC Beta Site';

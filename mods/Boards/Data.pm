@@ -163,11 +163,23 @@ package Boards::VideoProvider;
 			
 			my $config = shift;
 			
+			my $extending_config_pkg = shift;
+			
 			my $self = $pkg->find_or_create({controller=>$pkg});
 			
 			$self->name($config->{name}) if $self->name ne $config->{name};
 			#$self->description($diz) if $self->description ne $diz;
 			$self->update if $self->is_changed;
+			
+			if($extending_config_pkg)
+			{
+				my $other_config = $PackageConfig{$extending_config_pkg} || {};
+				foreach my $key ( keys %$other_config)
+				{
+					$config->{$key} = $other_config->{$key}
+						if !defined $config->{$key};
+				}
+			}
 			
 			$PackageConfig{$pkg} = $config;
 			
@@ -563,7 +575,7 @@ package Boards::Post::GenericDataClass;
 	{
 		my $self = shift;
 		$self->{inst}->extra_data(to_json($self->{data}));
-		#print STDERR "Debug: save '".$self->{inst}->data_store."'\n";
+		#print STDERR "Debug: save '".$self->{inst}->extra_data."' on post ".$self->{inst}."\n";
 		return $self->{inst}->update;
 	}
 }
@@ -602,7 +614,7 @@ package Boards::Board;
 			{ field => 'created_by',		type => 'int', linked => 'AppCore::User' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
 			{ field => 'enabled',			type => 'int(1)', null => 0, default => 1 },
-			{ field => 'fb_sync_enabled',		type => 'int(1)', null => 0, default => 1 },
+			{ field => 'fb_sync_enabled',		type => 'int(1)', null => 0, default => 0 },
 			{ field	=> 'fb_feed_id',		type => 'varchar(255)' },
 			{ field	=> 'fb_access_token',		type => 'varchar(255)' },
 			{ field	=> 'fb_feed_name',		type => 'varchar(255)' }, # only for display to the user - not "required" or really used

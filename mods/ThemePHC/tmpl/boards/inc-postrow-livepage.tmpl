@@ -17,41 +17,42 @@
 			<td valign='top' align='center' class='photo'>
 				<img class='user_photo' 
 					src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
-					userid='%%posted_by%%'/>
+					userid='%%posted_by%%' width=16 height=16/>
 			</td>
 			<td valign='top' class='data'>
-				<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
-					%%subject%%
-				</a>
 				
-				<div class='posted_by'>
-					<span class='by'>by</span> <span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span>
-					<tmpl_if board_userid>
+				<span class='posted_by'>
+					<!--<span class='by'>by</span> --><span class='name'><tmpl_if username:str><a href='/%%username%%' title="Go to %%poster_name%%'s Wall"><b></tmpl_if>%%poster_name%%<tmpl_if username:str></b></a></tmpl_if></span>
+					<!--<tmpl_if board_userid>
 						<tmpl_if original_board_folder_name:str>
 							<span class='by'>in</span> 
 							<span class='name'><a href='/boards/%%original_board_folder_name%%#p%%postid%%'><b>%%board_title%%</b></a></span>
 						</tmpl_if>
-					</tmpl_if>
+					</tmpl_if>-->
 					<a name="p%%postid%%">&middot;</a>
-					<span class='timestamp'><span class='approx_time_ago' title='%%timestamp%%' timestamp='%%timestamp%%'>%%approx_time_ago%%</span> ago on <span class='pretty_timestamp'>%%pretty_timestamp%%</span> 
-					<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if> 
-					<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a></span>
-				</div>
+					<span class='timestamp'><!--<span class='approx_time_ago' title='%%timestamp%%' timestamp='%%timestamp%%'>%%approx_time_ago%%</span> ago on -->
+					<!--<span class='pretty_timestamp'>%%pretty_timestamp%%</span>--> 
+					<!--<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if>--> 
+					<!--<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a>-->
+					</span>
+				</span>
 				
-				<div class='post_text'>
+				<span class='post_text'>
 					<tmpl_if single_post_page>
 						%%post_text%%
 					<tmpl_else>
-						<div id='short_text_%%postid%%' class='short_text'>
+						<span id='short_text_%%postid%%' class='short_text'>
 							%%clean_html%%
-						</div>
+						</span>
 						<tmpl_if short_text_has_more>
-							<div id='long_text_%%postid%%' class='long_text'></div>
+							<span id='long_text_%%postid%%' class='long_text'></span>
 						</tmpl_if>
 					</tmpl_if>
-				</div>
+				</span>
 				
-				<div class='actions post_actions' id='acts%%postid%%'>
+				<span class='actions post_actions' id='acts%%postid%%'>
+					&middot;
+					 
 					<tmpl_unless single_post_page>
 						<tmpl_if short_text_has_more>
 							<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%' class='readmore_link' postid='%%postid%%'>Read More &raquo;</a>
@@ -59,15 +60,17 @@
 						</tmpl_if>
 					</tmpl_unless>
 					
-					<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%'>Add a Comment</a> &middot;
+					<!--<a href='%%reply_to_url%%/%%folder_name%%' class='reply_link' postid='%%postid%%'>Add a Comment</a> &middot;-->
+					<span class='timestamp'><span class='approx_time_ago' title='%%timestamp%%' timestamp='%%timestamp%%'>%%approx_time_ago%%</span> ago &middot;</span>
+					<!--<span class='pretty_timestamp'>%%pretty_timestamp%%</span> &middot;-->
 					
 					<tmpl_if can_edit>
-						<a class='edit_post_link' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/edit'>Edit</a> &middot;
-						<a class='delete_post_link' postid='%%postid%%' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/delete'>Delete</a> &middot;
+						<!--<a class='edit_post_link' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/edit'>Edit</a> &middot;-->
+						<a class='delete_post_link' postid='%%postid%%' href='%%bin%%/%%board_folder_name%%/%%folder_name%%/delete'>X</a> &middot;
 					</tmpl_if>
 						
 					${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-likes.tmpl}
-				</div>
+				</span>
 				
 				<div class='reply_container' id='reply%%postid%%'></div>
 				

@@ -35,6 +35,20 @@ use strict;
 # 	});
 # }
 
+package Boards::VideoProvider::VimeoPHC;
+{
+	use Boards;
+	use base 'Boards::VideoProvider::Vimeo';
+	__PACKAGE__->register(
+		{	
+			name		=> 'PHC Video Page',
+			url_regex	=> qr/\#phc-vimeo-vid(\d+)/,
+		},
+		# Copy missing config keys from the config for this video provider package
+		'Boards::VideoProvider::Vimeo'
+	); 
+};
+
 package ThemePHC::Videos;
 {
 	# Inherit both the Boards and Page Controller.
@@ -93,7 +107,7 @@ package ThemePHC::Videos;
 	
 	my $SUBJECT_LENGTH = 50;
 	
-	my $VIDEOS_BOARD = Boards::Board->find_or_create(title=>'Videos', folder_name=>'videos');
+	our $VIDEOS_BOARD = Boards::Board->find_or_create(title=>'Videos', folder_name=>'videos');
 	
 	my @DOW_NAMES = qw/- Monday Tuesday Wednesday Thursday Friday Saturday Sunday/;
 	my @DOW_NAMES_SHORT = qw/- Mon Tue Wed Thur Fri Sat Sun/;
@@ -203,6 +217,10 @@ package ThemePHC::Videos;
 # 		
 # 		$post->{item} = $x;
  		$self->prep_video_hash($post);
+ 		
+ 		#$rs->{'video_'.$_} = $post->data->get($_) foreach qw/title description url duration/;
+ 		 
+ 		$rs->{post_text} = $post->data->get('description'). $self->create_video_links($post->external_url,1);
 # 		
 # 		foreach my $prep_key (qw/time same_day day_name normal_datestamp timestamp end_time/)
 # 		{
@@ -531,12 +549,17 @@ package ThemePHC::Videos;
 		
 		my $user = AppCore::User->retrieve(1); # Josiah
 		
+		$self->binpath(AppCore::Config->get('WEBSITE_SERVER') . "/learn/videos");
+		
 		foreach my $vdat (@$list)
 		{
+			#print STDERR "Checking post ".$vdat->{id}." - ".$vdat->{title}."\n";
 			my $post_text = "<span class=title>$vdat->{title}</span><span class=filler>: </span><span class=url>$vdat->{url}</span><span class=filler> - </span><span class=description>$vdat->{description}</span>";
 			my $post = Boards::Post->by_field(external_source => 'Vimeo', external_id => $vdat->{id}, deleted => 0);
 			if(!$post)
 			{
+				#die "Missed video $vdat->{id}";
+				
 				# Create a set of arguments for create_new_thread()
 				my $data = {
 					poster_name	=> 'PHC AV Team',
@@ -560,14 +583,45 @@ package ThemePHC::Videos;
 				$post->post_class('video');
 				
 				$post->data->set($_, $vdat->{$_}) foreach qw/title description url duration/;
+				
+				my $video_url = $self->binpath . "/" . $post->folder_name . '#phc-vimeo-vid'.$vdat->{id};
+				$post->data->set('phc_video_url', $video_url);
+				
 				$post->data->update;
 				
 				$post->update;
 			
 				#$post_is_new = 1;
 				
-				my $url = AppCore::Config->get('WEBSITE_SERVER') . "/learn/videos/" . $post->folder_name;
-				print "Created post from Vimeo - # $post - '".$post->subject."' - $url\n";
+				
+				my $talk_board_controller = AppCore::Web::Module->bootstrap('ThemePHC::BoardsTalk');
+				my $talk_board = Boards::Board->retrieve(1); # id 1 is the prayer/praise/talk board
+				my $talk_args = $data;
+				$data->{comment} = $vdat->{description}.'. Watch it now at '.$video_url; #$vdat->{url}; 
+				
+				my $talk_post = $talk_board_controller->create_new_thread($talk_board,$talk_args);
+				
+				# Note: We call send_notifcations() on $self so it will call our facebook_notify_hook()
+				#       to reformat the FB story args the way we want them before uploading instead 
+				#       of using the default story format.
+				#     - We also send notifications for our video $post, NOT the $talk_post, since 
+				#       the video $post has the extra data attributes we can use.
+				#     - Give the $talk_board in the args because the FB notification routine needs the
+				#       FB wall ID and sync info from the board - and its not set on the Video board
+				my @errors = $self->send_notifications('new_post',$post,{really_upload=>1, board=>$talk_board}); # Force the FB method to upload now rather than wait for the poller crontab script
+				if(@errors)
+				{
+					print STDERR "Error sending notifications of new video post $post: \n\t".join("\n\t",@errors)."\n";
+				}
+				
+				
+				# Reset external_id on this post because the FB upload script overwrites our ID
+				$post->external_id($vdat->{id});
+				$post->update;
+				
+				print "Created post from Vimeo - # $post - '".$post->subject."' - $video_url (talk post $talk_post)\n";
+				
+				#die "Test done";
 			}
 			else
 			{
@@ -629,6 +683,125 @@ package ThemePHC::Videos;
 
 		
 		
+	}
+	
+# 			my $post_text = "<span class=title>$vdat->{title}</span><span class=filler>: </span><span class=url>$vdat->{url}</span><span class=filler> - </span><span class=description>$vdat->{description}</span>";
+
+# 			my $data = {
+# 				poster_name	=> 'PHC AV Team',
+# 				poster_photo	=> 'https://graph.facebook.com/180929095286122/picture', # Picture for PHC FB Page
+# 				poster_email	=> 'josiahbryan@gmail.com',
+# 				comment		=> $post_text,
+# 				subject		=> $vdat->{title}, 
+# 			};
+# 			
+# 			$post->timestamp($vdat->{upload_date});
+# 			$post->updated_time($vdat->{upload_date});
+# 			
+# 			# Flag it as from Vimeo and store the Vimeo Video ID for future reference
+# 			$post->external_source('Vimeo');
+# 			$post->external_id($vdat->{id});
+# 			$post->external_url($vdat->{url});
+# 			
+# 			$post->post_class('video');
+# 			
+# 			$post->data->set($_, $vdat->{$_}) foreach qw/title description url duration/;
+
+# 	my $form = 
+# 	{
+# 		access_token	=> $fb_access_token,
+# 		message		=> $message,
+# 		link		=> $abs_url,
+# 		picture		=> $photo,
+# 		name		=> $post->subject,
+# 		caption		=> $action eq 'new_post' ? 
+# 			"by ".$post->poster_name." in ".$board->title :
+# 			"by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
+# 		description	=> $short_text,
+# 		actions		=> qq|{"name": "View on the PHC Website", "link": "$abs_url"}|,
+# 	};
+	
+	sub video_thumbnail
+	{
+		my $self = shift;
+		my $post = shift;
+		
+		if(my $thumb = $post->data->get('thumbnail'))
+		{
+			return $thumb;
+		}
+		
+		my $image = '';
+		my $source = $post->external_source;
+		if($source eq 'Vimeo')
+		{
+			# Craft the metadata URL for vimeo inorder to download the thumnail
+			my $id = $post->external_id;
+			my $url = "http://vimeo.com/api/v2/video/" . $id . ".json";
+			#print STDERR "\tVimeo video - calling $url\n";
+			
+			# Download and decode metadata
+			#print STDERR __PACKAGE__."::facebook_notify_hook: Downloading metadata for video $id from URL $url, got: '$json'\n"; 
+			my $json = LWP::Simple::get($url);
+			my $data = decode_json($json ? $json : '[]');
+			
+			# Extract thumbnail URL
+			my @list = @{$data || []};
+			my $meta = shift @list;
+			$image = $meta->{thumbnail_small};
+			
+			#print STDERR "\t Downloaded image $image\n";
+		}
+		elsif($source eq 'YouTube')
+		{
+			my $url = $post->external_url;
+			my ($code) = $url =~ /v=([a-zA-Z0-9\-]+)/;
+			$image = "http://img.youtube.com/vi/$code/1.jpg";
+		}
+		else
+		{
+			warn __PACKAGE__."::video_thumbnail: I don't know how to get thumbnail for a ${source} video - sorry!";
+			
+			# Default PHC profile photo on FB
+			$image = 'https://graph.facebook.com/180929095286122/picture';
+		}
+		
+		$post->data->set('thumbnail', $image);
+		$post->data->update;
+		$post->update;
+		
+		return $image;
+
+		
+	}
+	
+	sub facebook_notify_hook
+	{
+		my $self = shift;
+		my $post = shift;
+		my $form = shift;
+		my $args = shift;
+		
+		# Create the body of the FB post
+		my $phc_video_url = $self->binpath . '/' . $post->folder_name . '#autoplay';
+		$form->{message} = "New video from PHC: ".$post->data->get('description').". Watch it now at ".LWP::Simple::get("http://tinyurl.com/api-create.php?url=${phc_video_url}");
+		 
+		# Set the URL for the link attachment
+		$form->{link} = $phc_video_url;
+		
+		my $image = $self->video_thumbnail($post);
+		
+		# Finish setting link attachment attributes for the FB post
+		$form->{picture}	= $image; # ? $image : 'https://graph.facebook.com/180929095286122/picture';
+		$form->{name}		= $post->data->get('title');
+		$form->{caption}	= "by Pleasant Hill Church AV Team";
+		$form->{description}	= $post->data->get('description');
+		
+		# Replace the default Boards FB action with a link to the video post
+		$form->{actions} = qq|{"name": "View at PHC's Site", "link": "$phc_video_url"}|;
+		
+		# We're working with a hashref here, so no need to return anything, but we will anyway for good practice
+		return $form;
 	}
 	
 # 	sub merge_item_to_post

@@ -30,16 +30,19 @@ $(function() {
 	// NOTE - The script below EXPECTS a 'videoid' attribute on the link to contain the videoid.
 	// If not present, the script wont work - the link will just fall thru and redirect the user to whatever the href is.
 	
-	$('a.video-play-link').live("click", function() {
+	window.VidPlay = function() {
 
 		var th = $(this),
 		    // Create a loading indicator
 		    loading = $('<img/>')
 		    	.attr('src',loaderGif);
 
+		//console.debug('video-play-link-click: mark1');
 		// No videoid - we dont do parsing here. Just fall thru and allow the link to work as links would normally work.
 		if(!th.attr('videoid'))
 			return true;
+			
+		//console.debug('video-play-link-click: videoid: '+th.attr('videoid'));
 		
 		// Fade out the icon for the video
 		th.children('img').animate({opacity:0},300);
@@ -53,10 +56,14 @@ $(function() {
 		for(var i=0;i<list.length;i++)
 		{
 			var ref = list[i];
+			//console.debug('video-play-link-click: list check, idx '+i+', class:'+ref.provider_class);
 			if(th.hasClass(ref.provider_class))
 			{
-				var w = ref.iframe_size[0], 
+				var w = ref.iframe_size[0],
 				    h = ref.iframe_size[1];
+				
+				//console.debug('video-play-link-click: animating iframe intro');
+				
 				th.animate({width:w, height:h}, 300, "swing", function()
 				{
 					var data = 
@@ -76,7 +83,9 @@ $(function() {
 			}
 		};
 		return false;
-	});
+	};
+	
+	$('a.video-play-link').live("click", window.VidPlay);
 });
 
 </script>

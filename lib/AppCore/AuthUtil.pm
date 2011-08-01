@@ -21,7 +21,8 @@ package AppCore::AuthUtil;
 	@EXPORT = qw/authenticate http_require_login require_auth/;
 		
 	use constant TICKET_COOKIE => 'appcore.auth_ticket';
-	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; } 
+	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	 
 	
 	sub _cdbi_load_all_columns
 	{
@@ -92,9 +93,12 @@ package AppCore::AuthUtil;
 		
 		shift if $_[0] eq __PACKAGE__;
 		
+		my $ADMIN_GROUP = AppCore::User::Group->find_or_create({name => 'ADMIN'});
+	
 		if(!AppCore::User->retrieve(1)) # No first user, assume no users created - yes, a hack!
 		{
-			AppCore::User->insert({user=>'admin',email=>AppCore::Config->get('WEBMASTER_EMAIL'),display=>'Administrator',pass=>'admin'});
+			my $admin = AppCore::User->insert({user=>'admin',email=>AppCore::Config->get('WEBMASTER_EMAIL'),display=>'Administrator',pass=>'admin'});
+			AppCore::User::GroupList->insert({userid=>$admin,groupid=>$ADMIN_GROUP});
 		}
 		
 		
@@ -132,13 +136,24 @@ package AppCore::AuthUtil;
 			# the request.....
 			#setcookie('user','0'); # empty out the old cookies
 			#setcookie('pass','0'); # empty out the old cookies
+			return 0;
 		}
 		
+		#print STDERR "authenticate: user '$user', pass '$pass'\n";
 		my $user_object = AppCore::User->by_field(user => $user);
+		#print STDERR "authenticate: user '$user', mark1 obj '$user_object'\n";
 		if(!$user_object)
 		{
 			$user_object = AppCore::User->by_field(email => $user);
 		}
+		#print STDERR "authenticate: user '$user', mark2 obj '$user_object'\n";
+		
+		if(!$user_object)
+		{
+			return 0;
+		}
+		
+		#print STDERR "authenticate: user '$user', expected pass '".$user_object->pass."'\n";
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");

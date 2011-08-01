@@ -118,10 +118,7 @@ label { cursor: pointer }
 	margin: 0 auto;
 	/*font-size: 1.5em;*/
 	
-	padding-top: 40px;
-	padding-bottom: 40px;
-	padding-left: 40px;
-	padding-right: 40px;
+	padding: 40px 0;
 }
 
 

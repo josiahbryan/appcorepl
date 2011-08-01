@@ -114,7 +114,14 @@ package AppCore::Web::Module;
 		#print STDERR "Attempting to load: $pkg_file, exists? ".((-f $pkg_file)?1:0)."\n";
 		undef $@;
 		
-		eval { require $pkg_file; } if -f $pkg_file;
+		if(-f $pkg_file)
+		{
+			eval { require $pkg_file; };
+		}
+		else
+		{
+			eval('use '.$module_name);
+		}
 		
 		print STDERR "Error loading $pkg_file: $@" if $@;
 		
@@ -322,6 +329,12 @@ package AppCore::Web::Module;
 			#push @parts, $file;
 			
 			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.$file;
+			#print STDERR "get_template: 2: $abs_file\n";
+		}
+		
+		if(!$abs_file || !-f $abs_file)
+		{
+			$abs_file = AppCore::Config->get('WWW_DOC_ROOT') . $self->modpath.'/tmpl/'.$file;
 			#print STDERR "get_template: 2: $abs_file\n";
 		}
 		

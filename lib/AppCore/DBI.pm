@@ -2542,6 +2542,41 @@ package $opts->{pkg};
 		$db_modtime_sth->execute;
 		return $db_modtime_sth->fetchrow_hashref->{checksum};
 	}
+	
+	sub tmpl_select_list
+	{
+		my $pkg = shift;
+		my $cur = shift;
+		my $curid = ref $cur ? $cur->id : $cur;
+# 		my $include_invalid = shift || 0;
+# 		
+# 		my @all = $pkg->retrieve_from_sql('1 order by '.$pkg->get_orderby_sql());
+# 		my @list;
+# 		if($include_invalid)
+# 		{
+# 			push @list, { 
+# 				value 		=> undef,
+# 				text		=> '(None)',
+# 				selected	=> !$curid,
+# 			};
+# 		}
+# 		foreach my $item (@all)
+# 		{
+# 			push @list, {
+# 				value	=> $item->id,
+# 				text	=> $item->display, #$item->last.', '.$item->first,
+# 				#hint	=> $item->description,
+# 				selected => defined $curid && $item->id == $curid,
+# 			}
+# 		}
+		my $listref = $pkg->stringified_list();
+		foreach my $item (@$listref)
+		{
+			$item->{value} = $item->{id};
+			$item->{selected} = defined $curid && $item->{id} == $curid;
+		}
+		return $listref;
+	}
 
 	
 };

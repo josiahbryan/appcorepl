@@ -169,7 +169,7 @@
 					</td>
 				</tr>
 				<tr>
-					<td>Page Type:</td> <td>
+					<td valign=top>Page Type:</td> <td>
 						<select id='typeid' name='typeid' onchange='updateTypeHint(this)' onkeyup='updateTypeHint(this)'>
 							<tmpl_loop page_types>
 								<option value='%%value%%' x:img='%%image%%' x:usescontent="%%uses_content%%" hint='%%hint%%' fields='%%custom_fields%%' <tmpl_if selected>selected</tmpl_if>>%%text%%</option>
@@ -196,9 +196,48 @@
 									$("#tabs").tabs("option", "disabled", false);
 								}
 								
-								// TODO: Create field inputs for custom fields!
+								var fieldsBlock = $("#page_type_fields");
+								var fieldsTypeid = fieldsBlock.get(0).getAttribute('typeid');
+								//alert(fieldsTypeid+','+opt.value);
+								if(fieldsTypeid == opt.value)
+									fieldsBlock.show();
+								else
+									fieldsBlock.hide();
 							}
 						</script>
+						<div id='page_type_fields' typeid='%%typeid%%'>
+							<tmpl_if page_type_fields>
+								<hr size=1>
+								<h3>Options Specific to %%typeid_name%%</h3>
+								<table border=0>
+									<tmpl_loop page_type_fields>
+										<tr>
+											<tmpl_if type_bool>
+												<td>&nbsp;</td>
+												<td valign=middle>
+													<input type=checkbox class=checkbox name=opt_%%field%% value=1 <tmpl_if value>checked</tmpl_if> id=opt_%%field%%>
+													<label for=opt_%%field%%> <b>%%title%%</b></label>
+												
+											<tmpl_else>	
+												<td valign=top><b>%%title%%</b>:</td><td></td>
+												</tr><tr> 
+												<td valign=top colspan=2>
+													<tmpl_if type_int>
+														<input type=text class=num name=opt_%%field%% value='%%value%%' size=10>
+													<tmpl_else>
+														<input type=text class=textinput name=opt_%%field%% id=opt_%%field%% onfocus='select()' value="<tmpl_var value escape=html>" size=50>
+													</tmpl_if>
+											</tmpl_if>
+												
+												<tmpl_if hint>
+													<div class=hint>%%hint%%</div>
+												</tmpl_if>
+											</td>
+										</tr>
+									</tmpl_loop>
+								</table>
+							</tmpl_if>
+						</div>
 					</td>
 				</tr>
 			

@@ -1,0 +1,78 @@
+						<form class='wrap'  onsubmit='return ajax_post_new(this)' id="newpost-form">
+							<table width='100%'>
+								<tr>
+									<td class='content' colspan='2'>
+										<textarea class="hinted" 
+											id="newpost-text" 
+											name="comment" 
+											hint="Say something here ..."
+											onblur="if(this.value=='') {this.className='hinted';this.value=this.getAttribute('hint');}"
+											onfocus="if(this.value==this.getAttribute('hint')) {this.value='';this.className='';}else{select()}" 
+											>Say something here ...</textarea>
+									</td>
+								<tmpl_if user_display>
+								<tr>
+									<td colspan=3>
+										<!--<div class='ident' id='postas_display'>
+											<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
+											Posting as <b>%%user_display%%</b>
+											<input value='%%user_display%%' name='poster_name' type=hidden>
+											<input value='%%user_email%%' name='poster_email' type=hidden>
+										</div>-->
+										<div class='controls'>
+											<script>
+											$(function(){
+												var postOnEnter = true;
+												$("#newpost-text").keypress(function(event) {
+													if(!postOnEnter)
+														return;
+													if ( event.which == 13 ) {
+														$("#newpost-form").submit();
+													}
+												});
+												
+												$("#post-on-enter").attr('checked',true);
+												$("#post-on-enter").bind('change', function() {
+													var th = $(this);
+													if(!th.attr('checked'))
+													{
+														$("#post-on-enter-option").hide();
+														$("#post-btn").show();
+														postOnEnter = false;
+													}
+												});
+												
+												var elm = $("#newpost-text").get(0);
+												if(elm) elm.onfocus();
+											});
+											</script>
+											<style>
+												#post-on-enter{ vertical-align:middle };
+											</style>
+											<div id='post-on-enter-option' class='hint'>
+												<input type="checkbox" id="post-on-enter" value="1" checked><label for="post-on-enter" style='color: rgb(100,100,100);font-size:.90em'>
+													Post automatically when ENTER pressed
+												</label>
+											</div>
+											<button id="post-btn" style='display:none' type='submit' class='button'>Post</button>
+										</div>
+									</td>
+								</tr>
+								<tmpl_else>
+									<tr>
+										<td align='right'>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' id='newpost_poster_name' size=15></td>
+									
+										<td rowspan='2'>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td align='right'>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
+									</tr>
+								</tmpl_if>
+							</table>
+						</form>

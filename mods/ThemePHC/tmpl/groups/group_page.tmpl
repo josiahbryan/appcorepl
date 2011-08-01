@@ -41,7 +41,7 @@
 	</style>
 </tmpl_unless>
 
-<h1 class=title>%%group_title%%</h1>
+<h1 class='title'>%%group_title%%</h1>
 
 <style>
 .tagline
@@ -73,13 +73,13 @@ div.description { margin: .5em 0}
 </div>
 
 <tmpl_if group_tagline>
-	<div class=tagline>
+	<div class='tagline'>
 		%%group_tagline%%
 	</div>
 </tmpl_if>
 
 <tmpl_if group_description>
-	<div class=description>
+	<div class='description'>
 		%%group_description%%
 	</div>
 </tmpl_if>
@@ -129,7 +129,7 @@ td.title
 <tmpl_if events_weekly>
 	<h3 class='event-list-header'><a name='weekly'>Every Week</a></h3>
 		
-	<table class='posts' width='100%' cellpadding=0 cellspacing=0 style='margin-top:-1.5em'>
+	<table class='posts' width='100%' cellpadding='0' cellspacing='0' style='margin-top:-1.5em'>
 		<tbody>
 			<tr><td class='group-header' colspan=4>&nbsp;</td></tr>
 			<tmpl_loop events_weekly>
@@ -141,7 +141,7 @@ td.title
 				
 				<tmpl_loop list>		
 					<tr class='<tmpl_var post_flags>'>
-						<td nowrap class='subject' align=center>
+						<td nowrap class='subject' align='center'>
 							<a href='%%bin%%/%%folder_name%%' class='title_link'>%%time%%</a>
 						</td>
 						<td class=title>
@@ -155,7 +155,7 @@ td.title
 </tmpl_if>
 	
 <tmpl_if is_mobile>
-	<h1>Bulletin Board</h2>
+	<h1>Bulletin Board</h1>
 <tmpl_else>
 	<h3 class='posts_list_title' style='margin-top:1.5em'>Bulletin Board</h3>
 </tmpl_if>
