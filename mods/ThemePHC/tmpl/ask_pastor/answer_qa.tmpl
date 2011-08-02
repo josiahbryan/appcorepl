@@ -1,0 +1,80 @@
+<link href="/appcore/mods/Boards/css/boards.css" rel="stylesheet" type="text/css" />
+
+<title>Ask the Pastor</title>
+<h1>Ask the Pastor</h1>
+
+<!--%macro::sub_nav()%-->
+<!--<tmpl_var board_nav>-->
+
+<script src='%%appcore%%/ckeditor/ckeditor.js' index='0'></script>
+<!--<Xscript>
+function win_onload()
+{
+
+	var oFCKeditor = new FCKeditor('age') ;
+	oFCKeditor.BasePath = '/fckeditor/' ;
+	oFCKeditor.ToolbarSet = 'JBlog';
+	oFCKeditor.Height = "300px" ;
+	
+	oFCKeditor.ReplaceTextarea();
+}
+
+global.onload(win_onload);
+</script>-->
+
+<script>
+//CKEDITOR.basePath = '%%appcore%%/ckeditor/'; 
+CKEDITOR.replace( 'comment', {
+	//baseHref: '%%appcore%%/ckeditor/',
+	extraPlugins : 'autogrow',
+	width: '96%',
+	//skin: 'office2003'
+	skin: 'kama',
+	disableNativeSpellChecker: false,
+	removePlugins: 'elementspath,scayt,contextmenu',
+	toolbar: 'Basic',
+	//skin: 'v2'
+});
+
+</script>
+
+<tmpl_if post_text>
+	<div class='ffjc-info'>
+		<b>You are replying to:</p>
+			<blockquote>
+				<p><tmpl_var post_text></p>
+			</blockquote>
+		</p>
+	</div>
+</tmpl_if>
+
+<form action='<tmpl_var post_url>' method=POST style='display:inline;border:0;padding:0;margin:0' name=comment>
+	<input type=hidden name=postid value="<tmpl_var post_postid>">
+	
+
+	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
+	
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+			
+			<tr>
+				<td colspan=2 style='width:500px'><textarea rows=8 cols=85 id=comment name=comment><tmpl_var answer></textarea>
+				<!--<Xscript type="text/javascript">var e=$x('comment');if(e){e.focus();e.select()}</script>-->
+				</td>
+				
+			</tr>
+			
+			
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Save Answer"> 
+				<!--<input type=reset value="Reset to Original Values"> -->
+				</td>
+			</tr>
+		
+		
+		</table>
+	</div>
+	
+</form>

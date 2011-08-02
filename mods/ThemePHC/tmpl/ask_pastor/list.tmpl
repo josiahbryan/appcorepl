@@ -1,0 +1,147 @@
+<link href="%%modpath%%/css/comments.css" rel="stylesheet" type="text/css" />
+<link href="/appcore/mods/Boards/css/boards.css" rel="stylesheet" type="text/css" />
+<link href="%%modpath%%/css/boards-list.css" rel="stylesheet" type="text/css" />
+<link href="%%modpath%%/css/blogs.css" rel="stylesheet" type="text/css" />
+<link href="%%modpath%%/css/ask_pastor.css" rel="stylesheet" type="text/css" />
+<title><tmpl_var board_title></title>
+
+<h1><tmpl_var board_title></h1>
+
+<!--%macro::sub_nav()%-->
+<!--<Xtmpl_var board_nav>-->
+
+<tmpl_if board_tagline>
+	<h4 class='board-tagline'><tmpl_var board_tagline></h4>
+</tmpl_if>
+
+<tmpl_if description>
+	<div id='board-intro'>
+		<tmpl_var board_description>
+	</div>
+</tmpl_if> 
+
+
+
+<tmpl_if can_mgr>
+	<a class='edit_forum_link new_link' style='margin:0' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/edit_settings'><img src='%%appcore%%/images/silk/page_edit.png' border=0 align=absmiddle> Change Tagline Text...</a>
+</tmpl_if>
+
+<a class='new_link new_qa_link' href='%%binpath%%/new'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> <b>Ask Pastor <i>Your</i> Question!</b></a>
+		
+<style>
+.edit_post_link {
+	margin-right: -12em;
+}
+.hidden {
+	display: none;
+}
+</style>
+
+<tmpl_if posts>
+	<tmpl_loop posts>
+		<tmpl_if latest>
+			<div class='blogpost'>
+				<tmpl_if can_mgr>
+					<a class='edit_post_link' href='%%bin%%/answer?postid=<tmpl_var post_postid>'><img src='%%appcore%%/images/silk/page_edit.png' align=absmiddle border=0> <tmpl_if answer>Edit your Answer<tmpl_else>Answer Q #<tmpl_var post_postid></tmpl_if></a>
+				</tmpl_if>
+				
+				<h1><a name='p<tmpl_var post_postid>'><tmpl_var post_subject></a></h1>
+				<div class='question'>
+					<fieldset>
+						<div class='q'>Q<span class='hidden'>:</span></div>
+						<div class='question_text'>
+							<tmpl_var post_text>
+							<span class='attribution'>
+								<span class='name'>-- <tmpl_var post_poster_name></span> on <span class='date'><tmpl_var post_timestamp></span><!--, Question # <tmpl_var post_postid>-->
+							</span>
+						</div>
+					</fieldset>
+				</div>
+				<div class='answer'>
+					<fieldset>
+						<div class='a'>A<span class='hidden'>:</span></div>
+					
+						<div class='answer_text <tmpl_unless answer>not_answered_yet_container</tmpl_unless>'>
+							<tmpl_if answer>
+								<tmpl_var answer>
+								<span class='attribution'>
+									<span class='name'>-- Pastor Bryan</span> on <span class='date'><tmpl_var answer_timestamp></span>
+								</span>
+							<tmpl_else>
+								<span class='not_answered_yet'>(Not answered yet...)</span>
+							</tmpl_if>
+						</div>
+						
+					</fieldset>
+				</div>
+				<tmpl_unless replies>
+					<tmpl_if can_reply>
+						<a class='new_reply_link <tmpl_if replies>top_reply_link</tmpl_if>' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_folder_name>/reply'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Comment on the QA ...</a>
+					</tmpl_if can_comment>
+				</tmpl_unless>
+				
+				<div id='comments' class='comments_block'>
+					<tmpl_if replies>
+						<!--<h5>Comments:</h5>-->
+						<div class=comments_title>
+							Comments:
+						</div>
+						
+						<div class='replies_container'>
+							<tmpl_loop replies>
+								<div class=comment_text style='margin-left:<tmpl_var indent_css>em;margin-right:<tmpl_var indent_css>em;'>
+									<a name='c<tmpl_var postid>'><span class=timestamp><tmpl_var timestamp></span></a>: <br>
+									<tmpl_if can_admin><a class='admin_link' href='%%folder_name%%/delete?postid=%%postid%%' onclick='return confirm("Are you SURE you want to delete this comment?")'><img src='%%appcore%%/images/silk/delete.png' border=0 align=absmiddle></a> </tmpl_if>
+									<blockquote><span class=text><tmpl_var text></span>
+									<span class=meta> <span class=person>-- <tmpl_var poster_name></span></span><tmpl_if can_reply> <span class='irl'>(<a href='%%reply_to_url%%/%%fake_folder_name%%'>Reply <b>...</b></a>)</span></tmpl_if></blockquote>
+								</div>
+							</tmpl_loop>
+						</div>
+						
+						<tmpl_if can_reply>
+							<a class='new_reply_link' href='%%bin%%/%%pageid%%/<tmpl_var board_folder_name>/<tmpl_var post_folder_name>/reply'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Comment on the QA ...</a>
+						</tmpl_if>
+				
+					<tmpl_else>
+						<!--<h3>Sorry, no replies yet to this post.</h3>-->
+					</tmpl_if>
+				</div>
+			</div>
+		</tmpl_if>
+	</tmpl_loop> 
+	
+	<tmpl_if old_posts>
+		<style>
+			.ap tr.odd td { background: #ffffee }
+			.ap tr.even td { background: #f7eee7 }
+			.ap td { padding: .5em .25em .5em .25em; }
+			.ap td.ap-q, .ap td.ap-a { font-size: .85em; border-right: 2px solid #cdae94 }
+			.ap td.ap-q a, .ap td.ap-a a { font-size: .85em }
+			.ap td.ap-by { padding: 0 .25em 0 .25em; }
+			.ap td.ap-a span.notans { color: #6a6d6a }
+		</style>
+		<h1><tmpl_if questionid>Other<tmpl_else>Previous</tmpl_if> Questions Asked ...</h1>
+		<table class='posts ap' width='100%' cellpadding=0 cellspacing=0>
+			<thead>
+				<th align='left'>Question</th>
+				<th align='left'>Answer</th>
+				<th align='left'>Asked By</th>
+			</thead>
+			<tbody>
+				<tmpl_loop old_posts>
+					<tmpl_unless latest>
+						<tr class='<tmpl_if odd>odd<tmpl_else>even</tmpl_if>'>
+							<td valign='top' class='subject ap-q'><a href='?questionid=%%postid%%' title='Read this question'><img src='%%appcore%%/images/silk/book_open.png' align=absmiddle border=0 title='Read this question'></a> %%short_text%% (<a href='?questionid=%%postid%%'>Read...</a>)</td>
+							<td valign='top' class='subject ap-a'><tmpl_if short_answer>%%short_answer%%  (<a href='?questionid=%%postid%%'>Read...</a>)<tmpl_else><i><span class='notans'>Not answered yet...</span></i></tmpl_if></td>
+							<td valign='top' class='subject ap-by'><span class='by'>%%short_timestamp%% | %%poster_name%%</span></td>
+						</tr>
+					</tmpl_unless>
+				</tmpl_loop>
+			</tbody>
+		</table>
+	</tmpl_if>
+<tmpl_else>
+	<h3>Sorry, no posts added yet to this blog.</h3>
+</tmpl_if>
+
+

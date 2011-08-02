@@ -398,7 +398,7 @@ package WriteBlock;
 			my @posts = map { Boards::Post->retrieve($_) } @id_list;
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
-			my @output_list = map { $self->load_post($_,$req,1) } @posts; # 1 = dont count this load as a 'view'
+			my @output_list = map { $self->load_post($_,1) } @posts; # 1 = dont count this load as a 'view'
 			foreach my $b (@output_list)
 			{
 				$b->{bin}         = $bin;

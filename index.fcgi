@@ -13,6 +13,8 @@ my $dispatch = AppCore::Web::DispatchCore->new();
 
 my $last_mod = undef;
 
+AppCore::DBI->prime_cached_dbobjects;
+
 while(my $q = CGI::Fast->new)
 {
 	$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};

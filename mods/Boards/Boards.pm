@@ -597,8 +597,33 @@ package Boards;
 		@VideoProviders = ();
 		%ControllerCache = ();
 	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'prime_cache');
 	
+	sub prime_cache
+	{
+		my $self = shift;
+		
+		print STDERR __PACKAGE__."->prime_cache: Loading text filters and video providers\n";
+		$self->load_video_providers;
+		$self->load_text_filters;
+		
+# 		my @boards = Boards::Board->retrieve_all; #search(board_userid => 0);
+# 		foreach my $board (@boards)
+# 		{
+# 			print STDERR __PACKAGE__."->prime_cache: Loading board # $board - ".$board->title."\n";
+# 			$self->load_post_list($board);
+# 		}
+		
+	}
+	
+	sub load_text_filters
+	{
+		if(!@TextFilters)
+		{
+			# only load the 'enabled' filters (all are enabled by default)
+			@TextFilters = Boards::TextFilter->search(is_enabled=>1);
+		}
+	}	
 	
 	sub get_controller
 	{
@@ -777,7 +802,7 @@ package Boards;
 			my @posts = map { Boards::Post->retrieve($_) } @id_list;
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
-			my @output_list = map { $controller->load_post($_,$req,1) } @posts; # 1 = dont count this load as a 'view'
+			my @output_list = map { $controller->load_post($_,1) } @posts; # 1 = dont count this load as a 'view'
 			foreach my $b (@output_list)
 			{
 				$b->{bin}         = $bin;
@@ -1183,11 +1208,7 @@ package Boards;
 		#$clean_html = $self->create_inline_links($clean_html);
 		
 		# Run all Boards::TextFilter on both the clean_html and the full text
-		if(!@TextFilters)
-		{
-			# only load the 'enabled' filters (all are enabled by default)
-			@TextFilters = Boards::TextFilter->search(is_enabled=>1);
-		}
+		$self->load_text_filters;
 		
 		my $text_tmp = AppCore::Web::Common->clean_html($b->{text});
 		foreach my $filter (@TextFilters)
@@ -1310,7 +1331,6 @@ package Boards;
 		my $self = shift;
 		
 		my $post = shift;
-		my $req  = shift;
 		my $dont_count_view = shift || 0;
 		my $more_local_ctx  = shift || undef;
 		my $dont_incl_comments = shift || 0;
@@ -1627,14 +1647,18 @@ package Boards;
 		my $post_class = undef;
 		foreach my $provider (@VideoProviders)
 		{
-			my $config = $provider->controller->config;
-			my $rx = $config->{url_regex};
-			my ($url) = $req->{comment} =~ /$rx/;
-			if($url)
+			eval
 			{
-				$post_class = "video";
-				last;
-			}
+				my $config = $provider->controller->config;
+				my $rx = $config->{url_regex};
+				my ($url) = $req->{comment} =~ /$rx/;
+				if($url)
+				{
+					$post_class = "video";
+					last;
+				}
+			};
+			warn $@ if $@;
 		}
 		
 		if(!$post_class && 
@@ -1695,7 +1719,7 @@ package Boards;
 		my $folder_name = $req->shift_path;
 		$req->push_page_path($folder_name);
 		
-		#die Dumper $req, $req->page_path."", $self->binpath."";
+		#die Dumper $folder_name,$req, $req->page_path."", $self->binpath."";
 		
 		#my ($section_name,$folder_name,$board_folder_name,$skin,$r,$page,$req,$path) = @_;
 		
@@ -1749,7 +1773,6 @@ package Boards;
 				$tmpl->param($_ => $reply_form_resultset->{$_}) foreach keys %$reply_form_resultset;
 			};
 			$r->error("Error Loading Form",$@) if $@;
-			#$r->error("No Such Post","Sorry, the parent comment you gave appears to be invalid.");
 			
 			$tmpl->param(post_url => "$page_path/post");
 			
@@ -1895,7 +1918,7 @@ package Boards;
 			
 			#sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
 			my $dont_inc_comments = $req->no_comments == 1;
-			my $post_resultset = $controller->load_post($post,$req,0,undef,$dont_inc_comments);
+			my $post_resultset = $controller->load_post($post,0,undef,$dont_inc_comments);
 			
 			if($req->output_fmt eq 'json')
 			{
@@ -2107,31 +2130,25 @@ package Boards;
 		return 0;
 	}
 	
-	sub notify_via_email
+	sub email_new_post
 	{
+# 			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
+# 			return;
+			
 		my $self = shift;
-		my $action = shift;
 		my $post = shift;
 		my $args = shift;
 		
 		my $server = AppCore::Config->get('WEBSITE_SERVER');
 		
-		#print STDERR "notify_via_email stacktrace:\n"; 
-		#AppCore::Common::print_stack_trace();
+		my $board_folder = $post->boardid->folder_name;
 		
-		if($action eq 'new_post')
-		{
-# 			print STDERR __PACKAGE__."::email_new_post(): Disabled till email is enabled\n";
-# 			return;
-			
-			my $board_folder = $post->boardid->folder_name;
-			
-			my $folder_name = $post->folder_name;
-			my $board = $post->boardid;
-			
-			my $abs_url = $self->module_url("$board_folder/$folder_name",1);
-			
-			my $email_body = qq{A new post was added by }.$post->poster_name." in forum '".$board->title.qq{':
+		my $folder_name = $post->folder_name;
+		my $board = $post->boardid;
+		
+		my $abs_url = $self->module_url("$board_folder/$folder_name",1);
+		
+		my $email_body = qq{A new post was added by }.$post->poster_name." in forum '".$board->title.qq{':
 
     }.AppCore::Web::Common->html2text($post->text).qq{
 
@@ -2140,27 +2157,31 @@ Here's a link to that page:
     
 Cheers!};
 			
-			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
-			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
-			
-			# Dont email the person that just posted this :-)
-			@list = grep { $_ ne $post->poster_email } @list;
-			
-			AppCore::EmailQueue->send_email([@list],"[".AppCore::Config->get("WEBSITE_NAME")."] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
-			
-			return 1;
-		}
-		elsif($action eq 'new_comment')
-		{
-			
-# 			print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
+		my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+		@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
+		
+		# Dont email the person that just posted this :-)
+		@list = grep { $_ ne $post->poster_email } @list;
+		
+		AppCore::EmailQueue->send_email([@list],"[".AppCore::Config->get("WEBSITE_NAME")."] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
+	}
+	
+	sub email_new_comment
+	{
+		my $self = shift;
+		my $post = shift;
+		my $args = shift;
+		
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		
+#		print STDERR __PACKAGE__."::email_new_post_comments(): Disabled till email is enabled\n";
 # 			return;
-			
-			my $comment = $post;
-			my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."#c" . $comment->id;
-			
-			my $server = 
-			my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
+		
+		my $comment = $post;
+		my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."#c" . $comment->id;
+		
+		my $server = 
+		my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
 
     }.AppCore::Web::Common->html2text($comment->text).qq{
 
@@ -2168,93 +2189,122 @@ Here's a link to that page:
     ${server}$comment_url
     
 Cheers!};
-			#
-			AppCore::EmailQueue->reset_was_emailed;
-			
-			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
-			my $title = AppCore::Config->get("WEBSITE_NAME"); 
-			
-			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
-			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
-			
-			my $email_subject = "[$title] ".$comment->poster_name." commented on '".$comment->top_commentid->subject."'";
-			
-			# Dont email the person that just posted this :-)
-			@list = grep { $_ ne $comment->poster_email } @list;
-			
-			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
-			
-			AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
-					if $comment->parent_commentid && 
-					$comment->parent_commentid->id && 
-					$comment->parent_commentid->poster_email &&
-					$comment->parent_commentid->poster_email ne $comment->poster_email && 
-					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
-			
-			AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
-					if $comment->top_commentid && 
-					$comment->top_commentid->id && 
-					$comment->top_commentid->poster_email &&
-					$comment->top_commentid->poster_email ne $comment->poster_email &&  
-					!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
-			
-			my $board = $comment->boardid;
-			
-			AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,$email_body)
-						if $board && 
-						$board->id && 
-						$board->managerid && 
-						$board->managerid->id && 
-						$board->managerid->email && 
-						$board->managerid->email ne $comment->poster_email &&
-						!AppCore::EmailQueue->was_emailed($board->managerid->email);
-						
-			AppCore::EmailQueue->reset_was_emailed;
-			
+		#
+		AppCore::EmailQueue->reset_was_emailed;
+		
+		my $noun = $self->config->{long_noun} || 'Bulletin Boards';
+		my $title = AppCore::Config->get("WEBSITE_NAME"); 
+		
+		my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+		@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
+		
+		my $email_subject = "[$title] ".$comment->poster_name." commented on '".$comment->top_commentid->subject."'";
+		
+		# Dont email the person that just posted this :-)
+		@list = grep { $_ ne $comment->poster_email } @list;
+		
+		AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
+		
+		AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
+				if $comment->parent_commentid && 
+				$comment->parent_commentid->id && 
+				$comment->parent_commentid->poster_email &&
+				$comment->parent_commentid->poster_email ne $comment->poster_email && 
+				!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
+		
+		AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
+				if $comment->top_commentid && 
+				$comment->top_commentid->id && 
+				$comment->top_commentid->poster_email &&
+				$comment->top_commentid->poster_email ne $comment->poster_email &&  
+				!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
+		
+		my $board = $comment->boardid;
+		
+		AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,$email_body)
+					if $board && 
+					$board->id && 
+					$board->managerid && 
+					$board->managerid->id && 
+					$board->managerid->email && 
+					$board->managerid->email ne $comment->poster_email &&
+					!AppCore::EmailQueue->was_emailed($board->managerid->email);
+					
+		AppCore::EmailQueue->reset_was_emailed;
+	}
+	
+	sub email_new_like
+	{
+		my $self = shift;
+		my $post = shift;
+		my $args = shift;
+		
+		my $like = $post;
+		my $noun = $args->{noun};
+		
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		
+		my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
+		
+		AppCore::EmailQueue->reset_was_emailed;
+		
+		my $noun = $self->config->{long_noun} || 'Bulletin Boards';
+		my $title = AppCore::Config->get('WEBSITE_NAME'); 
+		
+		# Notify User
+		my $email_subject = "[$title $noun] ".$like->name." likes your $noun '".$like->postid->subject."'";
+		my $email_body = $like->name." likes your $noun '".$like->postid->subject."\n\n\t".
+				AppCore::Web::Common->html2text($like->postid->text)."\n\n".
+				"Here's a link to that page:\n".
+				"\t${server}$comment_url\n\n".
+				"Cheers!";
+		
+		my $user = AppCore::Common->context->user;
+		
+		AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
+		
+		# Notify Webmaster
+		my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+		@list = (AppCore::Config->get('WEBMASTER_EMAIL')) if !@list;
+		
+		$email_subject = "[$title $noun] ".$like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
+		$email_body = $like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."\n\n\t".
+				AppCore::Web::Common->html2text($like->postid->text)."\n\n".
+				"Here's a link to that page:\n".
+				"\t${server}$comment_url\n\n".
+				"Cheers!";
+		
+		# Dont email the person that just posted this :-)
+		if($user)
+		{
+			@list = grep { $_ ne $user->email} @list;
+		}
+		AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
+	}
+	
+	sub notify_via_email
+	{
+		my $self = shift;
+		my $action = shift;
+		my $post = shift;
+		my $args = shift;
+		
+		#print STDERR "notify_via_email stacktrace:\n"; 
+		#AppCore::Common::print_stack_trace();
+		
+		if($action eq 'new_post')
+		{
+			$self->email_new_post($post,$args);
+			return 1;
+		}
+		elsif($action eq 'new_comment')
+		{
+ 			$self->email_new_comment($post,$args);
 			return 1;
 		}
 		elsif($action eq 'new_like')
 		{
-			my $like = $post;
-			my $noun = $args->{noun};
-			
-			my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
-			
-			AppCore::EmailQueue->reset_was_emailed;
-			
-			my $noun = $self->config->{long_noun} || 'Bulletin Boards';
-			my $title = AppCore::Config->get("WEBSITE_NAME"); 
-			
-			# Notify User
-			my $email_subject = "[$title $noun] ".$like->name." likes your $noun '".$like->postid->subject."'";
-			my $email_body = $like->name." likes your $noun '".$like->postid->subject."\n\n\t".
-					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
-					"Here's a link to that page:\n".
-					"\t${server}$comment_url\n\n".
-					"Cheers!";
-			
-			my $user = AppCore::Common->context->user;
-			
-			AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
-			
-			# Notify Webmaster
-			my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
-			@list = (AppCore::Config->get("WEBMASTER_EMAIL")) if !@list;
-			
-			$email_subject = "[$title $noun] ".$like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
-			$email_body = $like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."\n\n\t".
-					AppCore::Web::Common->html2text($like->postid->text)."\n\n".
-					"Here's a link to that page:\n".
-					"\t${server}$comment_url\n\n".
-					"Cheers!";
-			
-			# Dont email the person that just posted this :-)
-			if($user)
-			{
-				@list = grep { $_ ne $user->email} @list;
-			}
-			AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
-			
+			$self->email_new_like($post,$args);
 			return 1;
 		}
 		

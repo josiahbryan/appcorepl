@@ -193,7 +193,7 @@ package ThemePHC::Events;
 	{
 		my $self = shift;
 		
-		my ($post, $req) = @_;
+		my ($post) = @_;
 		
 		my $rs = $self->SUPER::load_post(@_);
 		
@@ -473,7 +473,7 @@ package ThemePHC::Events;
 		#print STDERR __PACKAGE__.": Clearing cached data...\n";
 		$EventsListCache = 0;
 	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'load_basic_events_data');
 	
 	
 	sub events_main
@@ -720,7 +720,7 @@ package ThemePHC::Events;
 		my @keys = keys %$b;
 		#$b->{'post_'.$_} = $b->{$_} foreach @keys;
 		#$b->{'board_folder_name'} = $BOARD_FOLDER;
-		my $post_resultset = $self->SUPER::load_post($post,{},1); # 1 = dont count view
+		my $post_resultset = $self->SUPER::load_post($post,1); # 1 = dont count view
 		$b->{$_} = $post_resultset->{$_} foreach keys %$post_resultset;
 			
 		$b->{'item_'.$_}  = $item->get($_),"" foreach $item->columns; # TODO which line is needed??

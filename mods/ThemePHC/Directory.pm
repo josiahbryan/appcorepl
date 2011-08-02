@@ -243,7 +243,7 @@ package PHC::Directory;
 		#print STDERR __PACKAGE__.": Clearing cache...\n";
 		$DirectoryData = {count=>0, cache=>{}};
 	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'load_directory');
 	
 	sub load_directory
 	{
@@ -261,7 +261,7 @@ package PHC::Directory;
 		else
 		{
 			$search = '';
-			$length = shift; 
+			$length = shift || 10; 
 		}
 		
 		
@@ -297,7 +297,7 @@ package PHC::Directory;
 			return $DirectoryData->{cache}->{$cache_key};
 		} 
 			
-		#print STDERR "load_directory: Cache miss for key '$cache_key'\n";
+		print STDERR __PACKAGE__."->load_directory: Cache miss for key '$cache_key'\n";
 		
 			
 		my $www_path = AppCore::Config->get("WWW_DOC_ROOT");

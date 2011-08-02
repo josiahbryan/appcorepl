@@ -279,24 +279,45 @@ div.dlinfo td.text img
 		<tr class='search-footer'></tr>
 	</table>
 	
-	<table class='entry dir-body' width='100%'>
-		<tmpl_loop entries>
-			<tr class='group'>
-				<td colspan=2>
-					<!--<h3><a href='%%bin%%/%%folder_name'>%%title%%</a></h3>-->
-					<h3><a href='%%bin%%/%%folder_name%%'>%%title%%</a></h3>
-					<div class=diz>
-						%%tagline%%
-					</div>
-				</td>
-			</tr>
-		</tmpl_loop>
-		<tmpl_if next_idx>
-			<tmpl_unless search>
-				<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
-			</tmpl_unless>
+	<tmpl_if is_mobile>
+		<tmpl_if search>
+			<h1>Results Matching "<tmpl_var search escape=html>"</h1>
+		<tmpl_else>
+			<h1>Groups</h1>
 		</tmpl_if>
-	</table>
+		
+		<ul class='links'>
+			<tmpl_loop entries>
+				<li>
+					<a href='%%bin%%/%%folder_name%%'>
+						<h4>%%title%%</h4>
+					</a>
+				</li>
+			</tmpl_loop>
+		</ul>
+	
+	<tmpl_else>
+		
+		<table class='entry dir-body' width='100%'>
+			<tmpl_loop entries>
+				<tr class='group'>
+					<td colspan=2>
+						<!--<h3><a href='%%bin%%/%%folder_name'>%%title%%</a></h3>-->
+						<h3><a href='%%bin%%/%%folder_name%%'>%%title%%</a></h3>
+						<div class=diz>
+							%%tagline%%
+						</div>
+					</td>
+				</tr>
+			</tmpl_loop>
+			<tmpl_if next_idx>
+				<tmpl_unless search>
+					<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
+				</tmpl_unless>
+			</tmpl_if>
+		</table>
+		
+	</tmpl_if>
 	
 	<tmpl_if search>
 		<tmpl_unless entries>

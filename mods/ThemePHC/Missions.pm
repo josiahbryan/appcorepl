@@ -395,7 +395,7 @@ package ThemePHC::Missions;
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
 		$MissionsListCache = 0;
 	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'load_missions_list');
 	
 	sub missions_main
 	{
@@ -463,6 +463,13 @@ package ThemePHC::Missions;
 			$tmpl->param(missions_list => $MissionsListCache->{page_list});
 			
 			my $map_list = $MissionsListCache->{map_list};
+			
+			my $bin = $self->binpath;
+			foreach my $m (@{$map_list || []})
+			{
+				$m->{binpath} = $bin;
+			}
+			
 			$tmpl->param(mlist => $map_list);
 			$tmpl->param(mlist_json => to_json($map_list));
 			
@@ -495,7 +502,7 @@ package ThemePHC::Missions;
 			
 			my %country_groups;
 			
-			my $bin = $self->binpath;
+			#my $bin = $self->binpath;
 			
 			# Force US to the top and International to the bottom of the list
 			my %sort_keys = ('united states' => '0', 'international' => 'zzzzzzzzzzzzz');
@@ -527,7 +534,7 @@ package ThemePHC::Missions;
 				
 				$ref->{$_} = $m->get($_) foreach qw/missionid city country mission_name family_name photo_url lat lng deleted/;
 				
-				$ref->{binpath} = $bin;
+				#$ref->{binpath} = $bin;
 				$ref->{'board_'.$_} = $m->boardid->get($_) foreach qw/folder_name section_name/;
 				$ref->{list_title} = $m->family_name ? $m->family_name : $m->mission_name;
 				

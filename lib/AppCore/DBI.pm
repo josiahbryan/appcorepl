@@ -2513,12 +2513,38 @@ package $opts->{pkg};
 	sub clear_cached_dbobjects
 	{
 		my $class = shift;
+		my $dont_prime = shift || 0;
 		
 		#print STDERR __PACKAGE__.": Clearing Class::DBI cache...\n";
 		$class->clear_object_index;
-		foreach my $pkg (@CacheClearHooks)
+		foreach my $data (@CacheClearHooks)
 		{
-			$pkg->clear_cached_dbobjects;
+			$data->{pkg}->clear_cached_dbobjects;
+		}
+		
+		$class->prime_cached_dbojects unless $dont_prime;
+	}
+	
+	sub prime_cached_dbobjects
+	{
+		foreach my $data (@CacheClearHooks)
+		{
+			my $prime = $data->{prime};
+			if($prime)
+			{
+				print STDERR "AppCore::DBI->prime_cached_dbojects: Priming cache with ".$data->{pkg}."::${prime}\n"; 
+				my $obj = eval { AppCore::Web::Module->bootstrap($data->{pkg}); };
+				undef $@;
+				if($obj)
+				{
+					$obj->$prime();
+				}
+				else
+				{
+					warn "AppCore::DBI->prime_cached_dbojects: Problem boostraping package '$data->{pkg}' to prime cache, using method on class instead";
+					$data->{pkg}->$prime();
+				}
+			}
 		}
 	}
 	
@@ -2526,7 +2552,8 @@ package $opts->{pkg};
 	{
 		my $class = shift;
 		my $hook_pkg = shift;
-		push @CacheClearHooks, $hook_pkg;
+		my $prime_cache_method = shift || undef;
+		push @CacheClearHooks, { pkg => $hook_pkg, prime => $prime_cache_method };
 	}
 	
 	my $db_modtime_sth; 

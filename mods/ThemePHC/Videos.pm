@@ -204,7 +204,7 @@ package ThemePHC::Videos;
 	{
 		my $self = shift;
 		
-		my ($post, $req) = @_;
+		my ($post) = @_;
 		
 		my $rs = $self->SUPER::load_post(@_);
 		
@@ -856,7 +856,7 @@ package ThemePHC::Videos;
 # 		my @keys = keys %$b;
 # 		#$b->{'post_'.$_} = $b->{$_} foreach @keys;
 # 		#$b->{'board_folder_name'} = $BOARD_FOLDER;
-# 		my $post_resultset = $self->SUPER::load_post($post,{},1); # 1 = dont count view
+# 		my $post_resultset = $self->SUPER::load_post($post,1); # 1 = dont count view
 # 		$b->{$_} = $post_resultset->{$_} foreach keys %$post_resultset;
 # 			
 # 		$b->{'item_'.$_}  = $item->get($_),"" foreach $item->columns; # TODO which line is needed??

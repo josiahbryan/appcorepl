@@ -219,7 +219,21 @@ package ThemePHC::Groups;
 		%ControllerCache = ();
 		$GroupsListCache = {count=>0, cache=>{}};
 	}	
-	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'prime_cache');
+	
+	sub prime_cache
+	{
+		my $self = shift;
+		
+		print STDERR __PACKAGE__."->prime_cache: Loading ALL groups\n";
+		$self->load_groups_list();
+		
+		print STDERR __PACKAGE__."->prime_cache: Loading Small Groups\n";
+		$self->load_groups_list({group_type=>'Small Group'});
+		
+		print STDERR __PACKAGE__."->prime_cache: Loading Ministry Teams\n";
+		$self->load_groups_list({group_type=>'Ministry Team'});
+	}
 	
 	
 	sub load_groups_list

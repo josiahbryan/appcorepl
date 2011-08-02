@@ -7,13 +7,14 @@ package Boards::TextFilter::TagVerses;
 	
 	sub filter_text
 	{
-		my $self = shift;
+		shift if $_[0] eq __PACKAGE__;
 		my $textref = shift;
 		ThemePHC::VerseLookup->tag_verses($textref);
 	};
 	
 	sub replace_block
 	{
+		shift if $_[0] eq __PACKAGE__;
 		my $block = shift;
 		__PACKAGE__->filter_text(\$block);
 		return $block;
@@ -39,6 +40,7 @@ package ThemePHC;
 	use ThemePHC::Groups;
 	use ThemePHC::Search;
 	use ThemePHC::LivePage;
+	use ThemePHC::AskPastor;
 	
 	# Load the talk controller so it can update user prefs
 	use ThemePHC::BoardsTalk;

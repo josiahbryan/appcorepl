@@ -1026,12 +1026,15 @@ package Content::Page::ThemeEngine;
 			$pgdat->{nav_path} = $self->breadcrumb_list->list;
 		}
 				
-		my $page_tmpl = $self->load_template('page.tmpl');
-		if($page_tmpl)
+		eval
 		{
-			$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
-			$pgdat->{page_content} = $page_tmpl->output;
-		}
+			my $page_tmpl = $self->load_template('page.tmpl');
+			if($page_tmpl)
+			{
+				$page_tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+				$pgdat->{page_content} = $page_tmpl->output;
+			}
+		};
 		
 		$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
 		

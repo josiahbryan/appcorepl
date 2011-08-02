@@ -531,3 +531,12 @@ table.comment_text td {
 {
 	padding-top: 5px;
 }
+
+
+.board-tagline 
+{ 
+	border: 2px solid #c9ac93;
+	font-size: .95em;
+	text-indent: 0px !important;
+	background:	#fff6ec;
+}

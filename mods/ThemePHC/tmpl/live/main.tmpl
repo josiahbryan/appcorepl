@@ -162,6 +162,8 @@ window.USER_DISPLAY = "%%user_display%%";
 							
 							var th = $(this),
 							    videoid = th.attr("videoid");
+							if(!videoid)
+								return true;
 							$("#tabs").tabs('select',1);
 							$("#video-playbox").html('<iframe src="http://player.vimeo.com/video/'+videoid+'?portrait=0&amp;autoplay=1" width="480" height="271" frameborder="0"></iframe>');
 							$("#video-playbox").show();
