@@ -31,10 +31,12 @@ my %seen_feed; # flag feeds we've already synced so we dont duplicate post
 
 # Upload all new posts to FB from Boards
 my @posts = Boards::Post->retrieve_from_sql(q{deleted=0 and extra_data like '%"needs_uploaded":1%'});
+
+print date().": $0 Uploading posts to FB...\n" if @posts;
 foreach my $post (@posts)
 {
 	next if ! $post->boardid->fb_sync_enabled;
-	next if $post->data->get('user_said_no_fb');
+	next if   $post->data->get('user_said_no_fb');
 	
 	my $noun = 'post';
 	if($post->top_commentid && $post->top_commentid->id)
@@ -51,26 +53,32 @@ foreach my $post (@posts)
 	$post->data->update;
 }
 
+#die "Just testing - not going to run download yet";
+
 # Now iterate over all boards and attempt to pull down new posts/comments from FB
-my @boards = Boards::Board->retrieve_all(enabled => 1);
+my @boards = Boards::Board->search(fb_sync_enabled => 1, enabled => 1);
+
+print date().": $0 Checking ".scalar(@boards)." boards for new posts from FB...\n" if @boards;
 foreach my $board (@boards)
 {
-	next if !$board->fb_sync_enabled;
+	#next if !$board->fb_sync_enabled;
+	
+	#next if $board->id == 4;
 	
 	my $fb_feed_id      = $board->fb_feed_id;
 	my $fb_access_token = $board->fb_access_token;
 	
 	if(!$fb_feed_id || !$fb_access_token)
 	{
-		#print STDERR "Not syncing '".$board->title."' - no FB Feed ID or Access Token.\n";
+		print STDERR "Not syncing '".$board->title."' - no FB Feed ID or Access Token.\n";
 		next; 
 	}
 	
-	my $feed_url = "https://graph.facebook.com/${fb_feed_id}/feed?access_token=${fb_access_token}";
+	my $feed_url = "https://graph.facebook.com/${fb_feed_id}/feed?access_token=${fb_access_token}";#&limit=999";
 	
 	if($seen_feed{$feed_url})
 	{
-		#print STDERR "Not syncing '".$board->title."' - already synced feed $fb_feed_id to board '".$seen_feed{$feed_url}->title."'\n";
+		print STDERR "Not syncing '".$board->title."' - already synced feed $fb_feed_id to board '".$seen_feed{$feed_url}->title."'\n";
 		next;
 	}
 	
@@ -78,7 +86,6 @@ foreach my $board (@boards)
 	
 	update_board($board,$feed_url);
 }
-
 
 print date().": $0 Finished\n\n";
 
@@ -146,6 +153,13 @@ sub update_board
 		my $post_is_new = 0;
 		if(!$post)
 		{
+			my $fb_type = $fb_post->{type};
+			$fb_type = 'photo' if $fb_type eq 'image';
+  			print STDERR "[DEBUG] Test, New Post: By ".$fb_post->{from}->{name}.": '$fb_post->{message}' (Type: $fb_type)\n";
+  			print STDERR Dumper $fb_post; # if $fb_type ne 'photo' && $fb_type ne 'status' && $fb_type eq 'link';# && !$fb_post->{message}; 
+# 			#$fb_post->{type} eq 'photo' && !$fb_post->{message} && !$fb_post->{caption};
+ 			next;
+			
 			my $poster_fb_id = $fb_post->{from}->{id};
 			my $poster_photo_url = "https://graph.facebook.com/" . $poster_fb_id . "/picture";
 			
@@ -153,16 +167,59 @@ sub update_board
 			my $user = lookup_user($poster_fb_id, $fb_post->{from}->{name});
 			$poster_photo_url = download_user_photo($user, $poster_photo_url, $poster_fb_id);
 			
+			my $message = $fb_post->{message};
+			if(!$message)
+			{
+# 				if($fb_post->{caption})
+# 				{
+# 					#$message = "<span class=name>" . $fb_post->{from}->{name} ."</span> "
+# 					$message = "uploaded <a href='$fb_post->{link}'>$fb_post->{caption}</a> to <b><a href='$fb_post->{link}'>$fb_post->{name}</a></b> on <i>Facebook</i>";
+# 				}
+# 				else
+# 				{
+# 					$message = $fb_post->{description};
+# 				}
+			}
+			
 			# Create a set of arguments for create_new_thread()
 			my $data = {
 				poster_name	=> $fb_post->{from}->{name},
 				poster_photo	=> $poster_photo_url,
 				poster_email	=> $user ? $user->email : undef,
-				comment		=> $fb_post->{message} 
+				comment		=> $message,
+				post_class	=> $fb_type eq 'status' ? 'post' : $fb_type,
+				system_content	=> !$message ? 1:0,
 			};
+			
+			if($fb_type eq 'photo')
+			{
+# 				$data->{comment} .= qq{
+# 					<hr size=1 class='post-attach-divider'>
+# 					<a class='image-link' href="$fb_post->{link}"><img src="$fb_post->{picture}" border=0><span class='overlay'></span></a>};
+			}
+			elsif($fb_type eq 'link')
+			{
+# 				if($data->{comment} !~ /http:/)
+# 				{
+# 					$data->{comment} .= "<br>\nLink: $fb_post->{link}\n";
+# 				}
+			}
+			elsif($fb_type eq 'video')
+			{
+				if($data->{comment} !~ /http:/)
+				{
+					$data->{comment} .= "<br>\nWatch at $fb_post->{link}\n"; 	
+				}
+			}
+			
+ 			#print STDERR "[DEBUG] Data set: ".Dumper($data, $fb_post)."\n\n\n" if $fb_type eq 'link' && $fb_type ne 'status';
+ 			#next;
+			
 			
 			# Use Boards to create a new thread
 			$post = $board_controller->create_new_thread($board, $data, $user);
+			
+			#print STDERR "Debug: fb type: '$fb_type', in args:'$data->{post_class}', post class:'".$post->post_class."'\n";
 			
 			# Apply Facebook-specific data/fields that create_new_thread doesnt know about
 			my $create_time = normalize_timestamp($fb_post->{created_time});
@@ -175,11 +232,40 @@ sub update_board
 			$post->external_id($external_id);
 			$post->external_source('Facebook');
 			
-			my ($user,$post_num) = split /_/, $external_id;
-			if($user && $post_num)
+			if($fb_type eq 'photo' ||
+			   $fb_type eq 'video' ||
+			   $fb_type eq 'link')
 			{
-				$post->external_url('https://www.facebook.com/' . $user . '/posts/' . $post_num);
+				my $d = $post->data;
+				$d->set($_, $fb_post->{$_}) foreach qw(
+					picture
+					link
+					name
+					caption
+					message
+					description
+					icon
+				);
+				$d->set('has_attach', 1);
+				$d->update;
 			}
+			
+			if($fb_type eq 'photo')
+			{
+				$post->external_url($fb_post->{link});
+			}
+			else
+			{
+				my ($user,$post_num) = split /_/, $external_id;
+				if($user && $post_num)
+				{
+					$post->external_url('https://www.facebook.com/' . $user . '/posts/' . $post_num);
+				}
+			}
+			
+			$post->data->set('fb_data', $fb_post);
+			$post->data->update;
+			
 			$post->update;
 			
 			$post_is_new = 1;
@@ -187,8 +273,13 @@ sub update_board
 			my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
 			print "Created post from facebook - # $post - '".$post->subject."' - $url\n";
 		}
+		else
+		{
+			#print "Found valid post in our database from facebook - # $post - '".$post->subject."'\n";
+		}
 		
-		if($post->external_source eq 'Facebook')
+		if($post->external_source eq 'Facebook' &&
+			$post->id != 14294)  # Dont test this post - for some reason, it ALWAYS shows as new...
 		{
 			# Since this post was created FROM facebook (and not by us creating a post then uploading it to FB),
 			# we will check the update timestamp and attempt to update our local copy of the message if the
@@ -213,8 +304,8 @@ sub update_board
 					
 					my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$board->folder_name."/".$post->folder_name;
 					print "Updated post text from facebook - # $post - '".$post->subject."' - $url\n";
-					print STDERR "DEBUG[A]: [".$post->text."]\n";
-					print STDERR "DEBUG[B]: [".$msg."]\n";
+					print "DEBUG[A]: [".$post->text."]\n";
+					print "DEBUG[B]: [".$msg."]\n";
 				}
 			
 			}
@@ -295,7 +386,10 @@ sub update_board
 			# So this is only one way - create new comments on our posts based on comments from FB
 			my $fb_cmtid = $cmt_ref->{id};
 			my $cmt = Boards::Post->by_field(external_id => $fb_cmtid, deleted => 0);
-			while($cmt && $cmt->top_commentid->deleted)
+			
+			# If the top_commentid has been deleted in software (Deleted flag) or delete from the database,
+			# then disassociate this comment from the FB ID, and try to find any other comments with this FB ID
+			while($cmt && (($cmt->top_commentid && $cmt->top_commentid->deleted) || !$cmt->top_commentid))
 			{
 				$cmt->external_id(0);
 				$cmt->update;
@@ -337,6 +431,9 @@ sub update_board
 				{
 					$cmt->external_url('https://www.facebook.com/' . $user . '/posts/' . $post_num);
 				}
+				
+				$cmt->data->set('fb_data', $cmt_ref);
+				
 				$cmt->update;
 				
 				my $url = AppCore::Config->get('WEBSITE_SERVER') . "/boards/".$cmt->top_commentid->boardid->folder_name."/".$cmt->top_commentid->folder_name."#c$cmt";
@@ -365,13 +462,22 @@ sub update_board
 sub download_user_photo
 {
 	my $user = shift;
-	my $poster_photo_url = shift;
+	my $fb_poster_photo_url = shift;
 	my $fb_id = shift;
 	
-	my $photo = LWP::Simple::get($poster_photo_url);
-	my $local_photo_url = "/mods/User/user_photos/". ($user && $user->id ? "user". $user->id : "fb".md5_hex($fb_id)).".jpg";
+	my $ident = $user ? join(':', AppCore::Config->get('WEBSITE_NAME'), $user->id) : $fb_id;
+	
+	my $local_photo_url = "/mods/User/user_photos/". ($user && $user->id ? "user". md5_hex($ident) : "fb".md5_hex($fb_id)).".jpg";
 	my $file_path = AppCore::Config->get('APPCORE_ROOT') . $local_photo_url;
-		
+	
+	my $poster_photo_url = AppCore::Config->get('WWW_ROOT') . $local_photo_url;
+
+	my $mod_time = time - (stat($file_path))[9];
+	#print STDERR "Modtime diff on $file_path: $mod_time\n";
+	return $poster_photo_url if -f $file_path && ($mod_time) < 1 * 24 * 60 * 60 ; # just to speed it up...
+	
+	my $photo = LWP::Simple::get($fb_poster_photo_url);
+	
 	if(!open(PHOTO, '>' . $file_path))
 	{
 		print STDERR "Unable to write to $file_path: $!";
@@ -386,10 +492,8 @@ sub download_user_photo
 		$user->update;
 	}
 	
-	print "Downloaded user photo to $file_path.\n";
+	#print "Downloaded user photo to $file_path.\n";
 	
-	$poster_photo_url = AppCore::Config->get('WWW_ROOT') . $local_photo_url;
-
 	return $poster_photo_url;
 }
 

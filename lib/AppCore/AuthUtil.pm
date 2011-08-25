@@ -22,6 +22,7 @@ package AppCore::AuthUtil;
 		
 	use constant TICKET_COOKIE => 'appcore.auth_ticket';
 	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	#sub debug { print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
 	 
 	
 	sub _cdbi_load_all_columns
@@ -105,8 +106,8 @@ package AppCore::AuthUtil;
 		
 		my $args = $ctx->http_args || {};
 		
-		my $user = shift; # || $args->{user};
-		my $pass = shift; # || $args->{pass};
+		my $user = shift;# || $args->{user};
+		my $pass = shift;# || $args->{pass};
 	
 		if(!$user && !$pass)
 		{
@@ -123,6 +124,10 @@ package AppCore::AuthUtil;
 		my ($tk_user,$tk_pass) = $tk =~ /^(.*)\.([^\.]+)$/;
 		$user||=$tk_user;
 		$pass||=$tk_pass;
+		
+		$user = $args->{user} if !$user;
+		$pass = $args->{pass} if !$pass;
+		
 		debug("user='$user',pass='$pass'");
 		
 		if(!$user && !$pass)

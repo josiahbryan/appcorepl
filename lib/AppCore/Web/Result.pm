@@ -197,15 +197,16 @@ package AppCore::Web::Result;
 		#timemark("tmpl2jq");
 		if($out =~ /<html/)
 		{
-			
+			#$out =~ s/©/&copy;/g; # Corrupted entity fixup
 			if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
 			{	
+				#print STDERR "output: found a:cssx tags\n";
 				if(AppCore::Config->get('ENABLE_CSSX_COMBINE'))
 				{
+					#print STDERR "output: a:cssx: combining multuiples\n";
 					eval
 					{
-					
-						my @files = $out =~ /<a:cssx src="([^\"]+)"/gi;
+						my @files = $out =~ /<a:cssx src=["']([^\"']+)["']/gi;
 						$out =~ s/<a:cssx[^\>]+>//gi;
 						#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
 						#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
@@ -226,6 +227,7 @@ package AppCore::Web::Result;
 				}
 				else
 				{
+					#print STDERR "output: a:cssx: no combine, single processing\n";
 					$out =~ s/<a:cssx src="([^\"]+)"[^\>]+>/_process_cssx($self,$tmpl,$1)/segi;
 				}
 			}
@@ -259,12 +261,19 @@ package AppCore::Web::Result;
 			
 			if(AppCore::Config->get('ENABLE_JS_REORDER') && $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>/)
 			{
-				my @scripts = $out =~ /<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/g;
-				$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
+				#timemark("start js reorder");
+				
+				my @scripts;
+				$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>((?:\n|.)+?)<\/script>/push @scripts, $1;''/eg;
+				#timemark("jsr - extract1");
+				#$out =~ s/<script(?:\s+type="text\/javascript")?(?:\s+class=["'][^\'"]*["'])?>(?:\n|.)+?<\/script>//g;
+				#timemark("jsr - extract2");
 				my $block = join("\n\n/********************/\n\n", @scripts);
 				
+				#timemark("jsr - extract3");
+				
 				if(AppCore::Config->get('ENABLE_JS_REORDER_YUI') &&
-				AppCore::Config->get('USE_YUI_COMPRESS'))
+				   AppCore::Config->get('USE_YUI_COMPRESS'))
 				{
 					my $tmp_file = "/tmp/yuic-".md5_hex($block).".js";
 					if(-f $tmp_file)
@@ -313,7 +322,7 @@ package AppCore::Web::Result;
 			
 			if(AppCore::Config->get('ENABLE_CDN_IMG') && _can_cdn_for_fqdn())
 			{
-				$out =~ s/<img src=(['"])(\/[^'"]+)(['"])/"<img src=$1".cdn_url($2)."$3"/segi;
+				$out =~ s/<img(.*?)src=(['"])(\/[^'"]+)(['"])/"<img$1src=$2".cdn_url($3)."$4"/segi;
 			}
 			
 			#timemark("cdn - img");
@@ -370,7 +379,7 @@ _gaq.push(['_trackPageview']);
 				{
 					my $user = AppCore::Common->context->user;
 					my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
-					$ga .= qq{  _gaq.push(['_setVar','$uid']);};
+					$ga .= qq{_gaq.push(['_setVar','$uid']);};
 				}
 				
 				$ga .= qq#
@@ -396,6 +405,10 @@ $jq_footer
 		$self->content_type($ctype);
 		$self->content_title($title);
 		$self->body($out);
+		
+		#timemark("done with output");
+		
+		#die "Give me a stack trace";
 		return $self;
 	}
 	
@@ -726,6 +739,8 @@ $jq_footer
 		
 		my @files = @_;
 		
+		#print STDERR "_process_multi_cssx: files: ".join(', ',@files)."\n";
+		
 		my $mobile = AppCore::Common->context->x('IsMobile');
 		
 		my $md5 = md5_hex(join '', @files) . ($mobile ? '-m' : ''). '.css';
@@ -808,6 +823,7 @@ $jq_footer
 			}
 		}
 		
+		#print STDERR "_process_multi_cssx: final output file: $cssx_url\n";
 		return $cssx_url if $just_filename;
 		
 		if(AppCore::Config->get('ENABLE_CDN_CSS') && _can_cdn_for_fqdn())

@@ -43,7 +43,7 @@
 				<td colspan=3 valign=top>
 					<center>
 						<h3 style='margin:0'>You can Connect with your Facebook account!</h3>
-						<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'  tabindex=4>
+						<a href='https://www.facebook.com/dialog/oauth?client_id=%%fb_app_id%%&redirect_uri=%%fb_redir_url%%&scope=email<tmpl_if fb_permissions_list>,<tmpl_var fb_permissions_list></tmpl_if>' onclick='document.getElementById("fbimg").src="%%modpath%%/images/ajax-loader.gif"'  tabindex=4>
 							<img src='%%modpath%%/images/fb-connect-large.png' style='margin-top:1.5em' border=0 id='fbimg'>
 						</a>
 					</center>

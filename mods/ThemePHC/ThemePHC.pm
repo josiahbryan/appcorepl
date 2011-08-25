@@ -41,9 +41,11 @@ package ThemePHC;
 	use ThemePHC::Search;
 	use ThemePHC::LivePage;
 	use ThemePHC::AskPastor;
+	use ThemePHC::Audio;
 	
-	# Load the talk controller so it can update user prefs
+	# Load the board controllers so it can update user prefs
 	use ThemePHC::BoardsTalk;
+	use ThemePHC::PastorsBlog;
 	
 	__PACKAGE__->register_theme('PHC 2011','Pleasant Hill Church 2011 Website Update', [qw/home admin sub mobile/]);
 	
@@ -65,6 +67,7 @@ package ThemePHC;
 			ThemePHC::Videos
 			ThemePHC::Groups
 			ThemePHC::Search
+			ThemePHC::Audio
 		};
 		$_->apply_mysql_schema foreach @sub_mods;
 	}

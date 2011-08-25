@@ -1,0 +1,69 @@
+/* The styles here are primarily extensions or overrides of the base styles in boards.css .
+   These styles just add some padding/margins, adjust some widths, etc in order to make the 
+   layout more pleasing for the many-posts-per-page style of the blog_list.tmpl template */
+
+.new_link { width: 175px }
+
+.board-tagline
+{
+	margin-bottom: 1.25em !important;
+}
+
+.blogadmin a
+{
+	display: inline !important;
+	margin-right: 1.25em;
+}
+.blogadmin
+{
+	width: 375px;
+	margin: 0 auto 1.25em auto;
+}
+
+.blogpost 
+{
+	/*border-bottom: 2px solid #C9AC93;*/
+/*	margin-bottom: 1em;
+	padding-bottom: .5em;*/
+}
+.blogpost .post_text
+{
+	border-bottom:1px dotted #C9AC93;
+}
+
+.blogpost .new_reply_link
+{
+	width: 180px;
+}
+
+.blogpost .replies_container
+{
+	border-bottom: 0;
+	padding-bottom: 0;
+}
+
+.blogpost .comments_title 
+{
+	margin-top: 1em;
+}
+
+.blogpost .comments_block
+{
+	margin-left: .5em !important;
+}
+
+.blogpost .comments_block .new_reply_link
+{
+	margin-bottom: 1em !important;
+}
+
+.blogpost .edit_post_link 
+{
+	margin-top: .5em;
+}
+
+.blogpost .top_reply_link
+{
+	margin-top: 1.6em;
+}
+

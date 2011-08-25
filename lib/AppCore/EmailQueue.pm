@@ -254,10 +254,15 @@ Server: $host
 			return;
 		}
 		
+		#print STDERR "Fox\n";
 		eval{
 		
 			#print STDERR "Debug: Pkg: $pkg, server: $prof->{server}, port: $prof->{port}, user: $prof->{user}, pass: $prof->{pass}, domain: $domain\n";
-			eval('use '.$pkg) || die "Unable to load $pkg - Unable to send email thru $prof->{server}: $@" ; # required for relaying thru google
+			
+			eval('use '.$pkg);
+			 
+			#die "Unable to load $pkg - Unable to send email thru $prof->{server}: $@" ; # required for relaying thru google
+			
 			my %args = (
 				Port  => $prof->{port} || 25,
 				Hello => $domain,
@@ -268,8 +273,9 @@ Server: $host
 				$args{User} = $prof->{user} || 'notifications';
 				$args{Password} = $prof->{pass} || 'Notify1125';
 			}
-			#use Data::Dumper;
-			#print Dumper \%args;
+			
+			use Data::Dumper;
+			print STDERR Dumper \%args;
 				
 			$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
 			#print STDERR "Result: '$smtp'\n";

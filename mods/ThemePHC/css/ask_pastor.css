@@ -1,0 +1,102 @@
+/* A few of these styles are overrides of blogs.css and boards.css, but nost of the 
+   styling code here has to do with the formatting of the Q and A blocks in the list.
+*/
+
+	.blogpost
+	{
+		/*border-bottom:2px solid #C9AC93;
+		padding-top: 5px;*/
+	}
+	
+	.edit_forum_link { margin:0;float:right}
+	.new_qa_link { width: 210px }
+	
+	.question .q, .answer .a
+	{ 
+		color: #553b20;
+		float: left;
+		font-weight: bold;
+		font-family: Times New Roman, Serif;
+		font-size: 250%;
+		/*margin-top: -10px;*/
+		padding: 0 10px 2px 10px;
+		margin: 7px 10px 0 0;
+		background: #fff6ec;
+		border-color: #c9ac93;
+		border-style: solid;
+		border-width: 0 4px 0 4px;
+		width: 35px;
+		text-align: center;
+	}
+	
+	
+	.question .q {
+		margin-top: 6px;
+	}
+	
+	.question, .answer
+	{
+		border-color: #c9ac93;
+		border-style: solid;
+		border-width: 0px 0 0 0;
+		/*background: #fff6ec;*/
+		
+		
+	}
+	
+	.question , .answer
+	{
+		/*background: #fefeee;*/
+	}
+	
+	.question .attribution ,
+	.answer .attribution 
+	{ 
+		display:block;
+		margin-top: 0px !important;
+		width: auto !important;
+	
+	}
+	
+	.question .question_text,
+	.answer .answer_text
+	{
+		/*padding-top: 10px;*/
+		margin-left: 63px;
+		background: #fefeee;
+		padding: 0 5px 1px 5px;
+		margin-right: 4px;
+	}
+	
+	.question .question_text p,
+	.answer .answer_text p
+	{
+		text-indent: 0 !important;
+	}
+	
+	div fieldset { border:0;margin:0;padding:0 }
+	
+	.answer
+	{
+		margin-top: 5px;
+		/*margin-top: -2px;
+		border-width: 1px 0 0 0 ;*/
+	}
+	
+	.answer_text .not_answered_yet
+	{
+		color: rgb(100,100,100);
+		font-style: italic;
+		font-size: .85em;
+	}
+	
+	.not_answered_yet_container 
+	{
+		padding: 17px 0 !important;
+	}
+	
+	.edit_post_link { width: 120px }
+	
+	.comments_block { padding-top: 0 !important }
+	
+	.blogpost .top_reply_link { margin-top: 1em }

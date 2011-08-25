@@ -586,6 +586,9 @@ package ThemePHC::Events;
 		$EventsListCache = {} if !$EventsListCache;
 		if(!$EventsListCache->{$key})
 		{
+			# correct binpath if priming cache outside a HTTP call
+			$self->binpath('/connect/events') if $self->binpath =~ /themephc/;
+			 
 			my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);
 			my $sql = "datetime >= NOW() OR is_weekly = 1";
 			

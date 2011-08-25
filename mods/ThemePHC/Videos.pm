@@ -109,12 +109,6 @@ package ThemePHC::Videos;
 	
 	our $VIDEOS_BOARD = Boards::Board->find_or_create(title=>'Videos', folder_name=>'videos');
 	
-	my @DOW_NAMES = qw/- Monday Tuesday Wednesday Thursday Friday Saturday Sunday/;
-	my @DOW_NAMES_SHORT = qw/- Mon Tue Wed Thur Fri Sat Sun/;
-	my @DOW_LETTERS = qw/- M T W R F S S/;
-	my @MONTH_NAMES = qw/January Feburary March April May June July August September October November December/;
-	my @MONTH_NAMES_SHORT = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-	
 	sub apply_mysql_schema
 	{
 		my $self = shift;
@@ -440,6 +434,17 @@ package ThemePHC::Videos;
 		}
 		elsif($sub_page)
 		{
+			# For some reason, tinyurl doesn't include the '#' and following in the encode URL.
+			# So, we to a redirect to include the #autoplay on the assumption that it was supposed to be there
+			if($ENV{HTTP_REFERER} =~ /tinyurl/)
+			{
+				my $url = AppCore::Web::Common::get_full_url();
+				if($url !~ /ap=1/) # Prevent endless redirect loops
+				{
+					$url .= $url =~ /\?/ ? '&ap=1' : '?ap=1';
+					return $r->redirect($url.'#autoplay');
+				}
+			}
 			return $self->board_page($req,$r,$VIDEOS_BOARD);
 		}
 	}

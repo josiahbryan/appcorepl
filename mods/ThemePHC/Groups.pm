@@ -225,13 +225,13 @@ package ThemePHC::Groups;
 	{
 		my $self = shift;
 		
-		print STDERR __PACKAGE__."->prime_cache: Loading ALL groups\n";
+		#print STDERR __PACKAGE__."->prime_cache: Loading ALL groups\n";
 		$self->load_groups_list();
 		
-		print STDERR __PACKAGE__."->prime_cache: Loading Small Groups\n";
+		#print STDERR __PACKAGE__."->prime_cache: Loading Small Groups\n";
 		$self->load_groups_list({group_type=>'Small Group'});
 		
-		print STDERR __PACKAGE__."->prime_cache: Loading Ministry Teams\n";
+		#print STDERR __PACKAGE__."->prime_cache: Loading Ministry Teams\n";
 		$self->load_groups_list({group_type=>'Ministry Team'});
 	}
 	
@@ -289,7 +289,7 @@ package ThemePHC::Groups;
 			return $GroupsListCache->{cache}->{$cache_key};
 		} 
 			
-		print STDERR "load_groups_list: Cache miss for key '$cache_key'\n";
+		#print STDERR "load_groups_list: Cache miss for key '$cache_key'\n";
 		
 			
  		my $www_path = AppCore::Config->get('WWW_DOC_ROOT');
@@ -818,7 +818,7 @@ package ThemePHC::Groups;
 		my $user = AppCore::Common->context->user;
 		my $sub_page = $req->next_path;
 		
-		my $post = Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page);
+		my $post = $sub_page ? Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page) : 0;
 		#print STDERR __PACKAGE__."::group_page: sub_page:'$sub_page', post: $post\n";
 		
 		if($sub_page eq 'new_event' || $sub_page eq 'post_event' || $sub_page eq 'edit_event')

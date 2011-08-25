@@ -103,16 +103,16 @@ Cheers!};
 		
 		AppCore::EmailQueue->reset_was_emailed;
 		
-		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com'],"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body);
-# 		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com','pastor@mypleasanthillchurch.org'],"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body);
-# 		AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],
-# 			"[PHC Ask Pastor] New Reply on QA: ".$comment->top_commentid->subject,$email_body)
-# 				if $comment->parent_commentid && $comment->parent_commentid->id && $comment->parent_commentid->poster_email
-# 				&& !AppCore::EmailQueue->was_emailed($comment->parent_commentid->poster_email);
-# 		AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],
-# 			"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body)
-# 				if $comment->top_commentid && $comment->top_commentid->id && $comment->top_commentid->poster_email 
-# 				&& !AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
+#		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com'],"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body);
+		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com','pastor@mypleasanthillchurch.org'],"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body);
+		AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],
+			"[PHC Ask Pastor] New Reply on QA: ".$comment->top_commentid->subject,$email_body)
+				if $comment->parent_commentid && $comment->parent_commentid->id && $comment->parent_commentid->poster_email
+				&& !AppCore::EmailQueue->was_emailed($comment->parent_commentid->poster_email);
+		AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],
+			"[PHC Ask Pastor] New Comment on QA: ".$comment->top_commentid->subject,$email_body)
+				if $comment->top_commentid && $comment->top_commentid->id && $comment->top_commentid->poster_email 
+				&& !AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 		
 		AppCore::EmailQueue->reset_was_emailed;
 		
@@ -144,8 +144,8 @@ Here's a link to that page:
 Cheers!};
 			#
 			#
-		#AppCore::EmailQueue->send_email(['josiahbryan@gmail.com','pastor@mypleasanthillchurch.org'],"[PHC Ask Pastor] New Question: ".$post->subject,$email_body);
-		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com'],"[PHC Ask Pastor] New Question: ".$post->subject,$email_body);
+		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com','pastor@mypleasanthillchurch.org'],"[PHC Ask Pastor] New Question: ".$post->subject,$email_body);
+#		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com'],"[PHC Ask Pastor] New Question: ".$post->subject,$email_body);
 	}
 	
 	
@@ -394,7 +394,7 @@ Cheers!};
 	our $DataCache = 0;
 	sub clear_cached_dbobjects
 	{
-		print STDERR __PACKAGE__.": Clearing cache...\n";
+		#print STDERR __PACKAGE__.": Clearing cache...\n";
 		$DataCache = 0;
 	}	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__,'load_questions');
@@ -406,7 +406,11 @@ Cheers!};
 		my $posts = $DataCache;
 		return $posts if $posts;
 		
-		print STDERR __PACKAGE__."->load_questions: Cache miss\n";
+		# correct binpath if priming cache outside a HTTP call
+		$self->binpath('/learn/ask_pastor') if $self->binpath =~ /themephc/;
+			
+		
+		#print STDERR __PACKAGE__."->load_questions: Cache miss\n";
 		
 		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($Boards::ADMIN_ACL);
 		my $can_mgr   = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);

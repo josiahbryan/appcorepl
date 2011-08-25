@@ -297,7 +297,7 @@ package PHC::Directory;
 			return $DirectoryData->{cache}->{$cache_key};
 		} 
 			
-		print STDERR __PACKAGE__."->load_directory: Cache miss for key '$cache_key'\n";
+		#print STDERR __PACKAGE__."->load_directory: Cache miss for key '$cache_key'\n";
 		
 			
 		my $www_path = AppCore::Config->get("WWW_DOC_ROOT");
@@ -616,8 +616,8 @@ package ThemePHC::Directory;
 	use AppCore::Common;
 	use JSON qw/encode_json/;
 	
-	my $MGR_ACL = [qw/Pastor/];
-	
+	my $ADMIN_ACL = [qw/ADMIN Pastor faith08@gmail.com/];
+		
 	sub apply_mysql_schema
 	{
 		my $self = shift;
@@ -679,7 +679,7 @@ package ThemePHC::Directory;
 		my $sub_page = $req->next_path;
 		if($sub_page eq 'delete')
 		{
-			AppCore::AuthUtil->require_auth(['ADMIN','Pastor']);
+			AppCore::AuthUtil->require_auth($ADMIN_ACL);
 			
 			my $fam = $req->familyid;
 			
@@ -787,7 +787,7 @@ package ThemePHC::Directory;
 			my $entry = PHC::Directory::Family->retrieve($fam);
 			return $r->error("No Such Family","Sorry, the family ID you gave does not exist") if !$entry;
 			
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			my $can_edit = $admin || $entry->userid == $user || $entry->spouse_userid == $user;
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
 			
@@ -814,7 +814,7 @@ package ThemePHC::Directory;
 			}
 			$tmpl->param(kids => \@kids);
 			
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			$tmpl->param(is_admin => $admin);
 			
 			$tmpl->param(users => AppCore::User->tmpl_select_list($entry->userid,1));
@@ -827,11 +827,11 @@ package ThemePHC::Directory;
 		}
 		elsif($sub_page eq 'new')
 		{
-			AppCore::AuthUtil->require_auth(['ADMIN','Pastor']);
+			AppCore::AuthUtil->require_auth($ADMIN_ACL);
 			
 			my $tmpl = $self->get_template('directory/edit.tmpl');
 			
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			$tmpl->param(is_admin => $admin);
 			
 			$tmpl->param(users => AppCore::User->tmpl_select_list(undef,1));
@@ -847,7 +847,7 @@ package ThemePHC::Directory;
 		{
 			my $fam = $req->familyid;
 			
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			
 			my $entry = PHC::Directory::Family->retrieve($fam);
 			if(!$entry)
@@ -891,7 +891,7 @@ package ThemePHC::Directory;
 			/;
 			
 			# Add in admin-only columns
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			if($admin)
 			{
 				push @cols, qw/userid spouse_userid photo_num admin_notes/;
@@ -1056,7 +1056,7 @@ package ThemePHC::Directory;
 			$start =~ s/[^\d]//g;
 			$start = 0 if !$start || $start<0;
 			
-			my $length = 10;
+			my $length = 99999; #10;
 			
 			if($req->{search} && $req->output_fmt ne 'json')
 			{
@@ -1078,7 +1078,7 @@ package ThemePHC::Directory;
 			my @directory = @{$directory_data->{list}};
 			my $bin = $self->binpath;
 			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
-			my $admin = $user && $user->check_acl([qw/ADMIN Pastor/]) ? 1:0;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
 			my $userid = $user ? $user->id : undef;
 			my $mobile = AppCore::Common->context->mobile_flag;
 			foreach my $entry (@directory)
@@ -1088,6 +1088,7 @@ package ThemePHC::Directory;
 				$entry->{is_admin} = $admin;
 				$entry->{bin} = $bin;
 				$entry->{is_mobile} = $mobile;
+				$entry->{is_widget} = $req->{widget};
 				if($mobile)
 				{
 					$entry->{$_} = add_areacode($entry->{$_},765) foreach qw/cell spouse_cell home/;
@@ -1126,7 +1127,9 @@ package ThemePHC::Directory;
 			
 			$tmpl->param(entries => \@directory);
 			
-			#$r->output($tmpl);
+			$tmpl->param(is_widget => $req->{widget});
+			
+			return $r->output($tmpl) if $req->{widget};
 			my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 			return $r;
 		}
@@ -1138,7 +1141,7 @@ package ThemePHC::Directory;
 		my $areacode = shift;
 		my $test_copy = $num;
 		$test_copy =~ s/[^\d]//g;
-		$num = $areacode . '-' . $num if length $test_copy <= 7;
+		$num = $areacode . '-' . $num if $test_copy && length $test_copy <= 7;
 		return $num;
 	}
 	

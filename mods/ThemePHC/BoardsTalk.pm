@@ -140,7 +140,7 @@ package ThemePHC::BoardsTalk;
 		
 		# TODO Honor user prefereances re opt outs
 		
-		my @users;# = AppCore::User->retrieve_from_sql('email <> ""'); # and allow_email_flag!=0');
+		my @users = AppCore::User->retrieve_from_sql('email <> ""'); # and allow_email_flag!=0');
 		
 # 		# Just for Debugging ...
 # 		@users = map { AppCore::User->retrieve($_) } qw/1 51/;

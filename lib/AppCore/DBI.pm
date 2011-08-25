@@ -2522,7 +2522,7 @@ package $opts->{pkg};
 			$data->{pkg}->clear_cached_dbobjects;
 		}
 		
-		$class->prime_cached_dbojects unless $dont_prime;
+		$class->prime_cached_dbobjects unless $dont_prime;
 	}
 	
 	sub prime_cached_dbobjects
@@ -2532,7 +2532,7 @@ package $opts->{pkg};
 			my $prime = $data->{prime};
 			if($prime)
 			{
-				print STDERR "AppCore::DBI->prime_cached_dbojects: Priming cache with ".$data->{pkg}."::${prime}\n"; 
+				#print STDERR "AppCore::DBI->prime_cached_dbojects: Priming cache with ".$data->{pkg}."::${prime}\n"; 
 				my $obj = eval { AppCore::Web::Module->bootstrap($data->{pkg}); };
 				undef $@;
 				if($obj)
@@ -2605,6 +2605,17 @@ package $opts->{pkg};
 		return $listref;
 	}
 
+# 	sub search_like
+# 	{
+# 		my $self = shift;
+# 		my %fields = shift;
+# 		my @keys = sort keys %fields;
+# 		my $ctor = 'search_like_'.join('_', @keys);
+# 		if(!$self->can($ctor))
+# 		{
+# 			$self->add_
+# 		}
+# 	}
 	
 };
 1;

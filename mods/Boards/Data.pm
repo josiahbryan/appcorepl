@@ -376,6 +376,7 @@ package Boards::Post;
 			{ field => 'post_class',		type => 'varchar(255)' }, # An arbitrary classification, such as 'video', 'photo', 'link', 'text', or just empty... # TODO Should this be a Foreign Key ... e.g. classid?
 			#{ field => 'attribute_data',		type => 'longtext'},  # Legacy name of extra_data
 			{ field => 'folder_name',		type => 'varchar(255)' },
+			{ field => 'postroot_url',		type => 'varchar(255)' }, # local abs url (e.g. starts with /, includes folder_name); 
 			#{ field => 'fake_folder_name',		type => 'varchar(255)' }, # Legacy name of folder_name
 			{ field => 'deleted',			type => 'int', default => 0},
 			{ field => 'num_views',			type => 'int', default => 0},
@@ -383,6 +384,7 @@ package Boards::Post;
 			{ field => 'ticker_priority',		type => 'int', default => 0},
 			{ field => 'ticker_class',		type => 'varchar(255)' },
 			{ field => 'hidden',			type => 'int(1)', null => 0, default => 0 },
+			{ field => 'system_content',		type => 'int(1)', null => 0, default => 0 },			
 			#{ field => 'fb_post_id',		type => 'varchar(255)', default => '' },
 			{ field => 'external_id',		type => 'varchar(255)', default => '' },
 			{ field => 'external_source',		type => 'varchar(255)', default => '' },
@@ -511,6 +513,63 @@ package Boards::Post;
 		
 		return $ref;
 	}
+	
+	our $MAX_FOLDER_LENGTH = 60;
+	sub make_folder_name
+	{
+		my $class = shift;
+		my $string = lc shift;
+		my $disable_trim = shift || 0;
+		my $disable_stops = shift || 0;
+		
+		if(!$disable_stops)
+		{
+			AppCore::Web::Common->remove_stopwords(\$string);
+		}
+		
+		$string =~ s/['"\[\]\(\)]//g; #"'
+		$string =~ s/[^\w]/_/g;
+		$string =~ s/\_{2,}/_/g;
+		$string =~ s/(^\_+|\_+$)//g;
+		$string = substr($string,0,$MAX_FOLDER_LENGTH) if length($string) > $MAX_FOLDER_LENGTH && !$disable_trim;
+		return $string;
+	}
+	
+	sub pick_folder_name
+	{
+		my $post = shift;
+		my $title = shift || $post->subject;
+		
+		my $folder = $post->make_folder_name($title);
+		
+		$folder = $post->make_folder_name($title,0,1) if !$folder;
+		$folder = 'no_title_causes_framitz_reduction' if !$folder;
+		
+		if($post->by_field(folder_name => $folder))
+		{
+			$folder .= '_'.$post->id;
+		}
+		
+		#print "\nFolder '$folder' generated from subject '".$post->title."'\n";
+		
+		$post->folder_name($folder);
+		$post->update;
+	}
+	
+	sub fix_null_folders
+	{
+		my $class = shift;
+		my @all = $class->retrieve_from_sql('folder_name is NULL');
+		my $counter = 0;
+		foreach my $post (@all)
+		{
+			print STDERR "Working on postid $post, # $counter/$#all ... ";
+			 
+			$post->pick_folder_name;
+			
+			$counter ++;
+		}
+	}
 }
 
 
@@ -595,6 +654,7 @@ package Boards::Board;
 			{ field	=> 'board_userid',		type => 'int', linked => 'AppCore::User', default => 0 }, # If set, this is an 'auto created' board for a specific user
 			{ field	=> 'groupid',			type => 'int',	linked => 'Boards::Group' },
 			{ field	=> 'folder_name',		type => 'varchar(255)' },
+			{ field	=> 'boardroot_url',		type => 'varchar(255)' }, # local abs url (e.g. starts with /, includes folder_name);
 			{ field => 'pageid',			type => 'int',	linked => 'Content::Page' },  # pageid replaces section_name because it gives us the proper URL thru which this board should be accessed
 			{ field	=> 'section_name',		type => 'varchar(255)' }, ## TODO ?? Legacy ??
 			{ field => 'forum_controller',		type => 'varchar(255)' }, # Still needed .. but should be in some 'advanced' part of the config UI

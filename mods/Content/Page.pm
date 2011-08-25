@@ -265,7 +265,7 @@ package Content::Page::Type;
 		}
 			
 		undef $@;
-			
+		
 		eval
 		{
 			# Pass $self as the first arg so subclasses can access the ID of this type
@@ -274,7 +274,8 @@ package Content::Page::Type;
 		
 		if($@)
 		{
-			$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$@</pre>"); 
+			my $err = $@;
+			$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$err</pre>");
 		}
 		
 		return $r;
@@ -319,6 +320,7 @@ package Content::Page::Controller;
 		return $CurrentTheme;
 	}
 	
+	use AppCore::Common;
 	sub get_view
 	{
 		my $self      = shift;
@@ -329,18 +331,40 @@ package Content::Page::Controller;
 		
 		$view_code = 'default' if !$view_code;
 		
+		my $view_getter = undef;
+		
 		if($pkg->can('new'))
 		{
-			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
+# 			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
+# 			
+# 			$ViewInstCache{$pkg} = $pkg->new();
+# 			
+# 			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r);
+
+			#return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r) if $ViewInstCache{$pkg};
 			
-			$ViewInstCache{$pkg} = $pkg->new();
+			if(!$ViewInstCache{$pkg})
+			{
+				$view_getter = $ViewInstCache{$pkg} = $pkg->new();
+			}
+			else
+			{
+				$view_getter = $ViewInstCache{$pkg};
+			}
 			
-			return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r);
+			#return $CurrentView = $ViewInstCache{$pkg}->get_view($view_code,$r);
 		}
 		else
 		{
-			return $CurrentView = $pkg->get_view($view_code,$r);
+			#return $CurrentView = $pkg->get_view($view_code,$r);
+			$view_getter = $pkg;
 		}
+		
+		#timemark("start get_view/C::P::Ctrl");
+		$CurrentView = $view_getter->get_view($view_code,$r);
+		#timemark("end get_view/C::P::Ctrl");
+		
+		return $CurrentView;
 	}
 	
 	sub process_page
@@ -965,15 +989,21 @@ package Content::Page::ThemeEngine;
 		return $r;
 	};
 	
+	
+	use AppCore::Common;
 	sub auto_apply_params
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		
+		#timemark("AAP - start");
 		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
+			#timemark("AAP - no page obj, now basic");
 			$self->apply_basic_data($tmpl,$page_obj);
+			#timemark("AAP - basic done");
 		}
 		
+		#timemark("AAP - app done");
 		$tmpl->param(nav_url_from => $ENV{HTTP_REFERER});
 		
 	}
@@ -982,10 +1012,14 @@ package Content::Page::ThemeEngine;
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		
+		#timemark("ABD start [$page_obj]");
 		my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
+		#timemark("ABD done output");
 		my @titles = $blob=~/<title>(.*?)<\/title>/g;
 		#$title = $1 if !$title;
 		@titles = grep { !/\$/ } @titles;
+		
+		#timemark("ABD done titles");
 		
 		my $pgdat = {};
 		$pgdat->{page_title}	= shift @titles;
@@ -995,6 +1029,8 @@ package Content::Page::ThemeEngine;
 		if($r && $r->{page_obj})
 		{
 			my $subnav = $self->load_subnav($r->{page_obj});
+			
+			#timemark("ABD done load subnav");
 			
 			# Integrate any page-specified breadcrumbs onto the end of the list
 			my @list = @{ $self->breadcrumb_list->list || [] };
@@ -1019,13 +1055,16 @@ package Content::Page::ThemeEngine;
 				$subnav->{nav_path} = \@final;
 			}
 
+			#timemark("ABD done breadcrumb list prep");
 			$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
 		}
 		else
 		{
 			$pgdat->{nav_path} = $self->breadcrumb_list->list;
+			#timemark("ABD just get breadcrumbs");
 		}
-				
+			
+		#timemark("ABD before page.tmpl");
 		eval
 		{
 			my $page_tmpl = $self->load_template('page.tmpl');
@@ -1035,8 +1074,11 @@ package Content::Page::ThemeEngine;
 				$pgdat->{page_content} = $page_tmpl->output;
 			}
 		};
+		#timemark("ABD after page.tmpl");
 		
 		$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+		
+		#timemark("ABD tmpl->param calls done");
 		
 	}
 	

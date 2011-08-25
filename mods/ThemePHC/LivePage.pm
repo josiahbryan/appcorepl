@@ -83,9 +83,11 @@ package ThemePHC::LivePage;
  			$sub_page = $req->next_path;
  		}
  		
-			
-		my $post = Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page);
+ 		my $post;
+ 		$post = Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page) if $sub_page;
  		
+ 		#print STDERR __PACKAGE__."->live_page: sub_page:'$sub_page', post:$post\n";
+		
  		if($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $post)
 		{
 			# Board actions - TODO test and see if more actiosn need to be routed

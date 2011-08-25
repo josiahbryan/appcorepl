@@ -30,7 +30,7 @@
 				var w  = parseFloat(th.width()),
 				h  = parseFloat(th.height()),
 				ar = h/w,
-				newWidth  = 100.0, 
+				newWidth  = 320.0, 
 				newHeight = newWidth * ar;
 				
 				if(w > newWidth || h > newHeight)
@@ -59,6 +59,31 @@
 		}
 		
 		scaleImages();
+		
+		if(window.RunOnloadPosts)
+		{
+			var list = window.RunOnloadPosts;
+			for(var i=0;i<list.length;i++)
+			{
+				var func = list[i];
+				if(typeof(func) == 'function')
+				{
+					func();
+				}
+			}
+		}
+	}
+	
+	var loadingIndicator = 0;
+	$(function(){ 
+		loadingIndicator = $('<img/>')
+			.attr('src',window.loaderGif)
+			.attr('align','absmiddle')
+			.attr('class','like-loading-img');
+	});
+	function getLoadingIndicator(/*ctx*/)
+	{
+		return loadingIndicator;
 	}
 	
 	$(".postlist a.readmore_link").live("click",function() {
@@ -98,9 +123,7 @@
 			var	blockId  = "#long_text_"+postid,
 				shortId  = "#short_text_"+postid,
 				postHref = th.attr('href'),
-				loading  = $('<img/>')
-					.attr('src',loaderGif)
-					.attr('align','absmiddle');
+				loading  = getLoadingIndicator("like");
 				
 			$("body").css("cursor", "progress");
 			th.css("cursor", "progress");
@@ -140,6 +163,8 @@
 						$("body").css("cursor", "auto");
 						th.css("cursor", "pointer");
 						
+						runOnloadScripts();
+						
 						//alert(data);
 						//console.debug(data);
 					}	
@@ -157,10 +182,7 @@
 		
 		var th = $(this),
 		    // Create a loading indicator
-		    loading = $('<img/>')
-		    	.attr('src',loaderGif)
-		    	.attr('align','absmiddle')
-		    	.attr('class','like-loading-img');
+		    loading = getLoadingIndicator("like");
 		
 		loading.insertAfter(th);
 		
@@ -193,10 +215,7 @@
 		
 		var th = $(this),
 		    // Create a loading indicator
-		    loading = $('<img/>')
-		    	.attr('src',loaderGif)
-		    	.attr('align','absmiddle')
-		    	.attr('class','like-loading-img');
+		    loading = getLoadingIndicator("like");
 		
 		loading.insertAfter(th);
 		
@@ -232,10 +251,7 @@
 			
 		var th = $(this),
 		    // Create a loading indicator
-		    loading = $('<img/>')
-		    	.attr('src',loaderGif)
-		    	.attr('align','absmiddle')
-		    	.attr('class','like-loading-img');
+		    loading = getLoadingIndicator("delete");
 		
 		loading.insertAfter(th);
 		
@@ -266,10 +282,7 @@
 			
 		var th = $(this),
 		    // Create a loading indicator
-		    loading = $('<img/>')
-		    	.attr('src',loaderGif)
-		    	.attr('align','absmiddle')
-		    	.attr('class','like-loading-img');
+		    loading = getLoadingIndicator("like");
 		
 		loading.insertAfter(th);
 		

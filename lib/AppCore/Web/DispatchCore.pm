@@ -79,13 +79,15 @@ package AppCore::Web::DispatchCore;
 		
 		
 	}
+	
+	our $DISPATCH_START_TIME;
 	sub process
 	{
 		my $self = shift;
 		
 		my $q = shift;
 		
-		my $time_start = time;
+		my $time_start = $DISPATCH_START_TIME = time;
 		
 		AppCore::Common->context->_reset;
 	# 	AppCore::Session->_reset;
@@ -317,6 +319,8 @@ package AppCore::Web::DispatchCore;
 			if($err =~ /MySQL server has gone away/)
 			{
 				AppCore::DBI->clear_handle_cache;
+				AppCore::DBI->setup_modtime_sth;
+				AppCore::DBI->clear_cached_dbobjects;
 				goto REPROCESS_ON_SERVER_GONE;
 			}
 			else

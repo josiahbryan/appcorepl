@@ -39,6 +39,52 @@
 				</div>
 				
 				<div class='post_text'>
+					<tmpl_if system_content>
+						<tmpl_if post_class_link>
+							<span class='system_content'>
+								posted a link<tmpl_if data_name:str> to <a href='%%data_link%%'>%%data_name%%</a><tmpl_if data_caption> - <i>%%data_caption%%</i></tmpl_if></tmpl_if>.
+							</span>
+							<!--<hr size=1 class='post-attach-divider'>-->
+							<!--<div class='attach-container'>
+								<div class='attach'>
+									<a class='image-link' href="%%data_link%%">
+										<img src="<tmpl_if data_picture:str>%%data_picture%%<tmpl_else>%%data_icon%%</tmpl_if>" border=0>
+										<span class='overlay'></span>
+									</a>
+								</div>
+							</div>-->
+							
+						<tmpl_else>
+							<tmpl_if post_class_photo>
+								<span class='system_content'>
+									<tmpl_if data_caption:str>uploaded <a href='%%data_link%%'>%%data_caption%%</a> to<tmpl_else>updated a photo in </tmpl_if> <b><a href='%%data_link%%'>%%data_name%%</a></b> on <i>Facebook</i>.
+								</span>
+								<tmpl_if clean_text:str>
+									<span class='post_text'>
+										%%text_html%%
+									</span>
+								</tmpl_if>
+								<!--<div class='attach-container'>
+									<div class='attach'>
+										<a class='image-link' href="%%data_link%%">
+											<img src="<tmpl_if data_picture:str>%%data_picture%%<tmpl_else>%%data_icon%%</tmpl_if>" border=0>
+											<span class='overlay'></span>
+										</a>
+									</div>
+								</div>-->
+								
+							<tmpl_else>
+								<!-- Don't know how to render 'system content' for this post class, so just render content as normal -->
+								<span class='post_text'>
+									%%text_html%%
+								</span>
+								
+							</tmpl_if>
+							
+							
+						</tmpl_if>
+						
+					</tmpl_if>
 					<tmpl_if single_post_page>
 						%%post_text%%
 					<tmpl_else>
@@ -50,6 +96,23 @@
 						</tmpl_if>
 					</tmpl_if>
 				</div>
+				
+				<tmpl_if data_has_attach>
+					<div class='attach-container'>
+						<div class='attach'>
+							<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%data_link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if>>
+								<img src="<tmpl_if data_picture:str>%%data_picture%%<tmpl_else>%%data_icon%%</tmpl_if>" border=0>
+								<span class='overlay'></span>
+							</a>
+							<div class='attach-meta'>
+								<div class='attach-name'><a href='%%data_link%%'>%%data_name%%</a></div>
+								<div class='attach-caption'>%%data_caption%%</div>
+								<div class='attach-description'>%%data_description%%</div>
+							</div>
+						</div>
+						<div class='fc'></div>
+					</div>
+				</tmpl_if>
 				
 				<div class='actions post_actions' id='acts%%postid%%'>
 					<tmpl_unless single_post_page>

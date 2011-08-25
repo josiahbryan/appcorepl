@@ -276,24 +276,7 @@ package User;
 					
 					_set_if($user_obj, $_, $user_data->{location}->{$_}) foreach qw/street city state country zip latitude longitude/;
 					
-					
-					my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
-					my $photo = LWP::Simple::get($photo_url);
-					my $local_photo_url = "/mods/" . __PACKAGE__ . "/user_photos/user". $user_obj->id .".jpg";
-					my $file_path = AppCore::Config->get("APPCORE_ROOT") . $local_photo_url;
-					if(open(PHOTO, '>' . $file_path))
-					{
-						print PHOTO $photo;
-						close(PHOTO);
-						
-						$user_obj->photo(AppCore::Config->get("WWW_ROOT") . $local_photo_url);
-						
-						print STDERR "Downloaded user photo to $file_path.\n";
-					}
-					else
-					{
-						print STDERR "Error saving photo to $file_path: $!";
-					}
+					$user_obj->get_fb_photo();
 					
 					# If the user record existed prior to this interaction, but no password assigned,
 					# and the 'is_fbuser' is false, and it's not a $new_user, then the user has
@@ -423,6 +406,8 @@ package User;
 		#$tmpl->param(auth_requested => $req->{auth_requested});
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';
+		
+		$tmpl->param(fb_permissions_list => AppCore::Config->get('FB_EXTRA_PERMS'));
 		
 		$view->breadcrumb_list->push('Home',"/",0);
 		$view->breadcrumb_list->push('Login',"/user/login",0);

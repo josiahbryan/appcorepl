@@ -1,8 +1,68 @@
+<tmpl_if is_widget>
+<html>
+	<head>
+		<title>PHC Family Directory</title>
+		
+		<!--<link href="%%modpath%%/css/subpage.css" rel="stylesheet" type="text/css" />-->
+		<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico"/>
+		
+		<link href='%%appcore%%/jquery-ui/css/smoothness/jquery-ui-1.8.12.custom.css' rel="stylesheet" type="text/css">
+		<script src='https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.12/jquery-ui.min.js'></script>
+		
+		<!-- This stylesheet applies to all browsers -->
+		<a:cssx src="%%modpath%%/css/subpage.css"/>
+		
+		<style>
+			body {
+				margin:0;
+				padding:0;
+				border:0;
+				overflow: hidden;
+				overflow-y: auto;
+				background: white;
+			}
+		</style>
+	</head>
+	
+	<body>			
+
+	<iframe id="helperframe" src='' height='0' width='0' frameborder='0'></iframe>
+	
+	<script type="text/javascript">
+		
+		function iframeResizePipe()
+		{
+			// What's the page height?
+			var height = $(document.body).height();
+			
+			// Going to 'pipe' the data to the parent through the helpframe..
+			var pipe = document.getElementById('helperframe');
+			
+			// Cachebuster a precaution here to stop browser caching interfering
+			pipe.src = 'http://www.mypleasanthillchurch.org/iframe_resize_helper.html?height='+height+'&cacheb='+Math.random();
+			
+			//console.debug("new height:"+height);
+		
+		}
+		
+		$(function(){
+			
+			$(document).ready(iframeResizePipe); 
+			$(document.body).resize(iframeResizePipe);
+			$(window).resize(iframeResizePipe);
+			$(window).bind('scroll', iframeResizePipe);
+			setTimeout(iframeResizePipe, 1500);
+		});
+	</script>
+
+
+<tmpl_else>
+
 <title>PHC Family Directory</title> 
 <h1>PHC Family Directory</h1>
 <!--%macro::sub_nav()%-->
 
-
+</tmpl_if>
 <style>
 .new_link, .new_reply_link, .edit_post_link
 { 
@@ -227,10 +287,13 @@ div.dlinfo td.text img
 	</style>
 	
 	<form action='%%binpath%%' method=GET class='searchform'>
+		<input type=hidden name=widget value='%%is_widget%%'>
 		<table class='entry' width='100%' class=search-results>
 			<tr>
 				<td align=center>
-					<hr size=1>
+					<tmpl_unless is_widget>
+						<hr size=1>
+					</tmpl_unless>
 					<div style='margin-top:1.1em;margin-bottom:1em'>
 						Search: <input type=text name=search value='%%search%%' class='search_field' size=<tmpl_if search>16<tmpl_else>20</tmpl_if>> <tmpl_if search><input type=button class='clear_search' value='X'></tmpl_if> <input type=submit value='Search'>
 					</div>
@@ -248,14 +311,14 @@ div.dlinfo td.text img
 			var field = $('.search_field').get(0);
 			if(field) //&& field.value != '')
 			{
-				field.focus();
-				field.select();
+// 				field.focus();
+// 				field.select();
 			}
 			
 			$('.clear_search').live('click',function() {
 // 				$('.search_field').get(0).value = '';
 // 				$('.searchform').submit();
-				document.location.href = '%%binpath%%';
+				document.location.href = '%%binpath%%<tmpl_if is_widget>?widget=1</tmpl_if>';
 			
 			});
 		});
@@ -272,7 +335,7 @@ div.dlinfo td.text img
 			<tmpl_include 'inc-dir-entry.tmpl'>
 		</tmpl_loop>
 		<tmpl_unless search>
-			<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%'>See more entries...</a></tmpl_if></td></tr>
+			<tr class='loadmore'><td colspan=2 class='loading'><tmpl_if is_end>(No more entries)<tmpl_else><a href='%%binpath%%?start=%%next_idx%%<tmpl_if is_widget>&widget=1</tmpl_if>'>See more entries...</a></tmpl_if></td></tr>
 		</tmpl_unless>
 	</table>
 	
@@ -320,13 +383,15 @@ div.dlinfo td.text img
 			$("tr.loadmore").children("td").html("<img src="+loaderGif+" align=absmiddle> Loading ... ").addClass("loading");
 			
 			// Set a timeout so the browser has time to update the DOM with the loader gif we just added
-			setTimeout(pagingStage2,100);		
+			setTimeout(pagingStage2,100);
+					
+			return false;
 		};
 		
 		var pagingStage2 = function()
 		{
 			var loadMoreUrl = '%%binpath%%';
-			var linkHref = loadMoreUrl+"?start="+window.PagingNextIndex;
+			var linkHref = loadMoreUrl+"?start="+window.PagingNextIndex<tmpl_if is_widget>+"&widget=1"</tmpl_if>;
 			
 			$.ajax({
 				type: "GET",
@@ -375,6 +440,11 @@ div.dlinfo td.text img
 						$("body").css("cursor", "auto");
 						
 						pagingLock = false;
+						
+						<tmpl_if is_widget>
+						//alert("Yup, widget!");
+						//setTimeout(iframeResizePipe, 100);
+						</tmpl_if>
 					}	
 				},
 				error: function() 
@@ -388,7 +458,7 @@ div.dlinfo td.text img
 			return false;
 		}
 		
-// 		$(".loadmore a").live("click",pagingFunc);
+ 		$(".loadmore a").live("click",pagingFunc);
 // 		$("a.loadmore_link").live("click",pagingFunc);
 		
 		
@@ -399,21 +469,21 @@ div.dlinfo td.text img
 		// paging function (above) is triggered just as if the user
 		// had clicked the link
 		<tmpl_unless search>
-		$(window).bind('scroll', function(){
-				
-			var rowRef = $("tr.loadmore");
-			var scrollBottom = $(window).scrollTop() + $(window).height();
-			var fudge = 100; // amount by which to fudge the detection
-			var rowTop = rowRef.offset().top - fudge; 
-			if(rowTop < scrollBottom)
-			{
-				//var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
-				//domElm.doPaging = pagingFunc;
-				//domElm.doPaging();
-				pagingFunc();
-			}
-		});
-		setTimeout(pagingFunc,500);
+// 		$(window).bind('scroll', function(){
+// 				
+// 			var rowRef = $("tr.loadmore");
+// 			var scrollBottom = $(window).scrollTop() + $(window).height();
+// 			var fudge = 100; // amount by which to fudge the detection
+// 			var rowTop = rowRef.offset().top - fudge; 
+// 			if(rowTop < scrollBottom)
+// 			{
+// 				//var domElm = rowRef.get()[0]; //document.getElementById("load_more_bottom");
+// 				//domElm.doPaging = pagingFunc;
+// 				//domElm.doPaging();
+// 				pagingFunc();
+// 			}
+// 		});
+		//setTimeout(pagingFunc,500);
 		</tmpl_unless>
 	
 	});
@@ -438,3 +508,9 @@ div.dlinfo td.text img
 	-->
 
 <script type="text/javascript" src="%%appcore%%/js/jquery.tmpl.js" index="50"></script>
+
+<tmpl_if is_widget>
+		<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js' index="-100"></script>
+	</body>
+</html>
+</tmpl_if>

@@ -29,6 +29,7 @@ while(my $q = CGI::Fast->new)
 	{
 		AppCore::DBI->clear_handle_cache;
 		AppCore::DBI->setup_modtime_sth;
+		AppCore::DBI->clear_cached_dbobjects;
 		goto REPROCESS_MODTIME;
 	}
 	

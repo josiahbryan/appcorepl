@@ -28,6 +28,7 @@
 /* Add a border to the bottom "load more" link, top number display, and new post form */
 /*.newpost td,*/ 
 .loadmore td,
+div.loadmore,
 .current_nums td {
 	border-bottom: 1px solid #c7cddf;
 	border-top: 1px solid white;
@@ -35,10 +36,11 @@
 
 /* Add a nice background for the current post numbers at the top and load link at bottom */
 .loadmore td,
+div.loadmore,
 .current_nums td { background: #e9eeff; }
 
 /* Style the load more posts link at bottom */
-.loadmore td a {
+.loadmore a {
 	/*color: #364a90;*/
 	font-weight: bold;
 	/*font-size: .85em;*/
@@ -48,7 +50,7 @@
 }
 
 /* Styling for the loading animation at the bottom */
-.loadmore td img {
+.loadmore img {
 	display: block;
 	margin-bottom: 1em;
 }
@@ -70,8 +72,11 @@
 }
 
 /* Remove the dotted border for the bottom "Load more posts" link */
-.loadmore td a:active,
-.loadmore td a:focus { outline: 0; }
+.loadmore a { 
+	color: #364a90;
+}
+.loadmore a:active,
+.loadmore a:focus { outline: 0; }
 
 /* Width and clearfix for the new comment form */
 .reply_form .wrap { width: 450px; }
@@ -125,7 +130,8 @@
 .reply_form textarea, 
 .reply_form input,
 .newpost textarea, 
-.newpost input.text {
+.newpost input.text,
+.newpost .textinput {
 	border: 1px solid #b9c0da;
 }
 
@@ -181,14 +187,14 @@ tr.newpost td.photo {
 .postlist tr.newpost td.data { padding: 5px 0 0 0 } 
 
 /* Hide the subject field by default */
-.postlist .data .title_link { display: none; }
+.postlist .title_link { display: none; }
 
 /* Styling for timestamp and bylines */
-.postlist .data .by { 
+.postlist .by { 
 	font-style: italic;
 	/*font-size: .85em;*/
 } 
-.postlist .data .posted_by .name { 
+.postlist .posted_by .name { 
 	font-weight: bold; 
 	color: #364a90;
 }
@@ -207,9 +213,9 @@ img.loading,
 #post-placeholder { display: none; }
 
 /* Styling for an image link */
-.postlist td a.image-link {
-	/*display: block;*/
-	position: relative;
+.postlist a.image-link {
+	display: inline-block;
+	/*position: relative;*/
 	/*width: 120px;
 	height: 90px;*/
 	overflow: hidden !important;
@@ -221,13 +227,17 @@ img.loading,
 	/*margin-top: 4em;*/
 }
 
-.postlist td a.image-link img {
-	border: 1px solid black;
-	padding: 10px;
+.postlist a.image-link img {
+	border: 1px solid #b9c0da;
+	padding: 1px;
 	/*width: auto;
 	height: auto;
 	margin: auto auto;*/
 	background: white;
+}
+
+.postlist a.image-link img span.overlay {
+	/*clear: both;*/
 }
 
 /* Styling for the video play link */
@@ -260,7 +270,8 @@ img.loading,
 
 /* Add a dropshadow to the video play links */
 .postlist a.video-play-link,
-iframe.video-iframe {
+iframe.video-iframe,
+.postlist a.image-link {
 	-webkit-box-shadow: 0px 0px 9px #364a90;
 	-moz-box-shadow: 0px 0px 9px #364a90;
 	box-shadow: 0px 0px 9px #364a90;
@@ -279,13 +290,45 @@ iframe.video-iframe {
 .postlist a.video-play-link:focus { outline: 0; }
 
 /* Styling for horizontal rules in posts */
-.postlist td hr {
+.postlist hr {
 	margin-top: 10px;
 	margin-bottom: 4px;
 	border-color: #b9c0da;
 }
 
-.postlist td hr.post-attach-divider { margin-bottom: 10px; }
+.postlist hr.post-attach-divider { margin-bottom: 10px; }
+
+.postlist .system_content {
+	color: #768AD3;
+}
+
+
+.postlist .attach-container {
+	border-top: 1px solid rgb(235,235,235);
+	padding-top: 7px;
+	margin-top: 5px;
+	color: rgb(100,100,100);
+	margin-bottom: 13px;
+}
+
+.postlist .attach a.attach-link {
+	float: left;
+	margin-right: 10px;
+	margin-top: 4px;
+}
+
+.postlist .attach-meta {
+	/*margin-left: 10px;*/
+}
+
+.postlist .attach-meta .attach-name {
+	font-weight: bold;
+}
+
+.postlist .attach-meta .attach-caption {
+	font-style: italic;
+}
+
 
 /* Hide the "post as" form by default */
 .reply_form .form { display: none; }
@@ -536,7 +579,7 @@ table.comment_text td {
 .board-tagline 
 { 
 	border: 2px solid #c9ac93;
-	font-size: .95em;
+	/*font-size: .95em;*/
 	text-indent: 0px !important;
 	background:	#fff6ec;
 }

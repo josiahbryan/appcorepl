@@ -21,18 +21,20 @@
 							<td class='name' colspan=2>
 								<tmpl_if userid><a href='/%%user%%' title="View %%first%%'s Wall"></tmpl_if>%%first%%<tmpl_if userid></a></tmpl_if> <tmpl_if spouse:str> &amp; <tmpl_if spouse_userid><a href='/%%spouse_user%%' title="View %%spouse%%'s Wall"></tmpl_if>%%spouse%%<tmpl_if spouse_userid></a></tmpl_if></tmpl_if> %%last%%
 							
-								<tmpl_if can_edit>
-									<div class='edit'>
-										<a href='%%bin%%/edit?familyid=%%familyid%%'>Edit</a>
-										<tmpl_if is_admin> | <a href='%%bin%%/delete?familyid=%%familyid%%' onclick='return confirm("Are you sure?")'>Delete</a></tmpl_if>
-									</div>
-								<tmpl_else>
-									<tmpl_unless has_account>
+								<tmpl_unless is_widget>
+									<tmpl_if can_edit>
 										<div class='edit'>
-											<a href='%%bin%%/claim?familyid=%%familyid%%'>This is My Family!</a>
+											<a href='%%bin%%/edit?familyid=%%familyid%%'>Edit</a>
+											<tmpl_if is_admin> | <a href='%%bin%%/delete?familyid=%%familyid%%' onclick='return confirm("Are you sure?")'>Delete</a></tmpl_if>
 										</div>
-									</tmpl_unless>
-								</tmpl_if>
+									<tmpl_else>
+										<tmpl_unless has_account>
+											<div class='edit'>
+												<a href='%%bin%%/claim?familyid=%%familyid%%'>This is My Family!</a>
+											</div>
+										</tmpl_unless>
+									</tmpl_if>
+								</tmpl_unless>
 							</td>
 						</tr>
 						<tmpl_if incomplete_flag>

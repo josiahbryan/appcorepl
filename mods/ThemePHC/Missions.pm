@@ -498,6 +498,8 @@ package ThemePHC::Missions;
 		my $self = shift;
 		if(!$MissionsListCache)
 		{
+			$self->binpath('/serve/outreach'); # needed for priming cache properly
+			
 			my @missions = PHC::Missions->search(deleted=>0);
 			
 			my %country_groups;

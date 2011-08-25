@@ -6,6 +6,12 @@ package Boards::TextFilter::AutoLink;
 		use base 'Boards::TextFilter';
 		__PACKAGE__->register("Auto-Link","Adds hyperlinks to text.");
 		
+		sub _add_http
+		{
+			local $_ = shift;
+			return /^www\./ ? 'http://' . $_ : $_;
+		}
+		
 		# This actual filter can serve as a simple example:
 		# It just accepts a scalar ref and runs a regexp over the text (note the double $$ to deref)
 		sub filter_text
@@ -20,7 +26,12 @@ package Boards::TextFilter::AutoLink;
 			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
 			
 			# New regex:
-			$$textref =~ s/([^'"\/<>:]|^)((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1<a href="$2">$2<\/a>/gi;
+			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
+			# Changes:
+			# - Added '-' to the first exclusion block [^...] to properly handle this case:
+			#		<img src="http://cdn-www.i-am-bored.com/media/howwomenseetheworld.jpg" alt="" />
+			# - Removed '>' to properly link stuff like:
+			#		<p>http://www....</p>
 			
 			#print STDERR "AutoLink: After: ".$$textref."\n";
 		};
@@ -68,7 +79,7 @@ package Boards::VideoProvider::YouTube;
 		__PACKAGE__->register({
 			name		=> "YouTube",						# Name isn't used currently
 			provider_class	=> "video-youtube",					# provider_class is used in page to match provider to iframe template, and construct template and image ID's
-			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=[a-zA-Z0-9\-]+)/,	# Used to find this provider's URL in content
+			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=[a-zA-Z0-9\-\_]+)/,	# Used to find this provider's URL in content
 			
 			iframe_size	=> [375,312],						# The size of the iframe - used to animate the link block element size larger to accomidate the new iframe
 												# The iframe template is used by jQuery's template plugin to generate the iframe html
@@ -82,7 +93,7 @@ package Boards::VideoProvider::YouTube;
 		{
 			my $self = shift;
 			my $url = shift;
-			my ($code) = $url =~ /v=([a-zA-Z0-9\-]+)/;
+			my ($code) = $url =~ /v=([a-zA-Z0-9\-\_]+)/;
 			#print STDERR "youtube url: $url, code: $code\n";
 			return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
 		};
@@ -177,7 +188,7 @@ package Boards;
 	use Digest::MD5 qw/md5_hex/;
 	
 	# For outputting JSON for new posts
-	use JSON qw/encode_json decode_json/;
+	use JSON::XS qw/encode_json decode_json/;
 	
 	# Contains all the data packages we need, such as Boards::Post, etc
 	use Boards::Data;
@@ -603,7 +614,7 @@ package Boards;
 	{
 		my $self = shift;
 		
-		print STDERR __PACKAGE__."->prime_cache: Loading text filters and video providers\n";
+		#print STDERR __PACKAGE__."->prime_cache: Loading text filters and video providers\n";
 		$self->load_video_providers;
 		$self->load_text_filters;
 		
@@ -630,22 +641,31 @@ package Boards;
 		my $self = shift;
 		my $board = shift;
 		
-		return $ControllerCache{$board->id} if $ControllerCache{$board->id};
-		
 		my $controller = $self;
 		
-		#die $board->folder_name;
-		if($board->forum_controller)
+		if(!$ControllerCache{$board->id})
 		{
-			#eval 'use '.$board->forum_controller;
-			#die $@ if $@ && $@ !~ /Can't locate/;
+			#die $board->folder_name;
+			if($board->forum_controller)
+			{
+				#eval 'use '.$board->forum_controller;
+				#die $@ if $@ && $@ !~ /Can't locate/;
+				
+				$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
+				$controller->binpath($self->binpath);
+			}
 			
-			$controller = AppCore::Web::Module->bootstrap($board->forum_controller);
-			$controller->binpath($self->binpath);
+			
+			$ControllerCache{$board->id} = $controller;
+		}
+		else
+		{
+			$controller = $ControllerCache{$board->id};
 		}
 		
+		$controller->binpath($self->binpath) if $controller ne $self;
 		
-		$ControllerCache{$board->id} = $controller;
+		#print STDERR "get_controller: mark6: final bin:".$controller->binpath."\n";
 		
 		return $controller;
 	}
@@ -708,25 +728,51 @@ package Boards;
 		my $board = shift; 
 		
 		my $folder_name = $board->folder_name; 
+		my $boardroot_url = $board->boardroot_url;
 		
 		# Make sure we are being accessed thru a Content::Page object if one exists with "our name on it", so to speak
-		if(!$req->{page_obj})
+		if(!$boardroot_url || !$req->{page_obj})
 		{
-			my $sth = ($self->{_sth_pagecheck} ||= Content::Page->db_Main->prepare('select pageid from `'.Content::Page->table.'` where url like ? and typeid=?'));
-			$sth->execute("%/${folder_name}",$PAGE_TYPEID);
-			if($sth->rows)
+			my $try_redir_base = 0;
+			if($boardroot_url)
 			{
-				my $page = Content::Page->retrieve($sth->fetchrow);
-				my $cur_url = $req->page_path."/$folder_name";
+				my $cur_url = $req->page_path; #."/$folder_name";
+				
 				#print STDERR get_full_url().": board_page: Matched folder $folder_name to pageid $page, page url:".$page->url.", current path: $cur_url\n";
-				if($page->url ne $cur_url)
+				if($boardroot_url ne $cur_url)
 				{
-					my $new_url = $page->url.($req->path?"/".join('/',$req->path_info):"").($ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '');
-					if(get_full_url() ne $new_url)
+					$try_redir_base = $boardroot_url;
+				}
+			}
+			
+			if(!$try_redir_base || !$boardroot_url)
+			{
+				my $sth = ($self->{_sth_pagecheck} ||= Content::Page->db_Main->prepare('select pageid from `'.Content::Page->table.'` where url like ? and typeid=?'));
+				$sth->execute("%/${folder_name}",$PAGE_TYPEID);
+				if($sth->rows)
+				{
+					my $page = Content::Page->retrieve($sth->fetchrow);
+					my $cur_url = $req->page_path; #."/$folder_name";
+					
+					$boardroot_url = $cur_url;
+					$board->boardroot_url($boardroot_url);
+					$board->update; # trashes cache!
+					
+					#print STDERR get_full_url().": board_page: Matched folder $folder_name to pageid $page, page url:".$page->url.", current path: $cur_url\n";
+					if($page->url ne $cur_url)
 					{
-						print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
-						return $r->redirect($new_url);
+						$try_redir_base = $page->url;
 					}
+				}
+			}
+			
+			if($try_redir_base)
+			{
+				my $new_url = $try_redir_base.($req->path?"/".join('/',$req->path_info):"").($ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '');
+				if(get_full_url() ne $new_url)
+				{
+					print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
+					return $r->redirect($new_url);
 				}
 			}
 		}
@@ -740,7 +786,9 @@ package Boards;
 		my $bin = $self->binpath;
 		my $page_path = $req->page_path;
 		
-		#die Dumper $req, $bin, $page_path;
+		$boardroot_url = "$bin/$folder_name" if !$boardroot_url;
+		
+		#die Dumper $sub_page,$req, $bin, $page_path;
 		
 		if($sub_page eq 'post')
 		{
@@ -751,7 +799,7 @@ package Boards;
 			
 			if($req->output_fmt eq 'json')
 			{
-				my $b = $controller->load_post_for_list($post,$board->folder_name);
+				my $b = $controller->load_post_for_list($post,{board_folder_name => $board->folder_name, boardroot_url => $boardroot_url});
 				
 				#use Data::Dumper;
 				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
@@ -894,6 +942,9 @@ package Boards;
 		my $can_admin = $user && $user->check_acl($controller->config->{admin_acl}) ? 1 :0;
 		my $board_folder_name = $board->folder_name;
 		
+		my $bin = $self->binpath;
+		my $boardroot_url = $board->boardroot_url ? $board->boardroot_url : "$bin/$board_folder_name"; 
+		
 		my $user_wall_clause = 0; # Since this var is used in an "or" statement, the 0 will null it out unless we put something there
 		
 		# This board is specific to a user if board_userid is set
@@ -931,7 +982,7 @@ package Boards;
 			my $ts;
 			while(my $b = $sth->fetchrow_hashref)
 			{
-				my $x = $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+				my $x = $controller->load_post_for_list($b,{board_folder_name => $board_folder_name,can_admin => $can_admin, boardroot_url => $boardroot_url});
 				$ts = $x->{timestamp};
 				push @results, $x;
 			}
@@ -951,7 +1002,7 @@ package Boards;
 		
 		# Get the current paging location
 		my $idx = $req->{idx} || 0;
-		my $len = $req->{len} || AppCore::Config->get("BOARDS_POST_PAGE_LENGTH");
+		my $len = $req->{len} || $controller->config->{list_length} || AppCore::Config->get("BOARDS_POST_PAGE_LENGTH");
 		$len = AppCore::Config->get("BOARDS_POST_PAGE_MAX_LENGTH") if $len > AppCore::Config->get("BOARDS_POST_PAGE_MAX_LENGTH");
 		
 		# Find the total number of posts in this board
@@ -1025,7 +1076,7 @@ package Boards;
 				$b->{board_userid} = $board_userid;
 				$b->{post_number} = $counter ++; 
 				#die Dumper $b;
-				push @tmp_list, $controller->load_post_for_list($b,$board_folder_name,$can_admin);
+				push @tmp_list, $controller->load_post_for_list($b,{board_folder_name => $board_folder_name,can_admin => $can_admin, boardroot_url => $boardroot_url});
 			}
 			
 			my $threaded = $controller->thread_post_list(\@tmp_list, undef, undef, $board->board_userid);
@@ -1119,18 +1170,19 @@ package Boards;
 	{
 		my $self = shift;
 		my $post = shift;
-		my $board_folder_name = shift;
-		my $can_admin = shift;
-		my $dont_incl_comments = shift || 0;
+		my $opts = shift;
+			
+		my $board_folder_name	= $opts->{board_folder_name} || undef;
+		my $can_admin		= $opts->{can_admin} || undef; # will be decided below if not set
+		my $dont_incl_comments	= $opts->{dont_incl_comments} || 0;
 		
 		if(!defined $can_admin)
 		{
 			$can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
 		}
 		
-		
-		my $short_len             = AppCore::Config->get("BOARDS_SHORT_TEXT_LENGTH")     || $SHORT_TEXT_LENGTH;
-		my $last_post_subject_len = AppCore::Config->get("BOARDS_LAST_POST_SUBJ_LENGTH") || $LAST_POST_SUBJ_LENGTH;
+		my $short_len             = AppCore::Config->get('BOARDS_SHORT_TEXT_LENGTH')     || $SHORT_TEXT_LENGTH;
+		my $last_post_subject_len = AppCore::Config->get('BOARDS_LAST_POST_SUBJ_LENGTH') || $LAST_POST_SUBJ_LENGTH;
 		
 		my $ref_name = ref $post;
 		#print STDERR "Refname of post is '$ref_name', value '$post'\n";
@@ -1138,6 +1190,7 @@ package Boards;
 		{
 			my $hash = {};
 			$hash->{$_} = $post->{$_}."" foreach $post->columns;
+			
 			my $user = $post->posted_by;
 			if($user && $user->id)
 			{
@@ -1145,13 +1198,32 @@ package Boards;
 				$hash->{user_photo} = $user->photo;
 			}
 			
+			$hash->{board_userid} = $post->boardid ? $post->boardid->board_userid+0 : undef;
+			#die Dumper $hash;
+			
 			$post = $hash;
+		}
+		
+		if($post->{extra_data})
+		{
+			undef $@;
+			eval
+			{
+				my $hash = JSON::XS::decode_json($post->{extra_data});
+				if(ref $hash eq 'HASH')
+				{
+					$post->{'data_'.$_} = $hash->{$_} foreach keys %$hash;
+				}
+			};
+			warn "Error decoding extra data on postid $post->{postid}: $@" if $@;
 		}
 		
 		#my $board_folder_name = $board->{folder_name};
 		my $folder_name = $post->{folder_name};
 		#my $user = $post->{posted_by};
 		my $bin = $self->binpath;
+		#AppCore::Common::print_stack_trace() unless ref($self) ne 'ThemePHC::BoardsTalk' || $self->{stack} ++;
+		#print STDERR "Boards->load_post_for_list: bin:".$bin.", ref:".ref($self)."\n";
 		
 		
 		#my $b = {};
@@ -1162,7 +1234,7 @@ package Boards;
 # 		my @cols = $post->columns;
 # 		$b->{$_} = $post->get($_). "" foreach @cols; #$post->columns;
 		$b->{bin}         = $bin;
-		$b->{appcore}     = AppCore::Config->get("WWW_ROOT");
+		$b->{appcore}     = $self->{_www_root} ||= AppCore::Config->get("WWW_ROOT");
 		$b->{board_folder_name} = $board_folder_name;
 		$b->{can_admin}   = $can_admin;
 		
@@ -1174,9 +1246,9 @@ package Boards;
 		# 'single_post_page' IS used when viewing a single post - other than that, the template
 		# should just default to undefined. HTML::Template handles it fine, but jQuery tmpl doesnt.
 		# Grrrr.
-		$b->{single_post_page} = 0;
-		$b->{indent_is_odd}    = 0;
-		$b->{board_userid}	= 0;
+		$b->{single_post_page} = 0 if !$b->{single_post_page};
+		$b->{indent_is_odd}    = 0 if !$b->{indent_is_odd};
+		$b->{board_userid}     = 0 if !$b->{board_userid};
 		$b->{original_board_folder_name} = '';
 		
 		
@@ -1196,9 +1268,10 @@ package Boards;
 		#$b->{text} = AppCore::Web::Common->clean_html($b->{comment})
 		
 		my $short = AppCore::Web::Common->html2text($b->{text});
+		$short =~ s/(^[\s\n]+|[\s\n]+$)//g;
 		
 		$b->{short_text}  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
-		$b->{short_text_has_more} = length($short) > $short_len;
+		$b->{short_text_has_more} = length($short) > $short_len || $b->{text} =~ '<img' || $b->{text} =~ '<object';
 		
 		my $clean_html = AppCore::Web::Common->text2html($b->{short_text});
 		
@@ -1211,6 +1284,7 @@ package Boards;
 		$self->load_text_filters;
 		
 		my $text_tmp = AppCore::Web::Common->clean_html($b->{text});
+		
 		foreach my $filter (@TextFilters)
 		{
 			# Pass the text as a scalar ref
@@ -1224,11 +1298,58 @@ package Boards;
 		
 		#use Data::Dumper;
 		#die Dumper \@TEXT_FILTERS;
-		$b->{text}       = $self->create_video_links($text_tmp);
-		$b->{clean_html} = $self->create_video_links($clean_html);
+		if($b->{data_has_attach} && $b->{post_class} eq 'video')
+		{
+			my $text = $text_tmp;
+			
+			# Make sure it's loaded...
+			$self->load_video_providers;
+			
+			VIDEO_PROVIDER: foreach my $provider (@VideoProviders)
+			{
+				my $config = $provider->controller->config;
+				my $rx = $config->{url_regex};
+				my ($url) = $text =~ /$rx/;
+				if($url)
+				{
+					my ($link_url, $thumb_url, $videoid) = $provider->controller->process_url($url);
+					
+					my $provider_class = $config->{provider_class};
+					
+					
+					$b->{video_provider_class} = $provider_class;
+					$b->{videoid} = $videoid;
+					#$b->{video_image_id} =
+					 
+# 					#my ($code) = $url =~ /v=(.+?)\b/;
+# 					#$b->{short_text_html} .= '<hr size=1><iframe title="YouTube video player" width="320" height="240" src="http://www.youtube.com/embed/'.$code.'" frameborder="0" allowfullscreen></iframe>';;
+# 					my $attach = qq{
+# 						<hr size=1 class='post-attach-divider'>
+# 						<a href='$link_url' class='video-play-link $provider_class' videoid='$videoid'>
+# 						<img src="$thumb_url" border=0 id='$provider_class-$videoid'>
+# 						<span class='overlay'></span>
+# 						</a>
+# 					};
+# 					return $attach if $return_first;
+# 					$text .= $attach;
+					 
+					last VIDEO_PROVIDER;
+				}
+			}
+			
+			$b->{text}       = $text_tmp;
+			$b->{clean_html} = $clean_html;
+			
+			#return $text;
+		}
+		else
+		{
+			$b->{text}       = $self->create_video_links($text_tmp);
+			$b->{clean_html} = $self->create_video_links($clean_html);
+		}
 		
 		# Trim whitespace off start/end of html
-		$b->{clean_html} =~ s/(^\s|\s+$)//g;
+ 		$b->{clean_html} =~ s/(^[\s\n]+|[\s\n]+$)//g;
 		
 		#use Data::Dumper;
 		#die Dumper($b) if $b->{postid} == 10585;
@@ -1243,10 +1364,14 @@ package Boards;
 		$b->{approx_time_ago}  = approx_time_ago($b->{timestamp});
 		$b->{pretty_timestamp} = pretty_timestamp($b->{timestamp});
 		
-		my $reply_to_url   = "$bin/$folder_name/reply_to";
-		my $delete_base    = "$bin/$folder_name/delete";
-		my $like_url       = "$bin/$folder_name/like";
-		my $unlike_url     = "$bin/$folder_name/unlike";
+		my $boardroot = $opts->{boardroot_url} ? $opts->{boardroot_url} : "$bin/$board_folder_name";
+		$b->{postroot_url } = $opts->{postroot_url};
+		$b->{boardroot_url} = $boardroot; 
+		
+		my $reply_to_url   = "${boardroot}/${folder_name}/reply_to";
+		my $delete_base    = "${boardroot}/${folder_name}/delete";
+		my $like_url       = "${boardroot}/${folder_name}/like";
+		my $unlike_url     = "${boardroot}/${folder_name}/unlike";
 		
 		$b->{reply_to_url} = $reply_to_url;
 		$b->{delete_base}  = $delete_base;
@@ -1257,7 +1382,20 @@ package Boards;
 		
 		Boards::Post::Like->like_data_for_post($b->{postid}, $b);
 		
+		if($b->{to_userid} && $b->{to_userid} != $b->{posted_by})
+		{
+#			die Dumper $b;
+			my $to_user = ref $b->{to_userid} ? $b->{to_userid} : AppCore::User->retrieve($b->{to_userid});
+			if($to_user)
+			{
+				$b->{to_user_display} = $to_user->display;
+				$b->{to_user} = $to_user->user;
+			}
+		}
+		
 		#$b->{text} = PHC::VerseLookup->tag_verses($b->{text});
+		
+		#die Dumper $b if $short =~ /his passion, and his words/;
 		
 		return $b;
 	}
@@ -1337,6 +1475,7 @@ package Boards;
 		
 		my $first_ts = $post->timestamp;
 		
+		#print_stack_trace();
 		my $folder_name = $post->folder_name;
  		my $board_folder_name 
  		              = $post->boardid->folder_name;
@@ -1359,8 +1498,11 @@ package Boards;
 		{
 			my $can_admin = $user && $user->check_acl($self->config->{admin_acl}) ? 1:0;
 			
+			my $boardroot_url = $post->boardid->boardroot_url;
+			$boardroot_url = "$bin/$board_folder_name" if !$boardroot_url;
+			
 			# Do the actual query that loads all and comments in one gos
-			my $sth = Boards::Post->db_Main->prepare_cached('select p.*,b.folder_name as original_board_folder_name, b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+			my $sth = Boards::Post->db_Main->prepare_cached('select p.*,b.folder_name as original_board_folder_name, b.board_userid as board_userid,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
 				'where p.boardid=b.boardid and p.deleted=0 and '.
 				'top_commentid=? '.
 				'order by timestamp');
@@ -1371,13 +1513,13 @@ package Boards;
 			my @tmp_list;
 			while(my $b = $sth->fetchrow_hashref)
 			{
-				my $b = $self->load_post_for_list($b,$board_folder_name,$can_admin);
+				my $b = $self->load_post_for_list($b,{board_folder_name => $board_folder_name,can_admin => $can_admin, boardroot_url => $boardroot_url});
 				$first_ts = $b->{timestamp};
 				push @tmp_list, $b;
 			}
 			
 			my $board = $post->boardid;
-			$post_ref = $self->load_post_for_list($post,$board->folder_name,$can_admin);
+			$post_ref = $self->load_post_for_list($post,{board_folder_name => $board->folder_name, can_admin => $can_admin, boardroot_url => $boardroot_url});
 			$post_ref->{'board_'.$_} = $board->get($_)."" foreach $board->columns;
 			$post_ref->{'post_' .$_} = $post_ref->{$_}."" foreach $post->columns;
 			$post_ref->{reply_count}  = 0;
@@ -1509,7 +1651,7 @@ package Boards;
 						
 						#$data->{$_} = $post->get($_) foreach $post->columns;
 						my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});
-						my $data = $controller->load_post_for_list($post,$post->boardid->folder_name,$can_admin);
+						my $data = $controller->load_post_for_list($post,{board_folder_name => $post->boardid->folder_name, can_admin => $can_admin, boardroot_url => $board->boardroot_url});
 						foreach my $key (keys %$tmpl_incs)
 						{
 							$data->{'tmpl_inc_'.$key} = $tmpl_incs->{$key};
@@ -1590,7 +1732,7 @@ package Boards;
 		my $self = shift;
 		my $text = shift;
 		$text = AppCore::Web::Common->html2text($text);
-		print STDERR "guess_subject: text: [$text]\n";
+		#print STDERR "guess_subject: text: [$text]\n";
 		#$req->{subject} = substr($text,0,$SUBJECT_LENGTH). (length($text) > $SUBJECT_LENGTH ? '...' : '');
 		my $idx = index($text,"\n");
 		my $len = $idx > -1 && $idx < $SUBJECT_LENGTH ? $idx : $SUBJECT_LENGTH;
@@ -1644,7 +1786,7 @@ package Boards;
 		# Make sure it's loaded...
 		$self->load_video_providers;
 		
-		my $post_class = undef;
+		my $post_class = $req->{post_class};
 		foreach my $provider (@VideoProviders)
 		{
 			eval
@@ -1658,7 +1800,7 @@ package Boards;
 					last;
 				}
 			};
-			warn $@ if $@;
+			warn "Problem processing with Video Provider ID $provider: $@" if $@;
 		}
 		
 		if(!$post_class && 
@@ -1687,9 +1829,11 @@ package Boards;
 			folder_name		=> $fake_it,
 			post_class		=> $post_class,
 			to_userid		=> $board->board_userid,
+			system_content		=> $req->{system_content} || !$req->{comment},
 		});
 		
-		if($append_flag)
+		#if($append_flag)
+		if($append_flag || !$post->folder_name || !$post->text)
 		{
 			$fake_it = ($fake_it?$fake_it.'_':'').$post->id;
 			$post->folder_name($fake_it);
@@ -1732,16 +1876,17 @@ package Boards;
 			return $r->error("No Such Post","Sorry, the post folder name you gave did not match any existing Bulletin Board posts. Please check your URL or the link on the page that you clicked and try again.");
 		}
 		
+		my $bin = $self->binpath;
+		
 		my $board             = $post->boardid;
 		my $board_folder_name = $board->folder_name;
+		my $boardroot_url     = $board->boardroot_url ? $board->boardroot_url : "$bin/$board_folder_name";
 		
 		my $sub_page = $req->shift_path;
 		
 		my $page_path = $req->page_path;
 		
 		#$tmpl->param(can_upload=>1) if ($_ = AppCore::Common->context->user) && $_->check_acl($UPLOAD_ACL);
-		
-		my $bin = $self->binpath;
 		
 		if($sub_page eq 'post')
 		{
@@ -1754,7 +1899,7 @@ package Boards;
 			
 			if($req->output_fmt eq 'json')
 			{
-				my $output = $controller->load_post_for_list($comment,$board->folder_name);
+				my $output = $controller->load_post_for_list($comment,{board_folder_name => $board->folder_name, boardroot_url => $boardroot_url});
 				
 				my $json = encode_json($output);
 				return $r->output_data("application/json", $json);
@@ -2041,9 +2186,6 @@ package Boards;
 				return 0;
 			}
 				
-			my $notify_url = "https://graph.facebook.com/${fb_feed_id}/feed";
-			print STDERR "Posting to Facebook URL $notify_url\n";
-			
 			my $ua = LWP::UserAgent->new;
 			#$ua->env_proxy;
 			
@@ -2070,33 +2212,66 @@ package Boards;
 # 				($post->parent_commentid && $post->parent_commentid->id ? " replied to ".$post->parent_commentid->poster_name : " commented ").
 # 				" on \"".$post->top_commentid->subject."\" at $short_abs_url: $quote";
 
-			my $message = $action eq 'new_post' ?
-				$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
-				$post->poster_name.": $quote - ".
-				($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
-				" on \"".$post->top_commentid->subject."\" at $short_abs_url";
+			my $website_noun = AppCore::Config->get('WEBSITE_NOUN') || 'Original Website';
+				
+			my $form;
+			my $notify_url;
 			
-			
-			my $photo = $post->poster_photo ? $post->poster_photo :
-			            $post->posted_by ? $post->posted_by->photo : "";
-			$photo = AppCore::Config->get("WEBSITE_SERVER") . $photo if $photo =~ /\//;
-			
-			my $form = 
+			if($action eq 'new_post' || ($action eq 'new_comment' && $post->top_commentid && $post->top_commentid->id && !$post->top_commentid->external_id  ))
 			{
-				access_token	=> $fb_access_token,
-				message		=> $message,
-				link		=> $abs_url,
-				picture		=> $photo,
-				name		=> $post->subject,
-				caption		=> $action eq 'new_post' ? 
-					"by ".$post->poster_name." in ".$board->title :
-					"by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
-				description	=> $short_text,
-				actions		=> qq|{"name": "View on the PHC Website", "link": "$abs_url"}|,
-			};
+				# Post new posts OR comments who's parent was not put on FB as new posts
+				$notify_url = "https://graph.facebook.com/${fb_feed_id}/feed";
+				print STDERR "Posting $action to Facebook URL $notify_url\n";
 			
-			$self->facebook_notify_hook($post, $form, 
+				my $message = $action eq 'new_post' ?
+					$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
+					($post->poster_name.": $quote - ".
+						($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+						" on \"".$post->top_commentid->subject."\" at $short_abs_url");
+				
+				my $photo = $post->poster_photo ? $post->poster_photo :
+					$post->posted_by ? $post->posted_by->photo : "";
+				$photo = AppCore::Config->get("WEBSITE_SERVER") . $photo if $photo =~ /\//;
+				
+				$form = 
+				{
+					access_token	=> $fb_access_token,
+					message		=> $message,
+					link		=> $abs_url,
+					picture		=> $photo,
+					name		=> $post->subject,
+					caption		=> $action eq 'new_post' ? 
+						"by ".$post->poster_name." in ".$board->title :
+						"by ".$post->poster_name." on '".$post->top_commentid->subject."' in ".$board->title,
+					description	=> $short_text,
+					actions		=> qq|{"name": "View on $website_noun", "link": "$abs_url"}|,
+				};
+			}
+			else #if($action eq 'new_comment')
 			{
+				$notify_url = "https://graph.facebook.com/". $post->top_commentid->external_id ."/comments";
+				print STDERR "Posting New Comment to Facebook URL $notify_url\n";
+				
+				my $message = ($post->posted_by && $post->posted_by->id && $post->posted_by->fb_userid eq $board->fb_feed_id) ?
+							$short :
+							$post->poster_name . ": $quote - " . 
+								($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+								" on \"".$post->top_commentid->subject."\" at $short_abs_url";
+				
+				$form = 
+				{
+					access_token	=> $fb_access_token,
+					message		=> $message,
+					actions		=> qq|{"name": "View on $website_noun", "link": "$abs_url"}|,
+				};
+			
+			}
+			
+			my $hook_object = $args->{hook} || $self;
+			
+			$hook_object->facebook_notify_hook($post, $form, 
+			{
+				action => $action,
 				abs_url => $abs_url,
 				short_abs_url => $short_abs_url,
 				short_text => $short_text,
@@ -2105,6 +2280,7 @@ package Boards;
 			
 			use Data::Dumper;
 			print STDERR "Facebook post data: ".Dumper($form);
+			#die "[DEBUG] Facebook post data: ".Dumper($form);
 			
 			my $response = $ua->post($notify_url, $form);
 			
@@ -2114,7 +2290,7 @@ package Boards;
 				$post->external_id($rs->{id});
 				$post->update;
 				
-				print STDERR "Facebook post successful, Facebook Post ID: ".$post->external_id."\n";
+				print STDERR "Facebook post successful, Facebook Post ID: ".$post->external_id.", internal postid: $post\n";
 			}
 			else 
 			{
@@ -2430,6 +2606,7 @@ Cheers!};
 		}
 		
 		my $fake_it = $self->to_folder_name($req->{subject});
+		$fake_it =~ s/(^\s+|\s+$)//g;
 
 		my $append_flag = 0;
 		if(my $other = Boards::Post->by_field(folder_name => $fake_it))
@@ -2471,7 +2648,7 @@ Cheers!};
 			folder_name		=> $fake_it,
 		});
 		
-		if($append_flag)
+		if($append_flag || !$comment->folder_name || !$comment->text)
 		{
 			$comment->folder_name($fake_it.'_'.$comment->id);
 			$comment->update;

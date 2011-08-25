@@ -10,6 +10,8 @@ package AppCore::User;
 	
 	use base 'AppCore::DBI';
 	
+	use Digest::MD5 qw/md5_hex/;
+
 	our $default_acl = ['EVERYONE'];
 	
 	__PACKAGE__->meta({
@@ -490,6 +492,100 @@ package AppCore::User;
 		
 		return 0;
 	}
+	
+	sub store_photo
+	{
+# 		use Data::Dumper;
+# 		die Dumper \@_;
+		
+		#die "Done";
+		use LWP::Simple qw();
+		
+		
+		my $user_obj = shift;
+		my $photo_url = shift;
+		
+		
+		# Combine ident with website name incase multiple websites use the same location to store user images
+		my $ident = join(':', AppCore::Config->get('WEBSITE_NAME'), $user_obj->id);
+		my $local_photo_url = '/mods/User/user_photos/user'. md5_hex($ident) . '.jpg';
+		my $file_path = AppCore::Config->get('APPCORE_ROOT') . $local_photo_url;
+		
+		my $photo; # data buffer
+		
+		if($photo_url =~ /^(https?|ftp):/)
+		{
+			print STDERR "Using LWP to download $photo_url...\n";
+			$photo = LWP::Simple::get($photo_url);
+			print STDERR "Downloaded ".length($photo)." bytes\n";
+		}
+		elsif(-f $photo_url)
+		{
+			print STDERR "Reading $photo_url from disk...\n";
+			open(PHOTO, '<' . $photo_url) || die "Can't read $photo_url: $!";
+			my @buffer;
+			push @buffer, $_ while $_ = <PHOTO>;
+			close(PHOTO);
+			
+			$photo = join '', @buffer;
+		}
+		else
+		{
+			die "Don't know how to get '$photo_url'";
+		}
+		
+		if(length($photo) > 0 && open(PHOTO, '>' . $file_path))
+		{
+			print PHOTO $photo;
+			close(PHOTO);
+			
+			my $linux_user = getpwuid($<) || 'daemon';
+			if($linux_user eq 'root')
+			{
+				# Make writeable for non-root
+				my (undef,undef,$uid,$gid) = getpwnam('daemon') or die "daemon not in passwd file";
+				chown $uid, $gid, $file_path;
+				chmod 0755, $file_path;
+			}
+			
+			$user_obj->photo(AppCore::Config->get('WWW_ROOT') . $local_photo_url);
+			$user_obj->update;
+			
+			print STDERR "Downloaded user photo to $file_path.\n";
+		}
+		else
+		{
+			if(length($photo) <= 0)
+			{
+				print STDERR "Downloaded/read 0 bytes, clearing photo!\n";
+				$user_obj->photo(undef);
+				$user_obj->update;
+			}
+			else
+			{
+				print STDERR "Error saving photo to $file_path: $!";
+			}
+		}
+	}
+	
+	sub get_fb_photo
+	{
+		my $self = shift;
+# 		my $token = $self->fb_token;
+# 		my $expires = $self->fb_token_expires;
+# 		my $date = AppCore::Common::date();
+# 		if(($date cmp $expires) > 0)
+# 		{
+# 			warn "AppCore::User::get_fb_photo: User '".$self->display."': FB Token may be expired, probably won't get photo ($date > $expires)";
+# 		}
+# 		else
+# 		{
+# 			warn "AppCore::User::get_fb_photo: User '".$self->display."': Token good! ($date < $expires)\n";
+# 		}
+# 		my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
+		my $photo_url = 'https://graph.facebook.com/'. $self->fb_userid. '/picture';
+		return $self->store_photo($photo_url);
+	}
 };	
 
 # Package: AppCore::User::GenericDataClass 
@@ -686,6 +782,30 @@ package AppCore::User::PrefOption;
 		]
 	
 	});
+	
+	sub _cast
+	{
+		my $self = shift;
+		my $value = shift;
+		my $type = $self->datatype;
+		
+		return $type eq 'string' ? ''.$value :
+		       $type eq 'int'    ? 0+$value  :
+		       $type eq 'bool'   ? $value+0  :
+		       $value;
+	}
+	
+	sub value 
+	{
+		my $self = shift;
+		my $user = shift || AppCore::Web::Common->context->user;
+		return $self->_cast($self->default_value) if !$user;
+		
+		my $entry = AppCore::User::Preference->by_field( userid => $user, optid => $self );
+		return $self->_cast($self->default_value) if !$entry;
+		
+		return $self->_cast($entry->value);
+	}
 	
 	our %FlagSeen;
 	sub register
