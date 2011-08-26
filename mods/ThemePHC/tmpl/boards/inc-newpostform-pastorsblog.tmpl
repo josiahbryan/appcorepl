@@ -1,0 +1,111 @@
+					<tmpl_if can_post>
+						<script>
+						function pastors_blog_submit(formElm) 
+						{
+							$("#post_html").get(0).value = $("#post_editor").html();
+							ajax_post_new(formElm);
+							$("#post_editor").html("<p>&nsbp;</p>");
+							$("#post_subject").get(0).value="";
+							
+							return false;
+						}
+						</script>
+						<form class='wrap'  onsubmit='return pastors_blog_submit(this)'>
+						<!--<form class='wrap'  onsubmit='alert($("#post_html").get(0).value=$("#post_editor").html()); return false;'>-->
+							
+							<table width='100%'>
+								<tr>
+									<td width=1%>Subject:</td>
+									<td width=100%><input type=text class=text name=subject style='width:100%;margin-bottom:2px' id="post_subject">
+								</tr>
+										
+								<tr>
+									<!--<td>
+										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
+									</td>-->
+									<td class='content' colspan='2'>
+										<style>
+										#post_editor
+										{
+											width:99%;
+											min-height:75px;
+											margin-top: 0;
+											border: 1px solid #b9c0da;
+											white-space:normal;
+											padding: 2px;
+											cursor: text;
+											background: white;
+										}
+										
+										#post_editor:focus {
+											outline: 0;
+											-moz-box-shadow: 0px 0px 9px #364a90;
+											-webkit-box-shadow: 0px 0px 9px #364a90;
+											box-shadow: 0px 0px 9px #364a90;
+										}
+
+										</style>
+										<div id="post_editor" contenteditable='true'>
+										<p>&nbsp;</p>
+										</div>
+										<textarea class="expandText" name="comment" id='post_html' style='display:none'></textarea>
+									</td>
+								<tmpl_if user_display>
+								<tr>
+									<td colspan=3>
+										<!--<div class='ident' id='postas_display'>
+											<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
+											Posting as <b>%%user_display%%</b>
+											<input value='%%user_display%%' name='poster_name' type=hidden>
+											<input value='%%user_email%%' name='poster_email' type=hidden>
+										</div>-->
+										<div class='controls'>
+											<button type='submit' class='button'>Post</button>
+										</div>
+									</td>
+								</tr>
+								<tmpl_else>
+									<tr>
+										<!--<td align='right'>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' id='newpost_poster_name' size=15></td>-->
+									
+										<td rowspan='2'>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td align='right'>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=15></td>
+									</tr>
+								</tmpl_if>
+							</table>
+						
+						</form>
+						
+						<!--<div class='form' id='postas_form'<tmpl_unless user_display> style='display:block'</tmpl_unless>>
+								<table>
+									<tr>
+										<td>Name:</td>
+										<td><input value='%%user_display%%' name='poster_name'></td>
+									</tr>
+									<tr>
+										<td>Email:</td>
+										<td><input value='%%user_email%%' name='poster_email'></td>
+									</tr>
+								</table>
+							</div>
+							<tmpl_if user_display>
+								<div class='ident' id='postas_display'>
+									<script>
+									function show_postas_form()
+									{
+										$("#postas_form").show(200);
+										$("#postas_display").hide(200);
+									}
+									</script>
+									Posting as <b>%%user_display%%</b> - <a href='javascript:void(show_postas_form());'>Change</a>
+								</div>
+							</tmpl_if>-->
+					</tmpl_if>

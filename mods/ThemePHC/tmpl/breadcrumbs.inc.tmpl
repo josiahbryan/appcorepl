@@ -23,19 +23,30 @@
 								</tmpl_loop>
 								)</span>
 							</tmpl_if>
-						</td>
+						</td><!--
 						<tmpl_if nav_url_from>
 							<td nowrap>
 								<div>
-									<a href='%%nav_url_from%%'>&laquo; Return to the previous page</a>
+									<a href='%%nav_url_from%%'>&laquo; Previous page</a>
 								</div>
 							</td>
-						</tmpl_if>
+						</tmpl_if>-->
+						<td nowrap>
+							<!--<tmpl_if nav_url_from>
+								&nbsp;|
+							</tmpl_if>-->
+							
+							<tmpl_if user_userid>
+								<a href='/user/settings'>%%user_display%%</a> (<a href='/user/login'>Logout</a>)
+								<tmpl_if can_edit> | <a href='/content/admin/edit?url=%%content_url%%'>Edit Page</a></tmpl_if>
+								<tmpl_if is_admin> | <a href='/admin'>Admin</a></tmpl_if>
+							<tmpl_else>
+								<a href='/user/login'>Login</a> | <a href='/user/signup'>Signup</a>
+							</tmpl_if>
+						</td>
 						<td nowrap>
 							<div id='no_float_wrap' style='display:none'>
-								<tmpl_if nav_url_from>
-									&nbsp; | &nbsp;
-								</tmpl_if>
+								| 
 								<a href='#' class='no_float'>Don't Float</a>
 							</div>
 						</td>

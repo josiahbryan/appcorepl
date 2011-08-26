@@ -1,0 +1,14 @@
+%%first%%<tmpl_if spouse:str> & %%spouse%%</tmpl_if> %%last%%
+%%address%%
+<tmpl_if home:str>Home Phone: %%home%%
+</tmpl_if><tmpl_if cell:str><tmpl_if spouse:str>%%first%%'s </tmpl_if>Cell: %%cell%%
+</tmpl_if><tmpl_if spouse_cell:str><tmpl_if spouse:str>%%spouse%%'s </tmpl_if>Cell: %%spouse_cell%%
+</tmpl_if><tmpl_if email:str><tmpl_if spouse:str>%%first%%'s </tmpl_if>Email: %%email%%
+</tmpl_if><tmpl_if spouse_email:str><tmpl_if spouse:str>%%spouse%%'s </tmpl_if>Email: %%spouse_email%%
+</tmpl_if><tmpl_if birthday:str><tmpl_if spouse:str>%%first%%'s </tmpl_if>Birthday: %%birthday%%
+</tmpl_if><tmpl_if spouse_birthday:str><tmpl_if spouse:str>%%spouse%%'s </tmpl_if>Birthday: %%spouse_birthday%%
+</tmpl_if><tmpl_if anniversary:str>Anniversary: %%anniversary%%
+</tmpl_if><tmpl_if comments:str> %%comments_html%%
+</tmpl_if><tmpl_if kids>Children:
+<tmpl_loop kids>    %%display%% - %%birthday%%
+</tmpl_loop></tmpl_if>
