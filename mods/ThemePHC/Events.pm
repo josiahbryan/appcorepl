@@ -852,6 +852,190 @@ package ThemePHC::Events;
 		
 		return \@out_weekly;
 	}
+	
+	sub _day_data
+	{
+		my $class = shift;
+		my $date = shift;
+		my $zoom = shift;
+		my $extra = shift || {};
+		
+		
+		my ($x,$y) = split /\s/, $date;
+		my ($year,$month,$day) = split/-/, $x;
+		my $dt = DateTime->new(year=>$year,month=>$month,day=>$day);
+		
+		my $data = {};
+		my $dow = $dt->dow;
+		$data->{weekend} = $dt->dow < 1 || $dt->dow > 5;
+		$data->{day} = $dt->day;
+		#$data->{bin} = EAS::Common->context->eas_http_bin;
+		
+		$data->{prev_date} = $dt->subtract(days=>1)->ymd;
+		$data->{next_date} = $dt->add(days=>2)->ymd;
+		
+		#my $url_base = EAS::Common->context->eas_http_bin . '/kitchen';
+		#my $eas_root = EAS::Common->context->eas_http_root;
+		
+		my @day_loop;
+		
+		my $sql = "datetime like '$year-$month-$day %' OR (is_weekly = 1 AND weekday = $dow)";
+		#print STDERR "SQL=$sql\n";
+		my @events = PHC::Event->retrieve_from_sql($sql);
+		
+		#my $cur_dow = get_dow(EAS::Common::date());
+		foreach my $item (@events)
+		{
+		
+			#$event->{$_} = $event->get($_) foreach $event->columns;
+			#$event->{bin} = $bin;
+			my $event = $class->merge_item_to_post($item,$extra->{can_admin});
+			next if !$event || $event->{deleted};
+			
+			$class->prep_event_hash($event);
+			
+			push @day_loop, $event;
+		}
+		
+		@day_loop = sort {$a->{timestamp} cmp $b->{timestamp} } @day_loop;
+		
+		my $small_size = 3;
+		
+		my @day_loop_small;
+		push @day_loop_small, $day_loop[$_] for 0.. ($#day_loop < $small_size ? $#day_loop : $small_size);
+		
+		$data->{day_loop}	= \@day_loop;
+		$data->{day_loop_small}	= \@day_loop_small;
+		
+		$data->{date}		= $date;
+		$data->{dow}		= $dt->dow;
+		$data->{dow_name}	= $DOW_NAMES[$dt->dow];
+		$data->{dow_name_short}	= $DOW_NAMES_SHORT[$dt->dow];
+		$data->{dow_letter}	= $DOW_LETTERS[$dt->dow];
+		$data->{$_} = $extra->{$_} foreach keys %$extra;
+		
+		#die '<pre>'.(Dumper $data, \@day_loop).'</pre>';
+		return $data;
+	}
+
+
+	sub calendar_page
+	{
+		#my ($class,$skin,$r,$page,$args,$path) = @_;
+		#$r->header('X-Page-Comments-Disabled' => 1);
+		my ($self,$req,$r) = @_;
+		
+		my $tmpl = $self->get_template('events/calendar.tmpl');
+		
+		my $date = $req->{date} || date();
+		my $zoom = $req->{zoom}; # unused
+		
+		my ($x,$y) = split /\s/, $date;
+		my ($year,$month,$day) = split/-/, $x;
+		my $dt = DateTime->new(year=>$year,month=>$month,day=>1);
+		$tmpl->param(month_name => $MONTH_NAMES[$dt->month-1]);
+		
+		#die Dumper $dt->month, \@MONTH_NAMES;
+
+		# Move to the beginning of the week for the sake of drawing the calendar
+		$dt->subtract( days => $dt->dow ) unless $dt->dow == 7;
+
+		#die Dumper $dt->month, $month;
+		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($MGR_ACL);
+		$tmpl->param(can_admin=>$can_admin);
+		#$tmpl->param(pageid=>$page);
+		
+		# Walk the current month
+		my @days;
+		my %seen_date = ();
+		#my @days;
+		#print STDERR "date: $date, month: $month, dtmon: ".$dt->month.", dtday: ".$dt->day."\n";
+		# Walk the current month
+		while(($dt->month == 12 || $dt->month <= $month) && !defined $seen_date{$dt->day})
+		{
+			$seen_date{$dt->day} = 1;
+			#next if ($dt->ymd cmp $date) < 0;
+			
+			push @days, $self->_day_data($dt->ymd,$zoom,{cur_month=>$dt->month == $month,can_admin=>$can_admin});
+			$dt->add(days=>1);
+			#$last_month = $dt->month;
+			#last if $dt->day == 1 && $seen1;
+			#$seen1 = 1 if $dt->day == 1;
+			
+		}
+
+		# Now, extend it to the end of the week, again for visual's sake
+		unless($dt->dow == 7)
+		{
+			while($dt->dow <= 7)
+			{
+				push @days, $self->_day_data($dt->ymd,$zoom,{cur_month=>0,can_admin=>$can_admin});
+				$dt->add(days=>1);
+				last if $dt->dow == 7;
+			}
+		}
+
+		# Split the list of days into distinct weeks
+		my $bin = $self->binpath; #PHC::Web::Context->http_bin;
+		my @weeks;
+		my $cur_week;
+		for my $day (0..$#days)
+		{
+			if($day % 7 == 0)
+			{
+				push @weeks, {days=>$cur_week,bin=>$bin} if $cur_week;
+				$cur_week = [];
+			}
+			push @$cur_week, $days[$day]; #->{date}; 
+		}
+		push @weeks, {days=>$cur_week} if $cur_week;
+
+		# Debug
+		#die '<pre>'.(Dumper $zoom, \@weeks).'</pre>';
+		$tmpl->param(days  => \@days);
+		$tmpl->param(weeks => \@weeks);
+
+		# Now, build the calendar navigation bar at the top
+		my $p_year = $year - 1;
+		my $n_year = $year + 1;
+
+		$tmpl->param(month => $MONTH_NAMES[$month-1]);
+		
+		my $datesel_base = $self->binpath .'/calendar?date=';
+		$tmpl->param(last_year_url => $datesel_base . join('-', $p_year, rpad($month), rpad($day)));
+		$tmpl->param(next_year_url => $datesel_base . join('-', $n_year, rpad($month), rpad($day)));
+		$tmpl->param(last_year => $p_year);
+		$tmpl->param(next_year => $n_year);
+		$tmpl->param(this_year => $year);
+		
+
+		my @mini_months = qw(Jan Feb Mar Apr May Jun Jul Aug Sept Oct Nov Dec);
+		my @month_loop;
+
+		# Again,.a nice little bit of historical code ripped from ConfRooms.pl 
+		for my $x (0..$#mini_months)
+		{
+			my %row;
+			$row{mini_month} = $mini_months[$x];
+			$row{month} = $MONTH_NAMES[$x];
+			$row{is_cur_month} = ($x+1) == $month;
+			$row{month_url} = $datesel_base . join('-',$year,rpad($x+1),rpad($day));
+			push @month_loop,\%row;
+		}
+		$tmpl->param(months=>\@month_loop);
+		
+		
+		
+		#$r->output($tmpl);
+		my $view = Content::Page::Controller->get_view('sub',$r);
+		#$view->breadcrumb_list->push('',$self->module_url('/claim?familyid='.$fam),0);
+		$view->breadcrumb_list->push('Calendar View',$self->module_url('/calendar'),0);
+		$view->output($tmpl);
+		return $r;
+		
+		
+	}
+
 # 	
 # 	
 # 	

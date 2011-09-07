@@ -1,0 +1,165 @@
+<title>Sermon Audio</title> 
+<h1>Sermon Recordings</h1>
+
+
+<tmpl_if can_upload>
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+</style>
+<a class='new_link' href='/learn/listen/upload'><img src='%%appcore%%/images/silk/page_add.png' border=0 align=absmiddle> Upload a sermon...</a>
+</tmpl_if>
+
+<script type="text/javascript" src="%%modpath%%/audio-player/audio-player.js" index="-100"></script>  
+<script type="text/javascript">  
+AudioPlayer.setup("%%modpath%%/audio-player/player.swf", {  
+	width: 325 ,
+	buffer: 30
+});  
+</script> 
+
+<style>
+#sermons td { font-size: .95em }
+#sermons { margin-top: .25em;margin-left:1em; background: rgb(230,230,230); padding: 1em }
+#sermons th {border-bottom: 1px solid black }
+#sermons td.length, #sermons td.title {padding-right: 1em }
+#sermons .flash_alt { font-size: .8em; padding-left: 5px; color: rgb(100,100,100) }
+#sermons .player { background: white }
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+</style>
+<tmpl_if audio>
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Recordings</span> Available
+		</span>
+	</div>
+		
+	
+	<table cellspacing=0 border=0 id="sermons">
+		<thead>
+			<th align=left>Description</th>
+			<th align=left>Length</th>
+			<th align=left>Listen Online</th>
+		</thead>
+		<tbody>
+		<tmpl_loop audio>
+			<tr>
+				<!--<td class='title' nowrap><a href='<tmpl_var web_path>'><tmpl_var title></a></td>-->
+				<td class='title' nowrap><a href='%%bin%%/%%recordingid%%'><tmpl_var title></a></td>
+				<!--<td><tmpl_var datetime></td>-->
+				<td class='length' nowrap><tmpl_var dur></td>
+				<td class='player'>
+					<a class='play_link' id="link_<tmpl_var recordingid>" href='#'
+						x:files='<tmpl_var escape=html tracks>'
+						x:titles='<tmpl_var escape=html titles>'
+						x:artists='<tmpl_var escape=html artists>'
+						x:recordingid='<tmpl_var recordingid>'
+					>Listen</a>
+					<span id="audioplayer_<tmpl_var recordingid>"></div>
+					
+				</td>
+			</tr>
+		</tmpl_loop>
+		</tbody>
+	</table>
+	<style>
+	#sermons .play_link {
+		background: url(%%appcore%%/images/silk/control_play_blue.png) no-repeat center left;
+		padding-left: 20px;
+	}
+	</style>
+	<script>
+	$(function(){
+		var lastPlayed = 0;
+		$('#sermons .play_link').live('click',function() {
+			var t = this,
+				$t = $(this),
+				id = $t.attr('x:recordingid'),
+				playerId = "audioplayer_"+id;
+				
+			if(lastPlayed)
+			{
+				$('#link_'+lastPlayed).show();
+				var player = $('#audioplayer_'+lastPlayed);
+				player.hide();
+				player.html();
+			}
+			
+			AudioPlayer.embed(playerId, {
+				width: 300,
+				soundFile: $t.attr('x:files'),
+				titles: $t.attr('x:titles'),
+				artists: $t.attr('x:artists'),
+			
+			});
+			 
+			$('#link_'+id).hide();
+			$('#'+playerId).show();
+			
+			lastPlayed = id;
+			
+			try {
+				AudioPlayer.activate(playerId);
+				AudioPlayer.open(playerId);
+			} catch(e) {}
+			
+			return false;
+		});
+	});
+	</script>
+	
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Recordings</span> Available
+		</span>
+	</div>
+			
+<tmpl_else>
+	<h3>Sorry, no audio uploaded yet...</h3>
+</tmpl_if>

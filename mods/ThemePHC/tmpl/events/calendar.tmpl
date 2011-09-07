@@ -1,7 +1,7 @@
 <h1>Event Calendar</h1>
-%macro::sub_nav()%
-<link href="/css/boards.css" rel="stylesheet" type="text/css" />
-<script src='/cookies.js'></script>
+<link href="%%modpath%%/../Boards/css/boards.css" rel="stylesheet" type="text/css" />
+<link href="%%modpath%%/css/boards-list.css" rel="stylesheet" type="text/css" />
+<!--<xscript src='/cookies.js'></script>-->
 
 <style>
 	.daynum { font-weight: bold }
@@ -25,7 +25,7 @@
 	}
 	.daycell .eventlist
 	{
-		height: 5em !important;
+		height: 10em !important;
 		overflow: hidden !important;
 		/*width: 8em !important;*/
 	}
@@ -115,7 +115,7 @@
 
 	.day_view
 	{
-		margin-top: -1.75em;
+		/*margin-top: -1.75em;*/
 
 	}
 
@@ -123,7 +123,7 @@
 
 	.event
 	{
-		font-size: .7em;
+		font-size: .9em;
 
 	}
 
@@ -251,24 +251,31 @@
 		</tr>
 		<tr>
 			<td>
-				<tmpl_if can_admin><a class='new_link' href='%%bin%%/events/events/new'><img src='/eas_www/images/silk/add.png' align=absmiddle border=0> Add a new Event to the calendar</a></tmpl_if>
+				<tmpl_if can_admin><a class='new_link' href='%%bin%%/connect/events/new' style='width:120px;float: right;margin-right:-140px;margin-top:25px'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new Event to the calendar</a></tmpl_if>
 
-				<div class='ffjc-info' id='mytip' <tmpl_if hide_tip>style='display:none'</tmpl_if>>
+				<!--<div class='ffjc-info' id='mytip' <tmpl_if hide_tip>style='display:none'</tmpl_if>>
 					<b>Hint:</b> To see <b>all</b> the events on a given day, put your mouse over that day and they'll all show up! (<a href='javascript:void(close_tip())'>Close this tip.</a>)
-				</div>
+				</div>-->
+				<style>
+				.ffjc-info {
+					border: 1px solid rgb(180,180,180);
+					padding:1em;
+					margin: 1em;
+				}
+				</style>
 
 				<script>
-				var TIP_COOKIE = 'phc.calendar.rollover_tip';
-				function close_tip()
-				{
-					$x('mytip').style.display='none';
-					setCookie(TIP_COOKIE,'false');
-				}
-
-				var c = getCookie(TIP_COOKIE);
-				if(c == 'false') {
-					close_tip();
-				}
+// 				var TIP_COOKIE = 'phc.calendar.rollover_tip';
+// 				function close_tip()
+// 				{
+// 					$x('mytip').style.display='none';
+// 					setCookie(TIP_COOKIE,'false');
+// 				}
+// 
+// 				var c = getCookie(TIP_COOKIE);
+// 				if(c == 'false') {
+// 					close_tip();
+// 				}
 
 
 				</script>
@@ -294,7 +301,7 @@
 										<div class='eventlist smalltext'>
 											<tmpl_loop day_loop_small>
 												<div class='event <tmpl_if item_is_weekly>weekly<tmpl_else>non_weekly</tmpl_if>'>
-													<a href='%%bin%%/events/events/%%fake_folder_name%%'><span class='time'>%%time%%</span></a>
+													<a href='%%bin%%/events/%%folder_name%%'><span class='time'>%%time%%</span></a>
 													<span class='subject'>%%subject%%</span>
 												</div>
 											</tmpl_loop>
@@ -302,7 +309,7 @@
 										<div class='eventlist fulltext'>
 											<tmpl_loop day_loop>
 												<div class='event <tmpl_if item_is_weekly>weekly<tmpl_else>non_weekly</tmpl_if>'>
-													<a href='%%bin%%/events/events/%%fake_folder_name%%'><span class='time'>%%time%%</span></a>
+													<a href='%%bin%%/events/%%folder_name%%'><span class='time'>%%time%%</span></a>
 													<span class='subject'>%%text%%</span>
 												</div>
 											</tmpl_loop>
@@ -390,7 +397,7 @@
 				}
 
 				document.body.onclick = close_popup_cell;
-				var tab = $x('calendar');
+				var tab = $('#calendar').get(0);
 				var tb = tab.tBodies[0];
 				var rows = tb.getElementsByTagName('tr');
 				for(var i=0;i<rows.length;i++)

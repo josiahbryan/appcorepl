@@ -84,9 +84,10 @@
 			/*padding: 2px 35px 2px 10px;*/
 			margin: 0;
 			border: 0;
-			width: 90%;
+			/*width: 90%;*/
 			height: 1.25em;
 			overflow: hidden;
+			/*white-space: normal !important;*/
 		}
 		
 		.event_list p
@@ -131,6 +132,19 @@
 			
 		}
 		
+		.event_list .edit-link {
+			float: right;
+			display: block;
+			width: 16px;
+			height: 16px;
+			background: url(%%appcore%%/images/silk/page_white_edit.png) no-repeat top left;
+			margin-right: 2px;
+		}
+		
+		.event_list .edit-link span {
+			display: none;
+		}
+		
 		
 		</style>
 			
@@ -138,7 +152,7 @@
 			<tmpl_loop events_dated>
 				<tmpl_if folder_name>
 					<li>
-						<a href='/connect/events/%%folder_name%%'>
+						<a href='/connect/events/%%folder_name%%' title='%%subject%% - %%month_name_short%% %%day%% at %%time%%'>
 							<!-- FF Parser Error Fix!-->
 							<!--
 							<h5>
@@ -153,7 +167,12 @@
 								%%day%%
 							</h5>
 							<h3 class='event-title'>%%subject%%</h3>
-							<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if> <tmpl_if time_until>(in <b style='color:black'>%%time_until%%</b>!)</tmpl_if></p>
+							<tmpl_if can_edit>
+								<a href='/connect/events/%%folder_name%%/edit' class='edit-link'><span>Edit</span></a>
+							</tmpl_if>
+							<p>%%day_name%% at %%time%%<tmpl_if event_show_endtime> until %%end_time%%</tmpl_if> 
+							<tmpl_if time_until>(in <b style='color:black'>%%time_until%%</b>!)</tmpl_if></p>
+							
 						</a>
 					</li>
 				</tmpl_if>

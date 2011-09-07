@@ -517,7 +517,7 @@ package ThemePHC::Videos;
 		foreach my $post (@{$output->{posts}})
 		{
 			$post->{video_attach} = $self->create_video_links($post->{text},1);
-			$post->{thumbnail}    = $image = $self->video_thumbnail($post);
+			#$post->{thumbnail}    = $self->video_thumbnail($post);
 		}
 		
 		#$tmpl->param(board_nav => $controller->macro_board_nav());

@@ -5,8 +5,208 @@
 									<!--<td valign=top class=photo-cell>
 										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
 									</td>-->
-									<td valign=top class=content colspan=2>
+									<td valign=top class=content colspan=99>
 										<textarea class="expandText" name="comment" id="newpost_text"></textarea>
+										<div id=attach-wrapper>
+											<div id="attach_link_wrapper">
+												<a href='' id=attach_link><img src='%%appcore%%/images/silk/attach.png' border=0 align=absmiddle><span> Attach photo...</span></a>
+												<input id="custom_file_upload" type="file" name="upload" />
+											</div>
+											
+											<div class=fc></div>
+											<div id=attach-preview class=uploadify-wrapper>
+												
+												<div id="custom-queue"></div>	
+											</div>
+											
+										</div>
+										
+										<script src='%%appcore%%/mods/ThemePHC/uploadify/swfobject.js'></script>
+										<script src='%%appcore%%/mods/ThemePHC/uploadify/jquery.uploadify.v2.1.4.js'></script>
+
+										<style>
+										
+										#newpost_text {
+								
+										}
+										
+										#attach_link_wrapper {
+											/*background: url(%%appcore%%/images/silk/attach.png) no-repeat top left;*/
+											/*width: 16px;
+											height: 16px;*/
+											/*display: block;*/
+											/*padding-left: 18px;*/
+											/*float: left;*/
+											margin-top: -17px;
+											padding-left: 0px;
+											/*margin-bottom: -3px;*/
+											display: block;
+											/*left: 2px;*/
+											z-index: 100;
+											
+											position: relative;
+											
+											cursor: pointer;
+											
+											display: none; /* Hide until futher devel tomorrow */
+										}
+										
+										#custom_file_upload {
+											display: none;
+										}
+										
+										#attach-preview {
+											display: none;
+											margin-top: 3px;
+										}
+										
+										#attach_link:active,
+										#attach_link:focus {
+											outline: 0;
+										}
+										
+										
+										
+										.uploadify-wrapper .uploadifyQueueItem {
+											background-color: #FFFFFF;
+											border: none;
+											border-bottom: 1px solid #E5E5E5;
+											font: 11px Verdana, Geneva, sans-serif;
+											height: 50px;
+											margin-top: 0;
+											padding: 10px;
+											width: 350px;
+										}
+										.uploadify-wrapper .uploadifyError {
+											background-color: #FDE5DD !important;
+											border: none !important;
+											border-bottom: 1px solid #FBCBBC !important;
+										}
+										.uploadify-wrapper .uploadifyQueueItem .cancel {
+											float: right;
+										}
+										.uploadify-wrapper .uploadifyQueue .completed {
+											color: #C5C5C5;
+										}
+										.uploadify-wrapper .uploadifyProgress {
+											background-color: #E5E5E5;
+											margin-top: 10px;
+											width: 100%;
+										}
+										.uploadify-wrapper .uploadifyProgressBar {
+											background-color: #0099FF;
+											height: 3px;
+											width: 1px;
+										}
+										.uploadify-wrapper #custom-queue {
+											border: 1px solid #E5E5E5;
+											/*height: 213px;*/
+											margin-bottom: 10px;
+											margin-top: 10px;
+											width: 370px;
+											display: none;
+											/*padding-left: 2em;*/
+										}		
+										.uploadify-wrapper  {
+											/*margin-left: 2.5em;*/
+										}
+										
+										#custom_file_uploadUploader {
+											position: absolute;
+											top: 0;
+											left: 0;
+										}
+										
+										</style>
+										<script>
+										$(function() {
+											
+												
+											
+												$('#custom_file_upload').uploadify({
+													'wmode'          : 'transparent',
+													'hideButton'     : 'true',
+													'height'         : 16,
+													'width'          : 100,
+													'buttonText'     : 'Select Images ...',
+													'scriptData'     : { user: '%%user_user%%', pass: '%%user_pass%%' },
+													'uploader'       : '%%appcore%%/mods/ThemePHC/uploadify/uploadify.swf',
+													'script'         : '%%binpath%%/add_track',
+													'cancelImg'      : '%%appcore%%/mods/ThemePHC/uploadify/cancel.png',
+													'folder'         : '%%appcore%%/mods/ThemePHC/audio_upload_tmp',
+													'fileDataName'   : 'upload',
+													'multi'          : true,
+													'auto'           : true,
+													'fileExt'        : '*.jpg;*.gif;*.png',
+													'fileDesc'       : 'Image Files (.JPG, .GIF, .PNG)',
+													'queueID'        : 'custom-queue',
+													'queueSizeLimit' : 30,
+													'simUploadLimit' : 1,
+													'removeCompleted': true,
+													'onInit'	 : function() {
+														$('#upload').hide(); // hide fallback form
+														return true;
+													},
+													'onOpen'	 : function() {
+														$('#custom-queue').show();
+														$('#attach-preview').show();
+													},
+													'onSelectOnce'   : function(event,data) {
+														$('#status-message').text(data.filesSelected + ' files have been added to the queue.');
+													},
+													'onComplete'	 : function(event, ID, fileObj, response, data) {
+														// get parameters from response and set new scriptData
+														/* 
+														<input type='hidden' name='recordingid' id='track_recordingid' value=''>
+														<input type='hidden' name='title' id='track_title' value=''>
+														<input type='hidden' name='date' id='track_date' value=''>
+														<input type='hidden' name='bulk_flag' id='bulk_flag' value='0'>
+														*/
+						// 								console.debug('onComplete!');
+						// 								console.debug(response);
+														var json;
+														eval('json='+response);
+														if(!response)
+														{
+															alert("Error uploading using Flash uploader, switching to legacy uploader form.");
+															$('#upload').show();
+															$('.uploadify-wrapper').hide();
+														}
+														else
+														{
+															updateScriptData(json.recordingid);
+															
+															_upload_cb(json.recordingid, //recid
+																json.tracknum, //t_num
+																json.title, //t_title
+																json.len, 
+																json.file //t_file
+															);
+															$('#upload').hide();
+															
+														}
+														
+														//window.uploadifyInstance.uploadifyCancel(ID);
+													},
+													'onAllComplete'  : function(event,data) {
+														$('#status-message').text(data.filesUploaded + ' files uploaded, ' + data.errors + ' errors.');
+													},
+													'onError'     : function (event,ID,fileObj,errorObj) {
+														//console.debug(errorObj);
+														//alert(errorObj.type + ' Error: ' + errorObj.info);
+// 														$('#upload').show();
+// 														$('.uploadify-wrapper').hide();
+													},
+												});
+												
+												//$('#attach-preview').show();
+										
+// 											$("#attach_link").live('click', function() {
+// 												return false;
+// 											});
+										});
+											
+										</script>
 									</td>
 									<!--<td class=tags>
 										<div class=wrap>

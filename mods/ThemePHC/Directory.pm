@@ -57,6 +57,17 @@ package PHC::Directory::Family;
 	});
 	
 	__PACKAGE__->add_constructor(search_like => '(first like ? or last like ? or spouse like ? or address like ? or email like ? or spouse_email like ?) and deleted!=1 order by last, first');
+	__PACKAGE__->add_constructor(search_sounds_like => '(first sounds like ? or last sounds like ? or spouse sounds like ? or address sounds like ? or email sounds like ? or spouse_email sounds like ?) and deleted!=1 order by last, first');
+	
+# 	@fams = PHC::Directory::Family->search_both_spouse($first,$spouse) if !$last;
+# 	@fams = PHC::Directory::Family->search_both_spouse_with_last($first,$spouse,$last) if $last;
+# 	@fams = PHC::Directory::Family->search_first_last($first,$last);
+# 	@fams = PHC::Directory::Family->search_spouse_last($first,$last) if !@fams;
+
+	__PACKAGE__->add_constructor(search_both_spouse => '(first sounds like ? and spouse sounds like ?) and deleted!=1 order by last, first');
+	__PACKAGE__->add_constructor(search_both_spouse_with_last => '(first sounds like ? and spouse sounds like ? and last sounds like ?) and deleted!=1 order by last, first');
+	__PACKAGE__->add_constructor(search_first_last => '(first sounds like ? and last sounds like ?) and deleted!=1 order by last, first');
+	__PACKAGE__->add_constructor(search_spouse_last => '(spouse sounds like ? and last sounds like ?) and deleted!=1 order by last, first');
 };
 
 package PHC::Directory::Child;
@@ -305,8 +316,53 @@ package PHC::Directory;
 		my @fams;
 		if($search)
 		{
-			my $like = '%'.$search.'%';
-			@fams = PHC::Directory::Family->search_like($like,$like,$like,$like,$like,$like);
+			if($search =~ /^([uf])?(\d+)$/)
+			{
+				my $hint = $1;
+				my $int  = $2;
+				#print STDERR "search:'$search',hint:'$hint',int:'$int'\n";
+				# All-number search string - try to retrieve ID
+				@fams = PHC::Directory::Family->search(familyid => $int)      if $hint eq 'f' || !$hint;
+				@fams = PHC::Directory::Family->search(userid => $int)        if $hint eq 'u' || !@fams;
+				@fams = PHC::Directory::Family->search(spouse_userid => $int) if $hint eq 'u' || !@fams;
+			}
+			else
+			{
+				if($search =~ /and/)
+				{
+					my @words = split /\s+/, $search;
+				
+					my $first = shift @words;
+					shift @words; # and
+					my $spouse = shift @words;
+					my $last = shift @words;
+					
+					@fams = PHC::Directory::Family->search_both_spouse($first,$spouse) if !$last;
+					@fams = PHC::Directory::Family->search_both_spouse($spouse,$first) if !$last && !@fams; # flip-flip first and spouse
+					@fams = PHC::Directory::Family->search_both_spouse_with_last($first,$spouse,$last) if $last;
+					@fams = PHC::Directory::Family->search_both_spouse_with_last($spouse,$first,$last) if $last && !@fams; # flip-flip first and spouse
+					 
+				}
+				
+				if(!@fams)
+				{
+					my @words = split /\s+/, $search;
+					if(@words == 2)
+					{
+						my $first = shift @words;
+						my $last = shift @words;
+						@fams = PHC::Directory::Family->search_first_last($first,$last);
+						@fams = PHC::Directory::Family->search_spouse_last($first,$last) if !@fams;
+					}
+				}
+				
+				if(!@fams)
+				{
+					my $like = '%'.$search.'%';
+					@fams = PHC::Directory::Family->search_like($like,$like,$like,$like,$like,$like);
+					@fams = PHC::Directory::Family->search_sounds_like($like,$like,$like,$like,$like,$like) if !@fams;
+				}
+			}
 		}
 		else
 		{
@@ -540,7 +596,45 @@ package PHC::Directory;
 		# Return final file just to be nice
 		return $output_file;
 	}
-
+	
+	sub photo_for_user
+	{
+		my $self = shift;
+		my $user = shift || AppCore::Common->context->user;
+		my $want_large = shift || 0;
+		
+		$!='No user' 				and return undef if !$user || !ref $user || $user->id;
+		
+		my $www_root = AppCore::Config->get('WWW_ROOT');
+		my $www_path = AppCore::Config->get('WWW_DOC_ROOT');
+		return $user->photo if $user->photo && -f $www_root.$user->photo;
+		
+		my $fam = PHC::Directory::Family->by_field( userid => $user );
+		$fam = PHC::Directory::Family->by_field( spouse_userid => $user ) if !$fam;
+		
+		$!='No matching family entry found'	and return undef if !$fam;
+		
+		$!='No photo for family entry'		and return undef if $fam->photo_num eq '?';
+		
+		my $photo_file      = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
+		$fam->{large_photo} = $www_root.'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
+		#print STDERR "Primary photo: $photo_file\n";
+		if(! -f $www_path.$photo_file)
+		{
+			$photo_file         = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
+			$fam->{large_photo} = $www_root.'/mods/ThemePHC/dir_photos/dsc_'.$fam->{photo_num}.'.jpg';
+			#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
+		}
+		
+		if(-f $www_path.$fam->{large_photo} && 
+		  !-f $www_path.$photo_file)
+		{
+			print STDERR "Resizing $www_path.$fam->{large_photo} (160x120) to $www_path.$photo_file\n";
+			system("convert ${www_path}$fam->{large_photo} -resize 160x120 ${www_path}$photo_file");
+		}
+		
+		return $want_large ? $fam->{large_photo} : ($photo_file ? $photo_file : undef);
+	}
 };
 
 
@@ -1042,6 +1136,64 @@ package ThemePHC::Directory;
 		{
 			# Just send file
 			return $r->output_file(AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT') . '/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf','application/pdf');
+		}
+		elsif($sub_page)
+		{
+			my $tmpl = $self->get_template('directory/entry_view.tmpl');
+			
+			my $directory_data = PHC::Directory->load_directory($sub_page);
+			my @directory = @{$directory_data->{list}};
+			if(@directory != 1)
+			{
+				return $r->error("No Such Entry","Sorry, no such directory entry");
+			}
+			
+			my $my_entry;
+			if($user)
+			{
+				$my_entry = PHC::Directory::Family->by_field(userid => $user);
+				$my_entry = PHC::Directory::Family->by_field(spouse_userid => $user) if !$my_entry;
+			}
+			
+			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
+			my $bin = $self->binpath;
+			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
+			my $userid = $user ? $user->id : undef;
+			my $mobile = AppCore::Common->context->mobile_flag;
+			foreach my $entry (@directory)
+			{
+				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
+				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
+				$entry->{is_admin} = $admin;
+				$entry->{bin} = $bin;
+				$entry->{is_mobile} = $mobile;
+				$entry->{is_widget} = $req->{widget};
+				if($mobile)
+				{
+					$entry->{$_} = add_areacode($entry->{$_},765) foreach qw/cell spouse_cell home/;
+				}
+			}
+			
+			#use Data::Dumper;
+			#die Dumper $directory_data;
+			
+			if($req->output_fmt eq 'json')
+			{
+				my $json = encode_json($directory_data);
+				return $r->output_data("application/json", $json); # if $req->output_fmt eq 'json';
+				#return $r->output_data("text/plain", $json);
+			}
+			
+			my $entry = shift @directory;
+			$tmpl->param($_ => $entry->{$_}) foreach keys %$entry;
+			
+			$tmpl->param(is_widget => $req->{widget});
+			
+			return $r->output($tmpl) if $req->{widget};
+			my $view = Content::Page::Controller->get_view('sub',$r);
+			$view->breadcrumb_list->push($entry->{display},$self->module_url('/'.$entry),0);
+			return $view->output($tmpl);;
+			
 		}
 		else
 		{

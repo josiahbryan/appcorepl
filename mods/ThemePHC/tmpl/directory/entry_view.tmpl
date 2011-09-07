@@ -1,0 +1,190 @@
+<h1>%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%</h1>
+
+<div class='other_links'>
+	<a href='/connect/directory'>&laquo; Family Directory</a> 
+</div>
+
+
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+
+.dir-body 
+{
+	display: block;
+	page: main;
+	counter-reset: page 1;
+	
+}
+
+.dir-body, .dir-body td
+{
+	font-family: Bergamo, Georgia, serif;
+}
+
+
+.photo
+{
+	max-width: 10em;
+	max-height: 8em;
+	border: .25px solid black;
+}
+.photo_cell
+{
+	width: 10em;
+	padding-top: .5em;
+}
+.info_cell
+{
+	padding-top: .5em;
+	padding-left: .5em;
+}
+
+.no_photo
+{
+	border: 1px solid black;
+	background: rgb(220,220,220);
+	font-weight: bold;
+	font-size: 2em;
+}
+
+tr.name
+{
+	font-weight: bold;
+}
+
+div.incomplete
+{
+	border: .1px solid black;
+	color: green;
+}
+
+tr.address td
+{
+	/*border-bottom: .1px solid black;*/ 
+}
+
+tr.name td
+{
+	/*border-top: .1px solid black;*/
+}
+
+table.kids
+{
+	border-spacing: 0;
+}
+
+table.kids td.bday
+{
+	padding-left: .5em;
+	/*font-size: .85em;*/
+	color: rgb(80,80,80);
+}
+
+table.entry td
+{
+	font-size: .85em;
+}
+
+table.entry td.key
+{
+	color: rgb(80,80,80);
+	font-size: .75em;
+	width: 1%;
+	white-space:nowrap;
+}
+
+
+.admin_notes td
+{
+	padding-top: .5em;
+}
+
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+td.load-done,
+td.loading
+{
+	background: rgb(230,230,230);
+	/*border: 1px solid rgb(100,100,100);*/
+	-moz-border-radius: 3px;
+	padding: .5em;
+	margin-top: 1em;
+	font-size: .75em;
+	font-weight: bold;
+	text-align: center;
+	color: rgb(80,80,80);
+}
+
+tr.loadmore a
+{
+	text-decoration: none;
+	/*font-weight: normal;*/
+	color: #364a90;
+}
+
+<tmpl_unless is_mobile>
+div.dlinfo
+{
+	width: 13.25em;
+	margin-right: -15em;
+	margin-top: -4em;
+	padding: .5em;
+	float: right;
+	background: #E6E6E6;
+	-moz-border-radius: 3px;
+}
+	
+div.dlinfo td.text
+{
+	font-size: .8em;
+}
+
+div.dlinfo td.text img
+{
+	background: white;
+	padding: .5em;
+	border: 1px solid rgb(230,230,230);
+	-moz-border-radius: 3px;
+	
+	margin-top: .2em;
+	margin-bottom: .4em;
+	
+	display: block;
+	text-align: center;
+	
+}
+</tmpl_unless>
+
+</style>
+
+<table class='entry' width='100%' class=dir-body>
+<tmpl_include 'inc-dir-entry.tmpl'>
+</table>

@@ -2,6 +2,12 @@
 <tmpl_unless weekly_widget>
 	<title><tmpl_var board_title></title>
 	
+<!--	<div style='float:right;margin-bottom:10em;margin-top:1em;margin-right:.25em'>
+		<a href='calendar'>
+			<img src='%%appcore%%/images/silk/calendar.png' border=0 align=absmiddle>Calendar &raquo;
+		</a>
+	</div>
+	-->
 	<h1>Upcoming Events</h1>
 	
 	<!--%macro::sub_nav()%-->
@@ -146,9 +152,12 @@ td.title
 
 <tmpl_unless weekly_widget>
 	
+	<a class='new_link' href='%%binpath%%/calendar' style='float:right;margin-top: -3.3em;margin-right:4px;width:90px'><img src='%%appcore%%/images/silk/calendar.png' align=absmiddle border=0> Calendar &raquo;</a>
+	
 	<tmpl_if can_admin>
-		<a class='new_link' href='%%binpath%%/new' style='float:right;margin-top: -3.3em;margin-right:4px'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event to this list!</a>
+		<a class='new_link' href='%%binpath%%/new' style='float:right;margin-top: -3.3em;margin-right:4px;width:120px'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event</a>
 	</tmpl_if>
+	
 	
 	<!--<h1 class='event-list-header'>Upcomming Special Events</h1>-->
 	<tmpl_if dated>

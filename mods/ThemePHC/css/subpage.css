@@ -156,6 +156,11 @@ label { cursor: pointer }
 	text-indent: 2em;
 }
 
+.bodycontent p object {
+
+	margin-left: -2em; /* counteract text indent */
+}
+
 .bodycontent p + p {
 	/*text-indent: 0em;*/
 	/*text-indent: 2em;*/

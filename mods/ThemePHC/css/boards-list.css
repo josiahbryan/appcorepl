@@ -227,7 +227,8 @@ img.loading,
 	/*margin-top: 4em;*/
 }
 
-.postlist a.image-link img {
+.postlist a.image-link img,
+.postlist a.attach-link img {
 	border: 1px solid #b9c0da;
 	padding: 1px;
 	/*width: auto;
@@ -271,7 +272,8 @@ img.loading,
 /* Add a dropshadow to the video play links */
 .postlist a.video-play-link,
 iframe.video-iframe,
-.postlist a.image-link {
+.postlist a.image-link,
+.postlist a.attach-link {
 	-webkit-box-shadow: 0px 0px 9px #364a90;
 	-moz-box-shadow: 0px 0px 9px #364a90;
 	box-shadow: 0px 0px 9px #364a90;

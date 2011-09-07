@@ -273,7 +273,7 @@ package Boards::Admin;
 		
 		if(!$obj)
 		{
-			$obj = Boards::Board->insert();
+			$obj = Boards::Board->insert({folder_name=>$req->folder_name});
 			print STDERR "Admin: Created boardid $obj\n";
 			$boardid = $obj->id;
 		}

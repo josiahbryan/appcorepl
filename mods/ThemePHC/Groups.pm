@@ -361,22 +361,22 @@ package ThemePHC::Groups;
 		return $result;
 	};
 	
-	sub get_controller
+	sub get_group_controller
 	{
 		my $self = shift;
 		my $group = shift;
 		
 		return $ControllerCache{$group->id} if $ControllerCache{$group->id};
 		
-		my $controller = $self;
+		my $controller = undef;
 		
 		#die $group->folder_name;
-		if($group->forum_controller)
+		if($group->controller)
 		{
 			#eval 'use '.$group->forum_controller;
 			#die $@ if $@ && $@ !~ /Can't locate/;
 			
-			$controller = AppCore::Web::Module->bootstrap($group->forum_controller);
+			$controller = AppCore::Web::Module->bootstrap($group->controller);
 			$controller->binpath($self->binpath);
 		}
 		
@@ -834,8 +834,6 @@ package ThemePHC::Groups;
 		{
 			my $tmpl = $self->get_template('groups/group_page.tmpl');
 			
-			$tmpl->param('group_'.$_ => $group->get($_)) foreach $group->columns;
-			
 			# Load posts
 			my $data = $self->load_post_list($group->boardid, $req);
 			if($req->output_fmt eq 'json')
@@ -846,45 +844,19 @@ package ThemePHC::Groups;
 				#return $r->output_data("text/plain", $json);
 			}
 			
-			my $board = $group->boardid;
-			$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
-			$tmpl->param('posts_'.$_ => $data->{$_}) foreach keys %$data;
-			$tmpl->param($_ => $data->{$_}) foreach keys %$data; # since we are using Board's list.tmpl, they expect the params with now prefix
-			$tmpl->param(boards_indent_multiplier => $Boards::INDENT_MULTIPLIER);
-			my $tmpl_incs = $self->config->{tmpl_incs} || {};
-			#use Data::Dumper;
-			#die Dumper $tmpl_incs;
-			foreach my $key (keys %$tmpl_incs)
+			#die Dumper $group;
+			my $controller = $self->get_group_controller($group);
+			if($controller)
 			{
-				$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+				my ($output,$is_full_page) = $controller->group_page_hook($self,$req,$r,$group,$data,$tmpl);
+				
+				return $output if $is_full_page;
+				$tmpl = $output;
 			}
 			
-			$tmpl->param(boards_list_as_widget => 1);
+			$self->setup_group_page_template($tmpl,$group,$data);
 			
-			# Since a theme has the option to inline a new post form in the post template,
-			# provide the controller a method to hook into the template variables from here as well
-			$self->new_post_hook($tmpl,$board);
-			
-			
-			#die Dumper $data;
-			
-			# Note forced stringification required below.
-			$tmpl->param('posts_approx_time' => ''.approx_time_ago($data->{first_ts}));
-			
-			# For videos linked in posts...
-			$self->apply_video_providers($tmpl);
-		
-			# Load events
-			$self->{event_controller} = AppCore::Web::Module->bootstrap('ThemePHC::Events') if !$self->{event_controller};
-			my $event_controller = $self->{event_controller};
-			
-			my $events_data = $event_controller->load_basic_events_data($group);
-		
-			#die Dumper $events_data;
-			$tmpl->param(events_weekly => $events_data->{weekly});
-			$tmpl->param(events_dated  => $events_data->{dated});
-			
-			
+			# Output
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			#$view->breadcrumb_list->push('Groups Home',$self->module_url(),0);
 			$view->breadcrumb_list->push($group->title,$self->module_url('/'.$group->folder_name),0);
@@ -892,7 +864,93 @@ package ThemePHC::Groups;
 			return $r;
 		}
 	}
+	
+	sub setup_group_page_template
+	{
+		my $self = shift;
+		my $tmpl = shift;
+		my $group = shift;
+		my $data = shift;
+		
+		$tmpl->param('group_'.$_ => $group->get($_)) foreach $group->columns;
+			
+		my $board = $group->boardid;
+		$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
+		$tmpl->param('posts_'.$_ => $data->{$_}) foreach keys %$data;
+		$tmpl->param($_ => $data->{$_}) foreach keys %$data; # since we are using Board's list.tmpl, they expect the params with now prefix
+		$tmpl->param(boards_indent_multiplier => $Boards::INDENT_MULTIPLIER);
+		my $tmpl_incs = $self->config->{tmpl_incs} || {};
+		#use Data::Dumper;
+		#die Dumper $tmpl_incs;
+		foreach my $key (keys %$tmpl_incs)
+		{
+			$tmpl->param('tmpl_inc_'.$key => $tmpl_incs->{$key});
+		}
+		
+		$tmpl->param(boards_list_as_widget => 1);
+		
+		# Since a theme has the option to inline a new post form in the post template,
+		# provide the controller a method to hook into the template variables from here as well
+		$self->new_post_hook($tmpl,$board);
+		
+		
+		#die Dumper $data;
+		
+		# Note forced stringification required below.
+		$tmpl->param('posts_approx_time' => ''.approx_time_ago($data->{first_ts}));
+		
+		# For videos linked in posts...
+		$self->apply_video_providers($tmpl);
+	
+		# Load events
+		$self->{event_controller} = AppCore::Web::Module->bootstrap('ThemePHC::Events') if !$self->{event_controller};
+		my $event_controller = $self->{event_controller};
+		
+		my $events_data = $event_controller->load_basic_events_data($group);
+	
+		#die Dumper $events_data;
+		$tmpl->param(events_weekly => $events_data->{weekly});
+		$tmpl->param(events_dated  => $events_data->{dated});
+		
+		# Add contact photo
+		use ThemePHC::Directory;
+		my $photo = PHC::Directory->photo_for_user($group->contact_personid);
+		$tmpl->param(contact_photo => $photo);
+	}
 }
+
+package ThemePHC::Group::Controller::Physh;
+{
+	use base qw/AppCore::Web::Module/;
+	sub group_page_hook 
+	{
+# 		use Data::Dumper;
+# 		die Dumper \@_;
+		my $self = shift;
+		my $main_controller = shift;
+		my $req = shift;
+		my $r = shift;
+		my $group = shift;
+		my $board_data = shift;
+		my $tmpl = shift;
+		
+		#my ($output,$is_full_page) = $controller->group_page_hook($req,$r,$group,$data,$tmpl);
+		
+		$tmpl = $main_controller->get_template('groups/physh-main.tmpl');
+		
+		$main_controller->setup_group_page_template($tmpl,$group,$board_data);
+		
+# 		# Output
+# 		my $view = Content::Page::Controller->get_view('sub',$r);
+# 		#$view->breadcrumb_list->push('Groups Home',$self->module_url(),0);
+# 		$view->breadcrumb_list->push($group->title,$self->module_url('/'.$group->folder_name),0);
+# 		$view->output($tmpl);
+# 		return $r;
+		
+		return wantarray ? ($tmpl,0) : $tmpl; # 1 = full page
+	}
+};
 
 
 1;
+

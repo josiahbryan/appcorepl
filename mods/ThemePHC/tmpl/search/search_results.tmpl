@@ -1,0 +1,188 @@
+<link href="%%modpath%%/css/activity_log.css" rel="stylesheet" type="text/css" />
+
+<h1><tmpl_if q>Search Results<tmpl_else>Search PHC</tmpl_if></h1>
+
+<form action='%%bin%%/search' method='GET' id='inpageform'>
+	<div class='form_controls'>
+		Search for: <input type='text' size='30' style='text-align:left' class='text' id='q' name='term' autocomplete='off' value='<tmpl_var term escape=html>'> 
+		<tmpl_if term>
+		<button onclick='$("#q").get(0).value = "";$("#inpageform").submit()'>X</button>
+		</tmpl_if>
+		<input type='submit' value='Search'>
+		<tmpl_unless q>
+			<script>
+				var e = $('#q').get(0);
+				if(e)
+					e.focus();
+			</script>
+		</tmpl_unless>
+		<script>
+		if(typeof($( "#q" ).autocomplete) == 'function')
+		{
+			$( "#q" ).autocomplete({
+				source: "/search/autocomplete",
+				minLength: 2,
+				delay: 0,
+				select: function( event, ui ) {
+					if(ui.item)
+						document.location = ui.item.id;
+				}
+			});
+		}
+		</script>
+	</div>
+</form>
+
+<tmpl_if term>
+	<style>
+	.hint { color: rgb(80,80,80); font-size: .8em }
+
+	.page
+	{
+		margin-bottom: .75em;
+		font-size: 16px;
+	}
+
+	.page a {
+		color: #0000cd;
+
+	}
+
+	.page .body
+	{
+		font-size: .8em;
+		margin-bottom: -3px;
+	}
+
+	.page .meta, .page .attrib
+	{
+		font-size: .7em;
+		color: rgb(120,120,120);
+	}
+
+	.page .meta .url
+	{
+		color: #188d18;
+	}
+
+	.page .meta .rel
+	{
+
+	}
+
+	.page .attrib .author
+	{
+		font-weight: bold;
+	}
+
+	.page_results
+	{
+		margin-left: 0em;
+		margin-top: .75em;
+	}
+
+	.stats
+	{
+		/*font-size: .7em;*/
+		/*color: rgb(120,120,120);*/
+		/*margin-top: -8px;*/
+		float: right;
+	}
+
+	.stats .num_results,
+	.stats .time,
+	.attrib .updated
+	{ font-weight: bold }
+	
+	.sort_options 
+	{ 
+		margin: .5em 0 0 0;
+		padding: .25em 0 .25em 0;
+		font-size: .85em;
+		color: #535253;
+		border-top: 1px solid rgb(120,120,120);
+		border-bottom: 1px solid rgb(120,120,120);
+	}
+
+	</style>
+
+	<h3>Web pages matching "%%term%%":</h3>
+
+	<tmpl_if results>
+		
+		<div class='sort_options'>
+			<div class='stats'>
+				| Found <span class='num_results'>%%page_list_size%% items</span>
+				<!-- - searched <span class='size'>%%data_size%% items</span>--> in <span class='time'>%%time%% seconds</span>
+			</div>
+			<tmpl_if sortby_relevance><b>Results are sorted by Relevance</b><tmpl_else><a href='?q=%%term%%&sortby=relevance'>Sort by Relevance</a></tmpl_if> |
+			<tmpl_if sortby_timestamp><b>Results are sorted by Date/Time</b><tmpl_else><a href='?q=%%term%%&sortby=timestamp'>Sort by Date/Time</a></tmpl_if>
+		</div>
+		
+
+		<div class='page_results'>
+
+			<tmpl_loop results>
+				<div class='page'>
+					<a href='%%url%%'>%%title%%</a>
+					<tmpl_if author>
+						<span class='attrib'>
+							<br>
+							Posted by <span class='author'><a href='/search?q=%%author%%&sortby=timestamp'>%%author%%</a></span>
+							<tmpl_if time_ago>- <span class='updated'>%%time_ago%%</span> ago</tmpl_if>
+							<tmpl_if timestamp> - <span class='updated'>%%timestamp%%</span></tmpl_if>
+
+						</span>
+					</tmpl_if>
+					<div class='body'>%%body%%</div>
+					<span class='meta'>
+						<span class='url'>www.mypleasanthillchurch.org%%display_url%%</span> - <span class='rel'>%%rating%%</span>
+					</span>
+				</div>
+			</tmpl_loop>
+
+		</div>
+	<tmpl_else>
+		<div class='ffjc-error'>Sorry, no results found matching "<b>%%q%%</b>". <br>
+		<br>You can try a different phrase, or you can try the <a href='%%bin%%/new'>activity log</a> and show the past X number of days - for example, <a href='%%bin%%/new?days=30'>30</a> or <a href='%%bin%%/new?days=90'>90</a> days.</div>
+	</tmpl_if>
+<!--
+
+
+
+	<h3>Posts matching "%%q%%":</h3>
+	<span class='hint'>(Posts can be Bulletin Board Posts, or Pictures, or Blogs, or Ask Pastor Questions, or News, or Events.)</span>
+	<tmpl_if list>
+
+
+
+		<div class='new_list'>
+			<table border=0 cellspacing=0 cellpadding=0 height='100%' width='100%'>
+					<tmpl_loop list>
+						<tr class='%%ticker_class%%'>
+							<td class='board' nowrap>
+								<span class='board'>
+									<a href='%%bin%%/%%section_name%%/%%folder_name%%/' title='%%board_title%%'>%%board_title_short%%</a>:
+								</span>
+							</td>
+							<td class='title' nowrap>
+								<div class='wrap'>
+									<span class='clip'>
+										<span class='subject'><a href='%%bin%%/%%section_name%%/%%folder_name%%/%%fake_folder_name%%' title='Read "%%subject%%" ...'>%%subject_short%%</a></span>
+										-
+										<span class='text'>%%short_text%%</span>
+									</span>
+								</div>
+							</td>
+							<td class='hours_ago' nowrap>
+								<span onclick='alert(this.title)' title='Posted %%time_ago%% ago'><span>%%time_ago%%</span> ago</span>
+							</td>
+						</td>
+					</tmpl_loop>
+				</tr>
+			</table>
+		</div>
+	<tmpl_else>
+		<div class='ffjc-error'>Sorry, there were no posts matching "%%q%%". You can try a different phrase, or you can try the <a href='%%bin%%/new'>activity log</a> and show the past X number of days - for example, <a href='%%bin%%/new?days=30'>30</a> or <a href='%%bin%%/new?days=90'>90</a> days.</div>
+	</tmpl_if>-->
+</tmpl_if>

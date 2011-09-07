@@ -263,7 +263,7 @@ package ThemePHC::Audio;
 			return wantarray ? ($tmp_www,$calcd_duration,$concat_file) : $tmp_www;
 		}
 		
-		print STDERR "Sermon checked out, return web path: ".$recording->sermon_web_path."\n";
+		#print STDERR "Sermon checked out, return web path: ".$recording->sermon_web_path."\n";
 		
 		return wantarray ? ($recording->sermon_web_path, $recording->duration, $recording->sermon_file_path) : $recording->sermon_web_path;
 	}

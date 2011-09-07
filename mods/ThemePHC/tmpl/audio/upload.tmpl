@@ -1,0 +1,414 @@
+<h1>Upload a Sermon File</h1>
+<script src='%%modpath%%/js/calendar.js'></script>
+<script src='%%modpath%%/uploadify/swfobject.js'></script>
+<script src='%%modpath%%/uploadify/jquery.uploadify.v2.1.4.js'></script>
+<style>td.val{padding-left:4em}</style>
+
+
+	<!--<input type=hidden name=projectid value="<tmpl_var projectid>">
+	<input type=hidden name=redirect value="<tmpl_var eas_bin>/launchpad/<tmpl_var alias>/files">-->
+	
+	<!-- Yes, I know this is a dumb construct - nesting a table inside another table, and setting style on the containing cell. However, IE 6/Win REFUSED to give me padding when I used a SPAN or set the style on the child table itself. Yes, a div had padding, but then I would have had to set with. So, anyway, this now works in both IE and Firefox. -->
+	<script>function $x(a){return $("#"+a).get(0)}</script>
+	
+	<table border=0 cellpadding=0 cellspacing=0 >
+		<tr>
+			<td valign=top>
+				<h3>Step 1: Describe the Recording</h3>
+			
+				<form action='%%binpath%%/publish' method=POST style='display:inline;border:0;padding:0;margin:0' name="upload_form" id='upload_form'>
+					<input type='hidden' name='recordingid' id='recordingid' value=''>
+					<table border=0 cellpadding=3 cellspacing=0 style='background:rgb(220,220,220);-moz-border-radius:5px;padding:1em' >
+					<tr>
+						<td valign=top>Recording Title:</td>
+						<td valign=top>
+							<input type='text' size=30 name=title id="title_field" onfocus='select()' value="<tmpl_var title>" onkeyup="sync(this)" onchange="sync(this)">
+							<div class='hint'>This is the title that will be used to name the tracks added.<br>Your tracks will be named something like: <span id='title-ex'></span></div>
+							<script type="text/javascript">var e=$x('title_field');if(e){e.focus();e.select()}</script>
+						
+						</td>
+					</tr>
+					
+					<tr>
+						<td valign=top>Date Recorded:</td>
+						<td valign=top>
+							<input type='text' size=10 name=date id="date_field" onfocus='select()' value='%%date%%' onkeyup="sync(this)" onchange="sync(this)">
+							<!--<xscript>makeCalButton('upload_form.date')</script>-->
+							<br>
+							<div class='hint'>Format Required: YYYY-MM-DD, example: 2008-10-09</div>
+							
+						</td>
+					</tr>
+
+					<tr>
+						<td valign=top>Sermon Track#:</td>
+						<td valign=top>
+							<input type='text' size=3 name=sermon_track_num id='sermon_track_num_field' onfocus='select()' value='%%sermon_track_num%%'>
+							<div class='hint'>If there was no sermon, leave blank. Otherwise, just put the track# on which the sermon <b>starts</b> - the computer will take care of the rest!</div>
+						</td>
+					</tr>
+					
+					<!--<tr>
+						<td colspan=2 class='val' class=focus_highlight>
+						<input type=submit value="Save Recording">
+						</td>
+					</tr>-->
+					
+					
+					</table>
+				
+				</form>
+			<!--</td>
+			<td valign='top'>-->
+				<h3>Step 2: Add Tracks</h3>
+				
+				<script>
+								
+				function do_upload(flag)
+				{
+					$x('upload').style.display = flag ? 'none' : 'block';
+					$x('comm').style.display = flag ? 'block' : 'none';
+					
+				}
+				
+				function _upload_cb(recid,t_num,t_title,t_len,t_file)
+				{
+					do_upload(false);
+					$x('notracks').style.display = 'none';
+					//alert('upload cb: ['+fn+']');
+					$x('recordingid').value = recid;
+					$x('track_recordingid').value = recid;
+					
+					var tr = document.createElement('tr');
+					
+					var td;
+					td = document.createElement('td'); tr.appendChild(td); td.className = 'num';   
+						td.innerHTML = t_num;
+					td = document.createElement('td'); tr.appendChild(td); td.className = 'title'; 
+						td.innerHTML = t_title;
+					td = document.createElement('td'); tr.appendChild(td); td.className = 'len';   
+						td.innerHTML = t_len;
+// 					td = document.createElement('td'); tr.appendChild(td); td.className = 'listen';
+// 						td.innerHTML = "<span id='audioplayer_"+t_num+"'>Flash 9+ Required to List to Audio</span>";
+					
+					//alert(tr.innerHTML);
+					$x('tracks_list_body').appendChild(tr);
+					
+					
+					/*AudioPlayer.embed("audioplayer_"+t_num, {
+						//,/sermon_files/05-03-07/11 Track 11.mp3,/sermon_files/05-03-07/12 Track 12.mp3
+						soundFile: t_file,
+						titles:t_title,
+						artists:""
+					});*/  
+					
+					
+					
+					//$x('q').value = fn;
+					//do_search();
+					
+					
+				}	
+				
+				//setTimeout(function(){_upload_cb(3,'01','Sunday AM 05/03/07 - Track 01','07:40 min','/sermon_files/recording_3/track_01.mp3')},500);
+				
+				function sync(el)
+				{
+					var t = el.name;
+					var id = 'track_'+t;
+					var e = $x(id);
+					if(e)
+					{
+						e.value = el.value;
+						//console.debug('set "'+id+'" = "'+el.value+'"');
+						
+						if(!window.uploadifyScriptData)
+							window.uploadifyScriptData = {};
+						var sd = window.uploadifyScriptData;
+						
+						if(t == 'title')
+							sd.title = el.value;
+						else
+						if(t == 'date')
+							sd.date = el.value;
+						
+						if(window.uploadifyInstance)
+							window.uploadifyInstance.uploadifySettings('scriptData', sd);
+					}
+					
+					if(t == 'title')
+					{
+						var ex = $x('title-ex');
+						ex.innerHTML = '<b>'+el.value+' - Track 07</b>';
+					}
+					
+				}
+
+				
+				</script>
+				<div style='display:none;padding-left:2em' id=comm>
+					<img src="%%modpath%%/images/loading.gif" align=abscenter> <b>Adding to recording...</b>
+				</div>
+				<iframe name='track_upload' style='display:none' src='about:blank'></iframe>
+				<form action='%%binpath%%/add_track' ENCTYPE="multipart/form-data" method=POST target='track_upload' style='display:inline;border:0;padding:0;margin:0' id='upload' name="upload" onsubmit="do_upload(true)">
+					<input type='hidden' name='recordingid' id='track_recordingid' value=''>
+					<input type='hidden' name='title' id='track_title' value=''>
+					<input type='hidden' name='date' id='track_date' value=''>
+					<input type='hidden' name='bulk_flag' id='bulk_flag' value='0'>
+					<script>sync($x('date_field'));sync($x('title_field'));</script>
+					<table border=0 cellpadding=3 cellspacing=0 >
+					<tr>
+						<td colspan=2>Select an MP3-format audio file stored on your computer:</td>
+					</tr>
+					<tr>
+						<td colspan=2 style='padding-left:2em' >
+						<INPUT TYPE="FILE" NAME="upload" size=55 id=i_file>
+							&nbsp;
+							<button type=submit name=submit>
+								<img border=0 src='%%modpath%%/images/media-eject.png' align=absmiddle> Add to List
+							</button>
+							<br>
+						</td>
+					</tr>
+					<!--<tr>
+						<td colspan=2><b>Alternative Advanced Upload Method</b>:</td>
+					</tr>-->
+					<tr>
+						<td colspan=2 style='padding-left:2em'>
+							<div class='ffjc-info' style='margin:0'>
+								<b>Advanced Method:</b> You can do a bulk import on any tracks that you have <b>already uploaded</b> to the PHC FTP <a href='ftp://phc@mypleasanthillchurch.org'>BulkTrackUpload</a> folder (FTP User name: <b>phc</b>, password: <b>3664</b>). After you have uploaded the tracks to the FTP folder, click this button to import the tracks:<br>
+								<input type='submit' onclick="$x('bulk_flag').value=1" value='Bulk Import from FTP Uploads'>
+							</div>
+						
+						</td>
+					</tr>
+					</table>
+				</form>
+				
+				
+				<div id="uploadify-wrapper">
+
+						<!--<h2>Custom Demo</h2>
+						<p>Uploadify is fully customizable.  Here is an implementation with multiple files, auto uploads, limited file types, limited queue size, and custom onSelectOnce and onAllComplete functions.</p>-->
+					<script type="text/javascript">
+					function updateScriptData(recid)
+					{
+						if(!window.uploadifyScriptData)
+							window.uploadifyScriptData = {};
+						var sd = window.uploadifyScriptData;
+						if(recid)
+							sd.recordingid = recid;
+						sd.output_fmt = 'json';
+						sd.bulk_flag = 0;
+						sd.user = '%%user_user%%';
+						sd.pass = '%%user_pass%%';
+							
+// 						if(!window.uploadifyInstance)
+// 							window.uploadifyInstance = $('#custom_file_upload');
+							
+						if(window.uploadifyInstance)
+							window.uploadifyInstance.uploadifySettings('scriptData', sd);
+					}
+					
+					$(function() {
+						updateScriptData(); // create window.uploadifyScriptData
+						sync($x('date_field'));
+						sync($x('title_field'));
+						$('#custom_file_upload').uploadify({
+							'scriptData'     : window.uploadifyScriptData,
+							'uploader'       : '%%modpath%%/uploadify/uploadify.swf',
+							'script'         : '%%binpath%%/add_track',
+							'cancelImg'      : '%%modpath%%/uploadify/cancel.png',
+							'folder'         : '%%modpath%%/audio_upload_tmp',
+							'fileDataName'   : 'upload',
+							'multi'          : true,
+							'auto'           : true,
+							'fileExt'        : '*.mp3',
+							'fileDesc'       : 'MP3 Audio Files (.MP3)',
+							'queueID'        : 'custom-queue',
+							'queueSizeLimit' : 30,
+							'simUploadLimit' : 1,
+							'removeCompleted': true,
+							'onInit'	 : function() {
+								$('#upload').hide(); // hide fallback form
+								return true;
+							},
+							'onOpen'	 : function() {
+								$('#custom-queue').show();
+							},
+							'onSelectOnce'   : function(event,data) {
+								$('#status-message').text(data.filesSelected + ' files have been added to the queue.');
+							},
+							'onComplete'	 : function(event, ID, fileObj, response, data) {
+								// get parameters from response and set new scriptData
+								/* 
+								<input type='hidden' name='recordingid' id='track_recordingid' value=''>
+								<input type='hidden' name='title' id='track_title' value=''>
+								<input type='hidden' name='date' id='track_date' value=''>
+								<input type='hidden' name='bulk_flag' id='bulk_flag' value='0'>
+								*/
+// 								console.debug('onComplete!');
+// 								console.debug(response);
+								var json;
+								eval('json='+response);
+								if(!response)
+								{
+									alert("Error uploading using Flash uploader, switching to legacy uploader form.");
+									$('#upload').show();
+									$('#uploadify-wrapper').hide();
+								}
+								else
+								{
+									updateScriptData(json.recordingid);
+									
+									_upload_cb(json.recordingid, //recid
+										json.tracknum, //t_num
+										json.title, //t_title
+										json.len, 
+										json.file //t_file
+									);
+									$('#upload').hide();
+									
+								}
+								
+								//window.uploadifyInstance.uploadifyCancel(ID);
+							},
+							'onAllComplete'  : function(event,data) {
+								$('#status-message').text(data.filesUploaded + ' files uploaded, ' + data.errors + ' errors.');
+							},
+							'onError'     : function (event,ID,fileObj,errorObj) {
+								//console.debug(errorObj);
+								//alert(errorObj.type + ' Error: ' + errorObj.info);
+								$('#upload').show();
+								$('#uploadify-wrapper').hide();
+							},
+						});
+						window.uploadifyInstance = $('#custom_file_upload');
+						
+					});
+					</script>
+					<style type="text/css">
+					#uploadify-wrapper .uploadifyQueueItem {
+						background-color: #FFFFFF;
+						border: none;
+						border-bottom: 1px solid #E5E5E5;
+						font: 11px Verdana, Geneva, sans-serif;
+						height: 50px;
+						margin-top: 0;
+						padding: 10px;
+						width: 350px;
+					}
+					#uploadify-wrapper .uploadifyError {
+						background-color: #FDE5DD !important;
+						border: none !important;
+						border-bottom: 1px solid #FBCBBC !important;
+					}
+					#uploadify-wrapper .uploadifyQueueItem .cancel {
+						float: right;
+					}
+					#uploadify-wrapper .uploadifyQueue .completed {
+						color: #C5C5C5;
+					}
+					#uploadify-wrapper .uploadifyProgress {
+						background-color: #E5E5E5;
+						margin-top: 10px;
+						width: 100%;
+					}
+					#uploadify-wrapper .uploadifyProgressBar {
+						background-color: #0099FF;
+						height: 3px;
+						width: 1px;
+					}
+					#uploadify-wrapper #custom-queue {
+						border: 1px solid #E5E5E5;
+						/*height: 213px;*/
+						margin-bottom: 10px;
+						margin-top: 10px;
+						width: 370px;
+						display: none;
+						/*padding-left: 2em;*/
+					}		
+					#uploadify-wrapper  {
+						margin-left: 2.5em;
+					}
+					</style>
+					<div class="demo-box">
+						<!--<div id="status-message">Select some files to upload:</div>-->
+					
+						<input id="custom_file_upload" type="file" name="upload" />
+						<div id="custom-queue"></div>
+						
+					</div>
+				</div>
+				
+				
+				
+				<h3>Step 3: Review - Tracks in this Recording</h3>
+				<style>
+				#tracks_list { border:1px solid black }
+				#tracks_list .num 
+				{
+					background: rgb(220,220,220);
+					border-right: 1px solid black;
+					font-family: Monospace;
+					
+				}
+				
+				#tracks_list .title 
+				{
+					background: white;
+					border-right: 1px solid black;
+					font-size: .85em;
+					
+				}
+				#tracks_list .len 
+				{
+					background: rgb(220,220,220);
+					font-family: Monospace;
+					border-right: 1px solid black;
+					
+				}
+				
+				#tracks_list .listen {
+					/*background: rgb(220,220,220);*/
+				}
+				
+				#tracks_list thead th {
+					border-bottom: 1px solid black;
+					font-size: .85em;
+				}
+				
+				#notracks td
+				{
+					/*padding: 2em;*/
+					font-size: .85em;
+				}
+				
+				</style>
+				<script type="text/javascript" src="%%modpath%%/audio-player/audio-player.js"></script>  
+				<script type="text/javascript">  
+				AudioPlayer.setup("%%modpath%%/audio-player/player.swf", {  
+					width: 325  
+				});  
+				</script>  
+				<table id='tracks_list' style='margin-left:2em' cellspacing=0 cellpadding=2>
+					<thead>
+						<th>#</th>
+						<th>Title</th>
+						<th>Length</th>
+						<!--<th align=left>Listen</th>-->
+					</thead>
+					<tbody id='tracks_list_body'>
+						<tr id='notracks'>
+							<td colspan=4>
+								<div class='ffjc-warning'><b>No tracks added yet. You must add at least one track inorder to publish this recording.</b></div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<h3>Step 4: Click the Button, Max!</h3>
+				<button style='margin-left:2em' onclick='$x("upload_form").submit()'>Publish this Recording in the Sermon List</button>
+			</td>
+		</tr>
+	</table>

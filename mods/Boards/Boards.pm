@@ -38,6 +38,53 @@ package Boards::TextFilter::AutoLink;
 		
 	};
 	
+	
+package Boards::TextFilter::ScribdWordpressParser;
+	{ 
+		use base 'Boards::TextFilter';
+		__PACKAGE__->register("Scribd Wordpress Filter","Converts Scribd Wordpress Embed Code to HTML");
+		
+		my $HTML_FORMAT = 'flash'; # or html5
+		
+		sub _create_scribd_embed_html
+		{
+			my ($id,$key,$mode) = @_;
+			
+# 			<a title="View on Scribd" href="http://www.scribd.com/doc/${id}" style="margin: 12px auto 6px auto; font-family: Helvetica,Arial,Sans-serif; font-style: normal; font-variant: normal; font-weight: normal; font-size: 14px; line-height: normal; font-size-adjust: none; font-stretch: normal; -x-system-font: none; display: block; text-decoration: underline;">${title}</a>
+			return $HTML_FORMAT eq 'flash' ?
+			qq{
+				 <object height="600" width="100%" type="application/x-shockwave-flash" data="http://d1.scribdassets.com/ScribdViewer.swf" style="outline:none" >
+				 	<param name="movie" value="http://d1.scribdassets.com/ScribdViewer.swf">
+				 	<param name="wmode" value="opaque">
+				 	<param name="bgcolor" value="#ffffff">
+				 	<param name="allowFullScreen" value="true">
+				 	<param name="allowScriptAccess" value="always">
+				 	<param name="FlashVars" value="document_id=${id}&access_key=${key}&page=1&viewMode=${mode}">
+				 	<embed src="http://d1.scribdassets.com/ScribdViewer.swf?document_id=${id}&access_key=${key}&page=1&viewMode=${mode}" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" height="600" width="100%" wmode="opaque" bgcolor="#ffffff"></embed>
+				 </object>
+			} :
+			qq|
+				<iframe class="scribd_iframe_embed" src="http://www.scribd.com/embeds/${id}/content?start_page=1&view_mode=list&access_key=${key}" data-auto-height="true" data-aspect-ratio="0.779617834394905" scrolling="no" width="100%" height="600" frameborder="0"></iframe>
+				<script type="text/javascript">(function() { var scribd = document.createElement("script"); scribd.type = "text/javascript"; scribd.async = true; scribd.src = "http://www.scribd.com/javascripts/embed_code/inject.js"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(scribd, s); })();</script>
+			|;
+		}
+		
+		# It just accepts a scalar ref and runs a regexp over the text (note the double $$ to deref)
+		sub filter_text
+		{
+			my $self = shift;
+			my $textref = shift;
+			#print STDERR "AutoLink: Before: ".$$textref."\n";
+
+			#Sample: [scribd id=64192688 key=key-uwgseze2p7s03ow8a8b mode=list]
+			$$textref =~ s/\[scribd id=([^\s]+) key=([^\s]+) mode=([^\]]+)\]/_create_scribd_embed_html($1,$2,$3)/egi;
+			
+			#print STDERR "AutoLink: After: ".$$textref."\n";
+		};
+		
+	};
+	
+	
 package Boards::TextFilter::ImageLink;
 	{ 
 		use base 'Boards::TextFilter';
@@ -1997,6 +2044,7 @@ package Boards;
 			$tmpl->param($_ => $edit_resultset->{$_}) foreach keys %$edit_resultset;
 			
 			$tmpl->param(post_url => "$page_path/save");
+			$tmpl->param(delete_url => "$page_path/delete");
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			$view->breadcrumb_list->push('Edit Post',"$page_path/edit",0);

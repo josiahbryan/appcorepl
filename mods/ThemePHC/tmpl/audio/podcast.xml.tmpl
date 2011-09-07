@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+	<title>Pleasant Hill Church Podcasts</title>
+	<description>Sermons and other recordings from Pleasant Hill Church in Union City, IN</description>
+	<link>http://www.mypleasanthillchurch.org</link>
+	<language>en-us</language>
+	<copyright>Copyright 2008-%%current_year%%</copyright>
+	<lastBuildDate>%%datetime%%</lastBuildDate>
+	<pubDate>%%datetime%%</pubDate>
+	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+	<webMaster>webmaster@mypleasanthillchurch.org (PHC Webmaster)</webMaster>
+	<atom:link href="http://beta.mypleasanthillchurch.org/learn/listen/podcast.xml" rel="self" type="application/rss+xml" />
+	
+	<itunes:author>PHC AV Team</itunes:author>
+	<itunes:subtitle>Sermons and other recordings from Pleaseant Hill Church in Union City, IN</itunes:subtitle>
+	<itunes:summary>Sermons and other recordings from Pleaseant Hill Church in Union City, IN</itunes:summary>
+	
+	<itunes:owner>
+		<itunes:name>Pleasant Hill Church</itunes:name>
+		<itunes:email>webmaster@mypleasanthillchurch.org</itunes:email>
+	</itunes:owner>
+	
+	<itunes:explicit>No</itunes:explicit>
+	
+	<itunes:image href="http://beta.mypleasanthillchurch.org/appcore/mods/ThemePHC/images/phclogo-whitesq.jpg"/>
+	
+	<itunes:category text="Religion &amp; Spirituality"/>
+	
+	<tmpl_loop name="items">
+	<item>
+		<title>%%title%%</title>
+		<link>%%recording_page%%</link>
+		<guid>%%mp3_url%%</guid>
+		<description>%%description%%</description>
+		<enclosure url="%%mp3_url%%" length="%%mp3_bytes%%" type="audio/mpeg"/>
+		<category>Podcasts</category>
+		<pubDate>%%datetime%%</pubDate>
+		
+		<itunes:author>PHC AV Team</itunes:author>
+		
+		<itunes:explicit>No</itunes:explicit>
+		<itunes:subtitle>%%description%%</itunes:subtitle>
+		<itunes:summary>%%description%%</itunes:summary>
+		<itunes:duration>%%duration%%</itunes:duration>
+		<itunes:keywords>Pleasant Hill Church, Union City, Indiana</itunes:keywords>
+	</item>
+	</tmpl_loop>
+
+</channel>
+</rss>

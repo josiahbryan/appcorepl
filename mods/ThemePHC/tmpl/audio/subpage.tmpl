@@ -1,0 +1,40 @@
+<h1>%%title%%</h1>
+<script type="text/javascript" src="%%modpath%%/audio-player/audio-player.js"></script>
+<table class='pretty'>
+	<tr>
+		<td>Title:</td>
+		<td>%%title%%</td>
+	</tr>
+	<tr>
+		<td>Date:</td>
+		<td>%%datetime%%</td>
+	</tr>
+	<tr>
+		<td>Length:</td>
+		<td>%%length%%</td>
+	</tr>
+	<tr>
+		<td>Listen:</td>
+		<td><span id='audioplayer'>Flash 9+ Required to List to Audio</span></td>
+	</tr>
+	<tr>
+		<td>Download:</td>
+		<td><a href='%%web_path%%'>MP3 File</a></td>
+	</tr>
+
+</table>
+
+<script>
+$(function(){
+	AudioPlayer.setup("%%modpath%%/audio-player/player.swf", {  
+		width: 325  
+	});  
+				
+	AudioPlayer.embed("audioplayer", {
+		//,/sermon_files/05-03-07/11 Track 11.mp3,/sermon_files/05-03-07/12 Track 12.mp3
+		soundFile: "%%mp3_file%%",
+		titles: "%%title%%",
+		artists:""
+	});
+});
+</script>

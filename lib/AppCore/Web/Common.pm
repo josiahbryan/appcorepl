@@ -131,7 +131,7 @@ package AppCore::Web::Common;
 		my $url = shift;
 		my $expires_config = shift;
 	
-		print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
+		#print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
 		#AppCore::Session->save;
 			
 		#print STDERR "redirect mark1\n";
@@ -670,7 +670,8 @@ package AppCore::Web::Common;
 		$html =~ s/”/"/g;
 		$html =~ s/&#39;/'/g;
 		
-		
+		#Remove Wordpress Scribd 'tag', Sample: [scribd id=64192688 key=key-uwgseze2p7s03ow8a8b mode=list]
+		$html =~ s/\[scribd[^\]]+\]/(Embedded Document from Scribd)/gi;
 		
 		return $html;
 	}
@@ -691,6 +692,7 @@ package AppCore::Web::Common;
 		$html =~ s/’/'/g;
 		$html =~ s/“/"/g;
 		$html =~ s/”/"/g;
+		
 		
 		return $html;
 	}
