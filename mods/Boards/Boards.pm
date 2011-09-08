@@ -839,17 +839,22 @@ package Boards;
 		
 		if($sub_page eq 'post')
 		{
+			#$controller->{debug_extra_data} = 1;
+				
 			my $post = $controller->create_new_thread($board,$req);
+			#print STDERR "[XTRADAT] Raw \$post right after create:".Dumper($post) if $controller->{debug_extra_data};
 			
 			$controller->send_notifications('new_post',$post);
 			#$r->redirect(AppCore::Common->context->http_bin."/$section_name/$folder_name#c$post");
+			
+			#print STDERR "[DEBUG] Create new thread done, upload flag: ".$post->data->get('needs_uploaded')."\n";
 			
 			if($req->output_fmt eq 'json')
 			{
 				my $b = $controller->load_post_for_list($post,{board_folder_name => $board->folder_name, boardroot_url => $boardroot_url});
 				
 				#use Data::Dumper;
-				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b);
+				#print STDERR "Created new postid $post, outputting to JSON, values: ".Dumper($b,$post,$post->extra_data);
 				
 				my $json = encode_json($b);
 				return $r->output_data("application/json", $json);
@@ -928,6 +933,136 @@ package Boards;
 			}
 			
 			return $r->redirect($page_path);
+			
+		}
+		elsif($sub_page eq 'upload_photo')
+		{
+			# to move bulk upload files
+			use File::Copy;
+
+# 			our $UPLOAD_TMP_WWW     = '/appcore/mods/ThemePHC/audio_upload_tmp';
+# 			our $UPLOAD_TMP         = '/var/www/html'.$UPLOAD_TMP_WWW;
+# 			our $RECORDING_WWW_ROOT = '/appcore/mods/ThemePHC/audio_recordings';	
+# 			our $RECORDING_DOC_ROOT = '/var/www/html'.$RECORDING_WWW_ROOT;
+# 			our $BULK_UPLOAD_ROOT   = '/home/phc/BulkTrackUpload/';
+				
+			my $filename = $req->{upload};
+			#$skin->error("No Filename","No filename given") if !$filename;
+			if(!$filename)
+			{
+				print STDERR "INFO: $sub_page: No file given to upload.\n";
+				return $r->error('No File','You must select a file');
+				#return $r->output_data('text/html',"<html><head><script>parent.do_upload(false);alert('You must select a file to upload.')</script></head></html>\n");
+				
+			}
+			
+			$filename =~ s/^.*[\/\\](.*)$/$1/g;
+			my ($ext) = ($filename=~/\.(\w{3})$/);
+			
+			if(lc $ext !~ /(png|bmp|jpg|jpeg|gif)/i)
+			{
+				print STDERR "INFO: $sub_page: '$ext' is not an image extension.\n";
+				#return $r->output_data('text/html',"<html><head><script>parent.do_upload(false);alert('Only MP3 files are allowed - the file you selected was a \"".uc($ext)."\" file.')</script></head></html>\n");
+				return $r->error('Invalid File Type','Sorry, you can only upload photos.');
+			}
+			
+			
+# 			my $recording = get_recording_object($req);
+# 			my $track = create_new_track($recording);
+# 			
+# 			my $t_num = $track->tracknum < 9 ? '0'.$track->tracknum: $track->tracknum;
+			
+			
+			
+			my $written_filename = "/tmp/$$.$ext";
+			
+# 			my $file_path = $UPLOAD_TMP."/recording_".($recording->id);
+# 			my $file_url  = $RECORDING_WWW_ROOT."/recording_".($recording->id);
+# 			system("mkdir -p $file_path");
+			
+			
+			#my $abs = "$file_path/$written_filename";
+			
+			print STDERR "Uploading [$filename] to [$written_filename], ext=$ext\n";
+			
+			my $fh = main::upload('upload');
+			
+			open UPLOADFILE, ">$written_filename" || warn "Cannot write to $written_filename: $!"; 
+			binmode UPLOADFILE;
+			
+			while ( <$fh> )
+			{
+				print UPLOADFILE $_;
+			}
+			
+			close(UPLOADFILE);
+			
+			# Now, get md5 of file contents to determine final filename - that way, exact same images can be uploaded even if file names are different
+			my $file_md5 = `md5sum $written_filename`;
+			$file_md5 =~ s/[\r\n]//g;
+			$file_md5 =~ s/^([^\s]+).*$/$1/g;
+			
+			my $local_photo_url = "/mods/User/user_photos/upload$file_md5.jpg";
+			my $file_path = AppCore::Config->get('APPCORE_ROOT') . $local_photo_url;
+			my $abs_photo_url = AppCore::Config->get('WEBSITE_SERVER') . AppCore::Config->get('WWW_ROOT') . $local_photo_url;
+			
+			my $local_photo_url_thumb = "/mods/User/user_photos/upload$file_md5-small.jpg";
+			my $file_path_thumb = AppCore::Config->get('APPCORE_ROOT') . $local_photo_url_thumb;
+			my $abs_photo_url_thumb = AppCore::Config->get('WEBSITE_SERVER') . AppCore::Config->get('WWW_ROOT') . $local_photo_url_thumb;
+			
+			my $exif_data = `exiftool $written_filename -CreateDate -Caption-Abstract`;
+			my @lines = split /\n/, $exif_data;
+			
+			my $date = shift @lines;
+			$date =~ s/^(.*?):\s+//g;
+
+			my $caption = shift @lines;
+			$caption =~ s/^(.*?):\s+//g;
+			
+			my $title = guess_title($filename);
+			$title =~ s/\.\w+$//g;
+			
+			#$title = "Photo ".$date if $title =~ /^dsc_/i;
+			#$caption .= ($caption?' ':'')."(Photo taken ".$date.")";
+						
+			# Reformat Date
+			my ($year,$month,$day,$hour,$min,$sec) = $date =~ /(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
+			my $yr = substr($year,2,4);
+			$title = "Photo ".($month+0)."/".($day+0)."/".$yr." $hour:$min" if $title =~ /^dsc_/i;
+			$caption .= ($caption?' ':'')."(Photo taken ".($month+0)."/".($day+0)."/".$yr." at $hour:$min)";
+	
+			# Effect the move
+			print STDERR "Moving [$written_filename] to file path [$file_path]\n";
+			move($written_filename, $file_path);
+			
+			# Resize to thumbnail
+			print STDERR "Resizing [$file_path] to file path [$file_path_thumb] - 120x120\n";
+			system("convert $file_path -resize 120x120 $file_path_thumb");
+			
+			print STDERR "ABS URL: $abs_photo_url\nTitle: '$title'\nCaption: '$caption'\n";
+			
+# 			if($req->output_fmt eq 'json')
+# 			{
+				my $b = {
+					link	=> $abs_photo_url,
+					picture	=> $abs_photo_url_thumb,
+					name	=> $title,
+					caption	=> '',
+					description	=> $caption,
+				};
+				
+				# Recursive - not really, just kinda fun :-)
+				$b->{attach_data} = encode_entities(encode_json($b));
+				
+				my $json = encode_json($b);
+				print STDERR "Upload photo JSON response: $json\n";
+				return $r->output_data('application/json', $json);
+# 			}
+# 			
+# 			my $cb = "parent._upload_cb($recording,'$t_num','$t_title','$t_len','$t_file')";
+# 			#print STDERR "Callback: $cb\n";
+# 			
+# 			return $r->output_data('text/html',"<html><head><script>$cb</script></head></html>\n");
 			
 		}
 		elsif($sub_page)
@@ -1219,6 +1354,10 @@ package Boards;
 		my $post = shift;
 		my $opts = shift;
 			
+		use Data::Dumper;
+		
+		#print STDERR "[XTRADAT] Raw \$post and \$opts from args:".Dumper({post=>$post,opts=>$opts}) if $self->{debug_extra_data};
+		
 		my $board_folder_name	= $opts->{board_folder_name} || undef;
 		my $can_admin		= $opts->{can_admin} || undef; # will be decided below if not set
 		my $dont_incl_comments	= $opts->{dont_incl_comments} || 0;
@@ -1237,6 +1376,7 @@ package Boards;
 		{
 			my $hash = {};
 			$hash->{$_} = $post->{$_}."" foreach $post->columns;
+			$hash->{extra_data} = $post->extra_data; # Hack??
 			
 			my $user = $post->posted_by;
 			if($user && $user->id)
@@ -1251,18 +1391,25 @@ package Boards;
 			$post = $hash;
 		}
 		
+		#print STDERR "[XTRADAT] \$post:".Dumper($post) if $self->{debug_extra_data};
 		if($post->{extra_data})
 		{
 			undef $@;
 			eval
 			{
 				my $hash = JSON::XS::decode_json($post->{extra_data});
+				#print STDERR "[XTRADAT] \$hash:".Dumper($hash) if $self->{debug_extra_data};
 				if(ref $hash eq 'HASH')
 				{
 					$post->{'data_'.$_} = $hash->{$_} foreach keys %$hash;
+					#print STDERR "[XTRADAT] \$post after foreach:".Dumper($post) if $self->{debug_extra_data};
 				}
 			};
 			warn "Error decoding extra data on postid $post->{postid}: $@" if $@;
+		}
+		else
+		{
+			#print STDERR "[XTRADAT] No {extra_data} in post\n" if $self->{debug_extra_data};
 		}
 		
 		#my $board_folder_name = $board->{folder_name};
@@ -1297,6 +1444,10 @@ package Boards;
 		$b->{indent_is_odd}    = 0 if !$b->{indent_is_odd};
 		$b->{board_userid}     = 0 if !$b->{board_userid};
 		$b->{original_board_folder_name} = '';
+		
+		# More retarded jQuery tmpl plugin fixes
+		$b->{post_class_photo} = 0;
+		$b->{post_class_video} = 0;
 		
 		
 		my $cur_user = AppCore::Common->context->user;
@@ -1851,9 +2002,10 @@ package Boards;
 		}
 		
 		if(!$post_class && 
-		    $req->{comment} =~ /\.(jpg|gif|png)/)
+		    ($req->{comment} =~ /\.(jpg|gif|png)/i ||
+		     $req->{attach}  =~ /\.(jpg|gif|png)/i))
 		{
-			$post_class = "image";
+			$post_class = "photo";
 		}
 		
 		$post_class = "post" if !$post_class;
@@ -1879,6 +2031,75 @@ package Boards;
 			system_content		=> $req->{system_content} || !$req->{comment},
 		});
 		
+		#print STDERR "Debug: Req:".Dumper($req);
+# 		open(TMP,">/tmp/log.txt");
+# 		print TMP Dumper($req);
+# 		close(TMP);
+		
+		$req->{attach} = $req->{'attach[]'} if $req->{'attach[]'} && !$req->{attach};
+		
+		if($req->{attach})
+		{
+			my @multi_attach = split /\0/, $req->{attach};
+			
+			#print STDERR "Attachment list: ".Dumper(\@multi_attach);
+			$req->{attach} = $multi_attach[0] if @multi_attach > 1;
+			undef $@;
+			eval {
+				my $attach_data = decode_json($req->{attach});
+				my $d = $post->data;
+				$d->set($_, $attach_data->{$_}) foreach qw(
+					picture
+					link
+					name
+					caption
+					message
+					description
+					icon
+				);
+				$d->set('has_attach', 1);
+				
+				if(@multi_attach > 1)
+				{
+					my @parsed = map { decode_json($_) } @multi_attach;
+					$d->set('attach_list', \@parsed);
+					$d->set('has_multi_attach', 1);
+				}
+				
+				$d->update;
+				$post->update;
+				
+				#print STDERR "Final Dataset: ".Dumper($d);
+			};
+			
+			warn "Error storing attach json data: $@\n" if $@;
+			
+			#print STDERR "[XTRADAT] \$post after data apply:".Dumper($post) if $self->{debug_extra_data};
+			
+			# Rather hackish, but it works. 
+			if($post->data->get('link') =~/upload/ 
+			   && $post->post_class eq 'photo' 
+			   && $post->system_content # no comment
+			   && $post->data->get('description')) 
+			{
+				$post->text($post->data->get('description'));
+				$post->subject($self->guess_subject($post->text));
+				
+				if(my $other = Boards::Post->by_field(folder_name => $fake_it))
+				{
+					$append_flag = 1;
+				}
+				
+				$post->system_content(0);
+				$post->update;
+			}
+		}
+		
+		# Hack?
+		$post->{extra_data} = $post->extra_data;
+		
+		#print STDERR "[XTRADAT] \$post and {extra_data} prior to folder name check:".Dumper($post,$post->extra_data) if $self->{debug_extra_data};
+		
 		#if($append_flag)
 		if($append_flag || !$post->folder_name || !$post->text)
 		{
@@ -1895,6 +2116,7 @@ package Boards;
 		{
 			s/(^\s+|\s+$)//g && $post->add_tag($_) foreach split /,/, $req->{tags};
 		}
+		
 		
 		return $post;
 			
@@ -2180,8 +2402,13 @@ package Boards;
 		my @errors;
 		foreach my $method (qw/notify_via_email notify_via_facebook/)
 		{
+			undef $!;
 			#print STDERR "[DEBUG] ${self}->send_notifications: action:'$action': Running method '$method'\n";
 			push @errors, "$method: $!" if !$self->$method($action, $object, $args);
+			if($!)
+			{
+				print STDERR "[DEBUG] ${self}->send_notifications: action:'$action': Error running '$method': $!\n";
+			}
 		}
 		return @errors;
 	}
@@ -2213,6 +2440,9 @@ package Boards;
 				# Flag this post object for later processing by boards_fb_poller
 				$post->data->set('needs_uploaded',1);
 				$post->data->update;
+				$post->update;
+				
+				#print STDERR "[DEBUG] ${self}->notify_via_facebook: action:'$action': flag: ".$post->data->get('needs_uploaded')."\n";
 				return 1;
 			}
 			
@@ -2286,7 +2516,7 @@ package Boards;
 					access_token	=> $fb_access_token,
 					message		=> $message,
 					link		=> $abs_url,
-					picture		=> $photo,
+					picture		=> $post->data->get('picture') ? $post->data->get('picture') : $photo,
 					name		=> $post->subject,
 					caption		=> $action eq 'new_post' ? 
 						"by ".$post->poster_name." in ".$board->title :
@@ -2314,6 +2544,8 @@ package Boards;
 				};
 			
 			}
+			
+			$form->{picture} = AppCore::Config->get('WEBSITE_SERVER') . $form->{picture} if $form->{picture} && $form->{picture} !~ /^https?:/;
 			
 			my $hook_object = $args->{hook} || $self;
 			
@@ -2343,6 +2575,8 @@ package Boards;
 			else 
 			{
 				print STDERR "ERROR Posting to facebook, message: ".$response->status_line."\nAs String:".$response->as_string."\n";
+				$! = 'Error uploading to facebook: '.$response->as_string;
+				return 0; 
 			}
 			
 			return 1;

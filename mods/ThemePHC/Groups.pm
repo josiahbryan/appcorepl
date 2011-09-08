@@ -825,7 +825,7 @@ package ThemePHC::Groups;
 		{
 			# TODO wrap these actions and make event handlers for these actions
 		}
-		elsif($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $post)
+		elsif($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $sub_page eq 'upload_photo' || $post)
 		{
 			# Board actions - TODO test and see if more actiosn need to be routed
 			$self->SUPER::board_page($req,$r,$group->boardid);

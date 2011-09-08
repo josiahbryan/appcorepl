@@ -584,9 +584,32 @@ package Boards::Post;
 # Copied from EAS::Workflow::Instance::GenericDataClass.
 package Boards::Post::GenericDataClass;
 {
+	use vars qw/$AUTOLOAD/;
 	#use Storable qw/freeze thaw/;
 	use JSON qw/to_json from_json/;
 	use Data::Dumper;
+	
+	sub x
+	{
+		my($x,$k,$v)=@_;
+		#$x->{$k}=$v if defined $v;
+		#$x->{$k};
+		$x->set($k,$v) if defined $v;
+		return $x->get($k);
+	}
+	
+	sub AUTOLOAD 
+	{
+		my $node = shift;
+		my $name = $AUTOLOAD;
+		$name =~ s/.*:://;   # strip fully-qualified portion
+		
+		return if $name eq 'DESTROY';
+		
+		#print STDERR "DEBUG: AUTOLOAD() [$node] ACCESS $name\n"; # if $debug;
+		return $node->x($name,@_);
+	}
+	
 
 
 # Method: _init($inst,$ref)
@@ -633,7 +656,9 @@ package Boards::Post::GenericDataClass;
 	sub update
 	{
 		my $self = shift;
-		$self->{inst}->extra_data(to_json($self->{data}));
+		my $json = to_json($self->{data});
+		$self->{inst}->extra_data($json);
+		$self->{inst}->{extra_data} = $json;
 		#print STDERR "Debug: save '".$self->{inst}->extra_data."' on post ".$self->{inst}."\n";
 		return $self->{inst}->update;
 	}

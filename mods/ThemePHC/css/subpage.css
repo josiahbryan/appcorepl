@@ -122,7 +122,19 @@ label { cursor: pointer }
 }
 
 
-.bodycontent h1, .bodycontent h2, .bodycontent h3, .bodycontent h4, .bodycontent h5, .bodycontent h6, .bodycontent h7, .bodycontent p, .bodycontent form, .bodycontent ul, .bodycontent ol, .bodycontent li, .bodycontent blockquote { 
+.bodycontent h1, 
+.bodycontent h2, 
+.bodycontent h3, 
+.bodycontent h4, 
+.bodycontent h5, 
+.bodycontent h6, 
+.bodycontent h7, 
+.bodycontent p, 
+.bodycontent form, 
+.bodycontent ul, 
+.bodycontent ol, 
+.bodycontent li, 
+.bodycontent blockquote { 
 /* resets most browser styles to enhance cross-browser compatibility */
 	margin: default;
 	padding: default;

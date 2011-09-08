@@ -1,0 +1,38 @@
+				<tmpl_if data_has_attach>
+					<tmpl_if data_has_multi_attach>
+						<ul class='multi-attach-container'>
+							<tmpl_loop data_attach_list>
+								<li class='attach-container'>
+									<div class='attach'>
+										<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if>>
+											<img src="<tmpl_if picture:str>%%picture%%<tmpl_else>%%icon%%</tmpl_if>" border=0>
+											<span class='overlay'></span>
+											<div class='attach-meta'>
+												<div class='attach-name'>%%name%%</div>
+												<div class='attach-caption'>%%caption%%</div>
+												<div class='attach-description'>%%description%%</div>
+											</div>
+										</a>
+									</div>
+								</li>
+							</tmpl_loop>
+						</ul>
+						<div class='fc'></div>
+
+					<tmpl_else>
+						<div class='attach-container'>
+							<div class='attach'>
+								<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%data_link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if>>
+									<img src="<tmpl_if data_picture:str>%%data_picture%%<tmpl_else>%%data_icon%%</tmpl_if>" border=0>
+									<span class='overlay'></span>
+								</a>
+								<div class='attach-meta'>
+									<div class='attach-name'><a href='%%data_link%%'>%%data_name%%</a></div>
+									<div class='attach-caption'>%%data_caption%%</div>
+									<div class='attach-description'>%%data_description%%</div>
+								</div>
+							</div>
+							<div class='fc'></div>
+						</div>
+					</tmpl_if>
+				</tmpl_if>

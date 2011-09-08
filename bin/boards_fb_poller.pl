@@ -46,11 +46,12 @@ foreach my $post (@posts)
 	}
 	
 	# Upload the post to FB
-	$controller->get_controller($post->boardid)->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 });
-	
-	# Clear the 'needs uploaded' flag
-	$post->data->set('needs_uploaded',0);
-	$post->data->update;
+	if($controller->get_controller($post->boardid)->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 }))
+	{
+		# Clear the 'needs uploaded' flag
+		$post->data->set('needs_uploaded',0);
+		$post->data->update;
+	}
 }
 
 #die "Just testing - not going to run download yet";
@@ -155,10 +156,10 @@ sub update_board
 		{
 			my $fb_type = $fb_post->{type};
 			$fb_type = 'photo' if $fb_type eq 'image';
-  			print STDERR "[DEBUG] Test, New Post: By ".$fb_post->{from}->{name}.": '$fb_post->{message}' (Type: $fb_type)\n";
-  			print STDERR Dumper $fb_post; # if $fb_type ne 'photo' && $fb_type ne 'status' && $fb_type eq 'link';# && !$fb_post->{message}; 
-# 			#$fb_post->{type} eq 'photo' && !$fb_post->{message} && !$fb_post->{caption};
- 			next;
+#   			print STDERR "[DEBUG] Test, New Post (FB ID $external_id): By ".$fb_post->{from}->{name}.": '$fb_post->{message}' (Type: $fb_type)\n";
+#   			print STDERR Dumper $fb_post; # if $fb_type ne 'photo' && $fb_type ne 'status' && $fb_type eq 'link';# && !$fb_post->{message}; 
+# # 			#$fb_post->{type} eq 'photo' && !$fb_post->{message} && !$fb_post->{caption};
+#  			next;
 			
 			my $poster_fb_id = $fb_post->{from}->{id};
 			my $poster_photo_url = "https://graph.facebook.com/" . $poster_fb_id . "/picture";

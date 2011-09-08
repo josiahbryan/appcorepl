@@ -621,6 +621,10 @@ package ThemePHC::Videos;
 				}
 				
 				
+				# Copy the uploaded FB external id to the talk post for when the FB poller tries to sync down posts from FB
+				$talk_post->external_id($post->external_id);
+				$talk_post->update;
+				
 				# Reset external_id on this post because the FB upload script overwrites our ID
 				$post->external_id($vdat->{id});
 				$post->update;

@@ -212,7 +212,7 @@ package ThemePHC::Events;
 			$rs->{$prep_key} = $post->{$prep_key};
 		}
 		
-		if($x->groupid && $x->groupid->id && $x->groupid->folder_name)
+		if($x->groupid && $x->groupid->id && $x->groupid->folder_name && ($x->datetime cmp date()) > 0)
 		{
 			return AppCore::Web::Common::redirect('/connect/groups/'.$x->groupid->folder_name);
 		}
