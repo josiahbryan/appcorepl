@@ -287,7 +287,7 @@ div.dlinfo td.text img
 	</style>
 	
 	<form action='%%binpath%%' method=GET class='searchform'>
-		<input type=hidden name=widget value='%%is_widget%%'>
+		<tmpl_if is_widget><input type=hidden name=widget value='%%is_widget%%'></tmpl_if>
 		<table class='entry' width='100%' class=search-results>
 			<tr>
 				<td align=center>

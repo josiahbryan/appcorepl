@@ -4,7 +4,7 @@
 							<tmpl_loop data_attach_list>
 								<li class='attach-container'>
 									<div class='attach'>
-										<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if>>
+										<a rel="post_attachments_%%postid%%" class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if> title="<tmpl_var escape=html description>">
 											<img src="<tmpl_if picture:str>%%picture%%<tmpl_else>%%icon%%</tmpl_if>" border=0>
 											<span class='overlay'></span>
 											<div class='attach-meta'>
@@ -22,7 +22,7 @@
 					<tmpl_else>
 						<div class='attach-container'>
 							<div class='attach'>
-								<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%data_link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if>>
+								<a class='attach-link <tmpl_if post_class_photo>image-link<tmpl_else><tmpl_if post_class_video>video-link video-play-link %%video_provider_class%%<tmpl_else>link</tmpl_if></tmpl_if>' href="%%data_link%%" <tmpl_if post_class_video>videoid="%%videoid%%"</tmpl_if> title="<tmpl_var escape=html data_description>">
 									<img src="<tmpl_if data_picture:str>%%data_picture%%<tmpl_else>%%data_icon%%</tmpl_if>" border=0>
 									<span class='overlay'></span>
 								</a>
