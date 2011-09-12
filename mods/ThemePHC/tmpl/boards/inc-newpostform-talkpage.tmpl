@@ -40,10 +40,7 @@
 								<tr>
 									<td colspan=3>
 										<div class='ident' id='postas_display'>
-											<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
-											Posting as <b>%%user_display%%</b>
-											<input value='%%user_display%%' name='poster_name' type=hidden>
-											<input value='%%user_email%%' name='poster_email' type=hidden>
+											${inc:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-newpost-postas-alt-snippet.tmpl}
 										</div>
 										
 										<div class='controls'>
@@ -57,7 +54,7 @@
 											<span id=span_tag_pray>
 												<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
 											<span id=span_tag_talk>
-												<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
+												<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Talking</label></span>
 											<tmpl_if can_epa>&nbsp;&nbsp;| 
 											<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
 											</tmpl_if>

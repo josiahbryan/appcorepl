@@ -537,6 +537,29 @@ package Content::Page::ThemeEngine::View;
 	}
 };
 
+# package Content::Page::ThemeEngine::UserActionHook;
+# {
+# 	#use User;
+# 	use base 'User::ActionHook';
+# 	
+# 	__PACKAGE__->register(User::ActionHook::EVT_ANY);
+# 	
+# 	sub hook
+# 	{
+# 		my ($self,$event,$args) = @_;
+# 		
+# 		if($event eq User::ActionHook::EVT_USER_LOGIN ||
+# 		   $event eq User::ActionHook::EVT_USER_LOGOUT ||
+# 		   $event eq User::ActionHook::EVT_USER_ADDED_TO_GROUP)
+# 		{
+# 			print STDERR __PACKAGE__.": User event: '$event', clearing nav cache\n";
+# 			Content::Page::ThemeEngine->clear_nav_cache();
+# 		}
+# 	}
+# };
+
+
+
 package Content::Page::ThemeEngine;
 {
 	use Scalar::Util 'blessed';
@@ -687,11 +710,16 @@ package Content::Page::ThemeEngine;
 	sub clear_cached_dbobjects
 	{
 		#print STDERR __PACKAGE__.": Clearing navigation cache...\n";
-		@NavCache = ();
-		%NavMap = ();
+		clear_nav_cache();
 	}	
 	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
+	
+	sub clear_nav_cache
+	{
+		@NavCache = ();
+		%NavMap = ();
+	}
 	
 	sub load_nav
 	{

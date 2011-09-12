@@ -2,10 +2,21 @@
 <head>
 	<title>Pleasant Hill Church</title>
 	<!--<link href="%%modpath%%/css/frontpage.css" rel="stylesheet" type="text/css" />-->
+	<link rel="icon" type="image/x-icon" href="%%modpath%%/favicon-trans.ico"/>
 	<a:cssx src="%%modpath%%/css/frontpage.css"/>
+	<!-- Now for fun with Internet Explorer -->
+	<!--[if lt ie 7.0]>
+	<link href="%%modpath%%/css/iefixup-pre-ie7.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
+	<!--[if gte ie 7.0]>
+	<link href="%%modpath%%/css/iefixup-post-ie7.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
+	<!--[if ie]>
+	<link href="%%modpath%%/css/iefixup-all-ie.css" rel="stylesheet" type="text/css" />
+	<![endif]-->
 </head>
 
-<body>
+<body class='frontpage'>
 
 <tmpl_include main-nav.inc.tmpl>
 <!-- Hack our download order to reduce blockages futher in the download pipeline -->
@@ -16,7 +27,7 @@
 		<div id='mainlogo-floater'>
 			<div id='mainlogo-wrap'>
 				<!--<img src='%%modpath%%/images/mainlogo.png' id='mainlogo'>-->
-				<img src='%%modpath%%/images/mainlogo-300px-sm.png' id='mainlogo'>
+				<img src='%%modpath%%/images/mainlogo-300px-sm.png' id='mainlogo' alt='Pleasant Hill Church'>
 				<!--<img src='%%modpath%%/images/mainlogo-cropped2-250px.png' id='mainlogo'>-->
 				<a title='Learn more about Building Lives for Eternity...' href='/about/vision#build' id='build-lnk'>
 					<img src='%%modpath%%/images/build8.png' border=0 alt='Building Lives for Eternity' title='Learn about Building Lives for Eternity...'>
@@ -248,8 +259,14 @@
 				}
 				
 				
+				div.talk_wrap {
+					height:322px;
+					/*overflow:auto;*/
+					position: relative;
+				}
+				
 				</style>
-				<div style='height:322px;overflow:auto'>
+				<div class='talk_wrap'>
 					<!--<h2 style='text-align:center;margin:1em 0'>Prayer/Praise/Talk</h2>-->
 					<h1 style='text-align:center'>Latest Posts in Prayer/Praise/Talk</h1>
 					<table class='postlist' width='100%' align=center cellspacing=0 style='border-top:1px solid rgb(80,80,80);border-left:1px solid rgb(180,180,180)'>

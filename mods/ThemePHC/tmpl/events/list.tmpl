@@ -78,18 +78,24 @@ td.title
 	outline: none;
 }
 
+.event_list li {
+	position: relative;
+}
+
 .event_list h5
 {
 	background: url("%%modpath%%/images/calendar_background.jpg") no-repeat scroll 0 0 transparent;
 	color: #A09F9F !important;
 	display: block;
-	float: left;
+	/*float: left;*/
 	font-size: 1.4em;
 	height: 41px;
-	margin: 0 15px 0px 10px;
+	/*margin: 0 15px 0px 10px;*/
 	padding: 2px 0 0;
 	text-align: center;
 	width: 41px;
+	
+	position: absolute;
 }	
 
 .event_list h5 strong
@@ -109,6 +115,8 @@ td.title
 	width: 90%;
 	height: 1.25em;
 	overflow: hidden;
+	
+	margin-left: 51px;
 }
 
 .event_list p
@@ -118,6 +126,8 @@ td.title
 	text-indent: 0;
 	margin-top: -5px;
 	margin: 0;
+	
+	margin-left: 41px;
 }
 
 .event_list ul
@@ -152,7 +162,7 @@ td.title
 
 <tmpl_unless weekly_widget>
 	
-	<a class='new_link' href='%%binpath%%/calendar' style='float:right;margin-top: -3.3em;margin-right:4px;width:90px'><img src='%%appcore%%/images/silk/calendar.png' align=absmiddle border=0> Calendar &raquo;</a>
+	<a class='new_link' href='%%binpath%%/calendar' style='float:right;margin-top: -3.3em;margin-right:4px;width:120px'><img src='%%appcore%%/images/silk/calendar.png' align=absmiddle border=0> Calendar &raquo;</a>
 	
 	<tmpl_if can_admin>
 		<a class='new_link' href='%%binpath%%/new' style='float:right;margin-top: -3.3em;margin-right:4px;width:120px'><img src='%%appcore%%/images/silk/add.png' align=absmiddle border=0> Add a new event</a>

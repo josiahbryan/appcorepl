@@ -214,6 +214,24 @@ package ThemePHC::Missions;
 		return $class->SUPER::board_page($req,$r,$board);
 	}
 	
+	sub new_post_hook
+	{
+		my $class = shift;
+		my $tmpl = shift;
+		#die "new post hook";
+		my $can_epa = 1 if ($_ = AppCore::Web::Common->context->user) && $_->check_acl([qw/Pastor/]);
+		$tmpl->param(can_epa=>$can_epa);
+		
+		$tmpl->param(has_alt_postas => $can_epa);
+		if($can_epa)
+		{
+			$tmpl->param(alt_postas_name  => $class->{current_missionary} ? $class->{current_missionary}->mission_name : 'Pleasant Hill Church');
+			$tmpl->param(alt_postas_email => 'webmaster@mypleasanthillchurch.org');
+			$tmpl->param(alt_postas_photo => '/appcore/mods/User/user_photos/fbb55eae25485996cd31b362d9296591f6.jpg');
+		}
+		
+	}
+	
 	sub forum_list_hook
 	{
 		my $class = shift;
@@ -230,6 +248,7 @@ package ThemePHC::Missions;
 		my ($hash,$board) = @_;
 		
 		my $m = PHC::Missions->by_field(boardid=>$board);
+		$class->{current_missionary} = $m;
 		
 		AppCore::Web::Common::error(500,"You've got a valid WebBoard ID ($board) but no phc.missions row matches that boarid") if !$m || !$m->id;
 		

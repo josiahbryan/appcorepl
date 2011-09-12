@@ -108,6 +108,15 @@ package PHC::Group;
 		return \@rows;
 	}
 	
+	sub is_admin
+	{
+		my $self = shift;
+		my $user = shift;
+		return 1 if $user == $self->contact_personid;
+		return 1 if PHC::Group::Member->search(groupid => $self, userid=>$user, is_admin=>1);
+		return 0; 
+	}
+	
 };
 
 package PHC::Group::Member;
@@ -892,6 +901,17 @@ package ThemePHC::Groups;
 		# Since a theme has the option to inline a new post form in the post template,
 		# provide the controller a method to hook into the template variables from here as well
 		$self->new_post_hook($tmpl,$board);
+		
+		my $user = AppCore::Web::Common->context->user;
+		my $can_admin = 1 if $user->check_acl(['Pastor']) || $group->is_admin($user); 
+		$tmpl->param(has_alt_postas => $can_admin);
+		if($can_admin)
+		{
+			$tmpl->param(alt_postas_name  => $group->title); #'Pleasant Hill Church');
+			$tmpl->param(alt_postas_email => 'webmaster@mypleasanthillchurch.org');
+			$tmpl->param(alt_postas_photo => '/appcore/mods/User/user_photos/fbb55eae25485996cd31b362d9296591f6.jpg');
+		}
+	
 		
 		
 		#die Dumper $data;

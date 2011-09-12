@@ -966,20 +966,11 @@ package Boards;
 				return $r->error('Invalid File Type','Sorry, you can only upload photos.');
 			}
 			
-			
-# 			my $recording = get_recording_object($req);
-# 			my $track = create_new_track($recording);
-# 			
-# 			my $t_num = $track->tracknum < 9 ? '0'.$track->tracknum: $track->tracknum;
-			
-			
-			
 			my $written_filename = "/tmp/$$.$ext";
 			
 # 			my $file_path = $UPLOAD_TMP."/recording_".($recording->id);
 # 			my $file_url  = $RECORDING_WWW_ROOT."/recording_".($recording->id);
 # 			system("mkdir -p $file_path");
-			
 			
 			#my $abs = "$file_path/$written_filename";
 			
@@ -1403,6 +1394,17 @@ package Boards;
 				{
 					$post->{'data_'.$_} = $hash->{$_} foreach keys %$hash;
 					#print STDERR "[XTRADAT] \$post after foreach:".Dumper($post) if $self->{debug_extra_data};
+					if($post->{data_attach_list})
+					{
+						my @tmp = @{$post->{data_attach_list} || []};
+						foreach my $attachment (@tmp)
+						{
+							$attachment->{'post_class_'.$post->{post_class}} = 1;
+							$attachment->{postid} = $post->{postid};
+						} 
+						
+					}
+					#die Dumper $post if $post->{data_has_multi_attach};
 				}
 			};
 			warn "Error decoding extra data on postid $post->{postid}: $@" if $@;
@@ -2001,6 +2003,8 @@ package Boards;
 			warn "Problem processing with Video Provider ID $provider: $@" if $@;
 		}
 		
+		$req->{attach} = $req->{'attach[]'} if $req->{'attach[]'} && !$req->{attach};
+		
 		if(!$post_class && 
 		    ($req->{comment} =~ /\.(jpg|gif|png)/i ||
 		     $req->{attach}  =~ /\.(jpg|gif|png)/i))
@@ -2036,7 +2040,6 @@ package Boards;
 # 		print TMP Dumper($req);
 # 		close(TMP);
 		
-		$req->{attach} = $req->{'attach[]'} if $req->{'attach[]'} && !$req->{attach};
 		
 		if($req->{attach})
 		{

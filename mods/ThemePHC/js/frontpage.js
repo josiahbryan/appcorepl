@@ -11,39 +11,39 @@ $(document).ready(function() {
 		
 		{
 			file:	'crop2.jpg',
-			cap:	'The praise band leads a song Sunday morning',
+			cap:	'The praise band leads a song Sunday morning'
 		},
 		{
 			file:	'crop3.jpg',
-			cap:	'Flowers and PHC',
+			cap:	'Flowers and PHC'
 		},
 		{
 			file:	'dakota-and-shawn2.jpg',
 			cap:	'Dakota and Shawnasee sing during PHYSH Worship',
-			offset:	{ x:0, y:-20 },
+			offset:	{ x:0, y:-20 }
 		},
 		{
 			file:	'hk-girls.jpg',
 			cap:	'Little girls playing at HIS KROSS Sunday Evening',
-			offset:	{ x:0, y:-60 },
+			offset:	{ x:0, y:-60 }
 		},
 		{
 			file:	'crop1.jpg',
-			cap:	'Gary Zimmers leads a set of three songs Sunday',
+			cap:	'Gary Zimmers leads a set of three songs Sunday'
 		},
 		{
 			file:	'hk-boys.jpg',
 			cap:	'Little boys playing on the gym HIS KROSS Sunday',
-			offset:	{ x:0, y:-60 },
+			offset:	{ x:0, y:-60 }
 		},
 		{
 			file:	'physh-smile.jpg',
 			cap:	'Ashley smiles and laughs during PHYSH Worship',
-			offset:	{ x:0, y:-40 },
+			offset:	{ x:0, y:-40 }
 		},
 		{
 			file:	'crop4.jpg',
-			cap:	'PHC and freshly-cut grass',
+			cap:	'PHC and freshly-cut grass'
 		}
 	];
 	var currentPhotoNum = 0;

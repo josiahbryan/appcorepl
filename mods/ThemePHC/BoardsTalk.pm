@@ -63,6 +63,15 @@ package ThemePHC::BoardsTalk;
 		#die "new post hook";
 		my $can_epa = 1 if ($_ = AppCore::Web::Common->context->user) && $_->check_acl($EPA_ACL);
 		$tmpl->param(can_epa=>$can_epa);
+		
+		$tmpl->param(has_alt_postas => $can_epa);
+		if($can_epa)
+		{
+			$tmpl->param(alt_postas_name  => 'Pleasant Hill Church');
+			$tmpl->param(alt_postas_email => 'webmaster@mypleasanthillchurch.org');
+			$tmpl->param(alt_postas_photo => '/appcore/mods/User/user_photos/fbb55eae25485996cd31b362d9296591f6.jpg');
+		}
+		
 	}
 	
 	sub create_new_thread
@@ -158,7 +167,7 @@ package ThemePHC::BoardsTalk;
 		
 		my $folder = $post->folder_name;
 		
-		my $server = $AppCore::Config->get('WEBSITE_SERVER');
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
 		my $text = "Dear Friends,\n\n".
 			$body.
 			"\n\nPastor Bryan".
@@ -169,6 +178,8 @@ Here's a link to this $noun posted on the PHC Website:
     
 Cheers!
 };
+		use Data::Dumper;
+		#print STDERR "Emailing $noun to ".Dumper(\@emails);
 		AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
 		
 		

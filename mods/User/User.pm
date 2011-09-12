@@ -190,6 +190,19 @@ package User;
 		}
 		
 		$self->run_hooks(User::ActionHook::EVT_ANY, $args) if $event ne User::ActionHook::EVT_ANY;
+		
+		### HACK!!!!
+		# Because of pacakage loading order, we have to put this code HERE. 
+		# I'd rather have it as a PROPER hook in Content::Page, but due to the
+		# order thigns are loaded, it wont let the a package in Content::Page
+		# use 'User' as a parent class.
+		if($event eq User::ActionHook::EVT_USER_LOGIN ||
+		   $event eq User::ActionHook::EVT_USER_LOGOUT ||
+		   $event eq User::ActionHook::EVT_USER_ADDED_TO_GROUP)
+		{
+			print STDERR __PACKAGE__.": User event: '$event', clearing nav cache\n";
+			Content::Page::ThemeEngine->clear_nav_cache();
+		}
 	}
 	
 	sub connect_with_facebook

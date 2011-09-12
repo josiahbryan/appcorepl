@@ -465,18 +465,24 @@ body
 	
 }
 
+.event_list li {
+	position: relative;
+}
+
 .event_list h5
 {
 	background: url("%%modpath%%/images/calendar_background.jpg") no-repeat scroll 0 0 transparent;
 	color: #A09F9F;
 	display: block;
-	float: left;
+	/*float: left;*/
 	font-size: 1.4em;
 	height: 41px;
 	margin: 0 15px 0px 10px;
 	padding: 2px 0 0;
 	text-align: center;
 	width: 41px;
+	
+	position: absolute;
 }	
 
 .event_list h5 strong
@@ -495,6 +501,8 @@ body
 	width: 90%;
 	height: 1.25em;
 	overflow: hidden;
+	
+	margin-left: 51px;
 }
 
 .event_list p
@@ -503,6 +511,8 @@ body
 	padding: 0 35px 0px 10px;
 	margin-top: -5px;
 	margin: 0;
+	
+	margin-left: 41px;
 }
 
 .event_list ul

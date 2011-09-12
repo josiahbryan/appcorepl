@@ -3,15 +3,16 @@
 /* Main logo doesnt get proper Z Index in IE, so we have to move it into a new position to make it fully visible */
 #mainlogo
 {
-	margin-top: -47px !important;
+	/*margin-top: -47px !important;
 	margin-left: -25px  !important;
-	margin-bottom: -3px;
+	margin-bottom: -3px;*/
+	margin-left: 15px;
 }
 
 /* With main logo moved, the header shadow was out of place now */
-#header #header-shadow
+body.subpage #header #header-shadow
 {
-	background-position: 0 11 !important;
+	background-position: 0 -37 !important;
 }
 
 /* Mobile link top-left was way out of size - this fixes it */
@@ -41,3 +42,62 @@ h2#mobile-link a
 	zoom: 1;
 	filter: alpha(opacity = 75);
 }*/
+
+
+#graphicblock {
+	width: 980px !important;
+}
+
+#graphic-wrap {
+	margin-left: 23px !important;
+}
+
+#sidebar .sidebar-link-block a
+{
+	/*display: block;
+	width: 210px;*/
+	height: 80px !important;
+	/*text-align: center;
+	color: white;
+	text-decoration: none;
+	padding-top: 24px;
+	font-size: 14px;
+	
+	text-shadow: rgb(8,8,8) 1px 1px 1px;
+	outline: 0;*/
+
+}
+
+
+.event_list h5
+{
+	/*display: block;
+	float: left;
+	font-size: 1.4em;
+	height: 41px;
+	width: 41px;
+	margin: 0 15px 0px 10px;
+	padding: 2px 0 0;*/
+	margin-left: -51px !important;
+	
+}	
+
+.event_list h3.event-title 
+{
+	margin-top: -21px !important;
+}
+
+
+body.frontpage .event_list .readmore a 
+{
+	padding-top: .1em;
+}
+
+body.frontpage .bodycontent {
+
+	padding-bottom: 1em !important;
+}
+
+#footercontent {
+ 	text-align: center !important; 
+}

@@ -671,7 +671,9 @@ package AppCore::Web::Common;
 		$html =~ s/&#39;/'/g;
 		
 		#Remove Wordpress Scribd 'tag', Sample: [scribd id=64192688 key=key-uwgseze2p7s03ow8a8b mode=list]
-		$html =~ s/\[scribd[^\]]+\]/(Embedded Document from Scribd)/gi;
+		#$html =~ s/\[scribd[^\]]+\]/(Embedded Document from Scribd)/gi;
+		$html =~ s/\[scribd id=([^\s]+) key=([^\s]+) mode=([^\]]+)\]/(Document Posted on Scribd: http:\/\/www.scribd.com\/doc\/$1 )/gi;
+		
 		
 		return $html;
 	}

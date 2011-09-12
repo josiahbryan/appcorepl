@@ -6,7 +6,10 @@
 #footer,
 #mainlogo,
 .search,
-.postlist td a.video-play-link span 
+.postlist td a.video-play-link span,
+#build-lnk img,
+#graphicblock,
+/*#photo-cap, #photo-nav*/
 {
 	behavior: url("/iepngfix.htc");
 	/*behavior: url(/iepngfix/iepngfix.htc);*/

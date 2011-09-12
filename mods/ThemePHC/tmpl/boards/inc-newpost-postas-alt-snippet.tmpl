@@ -1,0 +1,141 @@
+											<input id='input_poster_name' value='%%user_display%%' name='poster_name' type=hidden>
+											<input id='input_poster_email' value='%%user_email%%' name='poster_email' type=hidden>
+											<input id='input_poster_photo' value='' name='poster_photo' type=hidden>
+											<img class='user_photo' id='html_poster_photo' src="$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
+											Posting as 
+											<tmpl_if has_alt_postas>
+												<ul class='postas_menu_wrapper'><li>
+													<a href='#' class='change_postas'><b><span id='html_poster_display'>%%user_display%%</b></a>
+													<div class='postas_menu'>
+														<ul style='margin:0'>
+															<li class='selected'>
+																<a href='#' 
+																	x:d='<tmpl_var escape=html user_display>'
+																	x:e='<tmpl_var escape=html user_email>'
+																	x:p='$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)'>
+																	<img class='user_photo' src="$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16> %%user_display%%</a>
+															</li>
+															<li>
+																<a href='#'
+																	x:d='<tmpl_var escape=html alt_postas_name>'
+																	x:e='<tmpl_var escape=html alt_postas_email>'
+																	x:p='$(CDN:<tmpl_if alt_postas_photo:str>%%alt_postas_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)'>
+																	<img class='user_photo' src="$(CDN:<tmpl_if alt_postas_photo:str>%%alt_postas_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" align=absmiddle width=16 height=16> %%alt_postas_name%%</a>
+															</li>
+														</ul>
+													</div>
+												</li></ul>
+												<script>
+												$(function() { 
+													$('.postas_menu a').live('click', function() {
+														var $t = $(this),
+															display = $t.attr('x:d'),
+															email   = $t.attr('x:e'),
+															photo   = $t.attr('x:p');
+														
+														$('#input_poster_name').attr('value',display);
+														$('#input_poster_email').attr('value',email);
+														$('#input_poster_photo').attr('value',photo);
+														
+														$('#html_poster_photo').attr('src',photo);
+														$('#html_poster_display').html(display);
+														
+														$t.parent().addClass('selected');
+														if($oldPostas)
+															$oldPostas.removeClass('selected');
+															
+														$oldPostas = $t.parent();
+														
+														return false;
+													});
+													
+													var $oldPostas = $('.postas_menu li.selected');
+												});
+												</script>
+												<style>
+												a.change_postas {
+													background: url(%%appcore%%/images/silk/bullet_arrow_down.png) center right no-repeat;
+													padding-right: 14px; 
+												}
+												
+												.postas_menu_wrapper a:hover {
+													text-decoration: none;
+												}
+												
+												.postas_menu_wrapper a {
+													font-size: .95em;
+												}
+												
+												.postas_menu_wrapper,
+												.postas_menu_wrapper li,
+												.postas_menu,
+												.postas_menu li { /* override .bodycontent ul li ul */
+													list-style: none;
+													padding:0;
+													margin: 0;
+												}
+												.postas_menu_wrapper,
+												.postas_menu_wrapper li {
+													display: inline;
+												}
+												
+												.postas_menu {
+													display: none;
+													position: absolute;
+													z-index: 2;
+													top: 16px;
+													left: 0;
+													background: white;
+													padding: 0 0px;
+													border: 1px solid #364a90;
+													-moz-box-shadow: 0px 0px 3px #000;
+													-webkit-box-shadow: 0px 0px 3px #000;
+													box-shadow: 0px 0px 3px #000;
+												}
+												
+												.postas_menu_wrapper li {
+													position: relative;
+												}
+												.postas_menu_wrapper li:hover .postas_menu {
+												/*.postas_menu_wrapper li .postas_menu {*/
+													display: block;
+												}
+												
+												.postas_menu li {
+													display: block;
+													padding: 2px 5px;
+													font-size: .95em;
+												}
+												
+												.postas_menu:first-child {
+													padding-top: 4px;
+												}
+												
+												.postas_menu:last-child {
+													padding-bottom:2px;
+												}
+												
+												.postas_menu li.selected {
+													background: #96a8ea;
+												}
+												
+												.postas_menu li:hover {
+													background: #364a90;
+												}
+												
+												.postas_menu li.selected a,
+												.postas_menu li:hover a {
+													color: white;
+													text-decoration: none;
+												}
+												
+												.postas_menu li a:focus,
+												.postas_menu li a:active {
+													outline: 0;
+												}  
+												
+												
+												</style>
+											<tmpl_else>
+												<b><span id='html_poster_display'>%%user_display%%</b>
+											</tmpl_if>

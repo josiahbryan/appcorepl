@@ -5,8 +5,9 @@
 	background-repeat: repeat-x;
 	height: 49px;
 	width: 100%;
-	
 }
+
+/*#navblock * { font-size: 100% }*/
 
 /* Raise the menu above the background and any images that may overlap */
 #header-wrap 
