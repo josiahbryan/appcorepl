@@ -2286,6 +2286,10 @@ package AppCore::DBI;
 								uc $a->{$k} eq 'CURRENT_TIMESTAMP' && !$b->{$k} &&
 								lc $a->{type} eq 'timestamp';
 								
+							# Multiple keys report oddly, so ignore them...
+							next if $k eq 'key' && 
+								$a->{$k} eq 'MUL' && !$b->{$k};
+								
 							print STDERR "Debug: k=$k, a=$a->{$k}, b=$b->{$k}, type=$a->{type}\n";
 							$cnt ++;
 						}
