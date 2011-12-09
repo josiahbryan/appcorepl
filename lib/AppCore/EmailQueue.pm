@@ -88,7 +88,7 @@ Server: $host
 		#print "From:$from\nTo:$to\nSubj:$subject\nText:$text\n";
 		#print_stack_trace();
 	
-		my $email_tmp_dir = AppCore::Config->get('EMAIL_TMP_DIR') || '/tmp';
+		my $email_tmp_dir = AppCore::Config->get('EMAIL_TMP_DIR') || '/var/spool/appcore/mailqueue';
 		
 		my @msg_refs;
 		
@@ -104,7 +104,7 @@ Server: $host
 		
 			### Add parts (each "attach" has same arguments as "new"):
 			$msg->attach(Type       =>'TEXT',
-				Data            =>$text);
+				     Data       =>$text);
 		
 			#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
 		
@@ -113,23 +113,26 @@ Server: $host
 			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g if $high_import_flag;
 			#die $str;
 			
-			my $uuid = `uuidgen`;
-			$uuid =~ s/[\r\n-]//g;
-			my $file = $email_tmp_dir . '/'. $uuid . '.eml';
-			
-			#print STDERR "(case2) Debug: Attempting to save to $file...\n";
-			if(open(FILE,">$file"))
+			if(length($str) > 1024*512) # Larger than half a meg
 			{
-				print FILE $str;
-				close(FILE);
+				my $uuid = `uuidgen`;
+				$uuid =~ s/[\r\n-]//g;
+				my $file = $email_tmp_dir . '/'. $uuid . '.eml';
 				
-				$str = "#file:$file";
-				
-				#print STDERR "(case2) Debug: Wrote file, new str: '$str'\n";
-			}
-			else
-			{
-				warn "(case2) Couldn't write to $file: $!, sending using raw database blob";
+				#print STDERR "(case2) Debug: Attempting to save to $file...\n";
+				if(open(FILE,">$file"))
+				{
+					print FILE $str;
+					close(FILE);
+					
+					$str = "#file:$file";
+					
+					#print STDERR "(case2) Debug: Wrote file, new str: '$str'\n";
+				}
+				else
+				{
+					warn "(case2) Couldn't write to $file: $!, sending using raw database blob";
+				}
 			}
 		
 			eval
@@ -149,7 +152,7 @@ Server: $host
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
-	our $DEBUG = 0;
+	our $DEBUG = 1;
 	sub send_all
 	{
 		my $self = shift;
@@ -197,19 +200,6 @@ Server: $host
 			return;
 		}
 		
-# 		$prof = 
-# 		{
-# # 			pkg     => 'Net::SMTP',
-# # 			server  => 'localhost',
-# # 			port    => 2500,	
-# 			pkg	=> 'Net::SMTP::TLS',
-# 			server	=> 'smtp.gmail.com',
-# 			port	=> 587,
-# 	#		user	=> 'PHC Notifications Robot <notifications@mypleasanthillchurch.org>',
-# 			user	=> 'notifications@mypleasanthillchurch.org',
-# 			pass	=> 'Notify1125',
-# 		} if $domain eq 'mypleasanthillchurch.org';
-		
 		# If config says its allowed (a true value) but no config, assume direct relay
 		$prof = { server => 'localhost' } if !ref $prof;
 		
@@ -217,7 +207,8 @@ Server: $host
 		
 		
 		my $pkg = $prof->{pkg};
-		if(!$pkg && $prof->{server} ne 'localhost')
+		if(!$pkg && 
+		    $prof->{server} ne 'localhost')
 		{
 			$self->sentflag(1);
 			$self->result("Error: Invalid config for $domain - no sender package in custom config");
@@ -244,7 +235,8 @@ Server: $host
 				push @buffer, $_ while $_ = <FILE>;
 				close(FILE);
 				$data = join '', @buffer;
-				unlink($file);
+				#unlink($file);
+				system("mv $file /var/spool/appcore/mailsent");
 			}
 			my ($tuser,$tdomain) = split /\@/, $self->msg_to;
 			$tdomain =~ s/>$//g;
@@ -270,12 +262,12 @@ Server: $host
 			);
 			#if($pkg eq 'Net::SMTP::TLS')
 			{
-				$args{User} = $prof->{user} || 'notifications';
+				$args{User}     = $prof->{user} || 'notifications';
 				$args{Password} = $prof->{pass} || 'Notify1125';
 			}
 			
-			use Data::Dumper;
-			print STDERR Dumper \%args;
+# 			use Data::Dumper;
+# 			print STDERR Dumper \%args;
 				
 			$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
 			#print STDERR "Result: '$smtp'\n";
@@ -330,7 +322,8 @@ Server: $host
 				$smtp->datasend($_);
 			}
 			close(FILE);
-			unlink($file);
+			#unlink($file);
+			system("mv $file /var/spool/appcore/mailsent");
 			
 			# Wierd, I know - but since we deleted the data file, there really is no point in keeping this record around in the database either...
 			#$self->delete;

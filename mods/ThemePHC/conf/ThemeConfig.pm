@@ -47,8 +47,8 @@ BEGIN
 # 	$MOBILE_URL = '/m';
 	
 	# Names use for user correspondance and other system-generated user-facing pages/content
-	$WEBSITE_NAME = 'PHC Beta Site';
-	$WEBSITE_NOUN = 'PHC Beta';
+	$WEBSITE_NAME = 'PHC';
+	$WEBSITE_NOUN = 'PHC';
 	
 	# When neededing a globally-absolute URL, what server should we prefix?
 	# Normally, URLs created are local URLs, absolute to the server, but not including the server.
@@ -111,7 +111,8 @@ BEGIN
 	$ENABLE_JS_REORDER_YUI = 1;	# Run the combined block of scripts in that page thru YUI before inclusion
 	
 	# Compress CSSX with YUI compressor if the .jar in $USE_YUI_COMPRESS exists  
-	$USE_YUI_COMPRESS = 0; #'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
+	#$USE_YUI_COMPRESS = 0; 
+	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
 	$YUI_COMPRESS_SETTINGS = '';
 
 	###########################################

@@ -603,18 +603,40 @@ package PHC::Directory;
 		my $user = shift || AppCore::Common->context->user;
 		my $want_large = shift || 0;
 		
-		$!='No user' 				and return undef if !$user || !ref $user || $user->id;
+		#print STDERR __PACKAGE__."->photo_for_user(".$user->display."): mark1, userid:$user\n";
+		if(!$user || !ref $user || !$user->id)
+		{
+			$!='No user';
+			return undef;
+		}
+		
+		my $userid = $user->id;
 		
 		my $www_root = AppCore::Config->get('WWW_ROOT');
 		my $www_path = AppCore::Config->get('WWW_DOC_ROOT');
-		return $user->photo if $user->photo && -f $www_root.$user->photo;
+		my $abs_path = $www_path.$user->photo;
+		#print STDERR __PACKAGE__."::photo_for_user($user): abs_path: $abs_path \n" if $user->photo;
+		return $user->photo if $user->photo && -f $abs_path;
 		
-		my $fam = PHC::Directory::Family->by_field( userid => $user );
-		$fam = PHC::Directory::Family->by_field( spouse_userid => $user ) if !$fam;
+		#print STDERR __PACKAGE__."->photo_for_user(".$user->display."): mark2\n";
 		
-		$!='No matching family entry found'	and return undef if !$fam;
+		my $fam = PHC::Directory::Family->by_field( userid => $userid, deleted => 0 );
+		$fam = PHC::Directory::Family->by_field( spouse_userid => $userid, deleted => 0 ) if !$fam;
 		
-		$!='No photo for family entry'		and return undef if $fam->photo_num eq '?';
+		#print STDERR __PACKAGE__."->photo_for_user(".$user->display."): mark3, fam:".$fam->display.", famid:$fam, userid:$userid\n";
+		
+		if(!$fam)
+		{
+			$!='No matching family entry found';
+			return undef;
+		}
+		
+		if($fam->photo_num eq '?')
+		{
+			$!='No photo for family entry';
+			return undef;
+		}
+		
 		
 		my $photo_file      = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
 		$fam->{large_photo} = $www_root.'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
@@ -632,6 +654,8 @@ package PHC::Directory;
 			print STDERR "Resizing $www_path.$fam->{large_photo} (160x120) to $www_path.$photo_file\n";
 			system("convert ${www_path}$fam->{large_photo} -resize 160x120 ${www_path}$photo_file");
 		}
+		
+		#print STDERR __PACKAGE__."->photo_for_user(".$user->display."): mark4\n";
 		
 		return $want_large ? $fam->{large_photo} : ($photo_file ? $photo_file : undef);
 	}

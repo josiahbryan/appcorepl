@@ -380,7 +380,7 @@ package User;
 			$user = AppCore::User->by_field(email=>$req->{user}) if !$user;
 			if($user && !$user->pass)
 			{
-				my $url = $self->module_url($SIGNUP_ACTION) . '?user='.AppCore::Common->url_encode($user->user);
+				my $url = $self->module_url($SIGNUP_ACTION) . '?user='.AppCore::Web::Common->url_encode($user->user);
 				print STDERR "auth fall thru: mark2: $url\n";
 				return $r->redirect($url);
 			}

@@ -42,6 +42,7 @@ package ThemePHC;
 	use ThemePHC::LivePage;
 	use ThemePHC::AskPastor;
 	use ThemePHC::Audio;
+	use ThemePHC::Recipes;
 	
 	# Load the board controllers so it can update user prefs
 	use ThemePHC::BoardsTalk;
@@ -68,6 +69,7 @@ package ThemePHC;
 			ThemePHC::Groups
 			ThemePHC::Search
 			ThemePHC::Audio
+			ThemePHC::Recipes
 		};
 		$_->apply_mysql_schema foreach @sub_mods;
 	}

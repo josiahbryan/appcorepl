@@ -13,7 +13,7 @@ BEGIN
 	else
 	{
 		$config = 'AppCore::Config';
-		print STDERR "$0: Loading DEFAULT AppCore config from $config\n";
+		#print STDERR "$0: Loading DEFAULT AppCore config from $config\n";
 		eval('use '.$config);
 		die "Error loading config: $@" if $@;
 	}

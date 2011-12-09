@@ -691,6 +691,7 @@ package AppCore::Web::Common;
 		
 		$html =~ s/<(style|!--)[^\>]*>(.|\n)*<\/(style|--)>//gi;
 		$html =~ s/—/ - /g;
+		$html =~ s/–/-/;
 		$html =~ s/’/'/g;
 		$html =~ s/“/"/g;
 		$html =~ s/”/"/g;

@@ -821,6 +821,30 @@ package Content::Page::ThemeEngine;
 	
 	AppCore::DBI->add_cache_clear_hook(__PACKAGE__);
 	
+	sub _create_scribd_embed_html
+	{
+		my ($id,$key,$mode) = @_;
+		
+		my $HTML_FORMAT = 'flash';
+		return $HTML_FORMAT eq 'flash' ?
+		qq{
+				<object height="600" width="100%" type="application/x-shockwave-flash" data="http://d1.scribdassets.com/ScribdViewer.swf" style="outline:none" >
+				<param name="movie" value="http://d1.scribdassets.com/ScribdViewer.swf">
+				<param name="wmode" value="opaque">
+				<param name="bgcolor" value="#ffffff">
+				<param name="allowFullScreen" value="true">
+				<param name="allowScriptAccess" value="always">
+				<param name="FlashVars" value="document_id=${id}&access_key=${key}&page=1&viewMode=${mode}">
+				<embed src="http://d1.scribdassets.com/ScribdViewer.swf?document_id=${id}&access_key=${key}&page=1&viewMode=${mode}" type="application/x-shockwave-flash" allowscriptaccess="always" allowfullscreen="true" height="600" width="100%" wmode="opaque" bgcolor="#ffffff"></embed>
+				</object>
+		} :
+		qq|
+			<iframe class="scribd_iframe_embed" src="http://www.scribd.com/embeds/${id}/content?start_page=1&view_mode=list&access_key=${key}" data-auto-height="true" data-aspect-ratio="0.779617834394905" scrolling="no" width="100%" height="600" frameborder="0"></iframe>
+			<script type="text/javascript">(function() { var scribd = document.createElement("script"); scribd.type = "text/javascript"; scribd.async = true; scribd.src = "http://www.scribd.com/javascripts/embed_code/inject.js"; var s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(scribd, s); })();</script>
+		|;
+	}
+	
+	
 	sub apply_page_obj
 	{
 		my ($self,$tmpl,$page_obj) = @_;
@@ -841,6 +865,10 @@ package Content::Page::ThemeEngine;
 					$page_obj->content;
 				
 				$content = AppCore::Web::Common::load_template($content)->output if $content =~ /%%/;
+				if($content =~ /\[scribd id=/)
+				{
+					$content =~ s/\[scribd id=([^\s]+) key=([^\s]+) mode=([^\]]+)\]/_create_scribd_embed_html($1,$2,$3)/egi;
+				}
 				
 				$pgdat->{'page_'.$_}	= $page_obj->get($_) foreach $page_obj->columns;
 				$pgdat->{page_content}	= $content;

@@ -193,21 +193,30 @@
 					<script type="text/javascript">
 					function updateScriptData(recid)
 					{
-						if(!window.uploadifyScriptData)
-							window.uploadifyScriptData = {};
-						var sd = window.uploadifyScriptData;
-						if(recid)
-							sd.recordingid = recid;
-						sd.output_fmt = 'json';
-						sd.bulk_flag = 0;
-						sd.user = '%%user_user%%';
-						sd.pass = '%%user_pass%%';
+						try {
+							if(!window.uploadifyScriptData)
+								window.uploadifyScriptData = {};
 							
-// 						if(!window.uploadifyInstance)
-// 							window.uploadifyInstance = $('#custom_file_upload');
+							var sd = window.uploadifyScriptData;
+							if(recid)
+								sd.recordingid = recid;
 							
-						if(window.uploadifyInstance)
-							window.uploadifyInstance.uploadifySettings('scriptData', sd);
+							sd.bulk_flag = 0;
+							sd.output_fmt = 'json';
+							sd.user = '%%user_user%%';
+							sd.pass = '%%user_pass%%';
+								
+	// 						if(!window.uploadifyInstance)
+	// 							window.uploadifyInstance = $('#custom_file_upload');
+								
+							if(window.uploadifyInstance)
+								window.uploadifyInstance.uploadifySettings('scriptData', sd);
+								
+						}
+						catch(e)
+						{
+							alert("Error in updateScriptData:"+e.name+"\n"+e.message);
+						}
 					}
 					
 					$(function() {
@@ -226,7 +235,7 @@
 							'fileExt'        : '*.mp3',
 							'fileDesc'       : 'MP3 Audio Files (.MP3)',
 							'queueID'        : 'custom-queue',
-							'queueSizeLimit' : 30,
+							'queueSizeLimit' : 100,
 							'simUploadLimit' : 1,
 							'removeCompleted': true,
 							'onInit'	 : function() {
@@ -249,8 +258,16 @@
 								*/
 // 								console.debug('onComplete!');
 // 								console.debug(response);
+								//alert("Upload complete, response: "+response);
 								var json;
-								eval('json='+response);
+								try {
+									eval('json='+response);
+								}
+								catch(e)
+								{
+									alert("Error parsing response:"+e);
+								}
+								
 								if(!response)
 								{
 									alert("Error uploading using Flash uploader, switching to legacy uploader form.");
@@ -259,7 +276,9 @@
 								}
 								else
 								{
+									//alert("json recording id:"+json.recordingid);
 									updateScriptData(json.recordingid);
+									//alert("script data update done");
 									
 									_upload_cb(json.recordingid, //recid
 										json.tracknum, //t_num
@@ -267,6 +286,7 @@
 										json.len, 
 										json.file //t_file
 									);
+									//alert("Done in callback");
 									$('#upload').hide();
 									
 								}

@@ -1,4 +1,5 @@
 # Custom controller for the "prayer/praise/talk" board on the new PHC website
+use strict;
 package ThemePHC::BoardsTalk;
 {
 	use AppCore::Web::Common;
@@ -137,6 +138,7 @@ package ThemePHC::BoardsTalk;
 	{
 		my $self = shift;
 		my $post = shift;
+		my $email_list = shift || undef;
 		
 		my $tag = lc $post->ticker_class;
 		
@@ -148,18 +150,26 @@ package ThemePHC::BoardsTalk;
 		my $noun = $self->alert_noun($tag);
 		
 		# TODO Honor user prefereances re opt outs
-		
-		my @users = AppCore::User->retrieve_from_sql('email <> ""'); # and allow_email_flag!=0');
-		
-# 		# Just for Debugging ...
-# 		@users = map { AppCore::User->retrieve($_) } qw/1 51/;
-		
-		# Extract email addresses
-		my @emails = map { $_->email } @users;
-		
-		# Make emails unique (dont send the same email twice to the same user)
-		my %unique_map = map { $_ => 1 } @emails;
-		@emails = keys %unique_map;
+		my @emails;
+		if($email_list)
+		{
+			@emails = @{$email_list || []};
+		}
+		else
+		{ 
+			
+			my @users = AppCore::User->retrieve_from_sql('email <> ""'); # and allow_email_flag!=0');
+			
+	# 		# Just for Debugging ...
+	# 		@users = map { AppCore::User->retrieve($_) } qw/1 51/;
+			
+			# Extract email addresses
+			@emails = map { $_->email } @users;
+			
+			# Make emails unique (dont send the same email twice to the same user)
+			my %unique_map = map { $_ => 1 } @emails;
+			@emails = keys %unique_map;
+		}
 		
 		my $subject = $post->subject; # the subject was set correctly in create_new_thread()
 		my $body = AppCore::Web::Common->html2text($post->text);
@@ -170,7 +180,7 @@ package ThemePHC::BoardsTalk;
 		my $server = AppCore::Config->get('WEBSITE_SERVER');
 		my $text = "Dear Friends,\n\n".
 			$body.
-			"\n\nPastor Bryan".
+#			"\n\nPastor Bryan".
 			"\n\n-----\n".qq{
 
 Here's a link to this $noun posted on the PHC Website:
@@ -179,8 +189,8 @@ Here's a link to this $noun posted on the PHC Website:
 Cheers!
 };
 		use Data::Dumper;
-		#print STDERR "Emailing $noun to ".Dumper(\@emails);
-		AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
+		print STDERR "Emailing $noun to ".Dumper(\@emails);
+		AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pleasant Hill Church <pastor@mypleasanthillchurch.org>');
 		
 		
 	}

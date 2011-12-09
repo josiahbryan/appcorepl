@@ -1,9 +1,9 @@
 	<tr class='post' id='post%%postid%%'>
 		<td valign='top' class='data' colspan='2'>
 			
-			<img class='user_photo' 
+			<img class='user_photo ar_adjustable' 
 				src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
-				userid='%%posted_by%%' align='left'/>
+				userid='%%posted_by%%' align='left' width='25' height='25'/>
 			
 			<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
 				%%subject%%

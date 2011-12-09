@@ -8,7 +8,9 @@
 			<tr id='family_%%familyid%%_data' class='family_data'>
 				<td class='photo_cell' align='center' valign='top'>
 					<tmpl_if photo:str>
-						<a href='%%large_photo%%' target='_new'><img src='%%photo%%' class='photo' border='0'></a>
+						<a href='%%large_photo%%' class='photo_link' rel='dir_photos' target='_new' title='%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%'>
+							<img src='%%photo%%' class='photo' border='0' alt='%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%'>
+						</a>
 					<tmpl_else>
 						<!--<div class='no_photo'>
 							?
@@ -25,7 +27,7 @@
 									<tmpl_if can_edit>
 										<div class='edit'>
 											<a href='%%bin%%/edit?familyid=%%familyid%%'>Edit</a>
-											<tmpl_if is_admin> | <a href='%%bin%%/delete?familyid=%%familyid%%' onclick='return confirm("Are you sure?")'>Delete</a></tmpl_if>
+											<tmpl_if is_admin> | <a href='%%bin%%/delete?familyid=%%familyid%%' onclick='return confirm("Are you sure you want to Delete this family?")'>Delete</a></tmpl_if>
 										</div>
 									<tmpl_else>
 										<tmpl_unless has_account>

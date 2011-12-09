@@ -101,3 +101,12 @@ body.frontpage .bodycontent {
 #footercontent {
  	text-align: center !important; 
 }
+
+h2#mobile-link {
+	border: 0 !important;
+}
+
+div.talk_wrap {
+	overflow:default !important;
+	
+}

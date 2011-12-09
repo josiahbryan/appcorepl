@@ -148,6 +148,7 @@ sub update_board
 	foreach my $fb_post (@$feed_list)
 	{
 		my $external_id = $fb_post->{id};
+		next if $external_id eq '180929095286122_150297708396755'; # Bad UTF8 encoding, buggers FastCGI in output, so skip for now
 		
 		my $post = Boards::Post->by_field(external_id => $external_id, deleted => 0);
 		

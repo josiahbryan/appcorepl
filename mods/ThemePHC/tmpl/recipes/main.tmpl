@@ -1,0 +1,104 @@
+<title>Recipes</title> 
+<h1>Recipes</h1>
+
+
+<tmpl_if can_create>
+<style>
+.new_link, .new_reply_link, .edit_post_link
+{ 
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	width: 150px;
+	/*background: #fff6ec; */
+	background: white;border-color: blue;
+	-moz-border-radius: 4px;
+	
+}
+	
+</style>
+<a class='new_link' href='/recipes/new'><img src='%%appcore%%/images/silk/page_add.png' border=0 align=absmiddle> Add a recipe...</a>
+</tmpl_if>
+
+<style>
+/*#recipes td { font-size: .95em }
+#recipes { margin-top: .25em;margin-left:1em; background: rgb(230,230,230); padding: 1em }
+#recipes th {border-bottom: 1px solid black }
+#recipes td.length, #recipes td.title {padding-right: 1em }
+#recipes .flash_alt { font-size: .8em; padding-left: 5px; color: rgb(100,100,100) }
+#recipes .player { background: white }*/
+.paging
+{
+	border: 2px solid #c9ac93;
+	padding: 5px;
+	margin-top: 1.5em;
+	margin-bottom: 1em;
+	font-size: 13px;
+	display: block;
+	/*width: 150px;*/
+	/*background: #fff6ec; */
+	background: white;border-color: rgb(180,180,180);
+	-moz-border-radius: 4px;
+}
+.paging .total { font-weight: bold }
+.paging .curpg { font-weight: bold }
+
+</style>
+<tmpl_if recipes>
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Recipes</span> Available
+		</span>
+	</div>
+		
+	
+	<table cellspacing=0 border=0 id="sermons" class='pretty' width='100%'>
+		<thead>
+			<th align=left>Title</th>
+			<th align=left>Category</th>
+			<th align=left>Author</th>
+			<!--<th align=left>Listen Online</th>-->
+		</thead>
+		<tbody>
+		<tmpl_loop recipes>
+			<tr>
+				<!--<td class='title' nowrap><a href='<tmpl_var web_path>'><tmpl_var title></a></td>-->
+				<td class='title' nowrap><a href='%%bin%%/%%recipeid%%'><tmpl_if title><tmpl_var title><tmpl_else>(No Title)</tmpl_if></a></td>
+				<td><tmpl_var category></td>
+				<td><tmpl_var author></td>
+				
+			</tr>
+		</tmpl_loop>
+		</tbody>
+	</table>
+	
+	<div class='paging top'>
+		<tmpl_unless is_start>
+			<span class='prev'><a href='%%bin%%?start=0'>&laquo; Start</a></span> | 
+			<span class='prev'><a href='%%bin%%?start=%%prev_start%%'>&laquo; Prev Page</a></span> | 
+		</tmpl_unless>
+		<tmpl_unless is_end>
+			<span class='next'><a href='%%bin%%?start=%%next_start%%'>Next Page &raquo;</a></span> | 
+			<span class='next'><a href='%%bin%%?start=%%count%%'>End &raquo;</a></span> | 
+		</tmpl_unless>
+		<span class='pages'>
+			Page <span class='curpg'>%%cur_page%%</span> of <span class='totalpg'>%%pages%%</span> |
+			Total: <span class='total'>%%count%% Recipes</span> Available
+		</span>
+	</div>
+			
+<tmpl_else>
+	<h3>Sorry, no recipes added yet...</h3>
+</tmpl_if>

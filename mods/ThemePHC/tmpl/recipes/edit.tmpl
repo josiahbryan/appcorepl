@@ -1,0 +1,179 @@
+<title><tmpl_if recipeid>Edit %%title%%<tmpl_else>Create New Recipe</tmpl_if></title>
+<h1><tmpl_if recipeid>Edit %%title%%<tmpl_else>Create New Recipe</tmpl_if></h1>
+
+<form action='%%binpath%%/post' method=POST>
+
+	<input type=hidden name=recipeid value="<tmpl_var recipeid>">
+	
+	<table class='editform'>
+		<tr>
+			<td>Title:</td> <td><input id='title' type=text name=title class='textinput' value='%%title%%' size=50></td>
+		</tr>
+		<tr>
+			<td>Author:</td> <td><input id='author' type=text name=author class='textinput' value='%%author%%' size=30></td>
+		</tr>
+		<!--<tr>-->
+			<!--<td valign=top>Recipe Type:</td> 
+			<td>
+				<tmpl_loop recipe_types>
+					<input type=radio name='recipe_type' value='%%value%%' id='recipe_type_%%counter%%' <tmpl_if selected>checked</tmpl_if>><label for='recipe_type_%%counter%%' style='color:black'> <b>%%text%%</b></label><br>
+				</tmpl_loop>
+			</td>-->
+		<!--</tr>-->
+		
+		<tr>
+			<!--<td>Group Type:</td> <td><input type=text name=group_type class='textinput' value='%%group_type%%' size=40></td>-->
+			<td valign=top>Category:</td> 
+			<td>
+				<tmpl_loop categories>
+					<input type=radio name='category' value='%%value%%' id='category_%%counter%%' <tmpl_if selected>checked</tmpl_if>><label for='category_%%counter%%' style='color:black'> <b>%%text%%</b></label><br>
+				</tmpl_loop>
+				<hr size=1>
+				<!--<center>Add New:</center>-->
+				<input type=radio name='category' value='_' id='category_new'><label for='category_new'> </label>
+					<input type=text name=category_new id='category_new_input' class='textinput' value='' size=20>
+				<script>
+				$(function() {
+					$('#category_new_input').bind('focus', function()
+					{
+						$('#category_new').attr("checked",true);
+						this.focus();
+					});
+				});
+				</script>
+				
+			</td>
+		</tr>
+		
+		
+		<!--<tr><td colspan=2><hr size=1></td></tr>-->
+		<tr>
+			<td colspan=2>
+			<h3>Ingredients</h3><a name='ingredients' style='float:left'></a>
+			<style>
+			.delete_item_link 
+			{
+				color: white;
+				background: rgb(170,170,170);
+				display: block;
+				padding: 3px 6px;
+				-moz-border-radius: 3px;
+				/*font-weight: bold;*/
+				text-transform: uppercase;
+				text-decoration: none;
+			}
+			.delete_item_link:hover
+			{
+				background: black;
+				color: yellow;
+			}
+			.editform td .item_name { color: black; }
+			.editform tr.odd td
+			{
+				background: rgb(200,200,200);
+			}
+			.editform tr.odd td.full_cell_control
+			{
+				background: inherit;
+			}
+			</style>
+			<table class='editform kids-tbl' style='padding:0' width=100%>
+				<thead>
+					<th align=left>Qty</th>
+					<th align=left>UM</th>
+					<th align=left>Item</th>
+					<th>&nbsp;</th>
+				</thead>
+				<tbody>
+					<tmpl_loop lines>
+						<tr <tmpl_if odd_flag>class=odd</tmpl_if>>
+							<td class='full_cell_control'>
+								<input type=text class='textinput' name='line_%%lineid%%_fraction_qty' value='<tmpl_var escape=html fraction_qty>' size=5>
+							</td>
+							<td class='full_cell_control'>
+								<input type=text class='textinput' name='line_%%lineid%%_um' value='<tmpl_var escape=html um>' size=5>
+							</td>
+							<td class='full_cell_control'>
+								<input type=text class='textinput' name='line_%%lineid%%_name' value='<tmpl_var escape=html item_name>' size=40>
+							</td>
+							<td align=center class='full_cell_control'>
+								<a href='%%delete_url%%' class='delete_item_link' title='Delete this item from this recipe' onclick='return confirm("Are you SURE you want to delete this item from this recipe?")'>x</a>
+							</a>
+						</tr>
+					</tmpl_loop>
+					<tr>
+						<td class='full_cell_control'>
+							<input type=text class='textinput' name='line_new_fraction_qty' id='line_new_fraction_qty' value='<tmpl_var escape=html fraction_qty>' size=5>
+						</td>
+						<td class='full_cell_control'>
+							<input type=text class='textinput' name='line_new_um' value='<tmpl_var escape=html um>' size=5>
+						</td>
+						<td class='full_cell_control'>
+							<input type=text class='textinput' name='line_new_name' value='<tmpl_var escape=html item_name>' size=40>
+						</td>
+						<td>&nbsp;</td>
+					</tr>
+					<tr>
+						<td colspan=2>
+							<input type=submit name=add_another value='Add Another Item'>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+			</td>
+		</tr>
+		<!--<tr><td colspan=2><hr size=1></td></tr>-->
+		<td colspan=2>
+			<h3>Instructions</h3><a name='instructions' style='float:left'></a>
+			<textarea cols=40 rows=5 style='width:100%' class=textinput name=instructions>%%instructions%%</textarea>
+		</td>
+		
+		
+		<!--<tmpl_if is_admin>
+			<tr>
+				<td valign=top><a name='admin_notes'>Admin Notes</a>:</td> <td><textarea name=admin_notes id='admin_notes' class='textinput' rows=4 cols=40>%%admin_notes%%</textarea></td>
+			</tr>
+			<tr><td colspan=2><hr size=1></td></tr>
+		</tmpl_if>-->
+		<tr>
+			<td colspan=2 class=controls>
+				<tmpl_if delete_url>
+					<a href='%%delete_url%%' onclick='return confirm("Are you SURE you want to delete this recipe?");' style='float:right'>Delete this recipe</a>
+				</tmpl_If>
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+			</td>
+		</tr>
+	</table>
+	
+	
+</form>
+
+<script>
+$(document).ready(function() {
+	
+	if(window.location.hash.indexOf("add_another")>0)
+	{
+		$('#line_new_fraction_qty').get(0).focus();
+	}
+/*	else
+	if(window.location.hash.indexOf("admin_notes")>0)
+	{
+		$('#admin_notes').get(0).focus();
+	}*/
+	else
+	if(!window.location.hash)
+	{
+		$('#title').get(0).focus();
+	}
+	
+	$('.textinput').live("focus", function() {
+		if(this.tagName.toUpperCase() == 'TEXTAREA')
+			return;
+		this.select();
+	});
+	
+	
+});
+	
+</script>

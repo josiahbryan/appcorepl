@@ -118,6 +118,8 @@ package ThemePHC::Missions;
 			
 			admin_acl	=> [qw/MissionsManager Admin-WebBoards Pastor/],
 			
+			#notification_methods => [qw/notify_via_email notify_via_facebook notify_via_talk/]
+			
 			#new_post_tmpl	=> 'pages/missions/new_post.tmpl',
 			#post_tmpl	=> 'pages/missions/post.tmpl',
 			#post_reply_tmpl	=> 'pages/boards/post_reply.tmpl',
@@ -127,6 +129,130 @@ package ThemePHC::Missions;
 		
 		return $self;
 	};
+	
+# 	sub notify_via_talk
+# 	{
+# # 		my $self = shift;
+# # 		my $post = shift;
+# 		
+# 		my $self = shift;
+# 		my $action = shift;
+# 		my $post = shift;
+# 		my $args = shift;
+# 		
+# 		if($action eq 'new_post')
+# 		{
+# 			my $folder = $post->folder_name;
+# 			my $server = AppCore::Config->get('WEBSITE_SERVER');
+# 			my $post_url = "${server}/serve/outreach/".$post->boardid->folder_name."/$folder";
+# 			
+# 			my $data = {
+# 				poster_name	=> 'PHC Website',
+# 				poster_photo	=> 'https://graph.facebook.com/180929095286122/picture', # Picture for PHC FB Page
+# 				poster_email	=> 'josiahbryan@gmail.com',
+# 				comment		=> "A new update, \"".$post->subject."\" has been added to the missions page for ".$post->boardid->title.". Read it at: $post_url",
+# 				subject		=> "New Missions Update: '".$post->subject."' in ".$post->boardid->title, 
+# 			};
+# 			
+# 			my $talk_board_controller = AppCore::Web::Module->bootstrap('ThemePHC::BoardsTalk');
+# 			my $talk_board = Boards::Board->retrieve(1); # id 1 is the prayer/praise/talk board
+# 			
+# 			my $talk_post = $talk_board_controller->create_new_thread($talk_board,$data);
+# 			
+# 			# Add extra data internally
+# 			$talk_post->data->set('blog_postid',$post->id);
+# 			$talk_post->data->set('post_url',$post_url);
+# 			$talk_post->data->set('title',$post->subject);
+# 			$talk_post->data->set('mission',$post->boardid->title);
+# 			$talk_post->data->update;
+# 			$talk_post->update;
+# 			$talk_post->{_orig} = $post;
+# 			
+# 			# Note: We call send_notifcations() on $self so it will call our facebook_notify_hook()
+# 			#       to reformat the FB story args the way we want them before uploading instead 
+# 			#       of using the default story format.
+# 			#     - We 'really_upload' so we can use $self (because we want to call our facebook_notify_hook())
+# 			#     - Give the $talk_board in the args because the FB notification routine needs the
+# 			#       FB wall ID and sync info from the board - and its not set on the Pastor's Blog board
+# 			my @errors = $self->send_notifications('new_post',$talk_post,{really_upload=>1, board=>$talk_board}); # Force the FB method to upload now rather than wait for the poller crontab script
+# 			if(@errors)
+# 			{
+# 				print STDERR "Error sending notifications of new blog post $post: \n\t".join("\n\t",@errors)."\n";
+# 			}
+# 			
+# 			return 1;
+# 		}
+# 		
+# 		$! = 'Notify via Talk - Action \''.$action.'\' Not Handled';
+# 		return 0;
+# 			
+# 	}
+# 	
+# 	sub facebook_notify_hook
+# 	{
+# 		my $self = shift;
+# 		my $post = shift;
+# 		my $form = shift;
+# 		my $args = shift;
+# 		
+# 		# Create the body of the FB post
+# 		my $post_url = $post->data->get('post_url');
+# 		
+# 		$form->{message} = $post->text; 
+# 		#"New video from PHC: ".$post->data->get('description').". Watch it now at ".LWP::Simple::get("http://tinyurl.com/api-create.php?url=${phc_video_url}");
+# 		 
+# 		# Set the URL for the link attachment
+# 		$form->{link} = $post_url;
+# 		
+# 		#my $image = $self->video_thumbnail($post);
+# 		
+# 		#my $pastor_user = AppCore::User->by_field(email => 'pastor@mypleasanthillchurch.org');
+# 		
+# 		my $orig_post = $post->{_orig};
+# 		my $quote;
+# 		if(!$orig_post)
+# 		{
+# 			$quote = "Read the full post at ".$post_url;
+# 		}
+# 		else
+# 		{
+# 			our $SHORT_TEXT_LENGTH = 60;
+# 			my $short_len = AppCore::Config->get("BOARDS_SHORT_TEXT_LENGTH")     || $SHORT_TEXT_LENGTH;
+# 			my $short = AppCore::Web::Common->html2text($orig_post->text);
+# 			
+# 			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
+# 			
+# 			$quote = "\"".
+# 				 substr($short,0,$short_len) . "\"" .
+# 				(length($short) > $short_len ? '...' : '');
+# 		}
+# 		
+# 		my $image = 'http://cdn1.mypleasanthillchurch.org/appcore/mods/User/user_photos/user68813c307218b849d02d2595c96e51e7.jpg'; # Pastors photo
+# 		
+# 		# Finish setting link attachment attributes for the FB post
+# 		$form->{picture}	= $image; # ? $image : 'https://graph.facebook.com/180929095286122/picture';
+# 		$form->{name}		= $post->data->get('title');
+# 		$form->{caption}	= "in ".$post->data->get('mission');
+# 		$form->{description}	= $quote; 
+# 		#$post->data->get('description');
+# 		
+# 		# Update original post with attachment data
+# 		my $d = $post->data;
+# 		$d->set('has_attach',1);
+# 		$d->set('name', $form->{name});
+# 		$d->set('caption', $form->{caption});
+# 		$d->set('description', $form->{description});
+# 		$d->set('picture', $form->{picture});
+# 		$d->update;
+# 		$post->post_class('link');
+# 		$post->update;
+# 		
+# 		# Replace the default Boards FB action with a link to the video post
+# 		$form->{actions} = qq|{"name": "View at PHC's Site", "link": "$post_url"}|;
+# 		
+# 		# We're working with a hashref here, so no need to return anything, but we will anyway for good practice
+# 		return $form;
+# 	}
 	
 # 	# Overrides AppCore::Web::Boards::email_new_post_comment()
 # 	sub email_new_post_comments

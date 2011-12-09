@@ -1,8 +1,8 @@
 	<tr class='post<tmpl_if post_class> post-%%post_class%%</tmpl_if> talktype-%%ticker_class%%' id='post%%postid%%'>
 		<td valign='top' align='center' class='photo'>
-			<img class='user_photo' 
+			<img class='user_photo ar_adjustable' 
 				src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
-				userid='%%posted_by%%'>
+				userid='%%posted_by%%' width='50' height='50'>
 		</td>
 		<td valign='top' class='data'>
 			<a href='%%binpath%%/%%board_folder_name%%/%%folder_name%%' class='title_link'>
@@ -14,7 +14,7 @@
 				<a name="p%%postid%%">&middot;</a>
 				<span class='timestamp'><span class='approx_time_ago' title='%%timestamp%%' timestamp='%%timestamp%%'>%%approx_time_ago%%</span> ago on <span class='pretty_timestamp'>%%pretty_timestamp%%</span> 
 				<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if> 
-				<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a><a name='num%%post_number%%'>&nbsp;</a></span>
+				<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a><a name='num%%post_number%%'>&nbsp;</a> <tmpl_if single_post_page>Post # %%postid%%</tmpl_if></span>
 			</div>
 			
 			<div class='post_text'>

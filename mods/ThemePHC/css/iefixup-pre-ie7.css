@@ -11,6 +11,8 @@
 #graphicblock,
 /*#photo-cap, #photo-nav*/
 {
+	/* This is actually handled by DispatchCore::send_iepngfix() which deliveres 
+	   /ie/iepngfix/iepngfix.htc with the correct content type (text/x-component) for IE */
 	behavior: url("/iepngfix.htc");
 	/*behavior: url(/iepngfix/iepngfix.htc);*/
 

@@ -1,6 +1,8 @@
 <title>%%group_title%% - Groups</title>
 
 
+
+
 <tmpl_unless is_mobile>
 	${inc:%%appcore%%/mods/ThemePHC/tmpl/groups/inc-eventlist-dated.tmpl}
 	<style>
@@ -43,6 +45,153 @@
 
 <h1 class='title'>%%group_title%%</h1>
 
+<tmpl_unless is_mobile>
+<style>
+div.dlinfo
+{
+	width: 13.25em;
+	margin-right: -15em;
+	margin-top: -4em;
+	padding: .5em;
+	float: right;
+	background: #E6E6E6;
+	-moz-border-radius: 3px;
+}
+	
+div.dlinfo td.text
+{
+	font-size: .8em;
+}
+
+/*div.dlinfo td.text img
+{
+	background: white;
+	padding: .5em;
+	border: 1px solid rgb(230,230,230);
+	-moz-border-radius: 3px;
+	
+	margin-top: .2em;
+	margin-bottom: .4em;
+	
+	display: block;
+	text-align: center;
+	
+}*/
+
+div.dlinfo ul,
+div.dlinfo ul li
+{
+	list-style: none;
+	/*margin: 0;*/
+	padding: 0;
+}
+
+div.dlinfo h3.first
+{
+	margin-top: 0.15em;
+}
+
+div.dlinfo a.email_link {
+	font-size: .85em;
+	text-align: right;
+}
+
+</style>
+</tmpl_unless>
+
+
+<div class='dlinfo'>
+	<table>
+		<tr>
+			<td class=text valign=top>
+				<!--<tmpl_unless is_mobile><center><a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'><img src='%%modpath%%/images/pdf.gif' border=0></a></center></tmpl_unless>
+				<b>Did you know?</b> You can download a <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>printable version of the directory</a>! Just <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>click here</a> to download and print off your own 22-page full-color copy!-->
+				<tmpl_if group_members>
+				<h3 class=first>Members</h3>
+				<ul>
+					<tmpl_loop group_members>
+					<tmpl_if photo>
+					<li>
+						
+							<img src='%%photo%%' alt='Photo of %%display%%' width=16 height=16 class='contact-photo' align=absmiddle class='ar_adjustable'>
+						
+						<b>%%display%%</b>
+					</li>
+					</tmpl_if> 
+					
+					</tmpl_loop>
+					
+				</ul>
+				</tmpl_if>
+					
+				<tmpl_if group_contact_person>
+				<h3>Contact</h3>
+				<ul>
+					<li>
+						<tmpl_if contact_photo>
+							<tmpl_if group_email>
+								<a href='mailto:%%group_email%%'>
+							</tmpl_if>
+								<img src='%%contact_photo%%' class='contact-photo' border=0 width=16 height=16>
+							<tmpl_if group_email>
+								</a>
+							</tmpl_if>
+						</tmpl_if>
+						
+						<b>%%group_contact_person%%</b><br>
+						<tmpl_if group_phone>
+						<b>%%group_phone%%</b><br>
+						</tmpl_if>
+						<tmpl_if group_email>
+						<a href='mailto:%%group_email%%' class=email_link><b>Email this Person</b></a>
+						</tmpl_if>
+					</li>
+				</ul>
+				</tmpl_if>
+				
+				
+				<!--<tmpl_if group_contact_person>
+					<div class='contact_person'>
+						<h3 class='posts_list_title'>
+							Contact
+						</h3>
+						<div class='description'>
+							<table border=0 cellspacing=0 cellpadding=0>
+							<tr><td>
+							
+							<tmpl_if contact_photo>
+								<tmpl_if group_email>
+									<a href='mailto:%%group_email%%'>
+								</tmpl_if>
+									<img src='%%contact_photo%%' class='contact-photo' border=0>
+								<tmpl_if group_email>
+									</a>
+								</tmpl_if>
+							</tmpl_if>
+							
+							</td>
+							<td>
+							
+							<b>%%group_contact_person%%</b><br>
+							<tmpl_if group_phone>
+							<b>%%group_phone%%</b><br>
+							</tmpl_if>
+							<tmpl_if group_email>
+							<a href='mailto:%%group_email%%'><b>%%group_email%%</p></a>
+							</tmpl_if>
+							
+							</td></tr>
+							</table>
+						</div>		
+						
+					</div>
+				</tmpl_if>-->
+
+			</td>
+		</tr>
+	</table>
+</div>
+
 <style>
 .tagline
 {
@@ -78,8 +227,22 @@ div.description {
 	margin-left:-1em;
 	border: 1px solid rgb(200,200,200);
 	-moz-box-shadow: 0 0 3px #000000;
+	margin-bottom: 10px;
 }
-		
+
+.member_list {
+	/*float: right;*/
+}
+
+.contact_person {
+	/*float: left;*/
+}
+
+.contact_person a {
+	/*display: inline !important;*/
+}
+
+
 </style>
 
 <div class='board_admin_link'>
@@ -96,32 +259,6 @@ div.description {
 	<div class='description'>
 		%%group_description%%
 	</div>
-</tmpl_if>
-
-<tmpl_if group_contact_person>
-	<h3 class='posts_list_title'>
-		Contact
-	</h4>
-	<div class='description'>
-		<tmpl_if contact_photo>
-			<tmpl_if group_email>
-				<a href='mailto:%%group_email%%'>
-			</tmpl_if>
-				<img src='%%contact_photo%%' class='contact-photo' border=0>
-			<tmpl_if group_email>
-				</a>
-			</tmpl_if>
-		</tmpl_if>
-		
-		<b>%%group_contact_person%%</b><br>
-		<tmpl_if group_phone>
-		<b>%%group_phone%%</b><br>
-		</tmpl_if>
-		<tmpl_if group_email>
-		<a href='mailto:%%group_email%%'><b>%%group_email%%</p></a>
-		</tmpl_if>
-	</div>		
-	<div class=fc></div>
 </tmpl_if>
 
 

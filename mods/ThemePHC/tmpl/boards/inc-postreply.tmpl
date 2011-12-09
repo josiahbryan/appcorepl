@@ -4,7 +4,7 @@
 			<tr>
 			<!--src="http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25"-->
 				<td valign=top style='padding-left:%%indent_css%%em' width='1%' class='indent-<tmpl_if indent_is_odd>odd<tmpl_else>even</tmpl_if>'>
-					<img class='user_photo' 
+					<img class='user_photo ar_adjustable' 
 						src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=25</tmpl_if>"
 						 
 						width=25 

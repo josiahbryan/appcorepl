@@ -151,6 +151,16 @@ $(document).ready(function() {
 	var userOverride  = false;  // if true, dont auto change blocks
 	var blockPRogress = 0;
 	
+	
+	// IE doesn't like our CSS 'overflow' prop on the Talk block, so it doesn't
+	// render anything in this area. Therefore, remove the 'talk' item from the
+	// end of the list of blocks to show when auto rotating. The user can still
+	// click on the link and code below allows the link to fall thru if IE
+	// for the talk block.
+	if($.browser.msie)
+		blockList.length --; 
+		
+	
 	function getTimestamp()
 	{
 		var time = new Date();
@@ -233,6 +243,13 @@ $(document).ready(function() {
 			suffix = $(this).attr('href');
 			suffix = suffix.substr(1,suffix.length());
 		}
+		
+		// IE doesn't like our CSS 'overflow' prop on the Talk block, so it doesn't
+		// render anything in this area. Therefore, just fall thru with the link
+		// click and allow browser to redirect.
+		if($.browser.msie && suffix == 'talk')
+			return true; 
+		
 		
 		showBlock(suffix);
 		

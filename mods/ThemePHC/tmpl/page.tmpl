@@ -123,7 +123,15 @@
 			%%page_content%%
 		</div>
 	<tmpl_else>
-		<table border=0 cellpadding=0 cellspacing=0 width='100%'>
+		
+		<tmpl_if nav_sibs>
+		<style>
+		.nav_level2 { margin-left: 18em; }
+		.nav-sibs { margin-top: -2.25em; } 
+		</style>
+		</tmpl_if>
+		
+		<table border=0 cellpadding=0 cellspacing=0 width='100%' id='nav-subs-table'>
 			<tr>
 				<tmpl_if nav_sibs>
 					<td valign=top class='nav-sibs-cell'>

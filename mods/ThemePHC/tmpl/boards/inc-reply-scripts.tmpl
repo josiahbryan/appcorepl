@@ -1,3 +1,6 @@
+	<style>
+	.age123{display:none}
+	</style>
 	<tmpl_if is_mobile>
 		<script id="reply-tmpl" type="text/x-jquery-tmpl">
 			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply-mobile.tmpl}
@@ -9,7 +12,7 @@
 				id='reply_form_${postid}' 
 				postid='${postid}'
 				top_commentid='${top_commentid}'>
-				
+				<span class=age123>Age: <input name=age123 size=24></span>
 				<div class='wrap'>
 					<input type='hidden' name='postid' value='${postid}'>
 					
@@ -60,6 +63,44 @@
 		</script>
 		
 	<tmpl_else>
+		<script>
+		$(function(){
+			var adjustAr = function() {
+				var origImg = new Image();
+				origImg.src = (this.getAttribute ? this.getAttribute("src") : false) || this.src;
+				if(origImg.width > 0)
+				{
+					var aspectRatio = origImg.height / origImg.width;
+					var newHeight = $(this).width() * aspectRatio;
+					$(this).height(newHeight);
+					//console.debug("aspectRatio:",aspectRatio,origImg.src);
+				}
+				else
+				{
+					//console.debug("orig image size is 0, src:",origImg.src);
+					if(!this.arAdjustCount)
+						this.arAdjustCount = 0;
+					this.arAdjustCount ++;
+					if(this.arAdjustCount < 3)
+					{
+						var elm = this;
+						//console.debug("retry count ",this.arAdjustCount," img:",origImg.src);
+						setTimeout(function(){ elm.adjustAr() }, 500);
+					}
+					else
+					{
+						//console.debug("not retrying, count is ",this.arAdjustCount," img:",origImg.src);
+					}
+				}
+			};
+			
+			$('.ar_adjustable').each(function() {
+				this.adjustAr = adjustAr;
+				this.adjustAr();
+			});
+		});
+		</script>
+		
 		<script id="reply-tmpl" type="text/x-jquery-tmpl">
 			${tmpl2jq:%%appcore%%/mods/ThemePHC/tmpl/boards/inc-postreply.tmpl}
 		</script>
@@ -70,7 +111,7 @@
 				id='reply_form_${postid}' 
 				postid='${postid}'
 				top_commentid='${top_commentid}'>
-				
+				<span class=age123>Age: <input name=age123 size=24></span>
 				<div class='wrap'>
 					<input type='hidden' name='postid' value='${postid}'/>
 					<div class='content'>

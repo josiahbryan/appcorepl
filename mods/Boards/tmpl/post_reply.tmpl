@@ -1,3 +1,6 @@
+<style>
+.age123{display:none}
+</style>
 <!--<link href="/css/boards.css" rel="stylesheet" type="text/css" />-->
 
 <title>Reply to "<tmpl_var post_subject>" - Bulletin Boards</title>
@@ -42,7 +45,7 @@ function win_onload()
 	
 
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
-	
+		
 		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
 			<tr class='name'>
 				<td>Your Name?</td> <td>
@@ -58,6 +61,11 @@ function win_onload()
 					<span style='font-size:.85em;color:rgb(100,100,100)'>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>
 				</td>
 			</tr>
+			<tr class=age123>
+				<td valign=top>Age:</td> <td>
+					<input name=age123 size=24>
+				</td>
+			</tr>
 			
 			<!--<tr class='subject'>
 				<td>Subject:</td> <td><input type=text name=subject id=subject value="<tmpl_var subject escape=html>" size=65>
@@ -69,12 +77,13 @@ function win_onload()
 				</td>
 				
 			</tr>-->
+			
 			<tr class='age'>
-				<td valign=top>Comment:</td> <td><textarea rows=8 cols=65 id=age name=age><tmpl_var comment></textarea>
+				<td valign=top>Comment:</td> <td><textarea rows=8 cols=65 id=comment name=comment><tmpl_var comment></textarea>
 				<!--<sxcript type="text/javascript">var e=$x('age');if(e){e.focus();e.select()}</script>-->
 				<script>
 				//CKEDITOR.basePath = '%%appcore%%/ckeditor/'; 
-				CKEDITOR.replace( 'age', {
+				CKEDITOR.replace( 'comment', {
 					//baseHref: '%%appcore%%/ckeditor/',
 					extraPlugins : 'autogrow',
 					width: '96%',

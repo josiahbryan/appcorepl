@@ -40,10 +40,16 @@ package PHC::Group;
 		],	
 	});
 	
-	__PACKAGE__->has_many(members => 'PHC::Group::Member');
+	#__PACKAGE__->has_many(members => 'PHC::Group::Member');
 	__PACKAGE__->add_constructor(load_all => 'deleted!=1 and listed_publicly!=0 order by title');
 	__PACKAGE__->add_constructor(search_like => '(title like ? or tagline like ? or description like ? or group_type like ? or contact_person like ?) and deleted!=1 and listed_publicly!=0 order by title');
 	__PACKAGE__->add_constructor(search_like_group_type => '(group_type like ?) and deleted!=1 and listed_publicly!=0 order by title');
+	
+	sub members 
+	{
+		my $group = shift;
+		return PHC::Group::Member->search(groupid => $group->id);
+	}
 	
 	sub tmpl_select_list
 	{
@@ -474,7 +480,7 @@ package ThemePHC::Groups;
 			
 			$tmpl->param($_ => $group->get($_)) foreach $group->columns;
 			
-			my $del_url_base = $self->module_url('/delete_member?memberid=');
+			my $del_url_base = $self->module_url('delete_member?memberid=');
 			
 			my @members = PHC::Group::Member->search(groupid => $group->id);
 			my $count = 0;
@@ -498,7 +504,7 @@ package ThemePHC::Groups;
 			#$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($group->spouse_userid,1));
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push('Edit Group',$self->module_url('/edit?groupid='.$fam),0);
+			$view->breadcrumb_list->push('Edit Group',$self->module_url('edit?groupid='.$fam),0);
 			$view->output($tmpl);
 			return $r;
 		}
@@ -517,7 +523,7 @@ package ThemePHC::Groups;
 			$tmpl->param(listed_publicly => 1);
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
-			$view->breadcrumb_list->push('New Group',$self->module_url('/new'),0);
+			$view->breadcrumb_list->push('New Group',$self->module_url('new'),0);
 			$view->output($tmpl);
 			return $r;
 			
@@ -559,7 +565,6 @@ package ThemePHC::Groups;
 			
 			# Anyone can edit these columns (anyone, well, anyone who has permission)
 			my @cols = qw/
-				folder_name
 				title
 				tagline
 				description
@@ -568,6 +573,14 @@ package ThemePHC::Groups;
 				phone
 				email
 			/;
+			
+			if(!$req->{folder})
+			{
+				my $folder = Boards->to_folder_name($req->{subject});
+				$folder =~ s/(^\s+|\s+$)//g;
+				$folder .= '_'.$group->id if PHC::Group->by_field(folder_name => $folder);
+				$req->{folder} = $folder;
+			}
 			
 			# Add in admin-only columns
 			if($admin)
@@ -586,15 +599,16 @@ package ThemePHC::Groups;
 			if($group->managerid && 
 				(!$group->contact_person || 
 				 !$group->contact_personid ||
+				 !$group->contact_personid->id ||
 				 !$group->phone || 
 				 !$group->email))
 			{
 				$group->contact_person($group->managerid->display) if !$group->contact_person;
-				if($group->email && !$group->contact_personid)
+				if($group->email && (!$group->contact_personid || !$group->contact_personid->id))
 				{
 					$group->contact_personid(AppCore::User->by_field(email => $group->email));
 				}
-				$group->contact_personid($group->managerid) if !$group->contact_personid;
+				$group->contact_personid($group->managerid) if !$group->contact_personid || !$group->contact_personid->id;
 				$group->email($group->contact_personid->email) if !$group->email;
 				$group->phone($group->contact_personid->phone) if !$group->phone;
 			}
@@ -839,6 +853,21 @@ package ThemePHC::Groups;
 			# Board actions - TODO test and see if more actiosn need to be routed
 			$self->SUPER::board_page($req,$r,$group->boardid);
 		}
+		elsif($sub_page eq 'admin_notify')
+		{
+			my $post = Boards::Post->by_field(folder_name => $req->post);
+			
+			return $r->error("Unknown Post","Sorry, invalid post") if !$post;
+			
+			# Email everyone in this group
+			$self->send_email_notifications($post);
+			
+			# Post to talk page and FB 
+			my $tp = $self->send_talk_notifications($post);
+			
+			my $tp_url = ""; #"http://beta.mypleasanthillchurch.org/connect/talk/".$tp->folder_name;
+			return $r->output_data("text/html","Notifications sent for post $post, title: ".$post->subject.", talk post url: <a href='$tp_url'>$tp_url</a>");
+		}
 		else
 		{
 			my $tmpl = $self->get_template('groups/group_page.tmpl');
@@ -868,7 +897,7 @@ package ThemePHC::Groups;
 			# Output
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			#$view->breadcrumb_list->push('Groups Home',$self->module_url(),0);
-			$view->breadcrumb_list->push($group->title,$self->module_url('/'.$group->folder_name),0);
+			$view->breadcrumb_list->push($group->title,$self->module_url($group->folder_name),0);
 			$view->output($tmpl);
 			return $r;
 		}
@@ -882,6 +911,16 @@ package ThemePHC::Groups;
 		my $data = shift;
 		
 		$tmpl->param('group_'.$_ => $group->get($_)) foreach $group->columns;
+		
+		my @members = $group->members;
+		my @mcols = PHC::Group::Member->columns;
+		foreach my $mem (@members)
+		{
+			$mem->{$_} = $mem->get($_) foreach @mcols;
+			$mem->{display} = $mem->userid->display;
+			$mem->{photo} = PHC::Directory->photo_for_user($mem->userid);
+		}
+		$tmpl->param(group_members => \@members);
 			
 		my $board = $group->boardid;
 		$tmpl->param('board_'.$_ => $board->get($_)) foreach $board->columns;
@@ -903,7 +942,7 @@ package ThemePHC::Groups;
 		$self->new_post_hook($tmpl,$board);
 		
 		my $user = AppCore::Web::Common->context->user;
-		my $can_admin = 1 if $user->check_acl(['Pastor']) || $group->is_admin($user); 
+		my $can_admin = 1 if $user && ($user->check_acl(['Pastor']) || $group->is_admin($user)); 
 		$tmpl->param(has_alt_postas => $can_admin);
 		if($can_admin)
 		{
@@ -912,8 +951,6 @@ package ThemePHC::Groups;
 			$tmpl->param(alt_postas_photo => '/appcore/mods/User/user_photos/fbb55eae25485996cd31b362d9296591f6.jpg');
 		}
 	
-		
-		
 		#die Dumper $data;
 		
 		# Note forced stringification required below.
@@ -936,6 +973,258 @@ package ThemePHC::Groups;
 		use ThemePHC::Directory;
 		my $photo = PHC::Directory->photo_for_user($group->contact_personid);
 		$tmpl->param(contact_photo => $photo);
+	}
+	
+	sub create_new_thread
+	{
+		my $self = shift;
+		my $board = shift;
+		my $req = shift;
+		my $user = shift;
+		
+# 		my $cmt = $req->{comment};
+# 		
+# 		
+# 		$cmt =~ s/(^\s+|\s+$)//g;
+# 		$cmt =~ s/(^&nbsp;)//g;
+# 		$cmt =~ s/<p>&nbsp;/<p>/g;
+# 		$cmt =~ s/<p>&nbsp;<\/p>//g;
+# 		$cmt =~ s/^\s*\n+//sg;
+# 		$cmt =~ s/(^\t+|\t+$)//g;
+# 
+# 		#die Dumper $cmt if $cmt =~ /^\s*\n/;
+# 		#die Dumper $cmt;
+# 		#die "Test done";
+# 		
+# 		$req->{comment} = $cmt;
+# 		
+# # 		open(TMP,">/tmp/test.txt");
+# # 		print TMP $cmt;
+# # 		close(TMP); 
+# # 		
+# 		#die "Test done";
+# 		
+# 		delete $req->{plain_text};
+# 		$req->{no_html_conversion} = 1;
+# 		
+# 		my $can_post = ($_ = AppCore::Web::Common->context->user) && $_->check_acl($PASTOR_ACL);
+# 		die "Unauthorized - sorry, you can't post in this blog" if !$can_post;
+		
+		
+		# Rely on superclass to do the actual post creation
+		my $post = $self->SUPER::create_new_thread($board, $req, $user);
+		
+		# Flag as a 'post' not just a 'small update' 
+		$post->post_class('post');
+		$post->update;
+		
+# 		open(TMP,">/tmp/test2.txt");
+# 		print TMP $post->text;
+# 		close(TMP);
+# 		
+		# Email everyone in this group
+		$self->send_email_notifications($post);
+		
+		# Post to talk page and FB 
+# 		my $user = AppCore::Web::Common->context->user;
+# 		my $can_admin = 1 if $user && ($user->check_acl(['Pastor']) || $group->is_admin($user));
+# 		if($can_admin)
+# 		{
+			$self->send_talk_notifications($post);
+		#}
+		
+		return $post;
+	}
+	
+	sub group_for_post
+	{
+		my $self = shift;
+		my $post = shift;
+		my $board = $post->boardid;
+		my $group = PHC::Group->by_field(boardid => $board->id);
+		return $group;
+	}
+	
+	sub send_email_notifications
+	{
+		my $self = shift;
+		my $post = shift;
+		
+		my $group = $self->group_for_post($post);
+		
+		print STDERR __PACKAGE__."::send_email_notifications for new post: ".$post->subject."\n";
+		
+		my @members = $group->members;
+		
+		my @users = grep { $_->email } map { $_->userid } @members;
+		
+		#my @users = AppCore::User->retrieve_from_sql('email <> ""'); # and allow_email_flag!=0');
+		#my @users = AppCore::User->retrieve_from_sql('email like "josiah%" or email like "jbryan%"'); # and allow_email_flag!=0');
+		
+		
+		my $subject = "[PHC] New Post in ".$group->title.": ".$post->subject; # the subject was set correctly in create_new_thread()
+		#my $body = AppCore::Web::Common->html2text($post->text);
+		#$body =~ s/\n\s*$//g;
+		
+		my $folder = $post->folder_name;
+		
+		#my $server = AppCore::Config->get('WEBSITE_SERVER');
+		
+		my $email_body = "\n"
+				.$post->posted_by->display." has added a new post to the bulletin board for group \"".$group->title."\" at MyPleasantHillChurch.org.\n"
+				."\n"
+				."Read \"".$post->subject."\" here:\n"
+				."    ".$self->module_url($group->folder_name,1)."/$folder\n"
+				."\n"
+				."Thanks,\n"
+				."The PHC Website Robot";
+		
+		print STDERR "Body text:".$email_body;
+		
+		my %seen_email = ();
+		foreach my $user (@users)
+		{
+# 			if(! $PREF_EMAIL_NEW_POST->value($user) )
+# 			{
+# 				print STDERR "Not emailing ".$user->email." due to negative preference on prefid ".$PREF_EMAIL_NEW_POST." for userid $user\n";
+# 				next;
+# 			}
+			
+			#my $subj = "Pastor Bryan Added a New Post in the Pastor's Blog";
+			my $text = "Hi ".$user->display.",\n".$email_body;
+			
+			#print STDERR "Emailing user ".$user->display." at ".$user->email."\n";
+				
+			if(!$seen_email{$user->email})
+			{
+				#PHC::Web::Common->send_email([$user->email], $subj, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
+				my $msgid = AppCore::EmailQueue->send_email([$user->email], $subject, $text);
+				
+				print STDERR "Queued msgid $msgid ".$user->email."\n"; #Subject: $subj\n$text\n";
+				
+				$seen_email{$user->email} = 1;
+			}
+		}
+		
+		#AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
+	}
+	
+	sub send_talk_notifications
+	{
+		my $self = shift;
+		my $post = shift;
+		
+		my $group = $self->group_for_post($post);
+		
+		
+		my $folder = $post->folder_name;
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		#my $post_url = "${server}/learn/pastors_blog/$folder";
+		my $post_url = $self->module_url($group->folder_name,1)."/$folder";
+		
+		my $data = {
+			poster_name	=> 'PHC Website',
+			poster_photo	=> 'https://graph.facebook.com/180929095286122/picture', # Picture for PHC FB Page
+			poster_email	=> 'josiahbryan@gmail.com',
+			comment		=> $post->posted_by->display." has added a new post, \"".$post->subject."\" to the bulletin board for group \"".$group->title."\". Read it at: $post_url",
+			subject		=> "New Post in ".$group->title.": '".$post->subject."'", 
+		};
+		
+		my $talk_board_controller = AppCore::Web::Module->bootstrap('ThemePHC::BoardsTalk');
+		my $talk_board = Boards::Board->retrieve(1); # id 1 is the prayer/praise/talk board
+		
+		my $talk_post = $talk_board_controller->create_new_thread($talk_board,$data);
+		
+		# Add extra data internally
+		$talk_post->data->set('blog_postid',$post->id);
+		$talk_post->data->set('post_url',$post_url);
+		$talk_post->data->set('title',$post->subject);
+		$talk_post->data->update;
+		$talk_post->update;
+		$talk_post->{_orig} = $post;
+		
+		# Note: We call send_notifcations() on $self so it will call our facebook_notify_hook()
+		#       to reformat the FB story args the way we want them before uploading instead 
+		#       of using the default story format.
+		#     - We 'really_upload' so we can use $self (because we want to call our facebook_notify_hook())
+		#     - Give the $talk_board in the args because the FB notification routine needs the
+		#       FB wall ID and sync info from the board - and its not set on the Pastor's Blog board
+		my @errors = $self->send_notifications('new_post',$talk_post,{really_upload=>1, board=>$talk_board}); # Force the FB method to upload now rather than wait for the poller crontab script
+		if(@errors)
+		{
+			print STDERR "Error sending notifications of new blog post $post: \n\t".join("\n\t",@errors)."\n";
+		}
+		
+		return $talk_post;
+			
+	}
+	
+	sub facebook_notify_hook
+	{
+		my $self = shift;
+		my $post = shift;
+		my $form = shift;
+		my $args = shift;
+		
+		# Create the body of the FB post
+		my $post_url = $post->data->get('post_url');
+		
+		$form->{message} = $post->text; 
+		#"New video from PHC: ".$post->data->get('description').". Watch it now at ".LWP::Simple::get("http://tinyurl.com/api-create.php?url=${phc_video_url}");
+		 
+		# Set the URL for the link attachment
+		$form->{link} = $post_url;
+		
+		#my $image = $self->video_thumbnail($post);
+		
+		#my $pastor_user = AppCore::User->by_field(email => 'pastor@mypleasanthillchurch.org');
+		
+		my $orig_post = $post->{_orig};
+		my $quote;
+		if(!$orig_post)
+		{
+			$quote = "Read the full post at ".$post_url;
+		}
+		else
+		{
+			our $SHORT_TEXT_LENGTH = 60;
+			my $short_len = AppCore::Config->get("BOARDS_SHORT_TEXT_LENGTH")     || $SHORT_TEXT_LENGTH;
+			my $short = AppCore::Web::Common->html2text($orig_post->text);
+			
+			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
+			
+			$quote = "\"".
+				 substr($short,0,$short_len) . "\"" .
+				(length($short) > $short_len ? '...' : '');
+		}
+		
+		my $image = 'http://cdn1.mypleasanthillchurch.org/appcore/mods/User/user_photos/fbb55eae25485996cd31b362d9296591f6.jpg'; # PHC Logo in white square
+		
+		# Finish setting link attachment attributes for the FB post
+		$form->{picture}	= $image; # ? $image : 'https://graph.facebook.com/180929095286122/picture';
+		$form->{name}		= $post->data->get('title');
+		$form->{caption}	= "by ".$post->posted_by->display;
+		$form->{description}	= $quote; 
+		#$post->data->get('description');
+		
+		# Update original post with attachment data
+		my $d = $post->data;
+		$d->set('has_attach',1);
+		$d->set('name', $form->{name});
+		$d->set('caption', $form->{caption});
+		$d->set('description', $form->{description});
+		$d->set('picture', $form->{picture});
+		$d->update;
+		$post->post_class('link');
+		$post->update;
+		
+		# Replace the default Boards FB action with a link to the video post
+		$form->{actions} = qq|{"name": "View at PHC's Site", "link": "$post_url"}|;
+		
+		# 
+		
+		# We're working with a hashref here, so no need to return anything, but we will anyway for good practice
+		return $form;
 	}
 }
 

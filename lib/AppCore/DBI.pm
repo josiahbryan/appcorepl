@@ -1375,7 +1375,7 @@ package AppCore::DBI;
 		$DB_CACHE{$key} = 
 	#$host eq '10.0.1.5' ? 
 	#		DBI::ReplicationProxy->connect($db) : 
-			DBI->connect("DBI:mysql:database=$db;host=$host",$user, $pass,{'RaiseError' => 1, %attrs});
+			DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=0",$user, $pass,{'RaiseError' => 1, %attrs});
 		#print STDERR "Connected.\n";
 		
 		return $DB_CACHE{$key};

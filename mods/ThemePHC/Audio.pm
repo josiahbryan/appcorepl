@@ -110,10 +110,11 @@ package ThemePHC::Audio;
 	{
 		my $dur = shift;
 		my $format = shift || 0;
+		#print STDERR "format_duration: at start, \$dur:'$dur', format:'$format'\n";
 		#return "$dur:00 min" if $dur == int($dur);
 		my $min = int($dur);
 		my $sec = int(($dur - $min) * 60);
-		my $hour = $min > 60 ? $min/60 : $min;
+		my $hour = $min >= 60 ? $min/60 : 0;
 		$min = int(($hour - int($hour)) * 60) if $hour;
 		$hour = int($hour);
 		if( $format )
@@ -123,7 +124,12 @@ package ThemePHC::Audio;
 			$sec = ($sec<10?'0'.$sec:$sec);
 			return join(':', $hour, $min, $sec);
 		}
-		return ($min<10?'0'.$min:$min).($sec ? 'm '.($sec<10?'0'.$sec:$sec).'s' : ' min');
+		#my $out = ($hour ? $hour.'hr ':'').($min ? $min:'').($sec ? 'm '.$sec.'s' : ($min?($hour ? 'min' : ' min'):''));
+		my $out = ($hour ? $hour . ($min ? ":". ($min<10?"0$min":$min)." hr"  : " hr")  :
+			  ($min  ? $min  . ($sec ? ":". ($sec<10?"0$sec":$sec)." min" : " min") : 
+			  ($sec  ? "$sec sec" : "0 min"))); 
+		#print STDERR "format_duration: output: '$out'\n";
+		return $out;
 		
 	}
 	
@@ -264,8 +270,13 @@ package ThemePHC::Audio;
 		}
 		
 		#print STDERR "Sermon checked out, return web path: ".$recording->sermon_web_path."\n";
+		#print STDERR "\$perm_sermon_mp3: '$perm_sermon_mp3'\n"; 
 		
-		return wantarray ? ($recording->sermon_web_path, $recording->duration, $recording->sermon_file_path) : $recording->sermon_web_path;
+		return wantarray ? ($recording->sermon_web_path, 
+				    $recording->sermon_duration, 
+				    $recording->sermon_file_path)
+			 
+				 :  $recording->sermon_web_path;
 	}
 			
 			
@@ -310,7 +321,11 @@ package ThemePHC::Audio;
 		{
 			AppCore::AuthUtil->require_auth($UPLOAD_ACL);
 			my $recid = $req->{recordingid};
-			my $recording = PHC::Recording->retrieve($recid);	
+			my $recording = PHC::Recording->retrieve($recid);
+			if(!$recording)
+			{
+				return $r->error("Sorry, '$recid' isn't a valid recording ID!"); 	
+			}
 			
 			my @tracks = PHC::Recording::Track->search(recordingid=>$recording);
 			if(!@tracks)
@@ -550,9 +565,9 @@ package ThemePHC::Audio;
 				$s->{bin} = $bin;
 				
 				my ($sermon_mp3, $sermon_dur, $sermon_file) = $self->check_sermon_mp3($s);
-				my $mp3_www = $sermon_mp3 ? $sermon_mp3 : $s->web_path;
-				my $mp3_duration = $sermon_mp3 ? $sermon_dur : $s->duration;
-				my $mp3_file = $sermon_file ? $sermon_file : $s->file_path;
+				my $mp3_www      = $sermon_mp3  ? $sermon_mp3  : $s->web_path;
+				my $mp3_duration = $sermon_mp3  ? $sermon_dur  : $s->duration;
+				my $mp3_file     = $sermon_file ? $sermon_file : $s->file_path;
 			
 				
 				$s->{recording_page} = $self->module_url($s->id,1); # 1 = abs url
@@ -580,14 +595,14 @@ package ThemePHC::Audio;
 			return $r->error('No Such Recording','Sorry, the recording ID you gave does not exist.') if !$recording;
 			
 			my ($sermon_mp3,$sermon_dur) = $self->check_sermon_mp3($recording);
-			my $mp3_file = $sermon_mp3 ? $sermon_mp3 : $recording->web_path;
+			my $mp3_file     = $sermon_mp3 ? $sermon_mp3 : $recording->web_path;
 			my $mp3_duration = $sermon_mp3 ? $sermon_dur : $recording->duration;
 			
 			my $tmpl = $self->get_template('audio/subpage.tmpl');
 			
 			$tmpl->param($_ => $recording->get($_)) foreach $recording->columns;
 			$tmpl->param(mp3_file => $mp3_file);
-			$tmpl->param(length => format_duration(int($mp3_duration)));
+			$tmpl->param(length   => format_duration(int($mp3_duration)));
 			
 			my $view = Content::Page::Controller->get_view('sub',$r);
 			$view->breadcrumb_list->push('Listen',$self->module_url($sub_page),0);

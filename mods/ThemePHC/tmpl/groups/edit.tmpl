@@ -9,9 +9,19 @@
 		<tr>
 			<td>Title:</td> <td><input id='title' type=text name=title class='textinput' value='%%title%%' size=40></td>
 		</tr>
+		<tmpl_if is_admin>
 		<tr>
-			<td>Folder:</td> <td><input type=text name=folder_name class='textinput' value='%%folder_name%%' size=40></td>
+			<td>Folder:</td> <td><input type=text name=folder_name class='textinput <tmpl_unless groupid>hinted</tmpl_unless>' value='<tmpl_unless groupid>(Automatically generated)</tmpl_unless>%%folder_name%%' hint='(Automatically generated)' size=40
+				onblur="if(this.value=='') {this.className='hinted';this.value=this.getAttribute('hint');}"
+				onfocus="if(this.value==this.getAttribute('hint')) {this.value='';this.className='';}else{select()}"
+			>
+			<style>
+			.hinted { color: rgb(100,100,100) !important }
+			</style>
+			
+			</td>
 		</tr>
+		</tmpl_if>
 		<tmpl_if is_admin>
 		<tr>
 			<td>Manager:</td> <td>

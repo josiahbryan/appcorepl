@@ -262,7 +262,7 @@ if(jQuery)(
 					settingValue = escape(scriptDataString.substr(1));
 				}
 				var finalId = jQuery(this).attr('id') + 'Uploader';
-				console.debug('finalId: '+finalId);
+				//console.debug('finalId: '+finalId);
 				returnValue = document.getElementById(finalId).updateSettings(settingName, settingValue);
 			});
 			if (settingValue == null) {

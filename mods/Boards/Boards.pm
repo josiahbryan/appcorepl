@@ -314,6 +314,8 @@ package Boards;
 				main_tmpl	=> 'main.tmpl',
 				
 				admin_acl	=> ['Admin-WebBoards'],
+				
+				notification_methods => [qw/notify_via_email notify_via_facebook/]
 			});
 		}
 		
@@ -802,8 +804,11 @@ package Boards;
 					my $cur_url = $req->page_path; #."/$folder_name";
 					
 					$boardroot_url = $cur_url;
-					$board->boardroot_url($boardroot_url);
-					$board->update; # trashes cache!
+					if($board->boardroot_url ne $boardroot_url)
+					{
+						$board->boardroot_url($boardroot_url) ;
+						$board->update; # trashes cache!
+					}
 					
 					#print STDERR get_full_url().": board_page: Matched folder $folder_name to pageid $page, page url:".$page->url.", current path: $cur_url\n";
 					if($page->url ne $cur_url)
@@ -818,11 +823,18 @@ package Boards;
 				my $new_url = $try_redir_base.($req->path?"/".join('/',$req->path_info):"").($ENV{QUERY_STRING} ? '?'.$ENV{QUERY_STRING} : '');
 				if(get_full_url() ne $new_url)
 				{
-					print STDERR get_full_url().": board_page: Redirecting to $new_url\n";
+					#print STDERR get_full_url().": board_page: Redirecting to $new_url\n" unless $new_url =~ /poll/;
 					return $r->redirect($new_url);
 				}
 			}
 		}
+		
+		
+		if($boardroot_url)
+		{
+			#$self->binpath('');
+		}
+		
 		
 		my $controller = $self->get_controller($board);
 		
@@ -1374,12 +1386,51 @@ package Boards;
 			{
 				$hash->{username} = $user->user;
 				$hash->{user_photo} = $user->photo;
+				
+				if(!$hash->{user_photo})
+				{
+					## HACK!!!
+					eval {
+						use ThemePHC::Directory;
+						$hash->{user_photo} = PHC::Directory->photo_for_user($user);
+						if($post->{user_photo})
+						{
+							$post->{poster_photo} = $post->{user_photo};
+						}
+					};
+					print STDERR "Debug: error calling p4u: $@, post: $hash->{folder_name}, postid: $hash->{postid}\n" if $@;
+					undef $@; 
+				}
 			}
+			
+			
 			
 			$hash->{board_userid} = $post->boardid ? $post->boardid->board_userid+0 : undef;
 			#die Dumper $hash;
 			
 			$post = $hash;
+		}
+		else
+		{
+			if(!$post->{user_photo} && $post->{posted_by})
+			{
+				## HACK!!!
+				eval {
+					use ThemePHC::Directory;
+					$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
+					if($post->{user_photo})
+					{
+						$post->{poster_photo} = $post->{user_photo};
+					}
+				};
+				print STDERR "Debug: error calling p4u: $@, post: $post->{folder_name}, postid: $post->{postid}\n" if $@;
+				undef $@; 
+			}
+			else
+			{
+				#print STDERR "Debug: Not called p4u because user_photo is '$post->{user_photo}' or posted_by is '$post->{posted_by}', post: $post->{folder_name}, postid: $post->{postid}\n";
+			}
+
 		}
 		
 		#print STDERR "[XTRADAT] \$post:".Dumper($post) if $self->{debug_extra_data};
@@ -1556,7 +1607,7 @@ package Boards;
 		
 		
 		# just for jQuery's sake - the template converter in AppCore::Web::Result treats variables ending in _html special
-		$b->{text_html} = $b->{text}; 
+		$b->{text_html} = $b->{text} = AppCore::Web::Common->clean_html($b->{text}); 
 		#timemark("html processing");
 		
 		
@@ -1947,6 +1998,7 @@ package Boards;
 		my $user = shift;
 		
 		#print STDERR "create_new_thread: \$SPAM_OVERRIDE=$SPAM_OVERRIDE, args:".Dumper($req);
+		$req->{bot_trap} = $req->{age123} if $req->{age123};
 		if($self->is_spam($req->{comment}, $req->{bot_trap}))
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
@@ -2402,8 +2454,10 @@ package Boards;
 		# - new_comment ($comment_ref, $comment_url)
 		# - new_like ($like_ref, $noun)
 		
+		my @notification_methods = @{ $self->config->{notification_methods} || [qw/notify_via_email notify_via_facebook/] };
+		
 		my @errors;
-		foreach my $method (qw/notify_via_email notify_via_facebook/)
+		foreach my $method (@notification_methods)
 		{
 			undef $!;
 			#print STDERR "[DEBUG] ${self}->send_notifications: action:'$action': Running method '$method'\n";
@@ -2877,6 +2931,8 @@ Cheers!};
 		my $post  = shift;
 		my $req  = shift;
 		my $user = shift;
+		
+		$req->{bot_trap} = $req->{age123} if $req->{age123};
 		
 		if($self->is_spam($req->{comment}, $req->{bot_trap}))
 		{
