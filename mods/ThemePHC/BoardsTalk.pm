@@ -149,11 +149,33 @@ package ThemePHC::BoardsTalk;
 		
 		my $noun = $self->alert_noun($tag);
 		
+		my $subject = $post->subject; # the subject was set correctly in create_new_thread()
+		my $body = AppCore::Web::Common->html2text($post->text);
+		$body =~ s/\n\s*$//g;
+		
+		my $folder = $post->folder_name;
+		
+		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		
 		# TODO Honor user prefereances re opt outs
 		my @emails;
 		if($email_list)
 		{
 			@emails = @{$email_list || []};
+			
+			my $text = "Dear Friends,\n\n".
+				$body.
+	#			"\n\nPastor Bryan".
+				"\n\n-----\n".qq{
+
+Here's a link to this $noun posted on the PHC Website:
+    ${server}/connect/talk/$folder
+    
+Cheers!
+};	
+			use Data::Dumper;
+			print STDERR "Emailing $noun to ".Dumper(\@emails);
+			AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pleasant Hill Church <pastor@mypleasanthillchurch.org>');
 		}
 		else
 		{ 
@@ -164,33 +186,44 @@ package ThemePHC::BoardsTalk;
 	# 		@users = map { AppCore::User->retrieve($_) } qw/1 51/;
 			
 			# Extract email addresses
-			@emails = map { $_->email } @users;
+			#@emails = map { $_->email } @users;
 			
 			# Make emails unique (dont send the same email twice to the same user)
-			my %unique_map = map { $_ => 1 } @emails;
-			@emails = keys %unique_map;
-		}
-		
-		my $subject = $post->subject; # the subject was set correctly in create_new_thread()
-		my $body = AppCore::Web::Common->html2text($post->text);
-		$body =~ s/\n\s*$//g;
-		
-		my $folder = $post->folder_name;
-		
-		my $server = AppCore::Config->get('WEBSITE_SERVER');
-		my $text = "Dear Friends,\n\n".
-			$body.
-#			"\n\nPastor Bryan".
-			"\n\n-----\n".qq{
+			#my %unique_map = map { $_ => 1 } @emails;
+			#@emails = keys %unique_map;
+			my %seen_email = ();
+			
+			foreach my $user (@users)
+			{
+				next if !$user || !$user->id || !$user->email || index($user->email,'@') < 0;
+				
+				my $id = $user->get_lkey(); #$user->id + 3729;
+				my $text = "Dear ".($user->first ? $user->first : $user->display).",\n\n".
+					$body
+		#			"\n\nPastor Bryan".
+					#"\n\n-----\n"
+					.qq{
 
 Here's a link to this $noun posted on the PHC Website:
-    ${server}/connect/talk/$folder
+    ${server}/connect/talk/$folder?lkey=$id
     
 Cheers!
 };
-		use Data::Dumper;
-		print STDERR "Emailing $noun to ".Dumper(\@emails);
-		AppCore::Web::Common->send_email(\@emails, $subject, $text, 0, 'Pleasant Hill Church <pastor@mypleasanthillchurch.org>');
+		
+				if(!$seen_email{$user->email})
+				{
+					#PHC::Web::Common->send_email([$user->email], $subj, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
+					my $msgid = AppCore::EmailQueue->send_email([$user->email], $subject, $text, 0, 'Pleasant Hill Church <pastor@mypleasanthillchurch.org>');
+					
+					print STDERR "Queued msgid $msgid ".$user->email."\n"; #Subject: $subj\n$text\n";
+					
+					$seen_email{$user->email} = 1;
+				}
+			}
+			
+		}
+		
+		
 		
 		
 	}

@@ -128,6 +128,41 @@ package AppCore::AuthUtil;
 		$user = $args->{user} if !$user;
 		$pass = $args->{pass} if !$pass;
 		
+		if(!$user && !$pass && $args->{lkey})
+		{
+			my $lkey = $args->{lkey};
+			my $userobj = AppCore::User->by_field(lkey => $lkey);
+			if($userobj)
+			{
+				$user = $userobj->user;
+				$pass = $userobj->pass;
+				
+				# Found user object, but the user never set a user or password
+				if(!$user && !$pass)
+				{
+					$user = "user".$userobj->id;
+					$pass = $userobj->id + 3729;
+					
+					$userobj->user($user);
+					$userobj->pass($pass);
+					$userobj->update;
+				}
+				
+				# Prevent auto-login for Admins
+				if($userobj->check_acl(['ADMIN']))
+				{
+					undef $user;
+					undef $pass;
+				}
+				else
+				{
+					$userobj->clear_lkey();
+				
+					print STDERR "Auto-login via lkey for ".$userobj->display.", lkey: $args->{lkey}\n";
+				}
+			}
+		}
+		
 		debug("user='$user',pass='$pass'");
 		
 		if(!$user && !$pass)

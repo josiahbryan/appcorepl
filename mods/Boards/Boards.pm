@@ -26,7 +26,7 @@ package Boards::TextFilter::AutoLink;
 			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
 			
 			# New regex:
-			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
+			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|https|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
 			# Changes:
 			# - Added '-' to the first exclusion block [^...] to properly handle this case:
 			#		<img src="http://cdn-www.i-am-bored.com/media/howwomenseetheworld.jpg" alt="" />
@@ -2590,7 +2590,9 @@ package Boards;
 				my $message = ($post->posted_by && $post->posted_by->id && $post->posted_by->fb_userid eq $board->fb_feed_id) ?
 							$short :
 							$post->poster_name . ": $quote - " . 
-								($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+								($post->parent_commentid && 
+								 $post->parent_commentid->id && 
+								 $post->parent_commentid->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
 								" on \"".$post->top_commentid->subject."\" at $short_abs_url";
 				
 				$form = 
@@ -2681,6 +2683,16 @@ Cheers!};
 		AppCore::EmailQueue->send_email([@list],"[".AppCore::Config->get("WEBSITE_NAME")."] ".$post->poster_name." posted in '".$board->title."'",$email_body) if @list;
 	}
 	
+	sub replace_lkey
+	{
+		my $text = shift;
+		my $user_ref = shift;
+		return $text if !$user_ref || !$user_ref->id;
+		my $id = $user_ref->get_lkey(); #$user_ref->id + 3729;
+		$text =~ s/lkey=[A-Za-z0-9+\/]+?/lkey=$id/g;
+		return $text;
+	}
+	
 	sub email_new_comment
 	{
 		my $self = shift;
@@ -2693,7 +2705,7 @@ Cheers!};
 # 			return;
 		
 		my $comment = $post;
-		my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."#c" . $comment->id;
+		my $comment_url = $args->{comment_url} || $self->binpath ."/". $comment->boardid->folder_name . "/". $comment->top_commentid->folder_name."?lkey=0#c" . $comment->id;
 		
 		my $server = 
 		my $email_body = qq{A comment was added by }.$comment->poster_name." to '".$comment->top_commentid->subject.qq{':
@@ -2720,14 +2732,14 @@ Cheers!};
 		
 		AppCore::EmailQueue->send_email([@list],$email_subject,$email_body);
 		
-		AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,$email_body)
+		AppCore::EmailQueue->send_email([$comment->parent_commentid->poster_email],$email_subject,replace_lkey($email_body,$comment->parent_commentid->posted_by))
 				if $comment->parent_commentid && 
 				$comment->parent_commentid->id && 
 				$comment->parent_commentid->poster_email &&
 				$comment->parent_commentid->poster_email ne $comment->poster_email && 
 				!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 		
-		AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,$email_body)
+		AppCore::EmailQueue->send_email([$comment->top_commentid->poster_email],$email_subject,replace_lkey($email_body,$comment->top_commentid->posted_by))
 				if $comment->top_commentid && 
 				$comment->top_commentid->id && 
 				$comment->top_commentid->poster_email &&
@@ -2736,7 +2748,7 @@ Cheers!};
 		
 		my $board = $comment->boardid;
 		
-		AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,$email_body)
+		AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,replace_lkey($email_body,$comment->managerid))
 					if $board && 
 					$board->id && 
 					$board->managerid && 
@@ -2759,7 +2771,7 @@ Cheers!};
 		
 		my $server = AppCore::Config->get('WEBSITE_SERVER');
 		
-		my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."#c" . $like->postid->id;
+		my $comment_url = join('/', $self->binpath, $like->postid->boardid->folder_name, $like->postid->folder_name)."?lkey=0#c" . $like->postid->id;
 		
 		AppCore::EmailQueue->reset_was_emailed;
 		
@@ -2767,7 +2779,7 @@ Cheers!};
 		my $title = AppCore::Config->get('WEBSITE_NAME'); 
 		
 		# Notify User
-		my $email_subject = "[$title $noun] ".$like->name." likes your $noun '".$like->postid->subject."'";
+		my $email_subject = "[$title $noun] ".($like->name?$like->name:'Anonymous')." likes your $noun '".$like->postid->subject."'";
 		my $email_body = $like->name." likes your $noun '".$like->postid->subject."\n\n\t".
 				AppCore::Web::Common->html2text($like->postid->text)."\n\n".
 				"Here's a link to that page:\n".
@@ -2776,13 +2788,13 @@ Cheers!};
 		
 		my $user = AppCore::Common->context->user;
 		
-		AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,$email_body) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
+		AppCore::EmailQueue->send_email($like->postid->poster_email,$email_subject,replace_lkey($email_body,$like->postid->posted_by)) unless $like->postid->poster_email =~ /example\.com$/ || ($user && $user->email eq $like->postid->poster_email);
 		
 		# Notify Webmaster
 		my @list = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
 		@list = (AppCore::Config->get('WEBMASTER_EMAIL')) if !@list;
 		
-		$email_subject = "[$title $noun] ".$like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
+		$email_subject = "[$title $noun] ".($like->name?$like->name:'Anonymous')." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."'";
 		$email_body = $like->name." likes ".$like->postid->poster_name."'s $noun '".$like->postid->subject."\n\n\t".
 				AppCore::Web::Common->html2text($like->postid->text)."\n\n".
 				"Here's a link to that page:\n".
@@ -2858,7 +2870,7 @@ Cheers!};
 		my $user = AppCore::Common->context->user;
 		
 		# Admins automatically bypass spam filtering methods
-		return 0 if $SPAM_OVERRIDE || ($user && $user->check_acl($self->config->{admin_acl}));
+		return 0 if $SPAM_OVERRIDE || ($user && ($user->check_acl($self->config->{admin_acl}) || $user->email eq 'faith08@gmail.com'));
 		
 		### Method: 'Bot Trap' - hidden field, but it it has data, its probably a bot.
 		if($bot_trap)
@@ -2890,7 +2902,7 @@ Cheers!};
 			my ($weight,$matched) = Boards::BanWords::get_phrase_weight($clean);
 
 			## TODO Make this a configurable threshold
-			if($weight >= 5)
+			if($weight >= 10)
 			{
 				$self->log_spam($text,'ban_words',"Weight: $weight, Matched: ". join(", ",@$matched));
 				$@ = "Sorry, the following word or words are not allowed: \n".join("\n    ",@$matched)."\n Please check your message and try again.\nYour original comment:\n$text";

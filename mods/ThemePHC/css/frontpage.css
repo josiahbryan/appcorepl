@@ -89,6 +89,20 @@ body
 	left: 423;
 }
 
+#live
+{
+	position: absolute;
+	top: 65;
+	left: 600;
+	background: white;
+	border: 2px solid black;
+}
+
+#live a
+{
+	
+}
+
 
 
 #mainlogo-wrap a:focus, 

@@ -144,13 +144,15 @@ package ThemePHC::PastorsBlog;
 				next;
 			}
 			
+			next if index($user->email,'@') < 0;
+			
 			my $subj = "Pastor Bryan Added a New Post in the Pastor's Blog";
 			my $text = "Hi ".$user->display.",\n"
 				."\n"
 				."Pastor Bryan has added a new post to the \"Pastor's Blog\" at MyPleasantHillChurch.org.\n"
 				."\n"
 				."Read \"".$post->subject."\" here:\n"
-				."    ${server}/learn/pastors_blog/$folder\n"
+				."    ${server}/learn/pastors_blog/$folder?lkey=".($user->get_lkey())."\n"
 				."\n"
 				."Thanks,\n"
 				."The PHC Website Robot";

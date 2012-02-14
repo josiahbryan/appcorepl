@@ -18,6 +18,13 @@ AppCore::DBI->prime_cached_dbobjects;
 while(my $q = CGI::Fast->new)
 {
 	$ENV{HTTP_HOST} = $ENV{HTTP_X_FORWARDED_HOST} if $ENV{HTTP_X_FORWARDED_HOST};
+	$ENV{REMOTE_ADDR} = $ENV{HTTP_X_FORWARDED_FOR} if defined $ENV{HTTP_X_FORWARDED_FOR};
+	if($ENV{REMOTE_ADDR} =~ /^180\.76\./) # too much traffic from china
+	{
+		print "Content-Type: text/plain\n\nToo much traffic from your subnet, please contact josiahbryan\@gmail.com to remove the block.\n\n";
+		next;
+	}
+	#print STDERR "Passing '$ENV{REMOTE_ADDR}'\n";
 	
 	REPROCESS_MODTIME:
 	my $mod = undef;

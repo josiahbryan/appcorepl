@@ -2,7 +2,8 @@ $(function()
 {
 	setTimeout(function()
 	{
-		if(window.USER_DISPLAY == 'Josiah Bryan')
+		if(window.USER_DISPLAY == 'Josiah Bryan' ||
+		   window.USER_DISPLAY == 'Bruce Bryan')
 		{
 			// probably testing - dont post! :-)
 			return;

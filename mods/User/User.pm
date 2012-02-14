@@ -276,7 +276,8 @@ package User;
 						print STDERR "Matched facebook user to existing user: $display - $email, userid $user_obj\n";
 					}
 					
-					$user_obj->user($fb_user)    if $user_obj->user =~ /\@/ && $user_obj->user ne $email;
+					
+					$user_obj->user($fb_user)    if ($user_obj->user =~ /\@/ && $user_obj->user ne $email) || !$user_obj->user;
 					$user_obj->email($email)     if $user_obj->email    ne $email;
 					$user_obj->first($first)     if $user_obj->first    ne $first;
 					$user_obj->last($last)       if $user_obj->last     ne $last;
@@ -301,6 +302,11 @@ package User;
 						$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user_obj});
 					}
 					
+					if(!$user_obj->pass)
+					{
+						$user_obj->pass($token);
+					}
+					
 					$user_obj->is_fbuser(1);
 					$user_obj->fb_token($token);
 					$user_obj->fb_token_expires($expires);
@@ -311,7 +317,8 @@ package User;
 						$self->run_hooks(User::ActionHook::EVT_NEW_FB_USER,{user=>$user_obj});
 					}
 					
-					if(AppCore::AuthUtil->authenticate($user_obj->user, $token))
+					#if(AppCore::AuthUtil->authenticate($user_obj->user, $token))
+					if(AppCore::AuthUtil->authenticate($user_obj->user, $user_obj->pass))
 					{
 						$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user_obj});
 						
@@ -322,6 +329,7 @@ package User;
 					}
 					else  # Can't authenticate  
 					{
+						eval{ print STDERR "Failure info: userid $user_obj, username:".$user_obj->user.", token:$token, pass:".$user_obj->pass."\n"; }; undef $@;
 						return $r->error("Facebook API Error","Unable to connect facebook data to local account.");
 					}
 				}
@@ -352,7 +360,7 @@ package User;
 		
 		my $action = $req->next_path || '';
 		
-		#print STDERR "auth($sub_page): ".Dumper($req,$page);
+		#print STDERR "auth($action): ".Dumper($req);
 			
 		if($action eq 'facebook')
 		{

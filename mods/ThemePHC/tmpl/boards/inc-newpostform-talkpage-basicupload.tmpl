@@ -1,0 +1,487 @@
+						<form class='wrap'  onsubmit='return ajax_post_new(this)'>
+							
+							<table width=100%>
+								<tr>
+									<!--<td valign=top class=photo-cell>
+										<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=left>
+									</td>-->
+									<td valign=top class=content colspan=99>
+										<textarea class="expandText" name="comment" id="newpost_text"></textarea>
+										<div id=attach-wrapper>
+											<!--<a href='' id=attach_link><img src='%%appcore%%/images/silk/attach.png' border=0 align=absmiddle><span> Attach photo...</span></a>-->
+											
+											<div class="fileinputs" id="attach_link">
+												<!--<form action='f' ENCTYPE="multipart/form-data" method=POST>
+													<INPUT TYPE="FILE" NAME="upload" class='file' size=55>
+													
+												</form>-->
+												<iframe name=hidden_iframe width=0 height=0 src='about:blank' style='display:none'></iframe>
+												<form action='/fake/upload' ENCTYPE="multipart/form-data" method=POST target=hidden_iframe>
+													<INPUT TYPE="FILE" NAME="upload" size=1 class=file id="photo_file_input">
+												</form>
+												<div class="fakefile">
+													<!--<input />-->
+													<a href=''>
+														<img src='%%appcore%%/images/silk/attach.png' border=0 align=absmiddle>
+														<span> Attach photo...</span>
+													</a>
+												</div>
+												
+												
+											
+											</div>
+											<!--<form action='f' ENCTYPE="multipart/form-data" method=POST id="working_upload">
+												<INPUT TYPE="FILE" NAME="upload" size=55 class=file>
+												
+											</form>-->
+
+											<div class=fc></div>
+											<div id=attach-preview class=uploadify-wrapper>
+												<!--<input id="custom_file_upload" type="file" name="upload" />
+												<div id="custom-queue"></div>-->	
+											</div>
+											
+										</div>
+										
+										
+										<style>
+											#attach_link {
+												/*background: url(%%appcore%%/images/silk/attach.png) no-repeat top left;*/
+												/*width: 16px;
+												height: 16px;*/
+												/*display: block;*/
+												/*padding-left: 18px;*/
+												/*float: left;*/
+												/*margin-bottom: -3px;*/
+												/*left: 2px;*/
+												margin-top: -17px;
+												padding-left: 0px;
+												display: block;
+												z-index: 100;
+												
+												/*display: none;*/ /* Hide until futher devel tomorrow */
+											}
+											
+											#attach-preview {
+												display: none;
+												margin-top: 3px;
+											}
+											
+											#attach_link:active,
+											#attach_link:focus {
+												outline: 0;
+											}
+											
+											
+											div.fileinputs {
+												position: relative;
+											}
+											
+											div.fakefile {
+												position: absolute;
+												top: 0px;
+												left: 0px;
+												z-index: 1;
+											}
+											
+											input.file {
+												position: relative;
+												text-align: right;
+												-moz-opacity:0 ;
+												filter:alpha(opacity: 0);
+												opacity: 0;
+												z-index: 2;
+												margin-left: -20px;
+												margin-top:-5px;
+											}
+											
+											#working_upload {
+												z-index: 2;
+											}
+											
+											/*#working_upload {*/
+											
+										</style>
+										<script>
+										$(function() {
+											var $form = $("#attach_link").parents('form');
+											$form.attr('ENCTYPE','multipart/form-data');
+											$form.attr('METHOD','POST');
+											$form.attr('ACTION','foo');
+											//var formEl = $form.get(0);
+											//formEl.setAttribute('enctype','multipart/form-data');
+											//alert(formEl.enctype);
+											
+// 											$("#attach_link").live('click', function() {
+// 												//ENCTYPE="multipart/form-data"
+// 										
+// 												return false;
+// 											});
+
+											$("#photo_file_input").bind('change',function() {
+												var t= this;
+												alert(t.value);
+											});
+										});
+											
+										</script>
+									</td>
+									<!--<td class=tags>
+										<div class=wrap>
+											<div><input type=radio name=tag value=pray> Prayer</div>
+											<div><input type=radio name=tag value=praise> Praise</div>
+											<div><input type=checkbox name=epa value=1> ePrayerAlert</div>
+										</div>
+										
+										<style>
+										.newpost .tags,
+										.newpost .tags div * { vertical-align: middle; }
+										
+										.newpost .tags .wrap 
+										{
+											margin-top: -1px;
+											padding-left: 2px;
+										}
+										
+										.newpost .tags .wrap div
+										{
+											background: #e9eeff;
+											border-bottom: 1px solid #c7cddf;
+											border-top: 1px solid white;
+											padding: 2px 5px;
+										}
+										</style>
+									
+									</td>-->
+								<tmpl_if user_display>
+								<tr>
+									<td colspan=3>
+										<div class='ident' id='postas_display'>
+											<img class='user_photo' src="$(CDN:<tmpl_if user_photo>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)" userid='%%user_userid%%' align=absmiddle width=16 height=16>
+											Posting as <b>%%user_display%%</b>
+											<input value='%%user_display%%' name='poster_name' type=hidden>
+											<input value='%%user_email%%' name='poster_email' type=hidden>
+										</div>
+										
+										<div class='controls'>
+											<button type='submit' class='button'>Post</button>
+										</div>
+										
+										
+										<div class='tags'>
+											<span id=span_tag_praise>
+												<input type=radio class=tag name=tag value=praise id=tag_praise><label       for=tag_praise class=tag> Praise!</label></span>
+											<span id=span_tag_pray>
+												<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
+											<span id=span_tag_talk>
+												<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
+											<tmpl_if can_epa>&nbsp;&nbsp;| 
+											<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+											</tmpl_if>
+										</div>
+									</td>
+								</tr>
+								<tmpl_else>
+									<tr>
+										<td valign=middle align=right>Name:</td>
+										<td><input class='text' value='%%user_display%%' name='poster_name' size=12></td>
+									
+										<td rowspan=2>
+											<div class='controls'>
+												<button type='submit' class='button'>Post</button>
+											</div>
+											
+											<div class='tags'>
+												<span id=span_tag_praise>
+													<input type=radio class=tag name=tag value=praise id=tag_praise><label       for=tag_praise class=tag> Praise!</label></span>
+												<span id=span_tag_pray>
+													<input type=radio class=tag name=tag value=pray   id=tag_pray><label         for=tag_pray class=tag> Prayer Request</label></span>
+												<span id=span_tag_talk>
+													<input type=radio class=tag name=tag value=talk   id=tag_talk checked><label for=tag_talk class=tag> Just Talking</label></span>
+												<tmpl_if can_epa>&nbsp;&nbsp;| 
+												<span><input type=checkbox name=epa value=1 id=epa><label for=epa> eAlert</label></span>
+												</tmpl_if>
+											</div>
+										</td>
+									</tr>
+									<tr>
+										<td valign=middle align=right>Email:</td>
+										<td><input class='text' value='%%user_email%%' name='poster_email' size=12></td>
+									</tr>
+								</tmpl_if>
+							</table>
+							
+							<style>
+							
+							.newpost .tags,
+							.newpost .tags span * { vertical-align: middle; }
+							.newpost .tags { 
+								margin-top: 3px;
+								text-align: right; 
+							}
+							
+							.newpost .controls { margin-left: .5em; }
+							
+							.newpost .ident { margin-top: 6px; }
+							
+							.newpost .tags span
+							{
+								font-weight: normal;
+								color: rgb(80,80,80);
+								padding: 2 5px 4px 0;
+							}
+							
+							#span_tag_pray
+							{
+								background: #fcffb1;
+							}
+							
+							#span_tag_praise
+							{
+								background: #d9ffd2;
+							}
+							
+							#span_tag_talk
+							{
+								background: rgb(235,235,235);
+							}
+							
+							
+							.newpost .tags span.current
+							{
+								color: black;
+								font-weight: bold;
+							}
+							
+							
+							/* Add padding to photo for coloring */
+							.postlist tr.talktype-ePrayerAlert td.photo,
+							.postlist tr.talktype-pray td.photo,
+							.postlist tr.talktype-praise td.photo, 
+							.postlist tr.talktype-talk td.photo,
+							.postlist .newpost td.photo-cell
+							{
+								padding-left: 5px;
+							}
+							
+							/*** Pray ***/
+							
+							.postlist tr.talktype-pray,
+							.postlist tr.talktype-ePrayerAlert
+							{
+								background: #fcfeb3;
+								
+							}
+							
+							.postlist tr.talktype-ePrayerAlert td.data,
+							.postlist tr.talktype-ePrayerAlert td.photo,
+							.postlist tr.talktype-pray td.data,
+							.postlist tr.talktype-pray td.photo
+							{
+								border-top: 1px solid white;
+								border-bottom: 1px solid #e3e684;
+							}
+							
+							.postlist span.talktype-pray,
+							.postlist span.talktype-ePrayerAlert
+							{
+								color: #636439;
+								font-weight: bold;
+							}
+							
+							/* Prayer Comments */
+							.postlist tr.talktype-pray .comment_text_wrap,
+							.postlist tr.talktype-ePrayerAlert .comment_text_wrap 
+							{
+								border-top: 1px solid #fdffc5;
+								border-bottom: 1px solid #d7d999;
+							}
+							.postlist tr.talktype-pray .indent-odd,
+							.postlist tr.talktype-ePrayerAlert .indent-odd {
+								background: #e8eaa5 !important;
+							}
+							.postlist tr.talktype-pray .indent-even,
+							.postlist tr.talktype-ePrayerAlert .indent-even {
+								background: #e4e6a2 !important;
+							}
+							
+							/*** Praise ***/
+							
+							.postlist tr.talktype-praise
+							{
+								background: #d9ffd2;
+								
+							}
+							
+							.postlist tr.talktype-praise td.data,
+							.postlist tr.talktype-praise td.photo
+							{
+								border-top:    1px solid white;
+								border-bottom: 1px solid #bfe1b9;
+							}
+							
+							.postlist span.talktype-praise
+							{
+								color: #556452;
+								font-weight: bold;
+							}
+							
+							/* Praise Comments */
+							.postlist tr.talktype-praise .comment_text_wrap
+							{
+								border-top: 1px solid #e2ffdd;
+								border-bottom: 1px solid #b5d5af;
+							}
+							.postlist tr.talktype-praise .indent-odd {
+								background: #d0f3c9 !important;
+							}
+							.postlist tr.talktype-praise .indent-even {
+								background: #c7eac1 !important;
+							}
+							
+							/*** Talk ***/
+							.postlist tr.talktype-talk
+							{
+								background: rgb(235,235,235);
+								
+							}
+							
+							.postlist tr.talktype-talk td.data,
+							.postlist tr.talktype-talk td.photo
+							{
+								border-top:    1px solid white;
+								border-bottom: 1px solid rgb(200,200,200);
+							}
+							
+							.postlist span.talktype-talk
+							{
+								color: rgb(100,100,100);
+								font-weight: bold;
+							}
+							
+							/* Talk Comments */
+							.postlist tr.talktype-talk .comment_text_wrap
+							{
+								border-top: 1px solid rgb(245,245,245);
+								border-bottom: 1px solid rgb(140,140,140);
+							}
+							.postlist tr.talktype-talk .indent-odd {
+								background: rgb(210,210,210) !important;
+							}
+							.postlist tr.talktype-talk .indent-even {
+								background: rgb(190,190,190) !important;
+							}
+							
+							
+							
+							
+							</style>
+							
+							<script>
+							// Put it all in a $(function(){}) block and
+							// make highlightTab a "var" instead of declaring
+							// it as a function - both of these decisions
+							// allow the YUI JS compressor to replace var names
+							// and the highlightTag function name with a much
+							// shorter name. Since no global vars are used or declared,
+							// this block is reduced to the following code (approx). 
+							// However, we maintain the code here in "long hand"
+							// for easier maintenance.
+							
+							// $(function(){var a=$("#tag_talk"),b=function(d,f){var e=d.get(0).id,
+							// c=$(".tags span[for="+e+"]");if(f){c.addClass("current")}else{
+							// c.removeClass("current")}};b(a,true);$(".newpost .tags input").live("click",function(){
+							// b(a,false);b(a=$(this),true)})})
+							
+							
+							$(function(){
+								// *** Highlight Current Tag *** /
+								var currentTag   = $("#tag_talk"),
+								    userClickedTag = false,
+								    highlightTag = function(tag, isCurrent)
+								{
+									var cId    = tag.get(0).id,
+									    cLabel = $("#span_"+cId);
+									if(isCurrent)
+									{
+										cLabel.addClass("current");
+										tag.attr('checked',true);
+									}
+									else
+										cLabel.removeClass("current");
+								}
+								
+								highlightTag(currentTag, true);
+							
+								$(".tags input.tag").live("click",function()
+								{
+									highlightTag(currentTag, false);
+									highlightTag(currentTag = $(this), true);
+								});
+								
+								// The user_clicked_tag form element is used to tell the server
+								// that the user, well, clicked the tag instead of automatically
+								// highlighting it. This allows the server to override the tag
+								// choice if it knows better - but dont override if the user
+								// actually clicked the tag themself. Note the "user clicked"
+								// flag is cleared if the user erases all text in the box 
+								// (called in the update() function below) 
+								var setUserClicked = function(flag)
+								{
+									// When called as an event handler as a result of bind() calls,
+									// 'flag' will be an Object reference instead of boolean,
+									// but it still evaluates true for our purposes here.
+									$("#user_clicked_tag").get(0).value = flag ? 1:0;
+									userClickedTag = flag ? true:false; // flag may not always be really a boolean, but may be true 
+								};
+								
+								// Call the 'set user clicked' routine only if the user actually uses the mouse to click a radio button or label
+								$(".tags input.tag").bind('mouseup',setUserClicked);
+								$(".tags label.tag").bind('mouseup',setUserClicked);
+								
+								// *** Automatically Change Tag Based on Typed Text *** 
+								var rx1 = new RegExp("((please\\s.*?)?remember|pray)", "i"),
+								    rx2 = new RegExp("(prais|thank)", "i"),
+								    //rx3 = new RegExp("talk", "i"),
+								    flagged = false,
+								    update = function()
+								{
+									var t = this;
+									if(!t.value)
+									{
+										$("#tag_talk").click();
+										t.tagged = false;
+										setUserClicked(false);
+										return;
+									}
+									if(t.tagged || userClickedTag)
+										return;
+									if(rx1.test(t.value))
+									{
+										$("#tag_pray").click();
+										t.tagged = true;
+										return;
+									}
+									if(rx2.test(t.value))
+									{
+										$("#tag_praise").click();
+										t.tagged = true;
+										return;
+									}
+// 									if(rx3.test(t.value))
+// 									{
+// 										$("#tag_talk").click();
+// 										t.tagged = true;
+// 										return;
+// 									}
+								};
+								//alert(update);
+								var n = $("#newpost_text");
+							
+								n.change(update).keyup(update).keydown(update);
+								//n.get(0).onkeyup = update;
+								
+							});
+							</script>
+							<input type=hidden name=user_clicked_tag id=user_clicked_tag value=0>
+						</form>

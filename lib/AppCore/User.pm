@@ -10,7 +10,8 @@ package AppCore::User;
 	
 	use base 'AppCore::DBI';
 	
-	use Digest::MD5 qw/md5_hex/;
+	use Digest::MD5 qw/md5_hex md5_base64/;
+	use Time::HiRes qw/time/;
 
 	our $default_acl = ['EVERYONE'];
 	
@@ -60,6 +61,7 @@ package AppCore::User;
 			{	field	=> 'latitude',		type	=> 'varchar(50)' },
 			{	field	=> 'longitude',		type	=> 'varchar(50)' },
 			{	field	=> 'phone',		type	=> 'varchar(50)' },
+			{	field	=> 'lkey',		type	=> 'varchar(255)' }, # one-time-use login key
 		]		
 	
 	});
@@ -75,6 +77,24 @@ package AppCore::User;
 		$self->mysql_schema_update('AppCore::User::Preference');
 		
  	}
+	
+	sub get_lkey
+	{
+		my $self = shift;
+		
+		my $lkey = md5_base64($self->id."".time());
+		$self->lkey($lkey);
+		$self->update;
+		
+		return $lkey;
+	}
+	
+	sub clear_lkey
+	{
+		my $self = shift;
+		$self->lkey("");
+		$self->update;
+	}
 	
 	sub stringify_fmt { qw/#userid/ }
 
@@ -311,6 +331,7 @@ package AppCore::User;
 	sub group_id
 	{
 		my $name = shift;
+		$name =~ s/\^!//g;
 		return $group_name_cache{$name} if exists $group_name_cache{$name};
 		
 		my $q_name = AppCore::DBI->dbh(AppCore::Config->get("USERS_DBNAME"))->prepare('select `groupid` from `user_groups` where `name`=?');

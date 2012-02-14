@@ -1,5 +1,7 @@
 use strict;
 
+use LWP::Simple; # for geocoding
+
 package PHC::Directory::Family;
 {
 	use base 'AppCore::DBI';
@@ -746,6 +748,23 @@ package ThemePHC::Directory;
 		AppCore::DBI->mysql_schema_update($_) foreach @db_objects;
 	}
 	
+	sub geocode_entry
+	{
+		my $entry = shift;
+		my $dont_update = shift || 0;
+		my $url = "http://maps.google.com/maps?q=".$entry->address;
+		my $content = LWP::Simple::get($url);
+		#die "Couldn't get it!" unless defined $content;
+		print STDERR "Error geocoding entry $entry, address:".$entry->address.": No content returned from $url\n";
+		#my $content = "viewport:{center:{lat:40.199858,lng:-84.809039},span:{lat:0.006295,lng:0.006295},zoom:16";
+		my ($lat,$lng) = ($content=~/center:\s*{lat:\s*(.*?),\s*lng:\s*(.*?)}/);
+		$entry->lat($lat);
+		$entry->lng($lng);
+		$entry->update unless $dont_update;
+		
+		return $entry;
+	}
+	
 	sub new
 	{
 		my $class = shift;
@@ -985,6 +1004,8 @@ package ThemePHC::Directory;
 			my $can_edit = $admin || $entry->userid == $user || $entry->spouse_userid == $user;
 			return $r->error("Permission Denied","Sorry, you don't have permission to edit this family") if !$can_edit;
 			
+			my $old_address = $entry->address; # cache for comparing to see if we need to re-geocode
+			
 			# Anyone can edit these columns (anyone, well, anyone who has permission)
 			my @cols = qw/
 				first
@@ -1010,6 +1031,7 @@ package ThemePHC::Directory;
 			
 			# Add in admin-only columns
 			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
+			#my $admin = $user && ($user->user eq 'Xjosiahbryan' || $user->user eq 'pastor');
 			if($admin)
 			{
 				push @cols, qw/userid spouse_userid photo_num admin_notes/;
@@ -1020,6 +1042,12 @@ package ThemePHC::Directory;
 			{
 				#print STDERR "Checking col: $col\n";
 				$entry->set($col, $req->$col) if defined $req->$col;
+			}
+			
+			if($entry->address ne $old_address ||
+			   !$entry->lat || !$entry->lng)
+			{
+				geocode_entry($entry);
 			}
 			
 			# Update display string
@@ -1161,6 +1189,27 @@ package ThemePHC::Directory;
 			# Just send file
 			return $r->output_file(AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT') . '/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf','application/pdf');
 		}
+		elsif($sub_page eq 'json')
+		{
+			my $directory_data = PHC::Directory->load_directory(0, 99999); # NOTE: Assuming a max of 10k families in this church! :-) JB 20110627
+			my @output_list;
+			foreach my $entry (@{$directory_data->{list} || []})
+			{
+				my $clone = {};
+				foreach my $key (keys %$entry)
+				{
+					#next if $key eq 'admin_notes';
+					$clone->{$key} = $entry->{$key};
+				}
+				push @output_list, $clone;
+			}
+			
+			$directory_data = \@output_list;
+			#die Dumper $directory_data;
+			my $json = encode_json($directory_data);
+			return $r->output_data("application/json", $json) if $req->output_fmt eq 'json';
+			return $r->output_data("text/plain", $json);
+		}
 		elsif($sub_page)
 		{
 			my $tmpl = $self->get_template('directory/entry_view.tmpl');
@@ -1182,6 +1231,7 @@ package ThemePHC::Directory;
 			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
 			my $bin = $self->binpath;
 			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
+			my $pastor = $user && $user->user eq 'pastor';
 			my $userid = $user ? $user->id : undef;
 			my $mobile = AppCore::Common->context->mobile_flag;
 			foreach my $entry (@directory)
@@ -1189,6 +1239,7 @@ package ThemePHC::Directory;
 				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
 				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
 				$entry->{is_admin} = $admin;
+				$entry->{is_pastor} = $pastor;
 				$entry->{bin} = $bin;
 				$entry->{is_mobile} = $mobile;
 				$entry->{is_widget} = $req->{widget};
@@ -1225,7 +1276,7 @@ package ThemePHC::Directory;
 			
 			my $map_view = $req->{map} eq '1';
 			
-			my $tmpl = $self->get_template('directory/'.( $map_view? 'map.tmpl' : 'main.tmpl' ));
+			my $tmpl = $self->get_template('directory/'.( $map_view? 'map2.tmpl' : 'main.tmpl' ));
 			
 			my $start = $req->{start} || 0;
 			
@@ -1255,6 +1306,7 @@ package ThemePHC::Directory;
 			my $bin = $self->binpath;
 			#@directory = grep { $_->{last} =~ /(Bryan)/ } @directory if $map_view;
 			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
+			my $pastor = $user && $user->user eq 'pastor';
 			my $userid = $user ? $user->id : undef;
 			my $mobile = AppCore::Common->context->mobile_flag;
 			foreach my $entry (@directory)
@@ -1262,12 +1314,29 @@ package ThemePHC::Directory;
 				$entry->{can_edit} = $admin || ($userid && ($entry->{userid} == $userid || $entry->{spouse_userid} == $userid));
 				$entry->{has_account} = $my_entry ? 1:0; # relevant only if !can_edit
 				$entry->{is_admin} = $admin;
+				$entry->{is_pastor} = $pastor;
 				$entry->{bin} = $bin;
 				$entry->{is_mobile} = $mobile;
 				$entry->{is_widget} = $req->{widget};
 				if($mobile)
 				{
 					$entry->{$_} = add_areacode($entry->{$_},765) foreach qw/cell spouse_cell home/;
+				}
+			}
+			
+			if($map_view)
+			{
+				my $gis = GIS::Distance->new();
+				
+				#my $distance = $gis->distance( $lat1,$lon1 => $lat2,$lon2 );
+				#print $distance->meters();
+				
+				foreach my $entry (@directory)
+				{
+					if(!$entry->lat || !$entry->lng)
+					{
+						#geocode_entry($entry);
+					}
 				}
 			}
 			

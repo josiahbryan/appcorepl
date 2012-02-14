@@ -112,7 +112,7 @@ td.key
 
 </style>
 
-<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=ABQIAAAA2fYS3gGbRe83STuGuZb86hR2bvkXktRCd2Yk1CPnFurnk_kHOxQgmeEg7NKHO-6yjZBBmHd36Yndhw" type="text/javascript"></script>
+<script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=AIzaSyAmuwgB4SyjfWRqpXtgbyFCYeLADMEx2rE" type="text/javascript"></script>
 
 <script type="text/javascript">
 
@@ -132,12 +132,13 @@ td.key
       }
       
       <tmpl_loop entries>
-      entries.push(["<tmpl_var adress>","%%first%% <tmpl_if spouse>& %%spouse%%</tmpl_if> %%last%%","%%photo%%"]);
+      entries.push(["<tmpl_var address>","%%first%% <tmpl_if spouse>& %%spouse%%</tmpl_if> %%last%%","%%photo%%"]);
       </tmpl_loop>
 	do_next();
     }
 //	setTimeout(initialize,1500);
-		global.onload(initialize);
+		//global.onload(initialize);
+		$(function(){initialize();});
 	function do_next()
 	{
 		clearTimeout(do_next.t);
@@ -158,7 +159,8 @@ function addAddressToMap(response,address,entry) {
 	var postalRx = new RegExp(/(\d+)$/);
 	var matches = postalRx.exec(address);
 	var origZip = matches ? matches[1] : "";
-	var newZip = place.AddressDetails.Country.AdministrativeArea.SubAdministrativeArea.Locality.PostalCode.PostalCodeNumber;
+	//console.debug(place);
+	var newZip = place.AddressDetails.Country.AdministrativeArea.Locality.PostalCode.PostalCodeNumber;
 	if(matches && newZip != origZip)
 	{
 //		alert("invalid address: newZip="+newZip+", origZip: "+origZip);
