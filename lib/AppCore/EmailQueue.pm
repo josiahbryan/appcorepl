@@ -162,7 +162,9 @@ Server: $host
 		
 		foreach my $ref (@unsent)
 		{
+			print STDERR AppCore::Common::date().": Email Queue: transmitting $ref\n" if $DEBUG;
 			$ref->transmit;
+			print STDERR AppCore::Common::date().": Email Queue: DONE transmitting $ref\n" if $DEBUG;
 		}
 	}
 	
@@ -337,6 +339,7 @@ Server: $host
 		$smtp->dataend(); 
 	
 		print "Done.\n" if $DEBUG;
+		#exit if $DEBUG;
 	}
 
 

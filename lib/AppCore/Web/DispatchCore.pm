@@ -66,7 +66,7 @@ package AppCore::Web::DispatchCore;
 		return if index($st,'(eval)') > -1;
 		
 		#print STDERR $st;
-		print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user."@" : "").$ENV{REMOTE_ADDR}."] [FATAL] $text\n";
+		print STDERR "(PID $$) [".($ctx_ref->user ? $ctx_ref->user->user."@" : "").$ENV{REMOTE_ADDR}."] [FATAL] $text (url: ".get_full_url().")\n";
 		#print STDERR "(PID $$) [".$ENV{REMOTE_ADDR}."] [FATAL] $text\n";
 		
 		my $email = AppCore::Config->get('WEBMASTER_EMAIL');

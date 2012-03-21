@@ -370,6 +370,9 @@ package ThemePHC::Audio;
 			
 			$self->send_talk_notifications($recording);
 			
+			# Clear our podcast cache 
+			undef $self->{postcast_xml_cache};
+			
 			return $r->redirect($self->binpath);
 			
 			## Todo:
@@ -540,6 +543,8 @@ package ThemePHC::Audio;
 		}
 		elsif($sub_page eq 'podcast.xml')
 		{
+			return $r->output_data('text/xml', $self->{postcast_xml_cache}) if $self->{postcast_xml_cache};
+			
 			my $tmpl = $self->get_template('audio/podcast.xml.tmpl');
 			
 			# datetime
@@ -586,7 +591,8 @@ package ThemePHC::Audio;
 			$tmpl->param(current_year => (localtime(time))[5] + 1900);
 			$tmpl->param(datetime => $datetime); #format_rfc822_date($datetime));
 			
-			return $r->output_data('text/xml', $tmpl->output);
+			$self->{postcast_xml_cache} = $tmpl->output;
+			return $r->output_data('text/xml', $self->{postcast_xml_cache});
 			
 		}
 		elsif($sub_page)

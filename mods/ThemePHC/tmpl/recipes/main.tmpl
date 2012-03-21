@@ -84,6 +84,10 @@
 		</tbody>
 	</table>
 	
+	<tmpl_if can_create>
+	<a class='new_link' href='/recipes/new'><img src='%%appcore%%/images/silk/page_add.png' border=0 align=absmiddle> Add a recipe...</a>
+	</tmpl_if>
+
 	<div class='paging top'>
 		<tmpl_unless is_start>
 			<span class='prev'><a href='%%bin%%?start=0'>&laquo; Start</a></span> | 

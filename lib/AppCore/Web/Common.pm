@@ -279,6 +279,11 @@ package AppCore::Web::Common;
 		#die Dumper $sid->{user_data};
 		
 		my $text = $tmpl->output;
+
+		#$text = Encode::_utf8_on($text);
+                #$text =~ s/\pM*//g; # remove wideprints
+		#$text= "foobar";
+
 		print "Content-Type: text/html\n\n";
 		#$text =~ s/<\/body>/$urchin<\/body>/g;
 		#$text =~ s/<img(.*?)src=['"]([^\'\"]+)['"](.*?)(?:jblog_auto_link=([^\s]+))?\/?>/_auto_link_image($1,$2,$3,$4,$5)/segi;

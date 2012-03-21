@@ -701,11 +701,13 @@ package ThemePHC::Directory::UserActionHook;
 			# Send user an email to let them know they've been added if its the directory group
 			if($args->{group} == $DIRECTORY_GROUP)
 			{
-				my $url = join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), 'connect/directory');
+				my $user = $args->{user};
+				my $lkey = $user->get_lkey();
+				my $prefix = AppCore::Config->get("DISPATCHER_URL_PREFIX");
+				my $url = join('/', AppCore::Config->get("WEBSITE_SERVER"), ($prefix ? $prefix.'/' : 'connect/directory')) . '?lkey='.$lkey;
 				print STDERR __PACKAGE__.": User added to directory group ($DIRECTORY_GROUP), emailing user URL $url\n";
 				
-				#my $user = $args->{user};
-				my $user = AppCore::Common->context->user;
+				#my $user = AppCore::Common->context->user;
 				AppCore::Common->send_email([$user->email],"[PHC] You've Been Approved for the PHC Family Directory!",
 			
 				"Your user account on the PHC website has been approved for access to the PHC Family Directory! You can see the family directory any time by going to the PHC website and selecting the 'Connect' menu from the top and 'Family Directory' at the bottom of that menu. You can also use this link to go right to the directory:\n\n\t$url");

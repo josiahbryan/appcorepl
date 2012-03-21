@@ -76,6 +76,7 @@
 			{
 				background: inherit;
 			}
+			textarea.textinput { overflow: hidden; }
 			</style>
 			<table class='editform kids-tbl' style='padding:0' width=100%>
 				<thead>
@@ -94,7 +95,7 @@
 								<input type=text class='textinput' name='line_%%lineid%%_um' value='<tmpl_var escape=html um>' size=5>
 							</td>
 							<td class='full_cell_control'>
-								<input type=text class='textinput' name='line_%%lineid%%_name' value='<tmpl_var escape=html item_name>' size=40>
+								<textarea type=text class='textinput' name='line_%%lineid%%_name' rows=1 cols=40><tmpl_var escape=html item_name></textarea>
 							</td>
 							<td align=center class='full_cell_control'>
 								<a href='%%delete_url%%' class='delete_item_link' title='Delete this item from this recipe' onclick='return confirm("Are you SURE you want to delete this item from this recipe?")'>x</a>
@@ -109,10 +110,147 @@
 							<input type=text class='textinput' name='line_new_um' value='<tmpl_var escape=html um>' size=5>
 						</td>
 						<td class='full_cell_control'>
-							<input type=text class='textinput' name='line_new_name' value='<tmpl_var escape=html item_name>' size=40>
+							<textarea type=text class='textinput' name='line_new_name' rows=1 cols=40></textarea>
 						</td>
 						<td>&nbsp;</td>
 					</tr>
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new1_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new1_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new1_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new2_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new2_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new2_name' rows=1 cols=40></textarea>                                                
+						</td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new3_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new3_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new3_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new4_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new4_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new4_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new5_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new5_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new5_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new6_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new6_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new6_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new7_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new7_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new7_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new8_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new8_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new8_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new9_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new9_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new9_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
+
+					<tr>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new10_fraction_qty' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <input type=text class='textinput' name='line_new10_um' size=5>
+                                                </td>
+                                                <td class='full_cell_control'>
+                                                        <textarea type=text class='textinput' name='line_new10_name' rows=1 cols=40></textarea>
+                                                </td>
+                                                <td>&nbsp;</td>
+                                        </tr>
+
 					<tr>
 						<td colspan=2>
 							<input type=submit name=add_another value='Add Another Item'>

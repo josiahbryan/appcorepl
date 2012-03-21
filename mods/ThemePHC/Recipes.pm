@@ -306,6 +306,23 @@ package ThemePHC::Recipes;
 					itemid => $self->item_for_name($req->{'line_new_name'}),
 				});
 			}
+
+			for my $x (1..10)
+			{
+
+				if($req->{"line_new${x}_name"})
+	                        {
+        	                        PHC::Recipe::Line->insert({
+                	                        recipeid => $recipe,
+                        	                um => $req->{"line_new${x}_um"},
+                                	        fraction_qty => $req->{"line_new${x}_fraction_qty"},
+                                        	quantity => $req->{"line_new${x}_quantity"},
+	                                        itemid => $self->item_for_name($req->{"line_new${x}_name"}),
+        	                        });
+                	        }
+
+
+			}
 			
 			if($req->{add_another})
 			{

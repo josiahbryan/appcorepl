@@ -532,7 +532,7 @@ Cheers!};
     $plain_text
 
 Here's a link to that page: 
-    http://mypleasanthillchurch.org${binpath}#p$post
+    http://mypleasanthillchurch.org${binpath}?lkey=0#p$post
     
 Cheers!};
 		
@@ -540,12 +540,23 @@ Cheers!};
 		
 		AppCore::EmailQueue->send_email(['josiahbryan@gmail.com'],"[PHC Ask Pastor] Answer Posted to QA: ".$post->subject,$email_body);
 		AppCore::EmailQueue->send_email([$post->poster_email],
-			"[PHC Ask Pastor] Answer Posted to QA: ".$post->subject,$email_body)
+			"[PHC Ask Pastor] Answer Posted to QA: ".$post->subject,replace_lkey($email_body,$post->posted_by))
 				if $post->poster_email
 				&& !AppCore::EmailQueue->was_emailed($post->poster_email);
 		
 		AppCore::EmailQueue->reset_was_emailed;
 	}
+	
+	sub replace_lkey
+	{
+		my $text = shift;
+		my $user_ref = shift;
+		return $text if !$user_ref || !$user_ref->id;
+		my $id = $user_ref->get_lkey(); #$user_ref->id + 3729;
+		$text =~ s/lkey=[A-Za-z0-9+\/]+?/lkey=$id/g;
+		return $text;
+	}
+	
 	
 };
 
