@@ -29,6 +29,12 @@ my @deps = qw/
 
 foreach my $dep (@deps)
 {
-	print "Installing: $dep\n";
-	CPAN::install($dep);
+	undef $@;
+	eval('use '.$dep);
+	if($@)
+	{
+		print "Installing: $dep\n";
+		CPAN::install($dep);
+		#print "Missing $dep\n";
+	}
 }
