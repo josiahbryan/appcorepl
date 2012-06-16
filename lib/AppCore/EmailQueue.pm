@@ -158,7 +158,7 @@ Server: $host
 		my $self = shift;
 		my @unsent = $self->search(sentflag => 0);
 		
-		print STDERR AppCore::Common::date().": Email Queue: ".scalar(@unsent)." messages.\n" if $DEBUG;
+		#print STDERR AppCore::Common::date().": Email Queue: ".scalar(@unsent)." messages.\n" if $DEBUG;
 		
 		foreach my $ref (@unsent)
 		{

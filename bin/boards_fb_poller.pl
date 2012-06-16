@@ -71,7 +71,7 @@ foreach my $board (@boards)
 	
 	if(!$fb_feed_id || !$fb_access_token)
 	{
-		print STDERR "Not syncing '".$board->title."' - no FB Feed ID or Access Token.\n";
+		#print STDERR "Not syncing '".$board->title."' - no FB Feed ID or Access Token.\n";
 		next; 
 	}
 	
@@ -79,7 +79,7 @@ foreach my $board (@boards)
 	
 	if($seen_feed{$feed_url})
 	{
-		print STDERR "Not syncing '".$board->title."' - already synced feed $fb_feed_id to board '".$seen_feed{$feed_url}->title."'\n";
+		#print STDERR "Not syncing '".$board->title."' - already synced feed $fb_feed_id to board '".$seen_feed{$feed_url}->title."'\n";
 		next;
 	}
 	

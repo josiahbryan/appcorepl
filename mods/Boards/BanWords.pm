@@ -4,7 +4,7 @@ package Boards::BanWords;
 	use Storable qw/store retrieve/;
 	use Time::HiRes qw/time/;
 	
-	my $DATA_FOLDER = '/opt/httpd-2.2.17/htdocs/appcore/mods/Boards/dg_phrase_list';
+	my $DATA_FOLDER = AppCore::Config->get('APPCORE_ROOT') . '/mods/Boards/dg_phrase_list';
 	
 	my $WORD_CACHE = '/tmp/ban_words.dat';
 	if(!-f $WORD_CACHE)

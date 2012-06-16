@@ -14,7 +14,7 @@ BEGIN
 	$USE_THEME_FAVICON = 'favicon-trans.ico';
 	
 	# Path in the server's file system to the document root of the websrver
-	$WWW_DOC_ROOT = '/opt/httpd-2.2.17/htdocs';
+	$WWW_DOC_ROOT = '/var/www/html';
 	# Path in the webserver's URL space (and relative to WWW_DOC_ROOT) where
 	# the appcore distribution lives
 	$WWW_ROOT     = '/appcore';
@@ -25,9 +25,16 @@ BEGIN
 	# Database configuration
 	$DB_HOST = '127.0.0.1';
 	$DB_USER = 'root';
-	$DB_PASS = 'testsys';
-	$DB_NAME = 'appcore';
-	
+	$DB_PASS = ''; # read below
+	$DB_NAME = 'phc';
+
+	# Read your Database Password from a local file that is NOT stored in a public source control repo
+        my $db_pass_file = $WWW_DOC_ROOT . $WWW_ROOT . '/db_pass.txt';
+        $DB_PASS = `cat $db_pass_file` if -f $db_pass_file;
+        $DB_PASS =~ s/[\r\n]//g;  # remove newlines read from cat/shell command
+
+	#print STDERR "Debug: pass '$DB_PASS' ( file: $db_pass_file )\n";
+
 	# Users's database config
 	$USERS_DBNAME = $DB_NAME;
 	$USERS_DBTABLE = 'users';
@@ -53,7 +60,7 @@ BEGIN
 	# When neededing a globally-absolute URL, what server should we prefix?
 	# Normally, URLs created are local URLs, absolute to the server, but not including the server.
 	# The globally absolute URLs are normally only used for things such as emails, etc
-	$WEBSITE_SERVER = 'http://beta.mypleasanthillchurch.org';
+	$WEBSITE_SERVER = 'http://www.mypleasanthillchurch.org';
 	
 	# Emails to send new user notifications to, etc
 	$ADMIN_EMAILS = [qw/
@@ -81,7 +88,7 @@ BEGIN
 	$FB_APP_ID     = '192357267468389';
 	
 	# Read your App Secret from a local file that is NOT stored in a public source control repo
-	my $fb_secret_file = $WWW_DOC_ROOT . $WWW_ROOT . '/fb_app_secret.txt';
+	my $fb_secret_file = $WWW_DOC_ROOT . $WWW_ROOT . '/phc_fb_app_secret.txt';
 	$FB_APP_SECRET = `cat $fb_secret_file` if -f $fb_secret_file;
 	$FB_APP_SECRET =~ s/[\r\n]//g;  # remove newlines read from cat/shell command  
 	
@@ -100,7 +107,7 @@ BEGIN
 	$ENABLE_NON_CSSX_COMBINE = 1;	# Not implemented yet ...
 	
 	# Process CSSX (above) thru csstidy if path given and the file in $USE_CSS_TIDY exists (-f) 
-	$USE_CSS_TIDY = '/opt/httpd-2.2.17/htdocs/appcore/csstidy/release/csstidy/csstidy';
+	$USE_CSS_TIDY = '/var/www/html/appcore/csstidy/release/csstidy/csstidy';
 	$CSS_TIDY_SETTINGS = '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
 	
 	###########################################
@@ -112,7 +119,7 @@ BEGIN
 	
 	# Compress CSSX with YUI compressor if the .jar in $USE_YUI_COMPRESS exists  
 	#$USE_YUI_COMPRESS = 0; 
-	$USE_YUI_COMPRESS = 'java -jar /opt/httpd-2.2.17/htdocs/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
+	$USE_YUI_COMPRESS = 'java -jar /var/www/html/appcore/yuicomp/yuicompressor-2.4.6/build/yuicompressor-2.4.6.jar';
 	$YUI_COMPRESS_SETTINGS = '';
 
 	###########################################
@@ -152,7 +159,7 @@ BEGIN
 	# because this saves 20-150ms on DNS lookup time
 	
 	$CDN_HOSTS = [qw/
-		beta.mypleasanthillchurch.org
+		www.mypleasanthillchurch.org
 		cdn1.mypleasanthillchurch.org
 		cdn2.mypleasanthillchurch.org
 		cdn3.mypleasanthillchurch.org

@@ -171,7 +171,6 @@ package ThemePHC::BoardsTalk;
 Here's a link to this $noun posted on the PHC Website:
     ${server}/connect/talk/$folder
     
-Cheers!
 };	
 			use Data::Dumper;
 			print STDERR "Emailing $noun to ".Dumper(\@emails);
@@ -207,7 +206,6 @@ Cheers!
 Here's a link to this $noun posted on the PHC Website:
     ${server}/connect/talk/$folder?lkey=$id
     
-Cheers!
 };
 		
 				if(!$seen_email{$user->email})

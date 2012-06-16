@@ -2,7 +2,8 @@ use strict;
 
 package BryanBlogs::Blog;
 {
-	our $DbPassword = AppCore::Common->read_file('mods/ThemeBryanBlogs/pci_db_password.txt');
+	our $DbPassword = '';
+	$DbPassword = AppCore::Common->read_file('mods/ThemeBryanBlogs/pci_db_password.txt') if -f 'mods/ThemeBryanBlogs/pci_db_password.txt';
 	{
 		$DbPassword =~ s/[\r\n]//g;
 	}

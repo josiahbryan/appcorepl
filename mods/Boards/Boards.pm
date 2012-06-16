@@ -2003,6 +2003,12 @@ package Boards;
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
+
+		if($req->{subject} =~ /(http:\/\/|url=)/)
+                {
+                        $self->log_spam($req->{subject},'subj-url');
+                        AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+                }
 		
 		if(!$req->{subject})
 		{
@@ -2924,9 +2930,22 @@ Cheers!};
 			$@ = "Links aren't allowed, sorry";
 			return 1;
 		}
+
+		### Method: One 'http:' per post if not a logged-inuser
+		if(
+			(!$user || !$user->id))
+		{
+			my @link_count = $text =~ /(http:)/g;
+			if(@link_count > 1)
+			{
+				$self->log_spam($text,'multi-http-intext');
+				$@ = "More than one textual URL not allowed, sorry";
+				return 1;
+			}
+		}
 		
 		### Method: 'Russian' - Ban russian characters
-		if($text =~/[итпрогамскюедвеь]/)
+		if($text =~/[итпрогамскюедвеь�]/)
 		{
 			$self->log_spam($text,'russian');
 			$@ = "Please use only Engish on this website";
@@ -2948,6 +2967,12 @@ Cheers!};
 		
 		if($self->is_spam($req->{comment}, $req->{bot_trap}))
 		{
+			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+		}
+
+		if($req->{subject} =~ /(http:\/\/|url=)/)
+		{
+			$self->log_spam($req->{subject},'subj-url');
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
 		
@@ -3157,6 +3182,12 @@ Cheers!};
 		{
 			AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
 		}
+
+		if($req->{subject} =~ /(http:\/\/|url=)/)
+                {
+                        $self->log_spam($req->{subject},'subj-url');
+                        AppCore::Web::Common::redirect('http://en.wikipedia.org/wiki/Spam_%28electronic%29');
+                }
 		
 		if(!$req->{subject})
 		{

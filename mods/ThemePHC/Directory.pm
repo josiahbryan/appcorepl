@@ -506,10 +506,11 @@ package PHC::Directory;
 		my $image_size_cache = '/tmp/phc-directory-imagedata.storable';
 		my $image_data = -f $image_size_cache ? retrieve($image_size_cache) : {};
 		
-		my $root = AppCore::Config->get('WWW_DOC_ROOT').AppCore::Config->get('WWW_ROOT');
+		my $root = AppCore::Config->get('APPCORE_ROOT');
 		
 		my $self = shift;
 		my $output_file = shift || $root.'/mods/ThemePHC/downloads/PHCFamilyDirectory.pdf';
+		#print STDERR "[Debug] Output file: $output_file\n";
 		
 		# Read directory from database
 		my $directory_data = PHC::Directory->load_directory(0, 99999); # NOTE: Assuming a max of 10k families in this church! :-) JB 20110627
@@ -574,7 +575,7 @@ package PHC::Directory;
 		}
 		
 		
-		my ($date) = split/\s/, directory_timestamp(); 
+		my ($date) = split /\s/, directory_timestamp(); 
 		
 		$tmpl->param(entries => \@directory);
 		$tmpl->param(date => $date); #time2str("%D",time));

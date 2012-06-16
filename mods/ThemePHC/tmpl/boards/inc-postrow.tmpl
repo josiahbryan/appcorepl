@@ -16,7 +16,7 @@
 		<tmpl_else>
 			<td valign='top' align='center' class='photo'>
 				<img class='user_photo ar_adjustable' 
-					src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
+					src="<tmpl_if poster_photo:str>%%poster_photo%%<tmpl_else>http://www.gravatar.com/avatar/%%poster_email_md5%%?d=$(CDN:<tmpl_if user_photo:str>http://www.mypleasanthillchurch.org/%%user_photo%%<tmpl_else>%%appcore%%/mods/User/images/male-fb-sq-50px.jpg</tmpl_if>)&s=50</tmpl_if>" 
 					userid='%%posted_by%%' width='50' height='50'/>
 			</td>
 			<td valign='top' class='data'>

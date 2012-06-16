@@ -202,7 +202,10 @@ package ThemePHC::Events;
 		
 		my $x = PHC::Event->retrieve($post->data->get('itemid'));
 		$rs->{type_event} = 1;
-		$rs->{'event_'.$_} = $x->get($_) foreach $x->columns;
+		if($x)
+		{
+			$rs->{'event_'.$_} = $x->get($_) foreach $x->columns;
+		}	
 		
 		$post->{item} = $x;
 		$self->prep_event_hash($post);
@@ -760,6 +763,10 @@ package ThemePHC::Events;
 		my $cur_dow = shift;
 		
 		my $item = $event->{item};
+		if(!$item)
+		{
+			die "Error loading item for $self, Dump:".Dumper($self);
+		}
 		
 		my $dow;
 		if($item->is_weekly)

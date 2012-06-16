@@ -86,9 +86,9 @@ package ThemePHC::LivePage;
  		my $post;
  		$post = Boards::Post->retrieve($sub_page) || Boards::Post->by_field(folder_name => $sub_page) if $sub_page;
  		
- 		#print STDERR __PACKAGE__."->live_page: sub_page:'$sub_page', post:$post\n";
+ 		print STDERR __PACKAGE__."->live_page: sub_page:'$sub_page', post:$post\n";
 		
- 		if($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $post)
+ 		if($sub_page eq 'new' || $sub_page eq 'post' || $sub_page eq 'edit' || $post || $sub_page eq 'live_feed_chat' || $req->mode eq 'poll_new_posts')
 		{
 			# Board actions - TODO test and see if more actiosn need to be routed
 			$self->SUPER::board_page($req,$r,$board);
@@ -107,7 +107,7 @@ package ThemePHC::LivePage;
 			my $json = encode_json($data);
 			return $r->output_data("application/json", $json);
 		}
-		elsif($sub_page eq 'chatframe')
+		elsif($sub_page eq 'chatframe' || $sub_page eq 'live_feed_chat')
 		{
 			# 	Moved the chat code into an iframe because it messes with the live feed:
 			# 	What happens:
