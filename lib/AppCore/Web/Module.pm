@@ -13,11 +13,14 @@ package AppCore::Web::Module;
 	my $ThemeEngineLoaded;
 	BEGIN { 
 		undef $@;
-		eval('use Content::Page');
-		if($@)
+		if(!eval('use Content::Page'))
 		{
 			$ThemeEngineLoaded = 0;
-			warn "Unable to load Content::Page - won't be able to use Content::Page::Controller->theme->remap_template(): $@";
+		}
+		elsif($@)
+		{
+			$ThemeEngineLoaded = 0;
+			warn "Unable to load Content::Page - won't be able to use Content::Page::Controller->theme->remap_template(): $@" unless $@ =~ /Unknown Database/;
 		}
 		else
 		{
@@ -157,8 +160,24 @@ package AppCore::Web::Module;
 		my @list = grep { !/^\./ } readdir DIR;
 		closedir(DIR);
 		
+		my %ignore = %{$AppCore::Config::IGNORE_MODS || {}};
+		#die Dumper \@list;
+		#@list = grep { !$ignore{$_} } @list;
+		my @tmp;
+		ENUM_MODULE_NAME: foreach my $name (@list)
+		{
+			foreach my $key (keys %ignore)
+			{
+				#print "\t Ignore test: $key/$name\n";
+				next ENUM_MODULE_NAME if $name =~ /^$key/; # || $name eq $key;
+			}
+			push @tmp, $name;
+		}
+		@list = @tmp;
+
 		my @data = map 
 		{
+			#print "enum_modules: Loading $_\n";
 			{
 				base   => SYS_PATH_MODULES,
 				module => $_, 

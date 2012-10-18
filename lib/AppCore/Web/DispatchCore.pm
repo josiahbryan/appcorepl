@@ -11,6 +11,7 @@ package AppCore::Web::DispatchCore;
 	use AppCore::Web::Module;
 	use AppCore::Web::Result;
 	use AppCore::Web::Request;
+	use AppCore::Web::MobileDetect;
 	use AppCore::User;
 	use AppCore::AuthUtil;
 	
@@ -81,17 +82,14 @@ package AppCore::Web::DispatchCore;
 	}
 	
 	our $DISPATCH_START_TIME;
-	sub process
+	
+	sub setup_request
 	{
-		my $self = shift;
-		
-		my $q = shift;
-		
-		my $time_start = $DISPATCH_START_TIME = time;
+		my ($self, $q) = @_;
 		
 		AppCore::Common->context->_reset;
-	# 	AppCore::Session->_reset;
-	# # 	
+		# 	AppCore::Session->_reset;
+		# # 	
 		AppCore::Common->context->{mod_fastcgi} = 1;
 		
 		$SIG{__WARN__} = sub 
@@ -156,9 +154,24 @@ package AppCore::Web::DispatchCore;
 		my $path = $ENV{PATH_INFO};
 		
 		# Give current theme a chance to remap the URL before ANY processing is done on it
-		if(my $new_url = Content::Page::Controller->theme->remap_url($path))
+		my $theme = Content::Page::Controller->theme;
+		eval 
 		{
-			$path = $ENV{PATH_INFO} = $new_url;
+			if(my $new_url = $theme->remap_url($path))
+			{
+				$path = $ENV{PATH_INFO} = $new_url;
+			}
+		};
+		if($@ =~ /" via package "$theme"/)
+		{
+			$Content::Page::Controller::CurrentTheme = 'Content::Page::ThemeEngine';
+			$AppCore::Config::THEME_MODULE = 'ThemeBasic';
+			#warn "Error loading config theme $theme, resorting to internal theme '$Content::Page::Controller::CurrentTheme'";
+			warn "Error loading config theme $theme, resorting to internal theme '$Content::Page::Controller::CurrentTheme', module '$AppCore::Config::THEME_MODULE'";
+		}
+		elsif($@)
+		{
+			warn "Warn: $@";
 		}
 		
 		# Strip first slash from URL since not relevant
@@ -254,7 +267,43 @@ package AppCore::Web::DispatchCore;
 		
 		$ctx_ref->current_request($request);
 		
-		$app = 'Content' if !$app;
+		#$app = 'Content' if !$app;
+		
+		return ($mod_obj, $request, $url);
+	}
+	
+	sub process
+	{
+		my $self = shift;
+		
+		my $q = shift;
+		
+		my $just_response = shift || 0;
+		
+		my $time_start = $DISPATCH_START_TIME = time;
+		
+		my ($mod_obj, $request, $url) = $self->setup_request($q);
+		
+		my $response = $self->execute_request($mod_obj, $request, $just_response);
+		
+		END_HTTP_REQUEST:
+		
+		my $time_end = time;
+		my $diff = $time_end - $time_start;
+		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/ || $ENV{HTTP_REFERER} =~ /dispatch_time_debug/;
+		#my $show_time = 1;
+		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time && $url !~ /poll/;
+		#################
+		
+		return $response;
+	}
+	
+	sub execute_request
+	{
+		my $self = shift;
+		my ($mod_obj, $request, $just_response) = @_;
+		
+		my $output_res = undef;
 		
 		REPROCESS_ON_SERVER_GONE:
 		
@@ -269,46 +318,51 @@ package AppCore::Web::DispatchCore;
 			
 			my $response = $mod_obj->dispatch($request, AppCore::Web::Result->new);
 			
-			#die Dumper $response;
+			$output_res = $response;
 			
-			binmode STDOUT;
-			
-			# Process output HTTP codes
-			my $code = $response->status;
-			#print STDERR "$path: $code: $out[0] (".length($out[1])." bytes) (".substr($out[1],0,5).")\n";
-			if($code == 200)
+			if(!$just_response)
 			{
-				#print "Content-Type: $out[0]\r\n\r\n";
-				my $ctype = $response->content_type;
-				my $data = $response->body;
-				#my %args = @out;
+				#die Dumper $response;
 				
-				print "Content-Type: $ctype\r\n";
-				#print "$_: $args{$_}\r\n" foreach keys %args;
-				print "\r\n";
-				print $data;
-			#	print "<hr><i>Process Hit # ".AppCore::Common->context->{mod_fastcgi}."</i>";
-			}
-			elsif($code == 302)
-			{
-				print "Status: 302 Moved Temporarily\r\nLocation: ".$response->body."\r\n\r\n";
-			}
-			elsif($code == 404)
-			{
-				#$out[0]||='text/html';
-				print "Status: 404 File Not Found\r\n";
-				print "Content-Type: ".($response->content_type || 'text/html')."\r\n\r\n";
-				print $response->body || "<h1>404 File Not Found</h1>Sorry, the requested URL does not exist.";
-			}
-			elsif($code == 500)
-			{
-				print "Status: 500 Internal Server Error\r\n";
-				print "Content-Type: ".$response->content_type."\r\n\r\n";
-				print $response->body;
-			}
-			elsif($code)
-			{
-				error("Unknown Code $code","Unknown Code $code from app $app");
+				binmode STDOUT;
+				
+				# Process output HTTP codes
+				my $code = $response->status;
+				#print STDERR "$path: $code: $out[0] (".length($out[1])." bytes) (".substr($out[1],0,5).")\n";
+				if($code == 200)
+				{
+					#print "Content-Type: $out[0]\r\n\r\n";
+					my $ctype = $response->content_type;
+					my $data = $response->body;
+					#my %args = @out;
+					
+					print "Content-Type: $ctype\r\n";
+					#print "$_: $args{$_}\r\n" foreach keys %args;
+					print "\r\n";
+					print $data;
+				#	print "<hr><i>Process Hit # ".AppCore::Common->context->{mod_fastcgi}."</i>";
+				}
+				elsif($code == 302)
+				{
+					print "Status: 302 Moved Temporarily\r\nLocation: ".$response->body."\r\n\r\n";
+				}
+				elsif($code == 404)
+				{
+					#$out[0]||='text/html';
+					print "Status: 404 File Not Found\r\n";
+					print "Content-Type: ".($response->content_type || 'text/html')."\r\n\r\n";
+					print $response->body || "<h1>404 File Not Found</h1>Sorry, the requested URL does not exist.";
+				}
+				elsif($code == 500)
+				{
+					print "Status: 500 Internal Server Error\r\n";
+					print "Content-Type: ".$response->content_type."\r\n\r\n";
+					print $response->body;
+				}
+				elsif($code)
+				{
+					error("Unknown Code $code","Unknown Code $code from $mod_obj");
+				}
 			}
 		};
 		
@@ -335,73 +389,7 @@ package AppCore::Web::DispatchCore;
 			}
 		}
 		
-		END_HTTP_REQUEST:
-		
-		my $time_end = time;
-		my $diff = $time_end - $time_start;
-		my $show_time = $ENV{QUERY_STRING} =~ /dispatch_time_debug/ || $ENV{HTTP_REFERER} =~ /dispatch_time_debug/;
-		#my $show_time = 1;
-		print STDERR "$url: [Duration: ".int($diff * 1000) . " ms]\n" if $url && $show_time && $url !~ /poll/;
-		#################
-	}
-
-
-	sub in_array {
-		my ($arr,$search_for) = @_;
-		my %items = map {$_ => 1} @$arr; # create a hash out of the array values
-		return (exists($items{$search_for}))?1:0;
-	}
-	
-	sub ismobile {
-		my $useragent=lc(shift());
-		my $is_mobile = '0';
-	
-		if($useragent =~ m/(android|up.browser|up.link|mmp|symbian|smartphone|midp|wap|phone)/i) {
-			$is_mobile=1;
-		}
-		#print STDERR "ismobile: ua: '$useragent'\n";
-	
-		if((index($ENV{HTTP_ACCEPT},'application/vnd.wap.xhtml+xml')>0) || ($ENV{HTTP_X_WAP_PROFILE} || $ENV{HTTP_PROFILE})) {
-			$is_mobile=1;
-		}
-	
-		my $mobile_ua = lc(substr $ENV{HTTP_USER_AGENT},0,4);
-		my @mobile_agents = ('w3c ','acs-','alav','alca','amoi','andr','audi','avan','benq','bird','blac','blaz','brew','cell','cldc','cmd-','dang','doco','eric','hipt','inno','ipaq','java','jigs','kddi','keji','leno','lg-c','lg-d','lg-g','lge-','maui','maxo','midp','mits','mmef','mobi','mot-','moto','mwbp','nec-','newt','noki','oper','palm','pana','pant','phil','play','port','prox','qwap','sage','sams','sany','sch-','sec-','send','seri','sgh-','shar','sie-','siem','smal','smar','sony','sph-','symb','t-mo','teli','tim-','tosh','tsm-','upg1','upsi','vk-v','voda','wap-','wapa','wapi','wapp','wapr','webc','winw','winw','xda','xda-');
-	
-		if(in_array(\@mobile_agents,$mobile_ua)) {
-			$is_mobile=1;
-		}
-	
-		if ($ENV{ALL_HTTP}) {
-			if (index(lc($ENV{ALL_HTTP}),'OperaMini')>0) {
-				$is_mobile=1;
-			}
-		}
-	
-		if (index(lc($ENV{HTTP_USER_AGENT}),'windows')>0) {
-			$is_mobile=0;
-		}
-		return $is_mobile;
-	}
-	
-	sub isiphone {
-	
-		my $useragent = @_;
-		my $iphone=0;
-		if (lc($useragent) =~ m/iphone/) {
-			$iphone=1;
-		}
-		return $iphone;
-	}
-	
-	sub isipad {
-	
-		my $useragent = @_;
-		my $ipad=0;
-		if (lc($useragent) =~ m/ipad/) {
-			$ipad=1;
-		}
-		return $ipad;
+		return $output_res;
 	}
 	
 	sub send_iepngfix

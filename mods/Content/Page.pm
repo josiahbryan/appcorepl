@@ -1153,7 +1153,7 @@ package Content::Page::ThemeEngine;
 			}
 			else
 			{
-				print STDERR __PACKAGE__."::load_template(): [1] Template file didnt exist: $tmp_file_name\n";
+				#print STDERR __PACKAGE__."::load_template(): [1] Template file didnt exist: $tmp_file_name\n";
 			}
 		}
 		
@@ -1166,9 +1166,24 @@ package Content::Page::ThemeEngine;
 			}
 			else
 			{
-				print STDERR __PACKAGE__."::load_template(): [2] Template file didnt exist: $tmp_file_name\n";
+				#print STDERR __PACKAGE__."::load_template(): [2] Template file didnt exist: $tmp_file_name\n";
 			}
 		}
+		
+		
+		if(!$tmpl)
+		{
+			my $tmp_file_name = 'tmpl/'.$file;
+			if($file !~ /^\// && -f $tmp_file_name)
+			{
+				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
+			}
+			else
+			{
+				#print STDERR __PACKAGE__."::load_template(): [3] Template file didnt exist: $tmp_file_name\n";
+			}
+		}
+		
 		
 		if(!$tmpl)
 		{

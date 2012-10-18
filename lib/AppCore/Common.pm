@@ -6,7 +6,7 @@ BEGIN
 	#use AppCore::Config;
 	if($config)
 	{
-		print STDERR "$0: Loading AppCore config from $config\n";
+		#print STDERR "$0: Loading AppCore config from $config\n";
 		eval('require "'.$config.'"');
 		die "Error loading config: $@" if $@;
 	}

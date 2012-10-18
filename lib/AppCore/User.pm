@@ -62,7 +62,11 @@ package AppCore::User;
 			{	field	=> 'longitude',		type	=> 'varchar(50)' },
 			{	field	=> 'phone',		type	=> 'varchar(50)' },
 			{	field	=> 'lkey',		type	=> 'varchar(255)' }, # one-time-use login key
-		]		
+		],
+		
+		after_create => sub {
+			__PACKAGE__->find_or_create({ user => 'admin', pass => 'admin', email => $AppCore::Config::WEBMASTER_EMAIL, display => 'admin', first => 'admin' });
+		},
 	
 	});
 	

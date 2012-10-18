@@ -147,7 +147,7 @@ foreach my $bucket (values %$grid)
 	$bucket->{dist} = $dist;
 }
 
-
+my $count_total = 0;
 my @list = sort {$a->{dist} <=> $b->{dist}} values %$grid;
 foreach my $bucket (@list)
 {
@@ -171,6 +171,7 @@ foreach my $bucket (@list)
 			address => $fam->{address},
 			cnt => $cnt,
 		};
+		$count_total += $cnt;
 	}
 	
 	$bucket->{simple} =
@@ -180,7 +181,7 @@ foreach my $bucket (@list)
 	};
 }
 	
-print STDERR "Processed $count\n";
+print STDERR "Processed $count, total people: $count_total\n";
 
 
 use GD;

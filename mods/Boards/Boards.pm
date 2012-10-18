@@ -1391,11 +1391,13 @@ package Boards;
 				{
 					## HACK!!!
 					eval {
-						use ThemePHC::Directory;
-						$hash->{user_photo} = PHC::Directory->photo_for_user($user);
-						if($post->{user_photo})
+						if(eval('use ThemePHC::Directory'))
 						{
-							$post->{poster_photo} = $post->{user_photo};
+							$hash->{user_photo} = PHC::Directory->photo_for_user($user);
+							if($post->{user_photo})
+							{
+								$post->{poster_photo} = $post->{user_photo};
+							}
 						}
 					};
 					print STDERR "Debug: error calling p4u: $@, post: $hash->{folder_name}, postid: $hash->{postid}\n" if $@;
@@ -1416,11 +1418,13 @@ package Boards;
 			{
 				## HACK!!!
 				eval {
-					use ThemePHC::Directory;
-					$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
-					if($post->{user_photo})
+					if(eval('use ThemePHC::Directory'))
 					{
-						$post->{poster_photo} = $post->{user_photo};
+						$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
+						if($post->{user_photo})
+						{
+							$post->{poster_photo} = $post->{user_photo};
+						}
 					}
 				};
 				print STDERR "Debug: error calling p4u: $@, post: $post->{folder_name}, postid: $post->{postid}\n" if $@;
@@ -2754,15 +2758,19 @@ Cheers!};
 		
 		my $board = $comment->boardid;
 		
-		AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,replace_lkey($email_body,$comment->managerid))
-					if $board && 
-					$board->id && 
-					$board->managerid && 
-					$board->managerid->id && 
-					$board->managerid->email && 
-					$board->managerid->email ne $comment->poster_email &&
-					!AppCore::EmailQueue->was_emailed($board->managerid->email);
-					
+		undef $@;
+		eval
+		{
+			AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,replace_lkey($email_body,$comment->managerid))
+						if $board && 
+						$board->id && 
+						$board->managerid && 
+						$board->managerid->id && 
+						$board->managerid->email && 
+						$board->managerid->email ne $comment->poster_email &&
+						!AppCore::EmailQueue->was_emailed($board->managerid->email);
+		}; 
+		warn $@ if $@;			
 		AppCore::EmailQueue->reset_was_emailed;
 	}
 	

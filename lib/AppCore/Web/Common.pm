@@ -131,7 +131,7 @@ package AppCore::Web::Common;
 		my $url = shift;
 		my $expires_config = shift;
 	
-		#print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
+		print STDERR called_from().": ".__PACKAGE__."::redirect(): Redirecting to '$url'\n";
 		#AppCore::Session->save;
 			
 		#print STDERR "redirect mark1\n";

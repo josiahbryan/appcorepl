@@ -195,10 +195,15 @@ Server: $host
 		
 		if(!$prof)
 		{
-			$self->sentflag(1);
-			$self->result("Error: Domain $domain not in list of allowed domains to send from");
-			print STDERR "MsgID $self: ".$self->result." (from:".$self->msg_from.")\n";
-			$self->update;
+			# Just IGNORE this message because we'll assume another script will 
+			# run with a different config that *will* handle this domain - no harm in just ignoring it.
+# 			$self->sentflag(1);
+ 			$self->sentflag(0);
+# 			$self->result("Error: Domain $domain not in list of allowed domains to send from");
+# 			print STDERR "MsgID $self: ".$self->result." (from:".$self->msg_from.")\n";
+			$self->result("Warn: Ignoring, domain $domain not in list of allowed domains to send from");
+ 			print STDERR "MsgID $self: ".$self->result." (from:".$self->msg_from.")\n";
+ 			$self->update;
 			return;
 		}
 		

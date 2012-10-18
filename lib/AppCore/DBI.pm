@@ -1371,12 +1371,23 @@ package AppCore::DBI;
 		
 		#print STDERR "dbh($db): CACHE MISS: $key\n"; # ********************************** Mark 2: ".Dumper(\%attrs);
 		
+		eval {
+		
 		#print STDERR "Connecting to db $db, host $host...\n";
 		$DB_CACHE{$key} = 
 	#$host eq '10.0.1.5' ? 
 	#		DBI::ReplicationProxy->connect($db) : 
 			DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=0",$user, $pass,{'RaiseError' => 1, %attrs});
 		#print STDERR "Connected.\n";
+		
+		};
+		if($@)
+		{
+			#print "\n\n" .date(). ": Error stacktrace:";
+			#print_stack_trace;
+			#print "\n\n";
+			die $@;
+		}
 		
 		return $DB_CACHE{$key};
 	}
@@ -2077,6 +2088,38 @@ package AppCore::DBI;
 		return wantarray ? %changes : (\%changes, $has_field_changes);
 	}
 	
+# 	# Default implementation of apply_mysql_schema() - feel free to override in subclasses
+# 	sub apply_mysql_schema
+# 	{
+# 		my $self = shift;
+# 		$self->mysql_schema_update(ref($self));
+# 	}
+	
+	sub auto_new_dbh
+	{
+		my $self = shift;
+		my $db = shift;
+		my $opts = shift || {};
+		my $dbh = undef;
+		eval { $dbh = AppCore::DBI->dbh($db,$opts->{host},$opts->{user},$opts->{pass}) };
+		
+		if($@ =~ /Unknown database '$db'/)
+		{
+			# Assume that default user can create databases
+			AppCore::DBI->dbh('mysql')->do('CREATE DATABASE `'.$db.'`');
+			#push @sql, 'CREATE DATABASE `'.$db.'`'."\n";
+			$dbh = AppCore::DBI->dbh($db,$opts->{host},$opts->{user},$opts->{pass});
+		}
+		else
+		{
+			die $@ if $@;
+		}
+		
+		return $dbh;
+	}
+	
+	
+	
 	# Function: mysql_schema_update($db,$table,$fields,$opts)
 	# Static function.
 	#
@@ -2148,6 +2191,8 @@ package AppCore::DBI;
 			
 			foreach my $class (@classes)
 			{
+				next if !$class;
+					
 				print STDERR "Debug: Updating class '$class'\n";
 				my $meta = eval '$class->meta';
 				if(!$meta || $@)
@@ -2169,7 +2214,8 @@ package AppCore::DBI;
 				
 				if(!$meta->{table})
 				{
-					die "Error in meta data from '$class': No 'table' element";
+					warn "Warn: Error in meta data from '$class': No 'table' element - not updating";
+					return undef;
 				}
 				
 				mysql_schema_update($meta->{db},$meta->{table},$meta->{schema},$meta->{schema_update_opts});
@@ -2191,20 +2237,7 @@ package AppCore::DBI;
 		
 		my @sql;
 		
-		my $dbh;
-		eval { $dbh = AppCore::DBI->dbh($db,$opts->{host},$opts->{user},$opts->{pass}) };
-		
-		if($@ =~ /Unknown database '$db'/)
-		{
-			# Assume that default user can create databases
-			AppCore::DBI->dbh('mysql')->do('CREATE DATABASE `'.$db.'`');
-			push @sql, 'CREATE DATABASE `'.$db.'`'."\n";
-			$dbh = AppCore::DBI->dbh($db,$opts->{host},$opts->{user},$opts->{pass});
-		}
-		else
-		{
-			die $@ if $@;
-		}
+		my $dbh = __PACKAGE__->auto_new_dbh($opts);
 		
 		my $q_explain = $dbh->prepare('explain `'.$table.'`');
 		my $old_fatal = $SIG{__DIE__};

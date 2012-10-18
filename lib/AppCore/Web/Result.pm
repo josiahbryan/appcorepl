@@ -50,6 +50,18 @@ package AppCore::Web::Result;
 		$x->{$k};
 	}
 	
+	sub to_HTTP_Response
+	{
+		my ($self, $res) = @_;
+		
+		$res = HTTP::Response->new if !$res;
+		$res->add_content($self->body);
+		$res->header('Content-Type', $self->content_type);
+		$res->code($self->status);
+		
+		return $res;
+	}
+	
 	sub is_fragment		{shift->x('is_fragment',@_)}
 	sub content_title	{shift->x('content_title',@_)}
 	sub body		{shift->x('body',@_)}
@@ -87,11 +99,19 @@ package AppCore::Web::Result;
 	{
 		my $self = shift;
 		my $url = shift || '/';
-		#$self->status(302);
-		#$self->header('Location',$url);
+		$self->status(302);
+		$self->header('Location',$url);
 		#print "Status: 302\r\nLocation: $url\n\n";
 		#exit;
-		AppCore::Web::Common::redirect($url);
+		if(AppCore::Common->context->{http_server_brick})
+		{
+			AppCore::Common->context->{_tmp_result} = $self;
+			goto END_HTTP_REQUEST;
+		}
+		else
+		{
+			AppCore::Web::Common::redirect($url);
+		}
 	}
 	
 	sub error
