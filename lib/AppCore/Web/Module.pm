@@ -323,7 +323,7 @@ package AppCore::Web::Module;
 		
 		
 		# Give the current theme an opportunity to remap the template into something different if desired
-		my $abs_file = $ThemeEngineLoaded ? Content::Page::Controller->theme->remap_template($pkg,$file) : undef;
+		my $abs_file = $ThemeEngineLoaded ? Content::Page::Controller->theme->remap_template($pkg, $file) : undef;
 		#print STDERR "get_template: 0: $abs_file\n";
 		if(!$abs_file || !-f $abs_file)
 		{

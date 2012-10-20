@@ -32,7 +32,7 @@ package User::Admin;
 		
 		#die Dumper $req;
 		
-		my $tmpl = $self->get_template('list.tmpl');
+		my $tmpl = $self->get_template('admin/list.tmpl');
 		my $binpath = $self->binpath;
 		my $modpath = $self->modpath;
 		my $appcore = join('/', AppCore::Config->get("WWW_ROOT"));
@@ -74,7 +74,7 @@ package User::Admin;
 		
 		#my $view = AppCore::User::Controller->get_view('admin',$r);
 		
-		my $tmpl = $self->get_template('edit.tmpl');
+		my $tmpl = $self->get_template('admin/edit.tmpl');
 		
 		my @groups = AppCore::User::Group->retrieve_from_sql('name!="EVERYONE" order by name');
 		foreach my $group (@groups)
@@ -114,7 +114,7 @@ package User::Admin;
 			return $r->redirect($self->module_url($CREATE_ACTION));
 		}
 		
-		my $tmpl = $self->get_template('edit.tmpl');
+		my $tmpl = $self->get_template('admin/edit.tmpl');
 		$tmpl->param(userid => $obj->id);
 		
 		$tmpl->param($_ => $obj->get($_)) foreach $obj->columns;

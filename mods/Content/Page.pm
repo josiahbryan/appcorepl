@@ -566,7 +566,40 @@ package Content::Page::ThemeEngine;
 	use base 'AppCore::DBI';
 	
 	# For subnav modifications...
-	use Clone::More qw( clone );
+	#use Clone::More qw( clone );
+
+	sub clone
+	{
+		my $ref = shift;
+		return $ref if !ref($ref) || !$ref;
+		if(ref $ref eq 'ARRAY' ||
+		   ref $ref eq 'DBM::Deep::Array')
+		{
+			my @new_array;
+			my @old_array = @$ref;
+			foreach my $line (@old_array)
+			{
+				push @new_array, _clean_ref($line);
+			}
+			return \@new_array;
+		}
+		#elsif(ref $ref eq 'HASH' ||
+		#      ref $ref eq 'DBM::Deep::Hash')
+		else
+		{
+			my %new_hash;
+			my %old_hash = %$ref;
+			my @keys = keys %old_hash;
+			foreach my $key (keys %old_hash)
+			{
+				$new_hash{$key} = _clean_ref($old_hash{$key});
+			}
+			return \%new_hash;
+		}
+		warn "clone($ref): Could not clean ref type '".ref($ref)."'";
+		return $ref;
+	}
+
 
 	
 	__PACKAGE__->meta({
@@ -1147,6 +1180,7 @@ package Content::Page::ThemeEngine;
 		if($pkg ne 'Content::Page::ThemeEngine')
 		{
 			my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+			#print STDERR __PACKAGE__."::load_template(): [1] Try load: $tmp_file_name\n";
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
@@ -1160,6 +1194,7 @@ package Content::Page::ThemeEngine;
 		if(!$tmpl)
 		{
 			my $tmp_file_name = 'mods/Content/tmpl/'.$file;
+			#print STDERR __PACKAGE__."::load_template(): [2] Try load: $tmp_file_name\n";
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
@@ -1174,6 +1209,7 @@ package Content::Page::ThemeEngine;
 		if(!$tmpl)
 		{
 			my $tmp_file_name = 'tmpl/'.$file;
+			#print STDERR __PACKAGE__."::load_template(): [3] Try load: $tmp_file_name\n";
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);

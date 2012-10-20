@@ -36,7 +36,7 @@ package Content::Admin;
 		Content::Page::Controller->current_view->breadcrumb_list->last_crumb->{current} = 1;
 			
 		
-		my $tmpl = $self->get_template('list.tmpl');
+		my $tmpl = $self->get_template('admin/list.tmpl');
 		my $binpath = $self->binpath;
 		my $modpath = $self->modpath;
 		
@@ -120,7 +120,7 @@ package Content::Admin;
 		my $url = $req->url;
 		$url =~ s/^\///;
 		
-		my $tmpl = $self->get_template('create.tmpl');
+		my $tmpl = $self->get_template('admin/create.tmpl');
 		$tmpl->param(page_url => $url);
 		
 		$tmpl->param(page_title => AppCore::Common::guess_title($url));
@@ -187,7 +187,7 @@ package Content::Admin;
 		
 		$url =~ s/^\///;
 		
-		my $tmpl = $self->get_template('create.tmpl');
+		my $tmpl = $self->get_template('admin/create.tmpl');
 		$tmpl->param(page_url => $url);
 		$tmpl->param(pageid => $page_obj->id);
 		

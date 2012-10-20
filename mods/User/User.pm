@@ -452,55 +452,16 @@ package User;
 		#print STDERR MY_LINE()."auth($sub_page): mark\n";
 
 
-		my $name_short = AppCore::Config->get("WEBSITE_NAME");
-		my $name_noun  = AppCore::Config->get("WEBSITE_NOUN");
-		my @admin_emails = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
-
 		if($sub_page eq 'post')
 		{
 			my $name = $req->{name};
 			my $email = $req->{user};
 			my $pass = $req->{pass};
 			
-			my $signup_ok = 0;
-			
-			my $user = AppCore::User->by_field(email=>$email);
-			$user = AppCore::User->by_field(user=>$email) if !$user;
-			if($user && !$user->pass)
-			{
-				print STDERR MY_LINE()."auth($sub_page): mark: case 1 ($user)\n";
-				$signup_ok = 1;
-				$user->pass($pass);
-				$user->email($email);
-				$user->user($email);
-				$user->display($name) if $name;
-				$user->update;
-				
-				AppCore::AuthUtils->authenticate($user,$pass);
-				
-				AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
-				AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
-				
-					$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
-			}
-			elsif(!$user)
-			{
-				print STDERR MY_LINE()."auth($sub_page): mark: case2\n";
-				$signup_ok = 1;
-				
-				my $user_ref = AppCore::User->insert({user=>$email,email=>$email,display=>$name,pass=>$pass});
-				AppCore::AuthUtil->authenticate($email,$pass);
-				
-				AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
-				AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
-				
-				$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user_ref});
-			}
+			my $signup_ok = $self->signup_user($name, $email, $pass);
 			
 			if($signup_ok)
 			{
-				$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user});
-				
 				print STDERR MY_LINE()."auth($sub_page): mark: signup_ok\n";
 				#my $url_from = AppCore::Web::Common->url_decode($req->{url_from});
 				#$url_from = AppCore::Common->context->http_bin.'/welcome' if !$url_from;
@@ -534,6 +495,59 @@ package User;
 		$view->output($tmpl);
 		
 		return $r;
+	}
+	
+	sub signup_user
+	{
+		my $self = shift;
+		my ($name, $email, $pass) = @_;
+		
+		my $signup_ok = 0;
+		
+		my $user = AppCore::User->by_field(email => $email);
+		   $user = AppCore::User->by_field(user  => $email) if !$user;
+
+		my $name_short = AppCore::Config->get("WEBSITE_NAME");
+		my $name_noun  = AppCore::Config->get("WEBSITE_NOUN");
+		my @admin_emails = @{ AppCore::Config->get('ADMIN_EMAILS') || [] };
+		
+		if($user && !$user->pass)
+		{
+			print STDERR MY_LINE()."signup_user(): mark: case 1 ($user)\n";
+			$signup_ok = 1;
+			$user->pass($pass);
+			$user->email($email);
+			$user->user($email);
+			$user->display($name) if $name;
+			$user->update;
+			
+			AppCore::AuthUtils->authenticate($user,$pass);
+			
+			AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
+			AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
+			
+			$self->run_hooks(User::ActionHook::EVT_USER_ACTIVATED,{user=>$user});
+		}
+		elsif(!$user)
+		{
+			print STDERR MY_LINE()."signup_user(): mark: case2\n";
+			$signup_ok = 1;
+			
+			my $user_ref = AppCore::User->insert({user=>$email,email=>$email,display=>$name,pass=>$pass});
+			AppCore::AuthUtil->authenticate($email,$pass);
+			
+			AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
+			AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
+			
+			$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user_ref});
+		}
+
+		if($signup_ok)
+		{
+			$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user});
+		}
+		
+		return $signup_ok;
 	}
 
 
