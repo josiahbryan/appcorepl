@@ -2315,8 +2315,9 @@ package AppCore::DBI;
 								$a->{$k} ne $b->{$k} &&
 								lc $a->{type} eq 'timestamp';
 							# timestamp with NULL defaults return CURRENT_TIMESTAMP from mysql - this is valid, just ignore
-							next if $k eq 'default' &&
-								uc $a->{$k} eq 'CURRENT_TIMESTAMP' && !$b->{$k} &&
+							# on some systems, it also returns 'on update CURRENT_TIMESTAMP' for key 'extra' - also valid, just ignore
+							next if ($k eq 'default' || $k eq 'extra') &&
+								uc $a->{$k} =~ 'CURRENT_TIMESTAMP' && !$b->{$k} &&
 								lc $a->{type} eq 'timestamp';
 								
 							# Multiple keys report oddly, so ignore them...

@@ -818,7 +818,7 @@ $jq_footer
 				my $tmp_file = "/tmp/csstidy.$$.css";
 				my $args = AppCore::Config->get('CSS_TIDY_SETTINGS') || '-template=highest --discard_invalid_properties=false --compress_colors=true "--remove_last_;=true"';
 				my $tidy = AppCore::Config->get('USE_CSS_TIDY');
-				my $cmd = "$tidy $cssx_file $args $tmp_file";
+				my $cmd = "$tidy $cssx_file $args $tmp_file 1>/dev/null 2>&1";
 				print STDERR "Tidy command: '$cmd'\n";
 				system($cmd);
 				system("mv -f $tmp_file $cssx_file");

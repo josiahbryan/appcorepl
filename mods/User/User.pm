@@ -540,6 +540,8 @@ package User;
 			AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
 			
 			$self->run_hooks(User::ActionHook::EVT_NEW_USER,{user=>$user_ref});
+
+			$user = $user_ref;
 		}
 
 		if($signup_ok)
@@ -547,7 +549,7 @@ package User;
 			$self->run_hooks(User::ActionHook::EVT_USER_LOGIN,{user=>$user});
 		}
 		
-		return $signup_ok;
+		return $user;
 	}
 
 
