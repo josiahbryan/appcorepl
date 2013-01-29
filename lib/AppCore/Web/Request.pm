@@ -190,6 +190,13 @@ package AppCore::Web::Request;
 		return @path > 0 ? $path[$#path] : undef;
 	}
 	
+	sub first_path
+	{
+		my $self = shift;
+		my @path = @{$self->{_PAGE_PATH} || []};
+		return @path > 0 ? $path[0] : undef;
+	}
+	
 	sub prev_page_path	
 	{
 		my $self = shift;
