@@ -255,7 +255,7 @@ package AppCore::Web::Common;
 			my $cookie = cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
 			print "Set-Cookie:".$cookie."\n";
 			#print $cookie;
-			#print STDERR called_from().": Setting cookie: $cookie\n";
+			print STDERR called_from().": Setting cookie: $cookie\n";
 			#$cgi_cookie_cache->{$name} = $value;
 			AppCore::Common->context->x('http_cookie_cache',{}) if !AppCore::Common->context->x('http_cookie_cache');
 			AppCore::Common->context->x('http_cookie_cache')->{$name} = $value;

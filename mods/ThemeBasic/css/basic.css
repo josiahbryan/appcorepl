@@ -17,3 +17,109 @@ h1.website_name a
 	color: black;
 	text-decoration: none;
 }
+
+/* table.css from ThemePHC */
+
+table.pretty
+{
+	border-collapse:collapse;
+	border: 1px solid rgb(80,80,80); /* light orange */
+/*	-moz-box-shadow: 0px 0px 8px #000;
+	box-shadow: 0 0 8px #000;*/
+	/*-moz-box-shadow: 0 0 3px #fff, 0px 0px 8px #000;*/
+	margin: 8 0;
+}
+
+table.pretty th
+{
+	background: rgb(80,80,80);
+	color: white;
+	text-shadow: rgb(8,8,8) 1px 1px 1px;
+	font-weight: bold;
+	padding: 2 4;
+	text-align: left;
+
+	border-bottom: 1px solid rgb(80,80,80); /* more saturated oragne */
+}
+
+table.pretty td
+{
+	border: 1px solid rgb(80,80,80); /* more saturated oragne */
+	padding: 2 4;
+	cursor: default;
+}
+
+table.pretty tr:hover td
+{
+	background: #c2cdf5;
+}
+
+table.pretty .util
+{
+	color: #364a90;
+}
+
+/* editform.css from ThemePHC */
+.editform
+{
+	padding: 1em;
+	background:rgb(220,220,220);
+	-moz-border-radius: 4px;
+	border:rgb(220,220,220);
+	/*margin-bottom:.5em;*/
+}
+
+.editform td
+{
+	padding: .1em;
+	/*color: rgb(80,80,80);*/
+	text-shadow: #fff 0px 0px 3px;
+	/*font-weight: bold;*/
+}
+
+.editform td.controls
+{
+	padding-top: 1em;
+	text-align: center;
+}
+
+.editform .textinput,
+.editform .text,
+.editform input[type="text"]
+{
+	border: 1px solid rgb(80,80,80);
+	/*-moz-border-radius: 3px;*/
+	background: white;
+	color: black;
+	padding: 1 2 1 2 ;
+	text-shadow: none;
+/*	-moz-box-shadow: 0px 0px 3px #000;
+	box-shadow: 0 0 3px #000;*/
+}
+
+.editform .textinput:focus,
+.editform .text:focus,
+.editform input[type="text"]:focus
+{
+	background: #fff67c;
+	border: 1px solid #8e8500;
+	-moz-box-shadow: 0px 0px 5px #5a5400;
+	box-shadow: 0 0 5px #5a5400;
+}
+
+div.editform-controls
+{
+	/*border: 1px solid red;*/
+	margin-top: .2em;
+	padding: 1em;
+	text-align: center;
+	background:rgb(220,220,220);
+	-moz-border-radius: 4px;
+	/*border:rgb(220,220,220);*/
+}
+
+.editform td .hint
+{
+	display: block;
+	margin-top: .25em;
+}
