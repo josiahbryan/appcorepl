@@ -287,6 +287,13 @@ package AppCore::DBI;
 				$meta->{field_map} = { map { lc $_->{field} => $_ } @s };
 			}
 			
+			# Shortcut to apply 'has_many' values
+			if($meta->{has_many})
+			{
+				my %hash = ${ $meta->{has_many} || {} };
+				$class->has_many($_ => $hash{$_}) foreach keys %hash; 
+			}
+			
 			# Prevents re-audits on each meta() call
 			$meta->{_audited} = 1;
 		}
@@ -2052,6 +2059,35 @@ package AppCore::DBI;
 		my $class = shift;
 		my @list = $class->search(@_);
 		return @list ? shift @list : undef;
+	}
+	
+	sub to_stringified_hash
+	{
+		my $self = shift;
+		#my $model = shift || $self->model;
+		my $model = $self;
+		
+		my %hash;
+		
+		foreach my $col ($model->columns)
+		{
+			my $fm = $model->field_meta($col);
+			my $val = $model->get($col);
+			
+			if($fm && $fm->{linked})
+			{
+				$hash{$col.'_raw'} = $val;
+				
+				eval 'use '.$fm->{linked};
+				my $x = eval {$fm->{linked}->stringify($val)};
+				$val = $x if !$@;
+			}
+			
+			$hash{$col} = $val;
+		}
+		
+		return \%hash;
+	
 	}
 	
 	sub before_update_diff
