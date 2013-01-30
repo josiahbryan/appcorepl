@@ -100,7 +100,7 @@ package AppCore::User;
 		$self->update;
 	}
 	
-	sub stringify_fmt { qw/#userid/ }
+	sub stringify_fmt { '#user' } #['#display','#display',['#user','#user','#userid']] }
 
 	use AppCore::AuthUtil;
 	sub authenticate { AppCore::AuthUtil->authenticate(@_) }
