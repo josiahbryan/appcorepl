@@ -371,7 +371,7 @@ package AppCore::Web::Module;
 		}
 		else
 		{
-			print STDERR __PACKAGE__."::get_template(): Template file didnt exist: $abs_file\n";
+			#warn __PACKAGE__."::get_template(): Template file didnt exist: $abs_file\n";
 		}
 		
 		# Check the superclass(es) for templates if their are any superclasses...

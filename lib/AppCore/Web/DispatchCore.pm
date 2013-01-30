@@ -102,7 +102,8 @@ package AppCore::Web::DispatchCore;
 		{
 			my $err = join(" ", @_);
 			return if $err =~ /(can't locate|undefined sub|Server returned error: Not permitted for method)/i;
-			print STDERR AppCore::Common::print_stack_trace();
+			print STDERR "Error: $err, Stack trace:\n";
+			AppCore::Common::print_stack_trace();
 			
 			my $user = AppCore::Common->context->user;
 	# 		

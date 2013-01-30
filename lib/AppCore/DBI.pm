@@ -290,8 +290,16 @@ package AppCore::DBI;
 			# Shortcut to apply 'has_many' values
 			if($meta->{has_many})
 			{
-				my %hash = ${ $meta->{has_many} || {} };
-				$class->has_many($_ => $hash{$_}) foreach keys %hash; 
+				if(ref $meta->{has_many} ne 'HASH')
+				{
+					#warn __PACKAGE__."::meta(): Unable to apply 'has_many' values to Class::DBI object because the meta key 'has_many' is not a HASH ref. Value of 'hash_may' in class's meta is: '$meta->{has_many}'\n";
+					#print STDERR Dumper $meta->{has_many};
+				}
+				else
+				{
+					my %hash = ${ $meta->{has_many} || {} };
+					$class->has_many($_ => $hash{$_}) foreach keys %hash;
+				} 
 			}
 			
 			# Prevents re-audits on each meta() call

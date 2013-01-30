@@ -255,7 +255,7 @@ package AppCore::Web::Common;
 			my $cookie = cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
 			print "Set-Cookie:".$cookie."\n";
 			#print $cookie;
-			print STDERR called_from().": Setting cookie: $cookie\n";
+			#print STDERR called_from().": Setting cookie: $cookie\n";
 			#$cgi_cookie_cache->{$name} = $value;
 			AppCore::Common->context->x('http_cookie_cache',{}) if !AppCore::Common->context->x('http_cookie_cache');
 			AppCore::Common->context->x('http_cookie_cache')->{$name} = $value;
@@ -515,7 +515,8 @@ package AppCore::Web::Common;
 		#die Dumper $split_path,$split_file;
 		
 		# Assume $file is a filename if no spaces found
-		die "File doesn't exist: $file" if !-f $file && index($file,' ') < 0;
+		#die "File doesn't exist: $file" if !-f $file && index($file,' ') < 0;
+		warn "File doesn't exist: $file" && return undef if !-f $file && index($file,' ') < 0;
 		 
 		my %args;
 		
