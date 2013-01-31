@@ -184,6 +184,8 @@ package AppCore::Common;
 	{
 		my $line = { min => shift };
 		
+		my $short_format = shift || 0;
+		
 		
 		if($line->{min} > 60)
 		{
@@ -229,6 +231,28 @@ package AppCore::Common;
 			}
 		}
 		
+# 		my $push_key = sub {
+# 			my $key = shift;
+# 			return 0 if ! if $line->{$key};
+# 			push @ago, $line->{$key}.$line->{$key.'_suffix'};
+# 			return scalar @ago;
+# 		};
+# 		
+# 		my @ago;
+# 		if($short_format)
+# 		{
+# 			if($line->{min}}
+# 		}
+# 		else
+# 		{
+# 			foreach my $key (qw/year month week day hour/)
+# 			{
+# 				$push_key->($key);
+# 			}
+# 			
+# 			push @ago, int($line->{min}).' min';
+# 		}
+		
 		my @ago;
 		foreach my $key (qw/year month week day hour/)
 		{
@@ -237,7 +261,17 @@ package AppCore::Common;
 		
 		push @ago, int($line->{min}).' min';
 		
-		return join '', @ago;
+		my $ago = join '', @ago;
+		
+		if($short_format && @ago > 2)
+		{
+			@ago = @ago[0 .. 1];
+			$ago = join '', @ago;
+			$ago =~ s/,\s$//g;
+			#die Dumper \@ago, $ago;
+		}
+		
+		return $ago;
 	}
 	
 	
