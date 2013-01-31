@@ -579,7 +579,7 @@ package Content::Page::ThemeEngine;
 			my @old_array = @$ref;
 			foreach my $line (@old_array)
 			{
-				push @new_array, _clean_ref($line);
+				push @new_array, clone($line);
 			}
 			return \@new_array;
 		}
@@ -592,7 +592,7 @@ package Content::Page::ThemeEngine;
 			my @keys = keys %old_hash;
 			foreach my $key (keys %old_hash)
 			{
-				$new_hash{$key} = _clean_ref($old_hash{$key});
+				$new_hash{$key} = clone($old_hash{$key});
 			}
 			return \%new_hash;
 		}
@@ -953,6 +953,7 @@ package Content::Page::ThemeEngine;
 			if(@parts < 2)
 			{
 				# no subnav
+				#print STDERR "load_subnav(): no subnav\n";
 			}
 			else
 			{
@@ -1049,6 +1050,8 @@ package Content::Page::ThemeEngine;
 				}
 				
 				$subnav->{nav_path} = \@nav_path;
+				
+				#print STDERR "subnav dump: ".Dumper($subnav);
 			}
 			
 			$SubnavCache{$url} = $subnav;
@@ -1101,6 +1104,7 @@ package Content::Page::ThemeEngine;
 	{
 		my ($self,$tmpl,$page_obj) = @_;
 		
+		#print STDERR "apply_basic_data for $page_obj\n";
 		#timemark("ABD start [$page_obj]");
 		my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;
 		#timemark("ABD done output");
@@ -1166,6 +1170,8 @@ package Content::Page::ThemeEngine;
 		#timemark("ABD after page.tmpl");
 		
 		$tmpl->param($_ => $pgdat->{$_}) foreach keys %$pgdat;
+		
+		#print STDERR "pgdat final: ".Dumper($pgdat);
 		
 		#timemark("ABD tmpl->param calls done");
 		

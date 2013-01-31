@@ -2657,6 +2657,8 @@ package $opts->{pkg};
 		my $pkg = shift;
 		my $cur = shift;
 		my $curid = ref $cur ? $cur->id : $cur;
+		
+		my $query_sql = shift || undef;
 # 		my $include_invalid = shift || 0;
 # 		
 # 		my @all = $pkg->retrieve_from_sql('1 order by '.$pkg->get_orderby_sql());
@@ -2678,7 +2680,7 @@ package $opts->{pkg};
 # 				selected => defined $curid && $item->id == $curid,
 # 			}
 # 		}
-		my $listref = $pkg->stringified_list();
+		my $listref = $pkg->stringified_list($curid, $query_sql);
 		foreach my $item (@$listref)
 		{
 			$item->{value} = $item->{id};
