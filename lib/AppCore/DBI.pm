@@ -2129,7 +2129,7 @@ package AppCore::DBI;
 			$has_field_changes = 1;
 		}
 		
-		return wantarray ? %changes : (\%changes, $has_field_changes);
+		return !wantarray ? %changes : (\%changes, $has_field_changes);
 	}
 	
 # 	# Default implementation of apply_mysql_schema() - feel free to override in subclasses
