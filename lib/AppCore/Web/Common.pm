@@ -30,10 +30,63 @@ package AppCore::Web::Common;
 		html2text
 		text2html
 		might_be_html
+		tmpl_select_list
 		/;
 		
 	push @EXPORT, @AppCore::Common::EXPORT;
 	#push @EXPORT, @{ $CGI::EXPORT_TAGS{':cgi'} };
+	
+	sub tmpl_select_list
+	{
+		shift if $_[0] eq __PACKAGE__;
+		my $curid = shift;
+		my $data  = shift;
+		
+		my @all;
+		if(!ref $data && $data =~ /^enum\((.*?)\)$/i)
+		{
+			@all = $1 =~ /'([^"]+?)'/g;
+		}
+		else
+		{
+			@all = @{$data || []};
+		}
+		
+		my $include_invalid = shift || 0;
+		
+		my @list;
+		if($include_invalid)
+		{
+			push @list, { 
+				value 		=> undef,
+				text		=> '(None)',
+				selected	=> !$curid,
+			};
+		}
+		
+		foreach my $item (@all)
+		{
+			if(ref $item eq 'HASH')
+			{
+				push @list, {
+					value	=> $item->{value} || $item->{id},
+					text	=> $item->{text}  || $item->{display},
+					selected => defined $curid && ($item->{value} || $item->{id}) eq $curid,
+				}
+			}
+			else
+			{
+				
+				push @list, {
+					value	=> $item,
+					text	=> $item,
+					selected => defined $curid && $item eq $curid,
+				}
+			}
+		}
+		#print STDERR "list: ".Dumper(\@list);
+		return \@list;
+	}
 	
 	sub simple_paging
 	{

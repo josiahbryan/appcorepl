@@ -2680,7 +2680,7 @@ package $opts->{pkg};
 # 				selected => defined $curid && $item->id == $curid,
 # 			}
 # 		}
-		my $listref = $pkg->stringified_list($curid, $query_sql);
+		my $listref = $pkg->stringified_list(undef, $query_sql);
 		foreach my $item (@$listref)
 		{
 			$item->{value} = $item->{id};
