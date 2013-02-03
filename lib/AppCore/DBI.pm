@@ -2657,8 +2657,8 @@ package $opts->{pkg};
 		my $pkg = shift;
 		my $cur = shift;
 		my $curid = ref $cur ? $cur->id : $cur;
-		
 		my $query_sql = shift || undef;
+		my $short_len = shift || -1;
 # 		my $include_invalid = shift || 0;
 # 		
 # 		my @all = $pkg->retrieve_from_sql('1 order by '.$pkg->get_orderby_sql());
@@ -2685,6 +2685,11 @@ package $opts->{pkg};
 		{
 			$item->{value} = $item->{id};
 			$item->{selected} = defined $curid && $item->{id} == $curid;
+
+			if($short_len > 0)
+			{
+				$item->{text} = substr($item->{text}, 0, $short_len) . (length($item->{text}) > $short_len ? '...' : '');
+			}
 		}
 		return $listref;
 	}
