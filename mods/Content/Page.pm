@@ -445,7 +445,10 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 			push @final, $item;
 		}
 		
-		$final[$#tmp]->{current} = 1 if @final;
+		$final[$#final]->{current} = 1 if @final;
+
+		#use Data::Dumper;
+		#die Dumper \@final;
 		
 		return \@final; 
 	}
