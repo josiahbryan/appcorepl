@@ -2659,18 +2659,20 @@ package $opts->{pkg};
 		my $curid = ref $cur ? $cur->id : $cur;
 		my $query_sql = shift || undef;
 		my $short_len = shift || -1;
-# 		my $include_invalid = shift || 0;
+ 		my $include_invalid = shift || 0;
 # 		
 # 		my @all = $pkg->retrieve_from_sql('1 order by '.$pkg->get_orderby_sql());
-# 		my @list;
-# 		if($include_invalid)
-# 		{
-# 			push @list, { 
-# 				value 		=> undef,
-# 				text		=> '(None)',
-# 				selected	=> !$curid,
-# 			};
-# 		}
+ 		my @list;
+		if($include_invalid)
+		{
+			push @list, {
+				value 		=> undef,
+				text		=> '(None)',
+				selected	=> !$curid,
+			};
+			#use Data::Dumper;
+			#die Dumper \@list, $curid;
+		}
 # 		foreach my $item (@all)
 # 		{
 # 			push @list, {
@@ -2691,7 +2693,8 @@ package $opts->{pkg};
 				$item->{text} = substr($item->{text}, 0, $short_len) . (length($item->{text}) > $short_len ? '...' : '');
 			}
 		}
-		return $listref;
+		push @list, @$listref;
+		return \@list;
 	}
 
 # 	sub search_like
