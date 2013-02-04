@@ -16,7 +16,7 @@ package AppCore::EmailQueue;
 	__PACKAGE__->meta({
 		table           => 'emailqueue',
 
-		db		=> AppCore::Config->get("EMAIL_DB")      || 'appcore',
+		#db		=> AppCore::Config->get("EMAIL_DB")      || 'appcore',
 		table		=> AppCore::Config->get("EMAIL_DBTABLE") || 'emailqueue',
 		
 		schema  =>
@@ -32,6 +32,7 @@ package AppCore::EmailQueue;
 			{       field   => 'sentflag',		type    => 'int(1)',    	default => 0,     null => 'NO' },
 			{       field   => 'msg_from',		type    => 'varchar(255)',	default => '',    null => 'NO' },
 			{       field   => 'msg_to',		type    => 'varchar(255)',	default => '',    null => 'NO' },
+			{       field   => 'msg_cc',		type    => 'varchar(255)',	default => '',    null => 'NO' },
 			{       field   => 'msg_subject',	type    => 'varchar(255)'	},
 			{       field   => 'msg',		type    => 'longtext' 		},
 			{       field   => 'result',		type    => 'varchar(255)'	},
@@ -62,7 +63,7 @@ package AppCore::EmailQueue;
 	{
 		my $class = shift;
 		
-		my ($list,$subject,$text,$high_import_flag,$from) = @_;
+		my ($list,$subject,$text,$high_import_flag,$from,%opts) = @_;
 		
 		$list = [$list] if !ref $list;
 		
@@ -98,6 +99,8 @@ Server: $host
 			my $msg = MIME::Lite->new(
 					From    =>$from,
 					To      =>$to,
+					'Reply-To'=>$from,
+					CC      =>$opts{cc} || '',
 					Subject =>$subject,
 					Type    =>'multipart/mixed'
 					);
@@ -105,6 +108,8 @@ Server: $host
 			### Add parts (each "attach" has same arguments as "new"):
 			$msg->attach(Type       =>'TEXT',
 				     Data       =>$text);
+
+			$msg->attach(%{$_}) foreach @{ $opts{attachments} || [] };
 		
 			#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
 		
@@ -142,13 +147,15 @@ Server: $host
 					msg_subject	=> $subject,
 					msg_from	=> $from,
 					msg_to		=> $to,
+					msg_cc		=> $opts{cc} || '',
 					msg		=> $str,
 				});
 			};
 			
 			#print STDERR "$str, $from, $to, LEN:".(length($str)/1024)."KB\n$@" if $@;
+			die $@ if $@;
 		}
-		
+
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
@@ -273,17 +280,17 @@ Server: $host
 				$args{Password} = $prof->{pass} || 'Notify1125';
 			}
 			
-# 			use Data::Dumper;
-# 			print STDERR Dumper \%args;
+ 			#use Data::Dumper;
+			#print STDERR Dumper \%args;
 				
 			$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
-			#print STDERR "Result: '$smtp'\n";
 		};
 		
 		if(!$smtp || $@)
 		{
+			my $err = $@;
 			$self->sentflag(1);
-			$self->result("Error: Unable to send: ".($@ ? $@ : "$pkg didn't connect for some reason"));
+			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect for some reason"));
 			print STDERR "MsgID $self: ".$self->result."\n";
 			$self->update;
 			return;
@@ -306,43 +313,52 @@ Server: $host
 				return;
 			}
 		}
-		
-		my $required_from = $prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain;
-		print STDERR "[DEBUG] Domain: '$domain', To: ".$self->msg_to.", From: ".$self->msg_from.", Server: $prof->{server}:$prof->{port}, Req: $required_from\n" if $DEBUG;
-			#user: $prof->{user}, pass: $prof->{pass}, port: $prof->{port}\n";
-		
-		$smtp->mail($required_from); 
-		
-		$smtp->to($self->msg_to); # recipient's address
-		$smtp->data(); # Start the mail
-		
-		my $data = $self->msg;
-		if($data =~ /^#file:(.*)$/)
+
+		my @recips = ($self->msg_to);
+ 		my @cc = split(/,/, $self->msg_cc);
+ 		s/(^\s+|\s+$)//g foreach @cc;
+		push @recips, @cc;
+
+		foreach my $recip (@recips)
 		{
-			print STDERR "Debug: Reading file $1\n" if $DEBUG;
-			my $file = $1;
-			open(FILE,"<$file");
-			while($_ = <FILE>)
+			my $required_from = $prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain;
+			print STDERR "[DEBUG] Domain: '$domain', To: $recip, From: ".$self->msg_from.", Server: $prof->{server}:$prof->{port}, Req: $required_from\n" if $DEBUG;
+				#user: $prof->{user}, pass: $prof->{pass}, port: $prof->{port}\n";
+
+			$smtp->mail($required_from);
+
+			#$smtp->to($self->msg_to); # recipient's address
+			$smtp->to($recip); # recipient's address
+			$smtp->data(); # Start the mail
+
+			my $data = $self->msg;
+			if($data =~ /^#file:(.*)$/)
 			{
-				s/From: .*$/From: $required_from/ if $domain eq 'productiveconcepts.com';
-				#print "[DATA] $_\n"; 
-				$smtp->datasend($_);
+				print STDERR "Debug: Reading file $1\n" if $DEBUG;
+				my $file = $1;
+				open(FILE,"<$file");
+				while($_ = <FILE>)
+				{
+					s/From: .*$/From: $required_from/ if $domain eq 'productiveconcepts.com';
+					#print "[DATA] $_\n";
+					$smtp->datasend($_);
+				}
+				close(FILE);
+				#unlink($file);
+				system("mv $file /var/spool/appcore/mailsent");
+
+				# Wierd, I know - but since we deleted the data file, there really is no point in keeping this record around in the database either...
+				#$self->delete;
 			}
-			close(FILE);
-			#unlink($file);
-			system("mv $file /var/spool/appcore/mailsent");
-			
-			# Wierd, I know - but since we deleted the data file, there really is no point in keeping this record around in the database either...
-			#$self->delete;
+			else
+			{
+				$data =~ s/From:.*\n/From: $required_from\n/i if $domain eq 'productiveconcepts.com';
+				#print "[DATA] $data\n";
+				$smtp->datasend($data);
+			}
+			$smtp->dataend();
 		}
-		else
-		{
-			$data =~ s/From:.*\n/From: $required_from\n/i if $domain eq 'productiveconcepts.com';
-			#print "[DATA] $data\n";
-			$smtp->datasend($data); 
-		}
-		$smtp->dataend(); 
-	
+		
 		print "Done.\n" if $DEBUG;
 		#exit if $DEBUG;
 	}
