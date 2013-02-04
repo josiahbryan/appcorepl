@@ -719,10 +719,18 @@ package AppCore::Common;
 		my $col;
 		my @out = map {
 			$col = $_;
-			my $title = $ref->field_meta($col);
-			if($title && $title->{linked} && eval '$ref->get($col)->can("stringify")') 
+			my $meta = $ref->field_meta($col);
+			my $val = $changes{$col};
+			my $old_val = undef;
+			($val, $old_val) = @$val if ref $val eq 'ARRAY';
+			
+			if($meta && $meta->{linked} && eval '$ref->get($col)->can("stringify")') 
 			{
-				$changes{$col} = $ref->get($col)->stringify;
+				$val = $ref->get($col)->stringify;
+				
+				undef $@;
+				eval '$old_val = $old_val->stringify';
+				warn "Error stringifying old value: $@" if $@;
 			}
 			else
 			{
@@ -730,10 +738,15 @@ package AppCore::Common;
 			}
 			#print STDERR "Debug: col($col),title(".($title?$title:'(undef)')."),linked(".($title?$title->{linked}:'(undef)')."): changes($changes{$col})\n";
 			
-			$title = $title ? ($title->{title} ? $title->{title} : AppCore::Common::guess_title($col)) : AppCore::Common::guess_title($col);
+			my $title = $meta ? ($meta->{title} ? $meta->{title} : AppCore::Common::guess_title($col)) : AppCore::Common::guess_title($col);
+			
 			"<span class='field_title'>$title</span> ". 
-				($title=~/to$/i ? "" : "to ").
-				'"<span class="field_value">'.(ref $changes{$col} && eval '$changes{$col}->can("stringify")' ? $changes{$col}->stringify : $changes{$col}).'</span>"'
+				(defined $old_val ? 
+					(	"from ".
+						'"<span class="field_value">'.(ref $old_val && eval '$old_val->can("stringify")' ? $old_val->stringify : $old_val).'</span>" '.
+						"to ")
+					: ($title=~/to$/i ? "" : "to ")).
+				'"<span class="field_value">'.(ref $val && eval '$val->can("stringify")' ? $val->stringify : $val).'</span>"'
 		} @keys;
 		@out = grep {$_} @out;
 		my $str = @out > 2 ? (join(', ', @out[0..$#out-1]).', and '.$out[$#out]) : join(' and ',@out);

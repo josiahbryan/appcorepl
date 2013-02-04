@@ -2101,6 +2101,7 @@ package AppCore::DBI;
 	sub before_update_diff
 	{
 		my $self = shift;
+		my $incl_old_values = shift || 0;
 		
 		## Grab the current values from the database
 		my $dbh = $self->db_Main;
@@ -2120,13 +2121,12 @@ package AppCore::DBI;
 			
 			if($new_val .'' ne $orig_values->{$key} .'')
 			{
-				$changes{$key} = $new_val;
+				$changes{$key} = $incl_old_values ? [$new_val, $orig_values->{$key}] : $new_val;;
+				$has_field_changes = 1;
 			}
 			
 			
 			#push @missing, $so->field_meta($key) || {title=>AppCore::Common::guess_title($key)} if !$so->get($key);
-			
-			$has_field_changes = 1;
 		}
 		
 		return !wantarray ? %changes : (\%changes, $has_field_changes);
