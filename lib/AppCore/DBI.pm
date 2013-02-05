@@ -2281,7 +2281,7 @@ package AppCore::DBI;
 		
 		my @sql;
 		
-		my $dbh = __PACKAGE__->auto_new_dbh($opts);
+		my $dbh = __PACKAGE__->auto_new_dbh($db, $opts);
 		
 		my $q_explain = $dbh->prepare('explain `'.$table.'`');
 		my $old_fatal = $SIG{__DIE__};

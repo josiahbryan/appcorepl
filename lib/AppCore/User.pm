@@ -111,8 +111,9 @@ package AppCore::User;
 		my $cur = shift;
 		my $curid = ref $cur ? $cur->id : $cur;
 		my $include_invalid = shift || 0;
+		my $query_sql = shift || '1';
 		
-		my @all = $pkg->retrieve_from_sql('1 order by display'); #`last`, `first`');
+		my @all = $pkg->retrieve_from_sql($query_sql.' order by display'); #`last`, `first`');
 		my @list;
 		if($include_invalid)
 		{
