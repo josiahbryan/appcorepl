@@ -732,10 +732,12 @@ package AppCore::Common;
 				eval '$old_val = $old_val->stringify';
 				warn "Error stringifying old value: $@" if $@;
 			}
-			else
+			
+			if($old_val && $meta->{linked})
 			{
-				
+				eval '$old_val = $meta->{linked}->retrieve($old_val)';
 			}
+			
 			#print STDERR "Debug: col($col),title(".($title?$title:'(undef)')."),linked(".($title?$title->{linked}:'(undef)')."): changes($changes{$col})\n";
 			
 			my $title = $meta ? ($meta->{title} ? $meta->{title} : AppCore::Common::guess_title($col)) : AppCore::Common::guess_title($col);
