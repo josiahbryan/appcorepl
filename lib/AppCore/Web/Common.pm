@@ -763,18 +763,41 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
-		
+
+		# Remove CR
+		$html =~ s/\r//g;
+
+		# Simplify blank lines
+		$html =~ s/\n\s+\n/\n\n/g;
+
 		# If plain text, convert paragraphs to <p>...</p>
-		$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
+		$html =~ s/((?:[^\n]+(?:\n|$))+)/<p>$1<\/p>\n\n/g;
+		#$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
+
+		# If the entire thing is only one line, wrap in paragraph tags
+		$html = "<p>$html</p>" if $html !~ /\n/;
+
 		# Auto italic/underline/bold based on common conventions in text
 		$html =~ s/\*([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
 		#$html =~ s/\/([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\//<i>$1<\/i>/g;
 		#$html =~ s/_([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)_/<u>$1<\/u>/g;
+		$html =~ s/===([^=]+?)===/<h3>$1<\/h3>/g;
+		$html =~ s/==([^=]+?)==/<h2>$1<\/h2>/g;
+		$html =~ s/=([^=]+?)=/<h1>$1<\/h1>/g;
+		$html =~ s/{([^}]+?)}/<tt>$1<\/tt>/g;
+		$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
+		$html =~ s/\s\/([^\/]+?)\/\s/ <i>$1<\/i> /g;
+		$html =~ s/\s\_([^\_]+?)\_\s/ <u>$1<\/u> /g;
+		$html =~ s/\[([^\|]+?)\|([^\]]+?)\]/<a href='$1'>$2<\/a>/g;
+		$html =~ s/\[([^\]]+?)\]/<a href='$1'>$1<\/a>/g;
+
 		# Limit multiple newlines to 2 each
 		$html =~ s/\n{2,}/\n\n/sg;
 		#$html =~ s/\n/<br>\n/g;
+
 		# Cleanup messy list html
 		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
+
 		# Add <br> between paragraphs with only a single \n linebreak between them
 		$html =~ s/([^\n])\n([^\n])/$1<br>\n$2/g;
 		
