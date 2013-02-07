@@ -755,6 +755,13 @@ package AppCore::Web::Common;
 		$html =~ s/“/"/g;
 		$html =~ s/”/"/g;
 		
+		# Originates as =A0 in emails, see: http://stackoverflow.com/questions/2774471/what-is-c2-a0-in-mime-encoded-quoted-printable-text
+		#my $chr = chr(hex('A0'));
+		#$html =~ s/$chr/&nbsp;/g;
+		$html =~ s/\x{A0}/&nbsp;/g;
+		$html =~ s/\x{C2A0}/&nbsp;/g;
+		$html =~ s/\x{00A0}/&nbsp;/g;
+		
 		
 		return $html;
 	}

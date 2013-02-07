@@ -16,7 +16,7 @@ package AppCore::EmailQueue;
 	__PACKAGE__->meta({
 		table           => 'emailqueue',
 
-		#db		=> AppCore::Config->get("EMAIL_DB")      || 'appcore',
+		db		=> AppCore::Config->get("EMAIL_DB")      || 'appcore',
 		table		=> AppCore::Config->get("EMAIL_DBTABLE") || 'emailqueue',
 		
 		schema  =>
@@ -261,6 +261,7 @@ Server: $host
 		}
 		
 		#print STDERR "Fox\n";
+		my %args;
 		eval{
 		
 			#print STDERR "Debug: Pkg: $pkg, server: $prof->{server}, port: $prof->{port}, user: $prof->{user}, pass: $prof->{pass}, domain: $domain\n";
@@ -269,7 +270,7 @@ Server: $host
 			 
 			#die "Unable to load $pkg - Unable to send email thru $prof->{server}: $@" ; # required for relaying thru google
 			
-			my %args = (
+			%args = (
 				Port  => $prof->{port} || 25,
 				Hello => $domain,
 				Debug => $DEBUG
@@ -291,7 +292,8 @@ Server: $host
 			my $err = $@;
 			$self->sentflag(1);
 			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect for some reason"));
-			print STDERR "MsgID $self: ".$self->result."\n";
+			use Data::Dumper;
+			print STDERR "MsgID $self: ".$self->result."\n".Dumper(\%args);
 			$self->update;
 			return;
 		}
