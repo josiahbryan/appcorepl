@@ -862,8 +862,11 @@ package HTML::Template::DelayedLoading;
 		
 		$CurrentObject = $self;
 		
+		$pargs{path} ||= '';
+		
 		#use Data::Dumper;
-		#print STDERR Dumper $self;
+		#print STDERR Dumper \%pargs;
+		
 		my $tmpl = HTML::Template->new(%pargs);
 		$tmpl->param(%{ $self->{params} });
 		
