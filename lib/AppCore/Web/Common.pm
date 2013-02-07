@@ -791,7 +791,7 @@ package AppCore::Web::Common;
 		$html =~ s/===([^=]+?)===/<h3>$1<\/h3>/g;
 		$html =~ s/==([^=]+?)==/<h2>$1<\/h2>/g;
 		#$html =~ s/=([^=]+?)=/<h1>$1<\/h1>/g;
-		$html =~ s/{{(.+?)}}/<tt stye='white-space:pre-wrap'>$1<\/tt>/g;
+		$html =~ s/{{((?:.|\n)+?)}}/<tt style='white-space:pre-wrap'>$1<\/tt>/g;
 		$html =~ s/{([^}]+?)}/<tt>$1<\/tt>/g;
 		$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
 		$html =~ s/\s\/([^\/]+?)\/\s/ <i>$1<\/i> /g;
