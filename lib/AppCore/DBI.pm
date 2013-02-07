@@ -2121,7 +2121,7 @@ package AppCore::DBI;
 			
 			if($new_val .'' ne $orig_values->{$key} .'')
 			{
-				$changes{$key} = $incl_old_values ? [$new_val, $orig_values->{$key}] : $new_val;;
+				$changes{$key} = $incl_old_values ? [$new_val, $orig_values->{$key}] : $new_val;
 				$has_field_changes = 1;
 			}
 			

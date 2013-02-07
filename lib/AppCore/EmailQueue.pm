@@ -70,7 +70,7 @@ package AppCore::EmailQueue;
 		#print STDERR "send_email(): list=".join(',',@$list),", subject=$subject, high_import_flag=$high_import_flag, text=[$text]\n";
 		#print STDERR "send_email(): CATCH ALL: Sending to jbryan only.\n";
 		#$list = ['jbryan@productiveconcepts.com'];
-		if(AppCore::Config->get('EMAIL_ENABLE_DEBUG_FOOTER'))
+		if(!ref $text && AppCore::Config->get('EMAIL_ENABLE_DEBUG_FOOTER'))
 		{
 			my $host = `hostname`;
 			$host =~ s/[\r\n]//g;
@@ -95,25 +95,43 @@ Server: $host
 		
 		foreach my $to (@$list)
 		{
-			$WasEmailed{lc($to)} = 1;	
-			my $msg = MIME::Lite->new(
-					From    =>$from,
-					To      =>$to,
-					'Reply-To'=>$from,
-					CC      =>$opts{cc} || '',
-					Subject =>$subject,
-					Type    =>'multipart/mixed'
-					);
-		
-			### Add parts (each "attach" has same arguments as "new"):
-			$msg->attach(Type       =>'TEXT',
-				     Data       =>$text);
-
-			$msg->attach(%{$_}) foreach @{ $opts{attachments} || [] };
-		
-			#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
-		
-			my $str = $msg->as_string;
+			$WasEmailed{lc($to)} = 1;
+				
+			my $str = undef;
+			if($opts{raw_mime})
+			{
+				$str = $text;
+				#warn "Options said raw_mime";
+			}
+			elsif(UNIVERSAL::isa($text, 'MIME::Lite'))
+			{
+				$str = $text->as_string;
+				#warn "Text was MIME::Lite, called as_string";
+			}
+			else
+			{
+				my $msg = MIME::Lite->new(
+						From    =>$from,
+						To      =>$to,
+						'Reply-To'=>$from,
+						CC      =>$opts{cc} || '',
+						Subject =>$subject,
+						Type    =>'multipart/mixed'
+						);
+			
+				### Add parts (each "attach" has same arguments as "new"):
+				$msg->attach(Type       => 'TEXT',
+					     Data       => $text);
+	
+				$msg->attach(%{$_}) foreach @{ $opts{attachments} || [] };
+				
+				#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
+			
+				$str = $msg->as_string;
+				#warn "Composed string implicitly";
+			}
+			
+			#die "String: $str\n";
 		
 			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g if $high_import_flag;
 			#die $str;
