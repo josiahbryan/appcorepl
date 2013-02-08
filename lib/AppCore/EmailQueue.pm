@@ -177,7 +177,7 @@ Server: $host
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
-	our $DEBUG = 1;
+	our $DEBUG = 0;
 	sub send_all
 	{
 		my $self = shift;
