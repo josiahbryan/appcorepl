@@ -791,7 +791,38 @@ package AppCore::Web::Common;
 		$html =~ s/===([^=]+?)===/<h3>$1<\/h3>/g;
 		$html =~ s/==([^=]+?)==/<h2>$1<\/h2>/g;
 		#$html =~ s/=([^=]+?)=/<h1>$1<\/h1>/g;
-		$html =~ s/{{((?:.|\n)+?)}}/<tt style='white-space:pre-wrap'>$1<\/tt>/g;
+
+		#$html =~ s/{{((?:.|\n)+?)}}/<tt style='white-space:pre-wrap'>$1<\/tt>/g;
+
+		if($html =~ /{{(?:.|\n)+?}}/)
+		{
+			# Courtesy of http://perlmonks.org/?node_id=1018136
+			my @splits = split /({{.*?}})/s, $html;
+
+			my $result="";
+			while (my $block = shift @splits)
+			{
+				$block  =~ s/\n/<br>\n/gs;
+				$result .= $block;
+				#$result .= shift @splits if @splits;
+				if(@splits)
+				{
+					my $tt = shift @splits;
+					$tt =~ s/{{((?:.|\n)+?)}}/<tt style='white-space:pre-wrap'>$1<\/tt>/g;
+					#die $tt;
+					$result .= $tt;
+				}
+			}
+			#die $result;
+
+			$html = $result;
+		}
+		else
+		{
+			# Add <br> between paragraphs with only a single \n linebreak between them
+			$html =~ s/([^\n])\n([^\n])/$1<br>\n$2/g;
+		}
+
 		$html =~ s/{([^}]+?)}/<tt>$1<\/tt>/g;
 		$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
 		$html =~ s/\s\/([^\/]+?)\/\s/ <i>$1<\/i> /g;
@@ -806,8 +837,7 @@ package AppCore::Web::Common;
 		# Cleanup messy list html
 		$html =~ s/<br>\s*\n\s*<br>\s*\n\s*<br>\s*\n/<br>\n/sg;
 
-		# Add <br> between paragraphs with only a single \n linebreak between them
-		$html =~ s/([^\n])\n([^\n])/$1<br>\n$2/g;
+
 		
 		return $html;
 	}
