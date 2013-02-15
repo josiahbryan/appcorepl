@@ -793,13 +793,13 @@ package AppCore::Web::Common;
 		# Get rid of classes and styles
 		$html =~ s/\s+style='[^']+'//gi;
 		$html =~ s#<(meta|link|/?o:|/?style|/?div|/?st\d|/?head|/?html|body|/?body|/?span|!\[)[^>]*?>"##gi;
-		$html =~ s/(<[^>]+>)+&nbsp;(<\/\w+>)+//gi;
+		#$html =~ s/(<[^>]+>)+&nbsp;(<\/\w+>)+//gi;
 		# remove bizarre v: element attached to <img> tag
 		$html =~ s/\s+v:\w+="[^"]+"//gi;
 		$html =~ s/(\n\r){2,}"//gi;
 		
 		# Remove wierd MS HTML
-		$html =~ s/<p(\s+class="MsoNormal")?>(<span([^\>]|\n)+>)?<o:p>.*?&nbsp;<\/o:p>(<\/span>)?<\/p>//g;
+		#$html =~ s/<p(\s+class="MsoNormal")?>(<span([^\>]|\n)+>)?<o:p>.*?&nbsp;<\/o:p>(<\/span>)?<\/p>//g;
 		
 		return $html;
 	}
