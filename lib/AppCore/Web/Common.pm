@@ -727,7 +727,14 @@ package AppCore::Web::Common;
 		$html =~ s/’/'/g;
 		$html =~ s/“/"/g;
 		$html =~ s/”/"/g;
+		# Textify some entitites
 		$html =~ s/&#39;/'/g;
+		$html =~ s/&#8217;/'/sg;
+		$html =~ s/&#8211;/ - /sg;
+		$html =~ s/&amp;#8217;/'/sg;
+		$html =~ s/&#8220;/"/sg;
+		$html =~ s/&#8221;/"/sg;
+		
 		
 		#Remove Wordpress Scribd 'tag', Sample: [scribd id=64192688 key=key-uwgseze2p7s03ow8a8b mode=list]
 		#$html =~ s/\[scribd[^\]]+\]/(Embedded Document from Scribd)/gi;
@@ -748,7 +755,26 @@ package AppCore::Web::Common;
 			$html = text2html($html);
 		}
 		
-		$html =~ s/<(style|!--)[^\>]*>(.|\n)*<\/(style|--)>//gi;
+		# Remove <html> tag, preserve contents
+		$html =~ s/<html[^\>]*>((?:.|\n)*)<\/html>/$1/gi;
+		# Remove <body> tag, preserve contents
+		$html =~ s/<body[^\>]*>((?:.|\n)*)<\/body>/$1/gi;
+		# Remove <head> tag and remove contents
+		$html =~ s/<head[^\>]*>(.|\n)*<\/head>//gi;
+		# Remove <style> tag and remove contents
+		$html =~ s/<style[^\>]*>(.|\n)*<\/style>//gi;
+		# Remove <title> tag and remove contents
+		$html =~ s/<title[^\>]*>(.|\n)*<\/title>//gi;
+		# Remove any HTML comments
+		$html =~ s/<!--[^\>]*>(.|\n)*-->//gi;
+		# Remove DOCTYPE declarations
+		$html =~ s/<!DOCTYPE[^\>]*>//gi;
+		# Remove <base> tag
+		$html =~ s/<base[^\>]*>//gi;
+		# Remove <meta> tag
+		$html =~ s/<meta[^\>]*>//gi;
+		
+		# Basic character replacements
 		$html =~ s/—/ - /g;
 		$html =~ s/–/-/;
 		$html =~ s/’/'/g;
