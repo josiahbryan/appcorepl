@@ -808,6 +808,7 @@ package AppCore::Web::Common;
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $html = shift;
+		my $no_p_wrap = shift;
 
 		# Remove CR
 		$html =~ s/\r//g;
@@ -815,12 +816,15 @@ package AppCore::Web::Common;
 		# Simplify blank lines
 		$html =~ s/\n\s+\n/\n\n/g;
 
-		# If plain text, convert paragraphs to <p>...</p>
-		$html =~ s/((?:[^\n]+(?:\n|$))+)/<p>$1<\/p>\n\n/g;
-		#$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
-
-		# If the entire thing is only one line, wrap in paragraph tags
-		$html = "<p>$html</p>" if $html !~ /\n/;
+		if(!$no_p_wrap)
+		{
+			# If plain text, convert paragraphs to <p>...</p>
+			$html =~ s/((?:[^\n]+(?:\n|$))+)/<p>$1<\/p>\n\n/g;
+			#$html =~ s/([^\n]+)\n\s*\n/<p>$1<\/p>\n\n/g;
+	
+			# If the entire thing is only one line, wrap in paragraph tags
+			$html = "<p>$html</p>" if $html !~ /\n/;
+		}
 
 		# Auto italic/underline/bold based on common conventions in text
 		$html =~ s/\*([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
