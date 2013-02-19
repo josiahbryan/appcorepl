@@ -195,7 +195,7 @@ package AppCore::AuthUtil;
 		
 		#print STDERR "authenticate: user '$user', expected pass '".$user_object->pass."'\n";
 		
-		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef,$ENV{REMOTE_ADDR}));
+		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");
 		if($user_object && $user && ($user_object->pass eq $pass || $hash eq $pass || $user_object->fb_token eq $pass))
 		{
