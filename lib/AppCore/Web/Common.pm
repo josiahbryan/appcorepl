@@ -730,6 +730,7 @@ package AppCore::Web::Common;
 		# Textify some entitites
 		$html =~ s/&#39;/'/g;
 		$html =~ s/&#8217;/'/sg;
+		$html =~ s/&#8230;/.../sg;
 		$html =~ s/&#8211;/ - /sg;
 		$html =~ s/&amp;#8217;/'/sg;
 		$html =~ s/&#8220;/"/sg;
