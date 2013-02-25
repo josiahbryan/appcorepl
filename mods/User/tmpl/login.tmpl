@@ -37,7 +37,7 @@
 
 	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
 	
-		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
+		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em;margin-top:1.5em">
 			<tmpl_if fb_app_id>
 			<tr>
 				<td colspan=3 valign=top>
@@ -57,20 +57,22 @@
 			</tr>
 			</tmpl_if>
 			<tr>
-				<td>Your E-Mail or User:</td> <td style='padding-right:1.5em'>
+				<td align=left>E-Mail or User:&nbsp;</td> <td  align=left style='padding-right:1.5em'>
 					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=43 tabindex=1>
 					<script>var e= document.getElementById('user');if(e)e.focus()</script>
 				</td>
 			</tr>
 			
 			<tr>
-				<td>Password:</td> <td>
+				<td align=left>Password:</td>
+				<td align=left>
 					<input type=password name=pass id=pass onfocus='select()' size=20 tabindex=2>  <a href='%%binpath%%/forgot_pass?user=<tmpl_var user>'>I forgot my password!</a>
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
 				</td>
 			</tr>
 			<tr>
-				<td colspan=2 align=center class=focus_highlight>
+				<td></td>
+				<td colspan=2 align=left class=focus_highlight>
 				<br>
 				
 				<input type=submit value="Login" tabindex=3>

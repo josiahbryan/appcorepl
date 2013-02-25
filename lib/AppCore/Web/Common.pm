@@ -789,6 +789,10 @@ package AppCore::Web::Common;
 		$html =~ s/\x{C2A0}/&nbsp;/g;
 		$html =~ s/\x{00A0}/&nbsp;/g;
 		
+# 		# Fix qutotation marks - doessnt work
+# 		$html =~ s/\x{2019}/'/g;
+# 		$html =~ s/\x{0027}/'/g;
+		
 		# From http://www.codinghorror.com/blog/2006/01/cleaning-words-nasty-html.html
 		
 		# Get rid of classes and styles
@@ -867,7 +871,7 @@ package AppCore::Web::Common;
 		}
 
 		$html =~ s/{([^}]+?)}/<tt>$1<\/tt>/g;
-		$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
+		#$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
 		$html =~ s/\s\/([^\/]+?)\/\s/ <i>$1<\/i> /g;
 		$html =~ s/\s\_([^\_]+?)\_\s/ <u>$1<\/u> /g;
 		$html =~ s/\[([^\|]+?)\|([^\]]+?)\]/<a href='$1'>$2<\/a>/g;

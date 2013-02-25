@@ -272,10 +272,17 @@ package Content::Page::Type;
 			$pkg->process_page($self,$req,$r,$page_obj);
 		};
 		
-		if($@)
+		if(my $err = $@)
 		{
-			my $err = $@;
-			$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$err</pre>");
+			if($err =~ /MySQL server has gone away/)
+			{
+				# Propogate database error
+				die $err;
+			}
+			else
+			{
+				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$err</pre>");
+			}
 		}
 		
 		return $r;
