@@ -526,7 +526,7 @@ package AppCore::Common;
 		if(!defined $test2)
 		{
 			$dt = DateTime->now();
-			$dt->subtract(hours=>5);
+			$dt->subtract(hours=>( localtime(time) )[-1] ? 4 : 5);
 		}
 		else
 		{
