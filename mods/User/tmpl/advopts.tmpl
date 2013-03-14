@@ -19,6 +19,9 @@
 
 <form action='%%binpath%%/settings/advanced/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
+	<tmpl_if user_userid>
+		<input type=hidden name=userid value="<tmpl_var user_userid>">
+	</tmpl_if>
 
 	<table class='editform' width='100%'>
 		<tmpl_loop opts>
