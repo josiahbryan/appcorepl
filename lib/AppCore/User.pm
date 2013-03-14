@@ -100,7 +100,29 @@ package AppCore::User;
 		$self->update;
 	}
 	
-	sub stringify_fmt { '#user' } #['#display','#display',['#user','#user','#userid']] }
+	#sub stringify_fmt { '#user' } #['#display','#display',['#user','#user','#userid']] }
+	sub stringify_fmt {
+		['#first',
+			['#first', ' ', '#last'],
+			['#display',
+				['#display'],
+				['#user',
+					'#user',
+					['#email',
+						'#email',
+						['User# ','#userid']
+					]
+				]
+			]
+		]
+	}
+	
+# 	my $name = $user->first   ? $user->first.' '.$user->last :
+# 					$user->display ? (split /\s/, $user->display)[0] :
+# 					$user->user    ? $user->user :
+# 					$user->email   ? $user->email :
+# 					"(User# $user)";
+# 				$row->{user_string} = $name;
 
 	use AppCore::AuthUtil;
 	sub authenticate { AppCore::AuthUtil->authenticate(@_) }

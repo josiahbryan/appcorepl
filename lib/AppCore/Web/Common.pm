@@ -735,7 +735,8 @@ package AppCore::Web::Common;
 		$html =~ s/&amp;#8217;/'/sg;
 		$html =~ s/&#8220;/"/sg;
 		$html =~ s/&#8221;/"/sg;
-		
+		# Finish textifying any entities that we didnt do above
+		$html = decode_entities($html);
 		
 		#Remove Wordpress Scribd 'tag', Sample: [scribd id=64192688 key=key-uwgseze2p7s03ow8a8b mode=list]
 		#$html =~ s/\[scribd[^\]]+\]/(Embedded Document from Scribd)/gi;

@@ -466,13 +466,13 @@ package ThemePHC::Search;
 			#$line->{body} .= " (<a href='$line->{url}'>Go to page</a>)" if $past_start || $past_end;
 			
 			# Calculate a rating based on the search query
-			my @count_body = $line->{body} =~ /($q)/i;
+			my @count_body  = $line->{body}  =~ /($q)/i;
 			my @count_title = $line->{title} =~ /($q)/i;
-			my @count_url = $line->{url} =~ /($q)/i;
+			my @count_url   = $line->{url}   =~ /($q)/i;
 			
-			my $count_body = scalar @count_body;
+			my $count_body  = scalar @count_body;
 			my $count_title = scalar @count_title;
-			my $count_url = scalar @count_url;
+			my $count_url   = scalar @count_url;
 			
 			#die Dumper $count_body, $count_title, $count_url, .25 * (length($line->{non_fuzz}) / 1024) if $line->{url} =~ /merry_christmas/;
 			
