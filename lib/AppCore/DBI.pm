@@ -377,7 +377,7 @@ package AppCore::DBI;
 			{
 				my ($col,$is_good,$is_bad) = @$val;
 				$col =~ s/^#//g;
-				print STDERR "_exec_string_fmt: get: '$col'\n";
+				#print STDERR "_exec_string_fmt: get: '$col'\n";
 				$val = $self->get($col);
 				#die Dumper $val if ref $val;
 				undef $val if ref $val && !$val->id;
