@@ -686,6 +686,7 @@ package AppCore::Common;
 		my $oname = $name;
 		$name =~ s/([a-z])([A-Z])/$1 $2/g;
 		$name =~ s/([a-z])_([a-z])/$1.' '.uc($2)/segi;
+		$name =~ s/(\w)(\d+)$/$1 $2/g;
 		$name =~ s/^([a-z])/uc($1)/seg;
 		$name =~ s/\/([a-z])/'\/'.uc($1)/seg;
 		$name =~ s/\s([a-z])/' '.uc($1)/seg;

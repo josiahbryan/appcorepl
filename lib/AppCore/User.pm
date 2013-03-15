@@ -110,7 +110,7 @@ package AppCore::User;
 					'#user',
 					['#email',
 						'#email',
-						['User# ','#userid']
+						'#userid'
 					]
 				]
 			]
