@@ -8,6 +8,7 @@ package AppCore::DBI;
 {
 	use base qw(Class::DBI);
 	
+	our $DEBUG = 0;
 	
 	our @PriKeyAttrs = (
 		'extra'	=> 'auto_increment',
@@ -338,7 +339,7 @@ package AppCore::DBI;
 		# Shouldn't break anything since we don't want to proceede if we don't have the actual record
 		my $record = ref $class ? $class : undef;
 		
-		#print STDERR "$class->stringify: id=[$id] (ref id? ".ref($id).")\n";
+		print STDERR ref($class)."->stringify: id=[$id] (ref id? ".ref($id).")\n" if $DEBUG;
 		$record = ref $id ? $id : $class->retrieve($id) if defined $id;
 		#if($id && !defined $record)
 		#{
@@ -347,7 +348,7 @@ package AppCore::DBI;
 		
 		return '' if !defined $id && !ref $record && !defined $record;
 		
-		#print STDERR "Got record: $record (".ref($record).")\n"; #, recordid=[".($record?$record->id:"")."]\n";
+		#print STDERR "Got record: $record (".ref($record).")\n" if $DEBUG; #, recordid=[".($record?$record->id:"")."]\n"
 		
 		if(!$record)
 		{
@@ -358,6 +359,7 @@ package AppCore::DBI;
 		my @fmt  = $record->can('stringify_fmt') ? $record->stringify_fmt : ();
 		@fmt = ('#'.($record->meta->{first_string} || $record->primary_column)) if !@fmt;
 		#die Dumper \@fmt;
+		print STDERR print STDERR ref($class)."->stringify: Using fmt: ".Dumper(\@fmt) if $DEBUG;
 		return $record->_exec_string_fmt(\@fmt);
 	}
 	
@@ -366,6 +368,8 @@ package AppCore::DBI;
 		my $self = shift;
 		my $fmt = shift || [];
 		
+		print STDERR ref($self)."->stringify: _exec_string_fmt: ".join('|', @$fmt)."\n" if $DEBUG;
+		
 		my @buf;
 		foreach my $val (@$fmt)
 		{
@@ -373,8 +377,10 @@ package AppCore::DBI;
 			#  - A is the "if" column - basically, value of that column must evaulate to perl boolean true (not null, not empty string, not zero, not a zero date)
 			#  - B is the "positive" outcome, in the same format as the stringify fmt itself (can be recursive IFs as well)
 			#  - C is the "negative" outcome
+			print STDERR ref($self)."->stringify: _exec_string_fmt: val: $val\n" if $DEBUG;
 			if(ref $val eq 'ARRAY')
 			{
+				print STDERR ref($self)."->stringify: _exec_string_fmt: [IF STMT] val is array\n" if $DEBUG; 
 				my ($col,$is_good,$is_bad) = @$val;
 				$col =~ s/^#//g;
 				#print STDERR "_exec_string_fmt: get: '$col'\n";
@@ -383,31 +389,47 @@ package AppCore::DBI;
 				undef $val if ref $val && !$val->id;
 				if(!$val || $val eq '0000-00-00 00:00:00')
 				{
-					$is_bad = []  if !$is_bad || ref $is_bad ne 'ARRAY';
+					print STDERR ref($self)."->stringify: _exec_string_fmt: [IF STMT] col '$col': val '$val': is_bad\n" if $DEBUG;
+					$is_bad = []  if !$is_bad;
+					$is_bad = [$is_bad] if ref $is_bad ne 'ARRAY';
 					$val = $self->_exec_string_fmt($is_bad);
 				}
 				else
 				{
-					$is_good = [] if !$is_good || ref $is_good ne 'ARRAY';
+					print STDERR ref($self)."->stringify: _exec_string_fmt: [IF STMT] col '$col': val '$val': is_good\n" if $DEBUG;
+					$is_good = [] if !$is_good;
+					$is_good = [$is_good] if ref $is_good ne 'ARRAY';
 					$val = $self->_exec_string_fmt($is_good);
 				}
+				
+				push @buf, $val;
 			}
 			# Column references start with a hash, so to reference column 'title', use '#title'
 			elsif($val =~ /^#(.+)$/)
 			{
+				my $col = $1;
+				print STDERR ref($self)."->stringify: _exec_string_fmt: [COL REF] col '$col'\n" if $DEBUG;
+
 				eval
 				{
-					$val = $self->get($1);
+					$val = $self->get($col);
+					print STDERR ref($self)."->stringify: _exec_string_fmt: [COL REF] col '$col': raw val '$val'\n" if $DEBUG;
 					$val = $val->stringify if ref $val && eval '$val->can("stringify")';
+					
+					push @buf, $val;
 				};
 				if($@)
 				{
 					die "Error while stringifying ".ref($self)."#$self, field name '$1': $@";
 				}
 			}
-			# All other $val's are interpreted to be literal strings
-	
-			push @buf, $val;
+			else
+			{
+				# All other $val's are interpreted to be literal strings
+				print STDERR ref($self)."->stringify: _exec_string_fmt: [RAW STR] '$val'\n" if $DEBUG;
+		
+				push @buf, $val;
+			}
 		}
 		
 		return join '', @buf;

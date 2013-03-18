@@ -102,19 +102,7 @@ package AppCore::User;
 	
 	#sub stringify_fmt { '#user' } #['#display','#display',['#user','#user','#userid']] }
 	sub stringify_fmt {
-		['#first',
-			['#first', ' ', '#last'],
-			['#display',
-				['#display'],
-				['#user',
-					'#user',
-					['#email',
-						'#email',
-						'#userid'
-					]
-				]
-			]
-		]
+		['#first',   ['#first', ' ', '#last'],[['#display', '#display', [['#user', '#user', [['#email', '#email', '#userid']] ]] ]] ]
 	}
 	
 # 	my $name = $user->first   ? $user->first.' '.$user->last :
