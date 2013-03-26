@@ -672,9 +672,6 @@ package AppCore::Common;
 		return $val;
 	}
 	
-	
-	
-	
 	# Function: guess_title($name)
 	# Static - guess the title for $name. E.g. converts foo_bar or FooBar to 'Foo Bar', quoteestid or quoteest to 'Quote Est.' and a few other minor optimizations.
 	my %TITLE_CACHE;
