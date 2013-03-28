@@ -88,6 +88,8 @@ package AppCore::Common;
 		SYS_PACKAGE_BASE
 		
 		timemark
+
+		elide_string
 		
 		/;
 		
@@ -794,7 +796,14 @@ package AppCore::Common;
 		
 		$LastTime = time;
 	}
-	
+
+
+	sub elide_string
+	{
+		my ($str,$len) = @_;
+		$len ||= 32;
+		return substr($str,0,$len).(length($str) > $len?'...':'');
+	}
 };
 
 package DateTime;
