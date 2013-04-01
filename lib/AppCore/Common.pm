@@ -91,6 +91,9 @@ package AppCore::Common;
 
 		elide_string
 		
+		hsv2rgb
+		random_color_for_key
+		
 		/;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
@@ -804,6 +807,72 @@ package AppCore::Common;
 		$len ||= 32;
 		return substr($str,0,$len).(length($str) > $len?'...':'');
 	}
+	use POSIX;
+	sub hsv2rgb
+	{
+		my ( $h, $s, $v ) = @_;
+
+		#$h *= 360;
+
+		if ( $s == 0 ) {
+			return $v, $v, $v;
+		}
+
+		$h /= 60;
+		my $i = floor( $h );
+		my $f = $h - $i;
+		my $p = $v * ( 1 - $s );
+		my $q = $v * ( 1 - $s * $f );
+		my $t = $v * ( 1 - $s * ( 1 - $f ) );
+
+		if ( $i == 0 ) {
+			return $v, $t, $p;
+		}
+		elsif ( $i == 1 ) {
+			return $q, $v, $t;
+		}
+		elsif ( $i == 2 ) {
+			return $p, $v, $t;
+		}
+		elsif ( $i == 3 ) {
+			return $p, $q, $v;
+		}
+		elsif ( $i == 4 ) {
+			return $t, $p, $v;
+		}
+		else {
+			return $v, $p, $q;
+		}
+	}
+
+
+	my $HueValue = 0;
+	my %ColorsGiven;
+	sub random_color_for_key
+	{
+		my $key = shift;
+		return $ColorsGiven{$key} if $ColorsGiven{$key};
+
+		my $golden_ratio_conjugate = 0.618033988749895 * 360;
+		$HueValue = rand() * 360 if ! $HueValue; # use random start value
+		$HueValue += $golden_ratio_conjugate;
+		#$hue_value = $hue_value - int($hue_value);  # $hue_value %= 1;
+		#print STDERR "hue_value: $hue_value\n";
+		$HueValue %= 360;
+
+		my @rgb = hsv2rgb($HueValue, 0.3, 0.95);
+		$_ = int($_ * 255) foreach @rgb;
+
+		my $color = 'rgb('.shift(@rgb).','.shift(@rgb).','.shift(@rgb).')';
+
+		#print STDERR "key: $key, color: $color\n";
+		$ColorsGiven{$key} = $color;
+
+		return $color;
+	}
+
+	srand(time);
+	
 };
 
 package DateTime;
