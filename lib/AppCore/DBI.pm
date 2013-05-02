@@ -107,6 +107,15 @@ package AppCore::DBI;
 			DEFAULT_PASS => shift,
 		};
 	}
+
+
+	# A simple shortcut to shorten the call to prepare_cached()
+	sub prepare_cached
+	{
+		my $self = shift;
+		my $sql = shift;
+		return $self->db_Main->prepare_cached($sql, undef, 1);
+	}
 	
 	my %META_CACHE;
 	sub meta
@@ -2476,11 +2485,135 @@ package AppCore::DBI;
 				my @buff = ('?') x $cols;
 				my $sql = 'INSERT INTO `'.$table.'` VALUES ('.join(',',@buff).')';
 				print STDERR "Debug: insert sql: $sql\n";
+				
 				my $sth = $dbh->prepare($sql);
 				$sth->execute(@$_) foreach @$after_create;
 				$sth->finish;
 			}		
-		}	
+		}
+
+		if($opts->{indexes})
+		{
+# 			if(ref $opts->{indexes} eq 'ARRAY')
+# 			{
+# 				# Load hash of existing index key names from DB
+# 				my $sth_existing_idx = $dbh->prepare('show indexes from `'.$table.'`');
+# 				$sth_existing_idx->execute;
+# 				my %hash;
+# 				while(my $ref = $sth_existing_idx->fetchrow_hashref)
+# 				{
+# 					$hash{$ref->{key_name}} = $ref;
+# 				}
+# 				#print Dumper \%hash;
+# 
+# 				# Loop through and make sure the indexes exist in the database
+# 				my @index_list = @{ $opts->{indexes} || [] };
+# 				foreach my $sql (@index_list)
+# 				{
+# 					my ($index_id) = $sql =~ /^create index ([^\s]+) on/i;
+# 					if($index_id)
+# 					{
+# 						if(!$hash{$index_id})
+# 						{
+# 							print "Debug: Index '$index_id' SQL: $sql\n";
+# 
+# 							push @sql, $sql;
+# 
+# 							eval { $dbh->do($sql); };
+# 							if($@ && $@ !~ /Duplicate key name/)
+# 							{
+# 								warn "Error creating index $index_id: $@";
+# 							}
+# 						}
+# 						else
+# 						{
+# 							#print "Debug: Index '$index_id': Index already exists, not creating\n";
+# 						}
+# 					}
+# 					else
+# 					{
+# 						warn "SQL in {indexes} array doesn't look like valid 'create index' SQL: $sql\n";
+# 					}
+# 				}
+# 			}
+			#elsif(ref $opts->{indexes} eq 'HASH')
+			if(ref $opts->{indexes} eq 'HASH')
+			{
+				# Load existing indexes from database
+				my $sth_existing_idx = $dbh->prepare('show indexes from `'.$table.'`');
+				$sth_existing_idx->execute;
+				my %hash;
+				while(my $ref = $sth_existing_idx->fetchrow_hashref)
+				{
+					$hash{$ref->{key_name}} ||= {};
+					$hash{$ref->{key_name}}->{$ref->{column_name}} = $ref;
+				}
+
+				# Compare indexes in %opts with the database indexes
+				my %idx = %{ $opts->{indexes} || {} };
+				foreach my $key_name (keys %idx)
+				{
+					my $diff = 0;
+					my $drop = 0;
+					my $db_data = $hash{$key_name};
+
+					# If index does exinst in DB, compare and flag if difference
+					if($db_data)
+					{
+						my @cols = @{ $idx{$key_name} || [] };
+						foreach my $col (@cols)
+						{
+							$diff = 1 if !$db_data->{$col};
+						}
+						$drop = 1 if $diff;
+					}
+					# Index does NOT exist, flag for creation
+					else
+					{
+						$diff = 1;
+					}
+
+					# Drop existing index if DB differs from %opts
+					if($drop)
+					{
+						my $sql = 'drop index `'.$key_name.'` on `'.$table.'`';
+						print "Debug: Index '$key_name' changed, deleting and recreating. Delete SQL: $sql\n";
+						push @sql, $sql;
+						$dbh->do($sql);
+					}
+
+					# Create index if different or if does not exist
+					if($diff)
+					{
+						my @cols = @{ $idx{$key_name} || [] };
+						my $sql = 'create index `'.$key_name.'` on `'.$table.'`(';
+						$sql .= join(',', map { '`'.$_.'`'} @cols);
+						$sql .= ')';
+
+						print "Debug: (re)Creating index '$key_name': $sql\n";
+						push @sql, $sql;
+						$dbh->do($sql);
+					}
+				}
+
+				# Compare indexes in %opts with ones in DB and delete from DB any not in %opts
+				foreach my $key_name (keys %hash)
+				{
+					next if $key_name eq 'PRIMARY';
+					if(!$opts->{indexes}->{$key_name})
+					{
+						my $sql = 'drop index `'.$key_name.'` on `'.$table.'`';
+						print "Debug: Index '$key_name' removed: $sql\n";
+						push @sql, $sql;
+						$dbh->do($sql);
+					}
+				}
+			}
+			else
+			{
+				warn "I don't know how to handle '$opts->{indexes}' for {indexes} option\n";
+			}
+		}
 		
 		push @mysql_schema_sql_debug_output, @sql ? ("<h3>Table: $table</h3>", @sql) : ();
 	}
