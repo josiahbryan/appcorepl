@@ -2566,6 +2566,8 @@ package AppCore::DBI;
 							$diff = 1 if !$db_data->{$col};
 						}
 						$drop = 1 if $diff;
+
+						# TODO: Compare diff the other direction: DB has cols that @cols does not have......
 					}
 					# Index does NOT exist, flag for creation
 					else

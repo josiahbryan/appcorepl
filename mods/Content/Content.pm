@@ -81,12 +81,16 @@ package Content;
 			}
 			
 			# Try to redirect to a specific bulletin board post
-			my $post = Boards::Post->by_field(folder_name => $first_item);
-			if($post && $post->id)
+			if(!$AppCore::Config::IGNORE_MODS{Boards})
 			{
-				my $url = Boards->module_url($post->boardid->folder_name . "/" . ($post->folder_name ? $post->folder_name : $post->id));
-				#print STDERR "Auto-redirecting fallthru to post $post, url: $url\n";
-				return $r->redirect($url);
+				#use Data::Dumper; die Dumper \%AppCore::Config::IGNORE_MODS;
+				my $post = Boards::Post->by_field(folder_name => $first_item);
+				if($post && $post->id)
+				{
+					my $url = Boards->module_url($post->boardid->folder_name . "/" . ($post->folder_name ? $post->folder_name : $post->id));
+					#print STDERR "Auto-redirecting fallthru to post $post, url: $url\n";
+					return $r->redirect($url);
+				}
 			}
 			
 			#return $r->error("Unknown Page Address","The page requested does not exist: <b>$url</b>");
