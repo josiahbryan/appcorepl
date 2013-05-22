@@ -31,6 +31,7 @@ package ThemeBasic;
 		
 		# ThemeEngine::load_template() assumes the file your asking file is in your 'tmpl/' folder in this module
 		my $tmpl = $self->load_template('basic.tmpl');
+		die "Unable to load basic.tmpl" if !$tmpl;
 		if(!$self->apply_page_obj($tmpl,$page_obj))
 		{
 			my $blob = (blessed $page_obj && $page_obj->isa('HTML::Template')) ? $page_obj->output : $page_obj;

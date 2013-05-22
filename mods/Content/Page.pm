@@ -1193,31 +1193,33 @@ package Content::Page::ThemeEngine;
 		my $file = shift;
 		my $pkg  = ref $self;
 		my $tmpl = undef;
+
+		my $DEBUG = 1;
 		if($pkg ne 'Content::Page::ThemeEngine')
 		{
 			my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
-			#print STDERR __PACKAGE__."::load_template(): [1] Try load: $tmp_file_name\n";
+			print STDERR __PACKAGE__."::load_template(): [1] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			}
 			else
 			{
-				#print STDERR __PACKAGE__."::load_template(): [1] Template file didnt exist: $tmp_file_name\n";
+				print STDERR __PACKAGE__."::load_template(): [1] Template file didnt exist: $tmp_file_name\n" if $DEBUG;
 			}
 		}
 		
 		if(!$tmpl)
 		{
 			my $tmp_file_name = 'mods/Content/tmpl/'.$file;
-			#print STDERR __PACKAGE__."::load_template(): [2] Try load: $tmp_file_name\n";
+			print STDERR __PACKAGE__."::load_template(): [2] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			}
 			else
 			{
-				#print STDERR __PACKAGE__."::load_template(): [2] Template file didnt exist: $tmp_file_name\n";
+				print STDERR __PACKAGE__."::load_template(): [2] Template file didnt exist: $tmp_file_name\n" if $DEBUG;
 			}
 		}
 		
@@ -1225,14 +1227,14 @@ package Content::Page::ThemeEngine;
 		if(!$tmpl)
 		{
 			my $tmp_file_name = 'tmpl/'.$file;
-			#print STDERR __PACKAGE__."::load_template(): [3] Try load: $tmp_file_name\n";
+			print STDERR __PACKAGE__."::load_template(): [3] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
 				$tmpl = AppCore::Web::Common::load_template($tmp_file_name);
 			}
 			else
 			{
-				#print STDERR __PACKAGE__."::load_template(): [3] Template file didnt exist: $tmp_file_name\n";
+				print STDERR __PACKAGE__."::load_template(): [3] Template file didnt exist: $tmp_file_name\n" if $DEBUG;
 			}
 		}
 		
