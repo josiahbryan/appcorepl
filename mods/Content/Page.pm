@@ -1194,10 +1194,13 @@ package Content::Page::ThemeEngine;
 		my $pkg  = ref $self;
 		my $tmpl = undef;
 
-		my $DEBUG = 1;
+		my $file_root = AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT');
+		$file_root .= '/' if substr($file_root, -1, 1) ne '/';
+
+		my $DEBUG = 0;
 		if($pkg ne 'Content::Page::ThemeEngine')
 		{
-			my $tmp_file_name = 'mods/'.$pkg.'/tmpl/'.$file;
+			my $tmp_file_name = $file_root . 'mods/'.$pkg.'/tmpl/'.$file;
 			print STDERR __PACKAGE__."::load_template(): [1] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
@@ -1211,7 +1214,7 @@ package Content::Page::ThemeEngine;
 		
 		if(!$tmpl)
 		{
-			my $tmp_file_name = 'mods/Content/tmpl/'.$file;
+			my $tmp_file_name = $file_root .'mods/Content/tmpl/'.$file;
 			print STDERR __PACKAGE__."::load_template(): [2] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
@@ -1226,7 +1229,7 @@ package Content::Page::ThemeEngine;
 		
 		if(!$tmpl)
 		{
-			my $tmp_file_name = 'tmpl/'.$file;
+			my $tmp_file_name = $file_root .'tmpl/'.$file;
 			print STDERR __PACKAGE__."::load_template(): [3] Try load: $tmp_file_name\n" if $DEBUG;
 			if($file !~ /^\// && -f $tmp_file_name)
 			{
