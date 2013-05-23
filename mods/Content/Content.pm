@@ -81,9 +81,10 @@ package Content;
 			}
 			
 			# Try to redirect to a specific bulletin board post
-			if(!$AppCore::Config::IGNORE_MODS{Boards})
+			my $ignore = AppCore::Config->get('IGNORE_MODS');
+			if(!$ignore->{Boards})
 			{
-				#use Data::Dumper; die Dumper \%AppCore::Config::IGNORE_MODS;
+				#use Data::Dumper; die Dumper \%AppCore::Config::IGNORE_MODS, AppCore::Config->get('IGNORE_MODS');
 				my $post = Boards::Post->by_field(folder_name => $first_item);
 				if($post && $post->id)
 				{
@@ -156,13 +157,20 @@ package Content;
 		
 		my $field = $mobile_flag ? 'mobile_alt_url' : 'url';
 		
-# 		print STDERR __PACKAGE__ . "::get_page(): url:'$url', field: $field, mobile_flag: $mobile_flag, cache key: $cache_key\n'";
+ 		print STDERR __PACKAGE__ . "::get_page(): url:'$url', field: $field, mobile_flag: $mobile_flag, cache key: $cache_key\n'";
 # 		use Data::Dumper;
 # 		print STDERR Dumper $self->{page_obj_cache};
 		
 		$obj = $self->{page_obj_cache}->{$cache_key} 
 		     = Content::Page->by_field($field => $url) 
 		     if !$obj;
+
+		if(!$obj && $url eq '/')
+		{
+			# Handle 'smart' users
+			$obj = $self->{page_obj_cache}->{$cache_key}
+	                     = Content::Page->by_field($field => '/'.$url)
+		}
 		
 		# Register ourself for when we need to clear the caches
 		$LiveObjects{$self} = $self if !$LiveObjects{$self};
