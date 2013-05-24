@@ -157,7 +157,7 @@ package Content;
 		
 		my $field = $mobile_flag ? 'mobile_alt_url' : 'url';
 		
- 		print STDERR __PACKAGE__ . "::get_page(): url:'$url', field: $field, mobile_flag: $mobile_flag, cache key: $cache_key\n'";
+# 		print STDERR __PACKAGE__ . "::get_page(): url:'$url', field: $field, mobile_flag: $mobile_flag, cache key: $cache_key\n'";
 # 		use Data::Dumper;
 # 		print STDERR Dumper $self->{page_obj_cache};
 		

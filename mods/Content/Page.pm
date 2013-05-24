@@ -774,6 +774,8 @@ package Content::Page::ThemeEngine;
 		my @pages = Content::Page->retrieve_from_sql('show_in_menus=1 order by menu_index, url');
 		#die Dumper \@pages;
 		my %hash; # = ( root=>{kids=>{}} );
+
+		my $current_url = AppCore::Common->context->current_request->page_path;
 		
 		#print STDERR "Building nav...\n";
 		foreach my $page (@pages)
@@ -796,15 +798,17 @@ package Content::Page::ThemeEngine;
 				}
 				else
 				{
-					my $no_slash = $page->url;
+					my $page_url = $page->url;
+					my $no_slash = $page_url;
 					$no_slash =~ s/^\///g;
 					$hash{$root} = 
 					{
 						title	=> $page->title,
-						url	=> $page->url,
+						url	=> $page_url,
 						no_slash=> $no_slash,
 						kid_map	=> {},
-						kids	=> []
+						kids	=> [],
+						current => $page_url eq $current_url || $page_url eq '/' && !$current_url || $current_url eq '/' && !$page_url,
 					};
 					$ref = $hash{$root};
 					$self->load_nav_hook($ref);
@@ -812,6 +816,9 @@ package Content::Page::ThemeEngine;
 					
 					#print STDERR $page->url.": Adding entry for '$root'".Dumper(\%hash);
 				}
+
+				$NavCache[0]->{first} = 1 if @NavCache;
+				$NavCache[$#NavCache]->{last} = 1 if @NavCache;
 			}
 			
 			while(@url)
