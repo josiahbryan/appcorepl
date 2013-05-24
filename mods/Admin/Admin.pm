@@ -51,7 +51,7 @@ package Admin;
 			# Retrieve entry for this admin module and get a blessed ref to the object
 			my $pkg = $entry->package;
 			my $obj = AppCore::Web::Module->bootstrap($pkg);
-			
+
 			# Override AppCore::Web::Module default binpath with our binpath, but modpath stays the same (for file loading, etc)
 			my $new_binpath = join('/', $self->binpath, $entry->folder_name);
 			$obj->binpath($new_binpath);

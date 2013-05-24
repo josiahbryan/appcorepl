@@ -21,6 +21,8 @@ package Boards::Admin;
 	use JSON qw/decode_json/;
 
 	sub new { bless {}, shift }
+
+	#sub dispatch { die "foobar" }
 	
 	sub main
 	{

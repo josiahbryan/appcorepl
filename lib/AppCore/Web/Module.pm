@@ -319,7 +319,12 @@ package AppCore::Web::Module;
 		$pkg = ref $pkg if ref $pkg;
 		
 		use Data::Dumper;
-		#die Dumper $pkg, [ eval '@'.$pkg.'::ISA' ]; 
+		#die Dumper $pkg, [ eval '@'.$pkg.'::ISA' ];
+
+		my $DEBUG = 0;
+
+		my $file_root = AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT');
+		$file_root .= '/' if substr($file_root, -1, 1) ne '/';
 		
 		
 		# Give the current theme an opportunity to remap the template into something different if desired
@@ -334,8 +339,8 @@ package AppCore::Web::Module;
 			@parts = lc $_ foreach @parts;
 			push @parts, $file;
 			
-			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
-			#print STDERR "get_template: 1: $abs_file\n";
+			$abs_file = $file_root . 'mods/'.$first_pkg.'/tmpl/'.join('/', @parts);
+			print STDERR "get_template: 1: $abs_file\n" if $DEBUG;
 		}
 		
 		if(!$abs_file || !-f $abs_file)
@@ -347,14 +352,14 @@ package AppCore::Web::Module;
 			#@parts = lc $_ foreach @parts;
 			#push @parts, $file;
 			
-			$abs_file = 'mods/'.$first_pkg.'/tmpl/'.$file;
-			#print STDERR "get_template: 2: $abs_file\n";
+			$abs_file = $file_root . 'mods/'.$first_pkg.'/tmpl/'.$file;
+			print STDERR "get_template: 2: $abs_file\n" if $DEBUG;
 		}
 		
 		if(!$abs_file || !-f $abs_file)
 		{
 			$abs_file = AppCore::Config->get('WWW_DOC_ROOT') . $self->modpath.'/tmpl/'.$file;
-			#print STDERR "get_template: 2: $abs_file\n";
+			print STDERR "get_template: 3: $abs_file\n" if $DEBUG;
 		}
 		
 		if($file !~ /^\// && -f $abs_file)
@@ -418,7 +423,9 @@ package AppCore::Web::Module;
 		
 		my $method;
 		
-		#print STDERR "Module::dispatch: class $class, rx $receiver_class, mod_obj '$mod_obj', WebMethods: ".$mod_obj->WebMethods.", next path:".$request->next_path."\n";
+		#print STDERR "Module::dispatch: class $class, rx $receiver_class, mod_obj '$mod_obj', WebMethods: ".Dumper($mod_obj->WebMethods).", next path:".$request->next_path."\n";
+		my $boards = $receiver_class =~ /Boards/;
+		
 		if($request->next_path && 
 		   $mod_obj->WebMethods->{$request->next_path} &&
 		   $mod_obj->can($request->next_path))
@@ -434,9 +441,10 @@ package AppCore::Web::Module;
 		{
 			$method = 'main';
 		}
-		
+
 		if($mod_obj->can($method))
 		{
+			#die Dumper $method, ref $mod_obj, $mod_obj, $request, $response  if $boards;
 			$response = $mod_obj->$method($request,$response);
 		}
 		else
