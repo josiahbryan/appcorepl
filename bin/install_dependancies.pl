@@ -2,8 +2,10 @@
 use strict;
 use CPAN;
 # Also follow http://www.cyberciti.biz/tips/rhel-centos-fedora-apache2-fastcgi-php-configuration.html to setup FastCGI (not the PHP part though)
-system("yum install -y mysql mysql-devel mysql-client mysql-server");
+#system("yum install -y mysql mysql-devel mysql-client mysql-server");
 my @deps = qw/
+	Module::Build
+	DateTime
 	HTML::Template
 	ExtUtils::MakeMaker
 	Params::Validate
