@@ -622,6 +622,208 @@ package AppCore::User;
 		my $photo_url = 'https://graph.facebook.com/'. $self->fb_userid. '/picture';
 		return $self->store_photo($photo_url);
 	}
+	
+	sub try_ad_auth
+	{
+		my $self = shift;
+		my $user = shift;
+		my $pass = shift;
+		
+		return undef if !AppCore::Config->get('AD_ENABLED');
+		
+		use Net::LDAP;
+		use Net::LDAP::Util qw(ldap_error_text ldap_error_name ldap_error_desc );
+		
+		my $server = AppCore::Config->get('AD_LDAP_SERVER') || warn "No AD server configured (AD_LDAP_SERVER), AD will fail";
+		
+		# Connect to the AD server
+		my $ldap = Net::LDAP->new($server, version => 3);
+		my $mesg = $ldap->start_tls(verify=>'none');
+		
+		#my $mesg = $ldap->bind("CN=".$user.",OU=Information Tech,DC=campus,DC=rc,DC=edu",password=>$pass);
+		my $domain = AppCore::Config->get('AD_DOMAIN')     || warn "No AD_DOMAIN configured, bind probably will fail";
+		
+		# Authenticate with our binding user
+		my $mesg;
+		
+		if(ref $self)
+		{
+			$mesg = $ldap->bind(($domain ? $domain.'\\' : '').$self->user, password=>$pass);
+		}
+		
+		if(!$mesg || $mesg->code)
+		{
+			$mesg = $ldap->bind(($domain ? $domain.'\\' : '').$user, password=>$pass);
+		}
+		
+		if($mesg->code)
+		{
+			my $errcode = $mesg->code;
+			my $errstr = ldap_error_text($errcode);
+			print STDERR "try_ad_auth: AD bind error code: $errcode - $errstr (".$self->user."/$pass)\n";
+			return undef;
+		}
+		
+		return 1;
+	}
+	
+	sub sync_from_ad
+	{
+		my $class = shift;
+		my $user = shift;
+		
+		return undef if !AppCore::Config->get('AD_ENABLED');
+		
+		use Net::LDAP;
+		use Net::LDAP::Util qw(ldap_error_text ldap_error_name ldap_error_desc );
+		
+		my $server = AppCore::Config->get('AD_LDAP_SERVER') || warn "No AD server configured (AD_LDAP_SERVER), AD will fail";
+		
+		# Connect to the AD server
+		my $ldap = Net::LDAP->new($server, version => 3);
+		my $mesg = $ldap->start_tls(verify=>'none');
+		
+		#my $mesg = $ldap->bind("CN=".$user.",OU=Information Tech,DC=campus,DC=rc,DC=edu",password=>$pass);
+		my $domain     = AppCore::Config->get('AD_DOMAIN')        || warn "No AD_DOMAIN configured, bind probably will fail";
+		my $bind_user  = AppCore::Config->get('AD_BIND_ACCOUNT')  || warn "No AD_BIND_ACCOUNT configured, bind probably will fail";
+		my $bind_pass  = AppCore::Config->get('AD_BIND_PASSWORD') || warn "No AD_BIND_PASSWORD configured, bind probably will fail";
+		
+		# Authenticate with our binding user
+		my $mesg = $ldap->bind(($domain ? $domain.'\\' : '').$bind_user, password=>$bind_pass);
+		if($mesg->code)
+		{
+			my $errcode = $mesg->code;
+			my $errstr = ldap_error_text($errcode);
+			print STDERR "AD bind error code: $errcode - $errstr\n";
+			return undef;
+		}
+		else
+		{
+			#print "Bind good\n";
+		}
+		
+		my %ldap_user_map = qw/
+			user	cn
+			email	userPrincipalName
+			first	givenName
+			last	sn
+			display	displayName
+		/;
+
+		my %ldap_user_map_reverse = map { $ldap_user_map{$_} => $_ } keys %ldap_user_map;
+		
+		
+		# If user given, just sync that user
+		if($user)
+		{
+			my $base = AppCore::Config->get('AD_SYNC_SINGLE_BASE') || warn "No AD_SYNC_SINGLE_BASE configured, AD sync will fial";
+			
+			# Find the user we want to pull in
+			$mesg = $ldap->search(
+				base   => $base,
+				filter => 'cn='.$user,
+			);
+
+			if($mesg->code)
+			{
+				warn $mesg->error;
+				return undef;
+			}
+			#print "Dumping\n";
+
+			#foreach $entry ($mesg->entries) { $entry->dump; }
+			
+			if($mesg->count > 1)
+			{
+				warn "More than one user exists in ActiveDirectory for username '$user' (search base: $base) - not creating or syncing user";
+				return undef;
+			}
+			
+			my $user_obj = $class->find_or_create( user => $user );
+			print STDERR "AppCore::User::sync_from_ad: Syncing user '$user' (userid $user_obj)\n";
+			
+			my $entry = $mesg->entry ( 0 );
+			foreach my $attr ( $entry->attributes )
+			{
+				my $attr_value = $entry->get_value( $attr );
+				#print join( ": ", $attr, $attr_value ), "\n";
+				my $user_key = $ldap_user_map_reverse{$attr};
+				if($user_key)
+				{
+					#$user_data{$user_key} = $attr_value;
+					$user_obj->set($user_key, $attr_value);
+				}
+			}
+			
+			$user_obj->update;
+			
+			$mesg = $ldap->unbind;   # take down session
+			
+			return $user_obj;
+		}
+		else
+		{
+			my $base_list_ref = AppCore::Config->get('AD_SYNC_BASES') || [];
+			my @base_list = @$base_list_ref;
+			if(!@base_list)
+			{
+				my $base = AppCore::Config->get('AD_SYNC_SINGLE_BASE') || warn "No AD_SYNC_SINGLE_BASE configured, AD sync will fail";
+				push @base_list, $base if $base;
+			}
+			
+			if(!@base_list)
+			{
+				warn "No AD_SYNC_BASES defined, cannot bulk sync users";
+				return 0;
+			}
+			
+			foreach my $base (@base_list)
+			{
+				# Find the user we want to pull in
+				$mesg = $ldap->search(
+					base   => $base,
+					filter => 'cn=*',
+				);
+
+				if($mesg->code)
+				{
+					warn $mesg->error;
+					next;
+				}
+
+				my $max = $mesg->count;
+				for ( my $i = 0 ; $i < $max ; $i++ )
+				{
+					my %user_data;
+					
+					my $entry = $mesg->entry ( $i );
+					foreach my $attr ( $entry->attributes )
+					{
+						my $attr_value = $entry->get_value( $attr );
+						#print join( ": ", $attr, $attr_value ), "\n";
+						my $user_key = $ldap_user_map_reverse{$attr};
+						if($user_key)
+						{
+							$user_data{$user_key} = $attr_value;
+						}
+					}
+					
+					my $user = $user_data{'user'};
+					
+					my $user_obj = $class->find_or_create( user => $user );
+					print STDERR "AppCore::User::sync_from_ad: [bulk] Syncing user '$user' (userid $user_obj)\n";
+					
+					foreach my $key (keys %user_data)
+					{
+						$user_obj->set($key, $user_data{$key});
+					}
+					$user_obj->update;
+				}
+			}
+			
+			$mesg = $ldap->unbind;   # take down session
+		}
+	}
 };	
 
 # Package: AppCore::User::GenericDataClass 

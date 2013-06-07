@@ -216,7 +216,7 @@ package User;
 			my $code = $req->code;
 				
 			my $token_url = 'https://graph.facebook.com/oauth/access_token?'
-				. 'client_id='     . AppCore::Config->get("FB_APP_ID")
+				.'client_id='      . AppCore::Config->get("FB_APP_ID")
 				.'&redirect_uri='  . $self->get_facebook_redir_url()
 				.'&client_secret=' . AppCore::Config->get("FB_APP_SECRET")
 				.'&code=' . $code;
@@ -260,9 +260,9 @@ package User;
 					my $fb_user = $user_data->{username};
 					my $fb_userid = $user_data->{id};
 					
-					my $user_obj = AppCore::User->by_field(email => $email);
-					$user_obj = AppCore::User->by_field(display => $display) if !$user_obj;
-					$user_obj = AppCore::User->by_field(display => $first." ".$last) if !$user_obj;
+					my $user_obj = AppCore::User->by_field(email   => $email);
+					   $user_obj = AppCore::User->by_field(display => $display)         if !$user_obj;
+					   $user_obj = AppCore::User->by_field(display => $first." ".$last) if !$user_obj;
 					
 					my $new_user = 0;
 					if(!$user_obj)

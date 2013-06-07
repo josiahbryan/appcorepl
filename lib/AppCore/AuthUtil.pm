@@ -96,13 +96,12 @@ package AppCore::AuthUtil;
 		
 		my $ADMIN_GROUP = AppCore::User::Group->find_or_create({name => 'ADMIN'});
 	
-		if(!AppCore::User->retrieve(1)) # No first user, assume no users created - yes, a hack!
+		#if(!AppCore::User->retrieve(1)) # No first user, assume no users created - yes, a hack!
+		if(!AppCore::User->sql_single('COUNT(userid)')->select_val)
 		{
 			my $admin = AppCore::User->insert({user=>'admin',email=>AppCore::Config->get('WEBMASTER_EMAIL'),display=>'Administrator',pass=>'admin'});
 			AppCore::User::GroupList->insert({userid=>$admin,groupid=>$ADMIN_GROUP});
 		}
-		
-		
 		
 		my $args = $ctx->http_args || {};
 		
@@ -128,7 +127,9 @@ package AppCore::AuthUtil;
 		$user = $args->{user} if !$user;
 		$pass = $args->{pass} if !$pass;
 		
-		if(!$user && !$pass && $args->{lkey})
+		# Check the "lkey" if given
+		if($args->{lkey} &&
+		   !$user && !$pass)
 		{
 			my $lkey = $args->{lkey};
 			my $userobj = AppCore::User->by_field(lkey => $lkey);
@@ -140,6 +141,8 @@ package AppCore::AuthUtil;
 				# Found user object, but the user never set a user or password
 				if(!$user && !$pass)
 				{
+					# The actual "authentication" takes place lower in the code,
+					# just setup the values here
 					$user = "user".$userobj->id;
 					$pass = $userobj->id + 3729;
 					
@@ -156,6 +159,8 @@ package AppCore::AuthUtil;
 				}
 				else
 				{
+					# We've put the user/pass in $user/$pass for checking below,
+					# now we just reset the lkey so the lkey login only works once
 					$userobj->clear_lkey();
 				
 					print STDERR "Auto-login via lkey for ".$userobj->display.", lkey: $args->{lkey}\n";
@@ -190,6 +195,11 @@ package AppCore::AuthUtil;
 		
 		if(!$user_object)
 		{
+			$user_object = AppCore::User->sync_from_ad($user);
+		}
+		
+		if(!$user_object)
+		{
 			return 0;
 		}
 		
@@ -197,7 +207,11 @@ package AppCore::AuthUtil;
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");
-		if($user_object && $user && ($user_object->pass eq $pass || $hash eq $pass || $user_object->fb_token eq $pass))
+		if($user_object && $user && 
+		   ($pass eq $user_object->pass || 
+		    $pass eq $hash              || 
+		    $pass eq $user_object->fb_token ||
+		    $user_object->try_ad_auth($user, $pass)))
 		{
 			$ctx->user($user_object);
 			$tk = join('.',$user,$hash);

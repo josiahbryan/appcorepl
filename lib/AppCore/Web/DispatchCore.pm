@@ -168,7 +168,7 @@ package AppCore::Web::DispatchCore;
 			$Content::Page::Controller::CurrentTheme = 'Content::Page::ThemeEngine';
 			$AppCore::Config::THEME_MODULE = 'ThemeBasic';
 			#warn "Error loading config theme $theme, resorting to internal theme '$Content::Page::Controller::CurrentTheme'";
-			warn "Error loading config theme $theme, resorting to internal theme '$Content::Page::Controller::CurrentTheme', module '$AppCore::Config::THEME_MODULE'";
+			warn "Error '$@' loading config theme $theme, resorting to internal theme '$Content::Page::Controller::CurrentTheme', module '$AppCore::Config::THEME_MODULE'";
 		}
 		elsif($@)
 		{
