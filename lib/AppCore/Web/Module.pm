@@ -326,7 +326,7 @@ package AppCore::Web::Module;
 		my $file_root = AppCore::Config->get('WWW_DOC_ROOT') . AppCore::Config->get('WWW_ROOT');
 		$file_root .= '/' if substr($file_root, -1, 1) ne '/';
 		
-		
+		#die Dumper $ThemeEngineLoaded;
 		# Give the current theme an opportunity to remap the template into something different if desired
 		my $abs_file = $ThemeEngineLoaded ? Content::Page::Controller->theme->remap_template($pkg, $file) : undef;
 		#print STDERR "get_template: 0: $abs_file\n";
@@ -362,9 +362,40 @@ package AppCore::Web::Module;
 			print STDERR "get_template: 3: $abs_file\n" if $DEBUG;
 		}
 		
+		my $tmpl;
 		if($file !~ /^\// && -f $abs_file)
 		{
-			my $tmpl = AppCore::Web::Common::load_template($abs_file);
+			$tmpl = AppCore::Web::Common::load_template($abs_file);
+			
+		}
+		else
+		{
+			#warn __PACKAGE__."::get_template(): Template file didnt exist: $abs_file\n";
+		}
+		
+		# Check the superclass(es) for templates if their are any superclasses...
+		if(!$tmpl)
+		{
+			my @pkg_isa = eval '@'.$pkg.'::ISA';
+			if(!-f $file && @pkg_isa && index($file,' ') < 0)
+			{
+				foreach my $isa (@pkg_isa)
+				{
+					if($isa->isa('AppCore::Web::Module'))
+					{
+						$tmpl = $isa->get_template($file);
+					}
+				}
+			}
+		}
+		
+		if(!$tmpl)
+		{
+			$tmpl = AppCore::Web::Common::load_template($file);
+		}
+		
+		if($tmpl)
+		{
 			$tmpl->param(appcore => join('/', AppCore::Config->get("WWW_ROOT")));
 			$tmpl->param(modpath => $self->modpath);
 			$tmpl->param(binpath => $self->binpath);
@@ -374,25 +405,8 @@ package AppCore::Web::Module;
 			$tmpl->param(website_name => AppCore::Config->get('WEBSITE_NAME'));
 			return $tmpl;
 		}
-		else
-		{
-			#warn __PACKAGE__."::get_template(): Template file didnt exist: $abs_file\n";
-		}
 		
-		# Check the superclass(es) for templates if their are any superclasses...
-		my @pkg_isa = eval '@'.$pkg.'::ISA';
-		if(!-f $file && @pkg_isa && index($file,' ') < 0)
-		{
-			foreach my $isa (@pkg_isa)
-			{
-				if($isa->isa('AppCore::Web::Module'))
-				{
-					return $isa->get_template($file);
-				}
-			}
-		}
-		
-		return AppCore::Web::Common::load_template($file);
+		return undef;
 	}
 	
 	sub module_url

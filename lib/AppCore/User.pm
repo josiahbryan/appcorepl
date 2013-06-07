@@ -702,17 +702,6 @@ package AppCore::User;
 			#print "Bind good\n";
 		}
 		
-		my %ldap_user_map = qw/
-			user	cn
-			email	userPrincipalName
-			first	givenName
-			last	sn
-			display	displayName
-		/;
-
-		my %ldap_user_map_reverse = map { $ldap_user_map{$_} => $_ } keys %ldap_user_map;
-		
-		
 		# If user given, just sync that user
 		if($user)
 		{
@@ -742,20 +731,9 @@ package AppCore::User;
 			my $user_obj = $class->find_or_create( user => $user );
 			print STDERR "AppCore::User::sync_from_ad: Syncing user '$user' (userid $user_obj)\n";
 			
-			my $entry = $mesg->entry ( 0 );
-			foreach my $attr ( $entry->attributes )
-			{
-				my $attr_value = $entry->get_value( $attr );
-				#print join( ": ", $attr, $attr_value ), "\n";
-				my $user_key = $ldap_user_map_reverse{$attr};
-				if($user_key)
-				{
-					#$user_data{$user_key} = $attr_value;
-					$user_obj->set($user_key, $attr_value);
-				}
-			}
+			my $entry = $mesg->entry( 0 );
 			
-			$user_obj->update;
+			$class->_sync_ad_entry($entry);
 			
 			$mesg = $ldap->unbind;   # take down session
 			
@@ -794,35 +772,123 @@ package AppCore::User;
 				my $max = $mesg->count;
 				for ( my $i = 0 ; $i < $max ; $i++ )
 				{
-					my %user_data;
-					
-					my $entry = $mesg->entry ( $i );
-					foreach my $attr ( $entry->attributes )
-					{
-						my $attr_value = $entry->get_value( $attr );
-						#print join( ": ", $attr, $attr_value ), "\n";
-						my $user_key = $ldap_user_map_reverse{$attr};
-						if($user_key)
-						{
-							$user_data{$user_key} = $attr_value;
-						}
-					}
-					
-					my $user = $user_data{'user'};
-					
-					my $user_obj = $class->find_or_create( user => $user );
-					print STDERR "AppCore::User::sync_from_ad: [bulk] Syncing user '$user' (userid $user_obj)\n";
-					
-					foreach my $key (keys %user_data)
-					{
-						$user_obj->set($key, $user_data{$key});
-					}
-					$user_obj->update;
+					$class->_sync_ad_entry($mesg->entry($i));
 				}
 			}
 			
 			$mesg = $ldap->unbind;   # take down session
 		}
+	}
+	
+	sub _sync_ad_entry
+	{
+		my $class = shift;
+		my $entry = shift;
+		my $user_obj = shift;
+		
+		
+		my %ldap_user_map = qw/
+			user	cn
+			email	userPrincipalName
+			first	givenName
+			last	sn
+			display	displayName
+		/;
+
+		my %ldap_user_map_reverse = map { $ldap_user_map{$_} => $_ } keys %ldap_user_map;
+		
+		my %user_data;
+					
+		foreach my $attr ( $entry->attributes )
+		{
+			if($attr eq 'memberOf')
+			{
+				my $ref = $entry->get_value($attr,  asref => 1);
+				my @list = @$ref;
+				
+				my @group_name_list;
+				foreach my $group (@list)
+				{
+					my ($cn) = $group =~ /^CN=(.*?),/;
+					if($cn eq 'Domain Admins')
+					{
+						# Add to ADMIN group
+						#print "User is an ADMIN\n";
+						$group = 'ADMIN';
+					}
+					else
+					{
+						#print "User is member of '$cn'\n";
+						$group = $cn;
+					}
+					
+					push @group_name_list, $group;
+				}
+				
+				$user_data{_groups} = \@group_name_list;
+				
+			}
+			my $attr_value = $entry->get_value( $attr );
+			#print join( ": ", $attr, $attr_value ), "\n";
+			my $user_key = $ldap_user_map_reverse{$attr};
+			if($user_key)
+			{
+				$user_data{$user_key} = $attr_value;
+			}
+		}
+		
+		my $user = $user_data{'user'};
+		
+		# If user_obj not given, attempt to find and create if not already in the database
+		if(!$user_obj)
+		{
+			$user_obj = $class->find_or_create( user => $user );
+		}
+		
+		print STDERR "AppCore::User::_sync_ad_entry: Syncing user '$user' (userid $user_obj)\n";
+		
+		my $remap_sub = AppCore::Config->get('AD_FIELD_REMAP');
+		
+		foreach my $key (keys %user_data)
+		{
+			# Skip _groups, handled below
+			next if $key eq '_groups';
+			
+			# Grab the val from the has built above
+			my $val = $user_data{$key};
+			
+			# Call the custom remap sub if defined in config
+			$val = $remap_sub->($user_obj, $key, $val) if $remap_sub;
+			
+			# Finally, set the actual database value
+			$user_obj->set($key, $val);
+		}
+		
+		# Enable this line to delete all existing groups from this user
+		#AppCore::User::GroupList->search(userid => $user_obj)->delete_all;
+		
+		my $val = $user_data{_groups};
+		$val = $remap_sub->($user_obj, '_groups', $val) if $remap_sub;
+		
+		my @groups = @{$val||[]};
+		foreach my $group (@groups)
+		{
+			my $group_obj = AppCore::User::Group->by_field( name => $group );
+			if(!$group_obj)
+			{
+				# Auto-create the group if one doesnt exist by that name
+				$group_obj = AppCore::User::Group->insert({
+					name => $group,
+					description => '(Imported from AD)',
+				});
+			}
+			
+			print STDERR " + Adding user to group '$group' (groupid $group_obj)\n";
+			
+			AppCore::User::GroupList->find_or_create( groupid => $group_obj, userid => $user_obj );
+		}
+		
+		$user_obj->update;
 	}
 };	
 

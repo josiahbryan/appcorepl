@@ -2,14 +2,14 @@
 <h1>Signup for %%website_name%%!</h1>
 
 <tmpl_if email_exists>
-	<div class='ffjc-error' style='margin:2em'>
+	<div class='ffjc-error'>
 		<b>Sorry, email you entered has already been activated or is in use.</b>
 		<br><br>
 		If you've forgotten your password for this email, you can have it sent to you by using the <a href='%%binpath%%/forgot_password?user=<tmpl_var user>'>forgotten password page</a>. Or, you can use a different email address altogether by changing the email listed below.
 	</div>
 </tmpl_if>
 
-<div class='ffjc-info' style='margin: 2em'>
+<div class='ffjc-info'>
 	<b>Why should <i>I</i> signup?</b> Good question! When you signup, you can:
 		<ul>
 			<li>Receive updates and reminders from %%website_name%%
@@ -34,7 +34,7 @@
 			</tr>
 			<tr>
 				<td valign=top>Your E-Mail:</td> <td>
-					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=30><br>
+					<input type=text name=user id=user onfocus='select()' value="<tmpl_if email>%%email%%<tmpl_else>%%user%%</tmpl_if>" size=30><br>
 					<span style='font-size:.85em;color:rgb(100,100,100)'>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>
 				</td>
 			</tr>

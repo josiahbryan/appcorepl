@@ -414,7 +414,10 @@ package User;
 		
 		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 		
-		my $tmpl = $self->get_template('login'.($mobile?'-mobile' : '').'.tmpl');
+		my $login_tmpl = AppCore::Config->get('LOGIN_TMPL');
+		$login_tmpl = 'login'.($mobile?'-mobile' : '').'.tmpl' if !$login_tmpl;
+		
+		my $tmpl = $self->get_template($login_tmpl);
 		#$tmpl->param(challenge => AppCore::AuthUtil->get_challenge());
 		setcookie('login.url_from',$url_from); # in case they use FB to login....
 		
@@ -484,6 +487,7 @@ package User;
 		if($user && !$user->pass)
 		{
 			$tmpl->param(name => $user->display);
+			$tmpl->param(email => $user->email);
 		}
 		
 		# Shouldn't get here if signup was ok
@@ -521,7 +525,7 @@ package User;
 			$user->display($name) if $name;
 			$user->update;
 			
-			AppCore::AuthUtils->authenticate($user,$pass);
+			AppCore::AuthUtil->authenticate($user,$pass);
 			
 			AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
 			AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
