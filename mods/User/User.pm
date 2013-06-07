@@ -408,7 +408,7 @@ package User;
 			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1');
 		}
 		
-		print STDERR "auth tmpl output\n";	
+		#print STDERR "auth tmpl output\n";	
 		
 		my $view = Content::Page::Controller->get_view('sub',$r);
 		

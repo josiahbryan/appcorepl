@@ -29,7 +29,7 @@
 				<td>What's your name?</td> <td>
 					<input type=text name=name id=name onfocus='select()' value='<tmpl_var name escape=html>' size=30> 
 					<!--<span style='font-size:.85em;color:rgb(100,100,100)'>(Will <b>NOT</b> be displayed)</span>-->
-					<script>var e= $('#name').get(0);if(e)e.focus()</script>
+					<script>$(function(){ var e= $('#name').get(0);if(e)e.focus() });</script>
 				</td>
 			</tr>
 			<tr>

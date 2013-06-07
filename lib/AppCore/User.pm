@@ -643,25 +643,37 @@ package AppCore::User;
 		#my $mesg = $ldap->bind("CN=".$user.",OU=Information Tech,DC=campus,DC=rc,DC=edu",password=>$pass);
 		my $domain = AppCore::Config->get('AD_DOMAIN')     || warn "No AD_DOMAIN configured, bind probably will fail";
 		
+		print STDERR "try_ad_auth: Authenticating $domain\\$user:$pass against AD server $server\n";
+		
 		# Authenticate with our binding user
 		my $mesg;
 		
 		if(ref $self)
 		{
 			$mesg = $ldap->bind(($domain ? $domain.'\\' : '').$self->user, password=>$pass);
+			
+			print STDERR "try_ad_auth: Fail 1 with (".$self->user."/$pass)\n" if $mesg->code;
 		}
 		
 		if(!$mesg || $mesg->code)
 		{
 			$mesg = $ldap->bind(($domain ? $domain.'\\' : '').$user, password=>$pass);
+			
+			print STDERR "try_ad_auth: Fail 2 with (".$user."/$pass)\n" if $mesg->code;
 		}
 		
 		if($mesg->code)
 		{
-			my $errcode = $mesg->code;
-			my $errstr = ldap_error_text($errcode);
-			print STDERR "try_ad_auth: AD bind error code: $errcode - $errstr (".$self->user."/$pass)\n";
+			#my $errcode = $mesg->code;
+			#my $errstr = ldap_error_text($errcode);
+			#print STDERR "try_ad_auth: AD bind error code: $errcode - $errstr (".$self->user."/$pass)\n";
 			return undef;
+		}
+		
+		if(ref $self && $self->pass ne $pass)
+		{
+			$self->pass($pass);
+			$self->update;
 		}
 		
 		return 1;
