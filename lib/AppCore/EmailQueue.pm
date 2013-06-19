@@ -177,7 +177,7 @@ Server: $host
 		return wantarray ? @msg_refs : shift @msg_refs;
 	}
 	
-	our $DEBUG = 0;
+	our $DEBUG = 1;
 	sub send_all
 	{
 		my $self = shift;
@@ -211,12 +211,14 @@ Server: $host
 			}
 		}
 
-		my ($user,$domain) = split /\@/, $self->msg_from;
-		$domain =~ s/>$//g;
+		#my ($user,$domain) = split /\@/, $self->msg_from;
+		#$domain =~ s/>$//g;
+		my ($domain) = $self->msg_from =~ /\@([A-Z0-9.-]+\.[A-Z]{2,4})\b/i;
 
 		$domain = lc $domain;
 		
 		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
+		   $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{'*'} if !$prof;
 		
 		if(!$prof)
 		{
@@ -378,6 +380,8 @@ Server: $host
 			}
 			$smtp->dataend();
 		}
+		
+		$smtp->quit() if $smtp;
 		
 		print "Done.\n" if $DEBUG;
 		#exit if $DEBUG;

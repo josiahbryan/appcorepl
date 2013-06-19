@@ -731,9 +731,12 @@ package AppCore::Common;
 			{
 				$val = $ref->get($col)->stringify;
 				
-				undef $@;
-				eval '$old_val = $old_val->stringify';
-				warn "Error stringifying old value: $@" if $@;
+				if($old_val)
+				{
+					undef $@;
+					eval '$old_val = $old_val->stringify';
+					warn "Error stringifying old value: $@" if $@;
+				}
 			}
 			
 			if($old_val && $meta->{linked})
