@@ -72,7 +72,8 @@ package AppCore::Common;
 		read_file 
 		write_file
 		
-		parse_csv 
+		parse_csv
+		parse_email_address_string
 		
 		taint_sql 
 		taint_sys 
@@ -478,6 +479,28 @@ package AppCore::Common;
 		return @new;      # list of values that were comma-separated
 	} 
 	
+	sub parse_email_address_string
+	{
+		my $string = shift;
+		$string =~ s/(^\s|\s+$)//g;
+		if($string =~ /[^\s]+.*?<.*?\@.*?>/)
+		{
+			
+			my ($name, $email) = $string =~ /^\s*(.*)\s*?<((?:helpdesk-test|[A-Z0-9._%-+]+)\@[A-Z0-9.-]+\.[A-Z]{2,4})>/ig;
+			$name =~ s/(^\s|\s+$)//g;
+			$name =~ s/(^['"]|['"]$)//g;
+			return ($name, $email);
+		}
+		else
+		{
+			my ($email) = $string =~ /\b((?:helpdesk-test|[A-Z0-9._%-+]+)\@[A-Z0-9.-]+\.[A-Z]{2,4})\b/ig;
+			my ($name) = $email =~ /\b(helpdesk-test|[A-Z0-9._%-+]+)\@/i;
+			$name =~ s/(^\s|\s+$)//g;
+			return (guess_title($name), $email);
+		}
+			
+	}
+
 	
 	sub date_math 
 	{

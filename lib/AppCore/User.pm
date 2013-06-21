@@ -41,9 +41,11 @@ package AppCore::User;
 			# Path relative to AppCore::Config->get("WWW_DOC_ROOT") for the users image
 			# However, I recommend using the 'get_photo' method to get an appropriate-sized photo (get_photo handles resizing and caching as necessary)
 			{	field	=> 'photo',		type	=> 'varchar(255)' },
+			{	field	=> 'managerid',		type	=> 'int', linked => 'AppCore::User' },
 			{	field	=> 'location',		type	=> 'varchar(255)' },
 			{	field	=> 'tz_off',		type	=> 'float',	  default => -4 },
 			{	field	=> 'notes',		type	=> 'text'	  },
+			{	field	=> 'is_external',	type	=> 'int(1)',	  default =>  0 },
 			{	field	=> 'is_fbuser',		type	=> 'int(1)',	  default =>  0 },
 			{	field	=> 'fb_user',		type	=> 'varchar(255)' },
 			{	field	=> 'fb_userid',		type	=> 'varchar(255)' },
@@ -740,7 +742,11 @@ package AppCore::User;
 				return undef;
 			}
 			
-			my $user_obj = $class->find_or_create( user => $user );
+			my $user_obj;
+			$user_obj = $class->by_field( user => $user );
+			$user_obj = $class->by_field( email => $user ) if !$user_obj;
+			$user_obj = $class->find_or_create( user => $user ) if !$user_obj;
+		
 			print STDERR "AppCore::User::sync_from_ad: Syncing user '$user' (userid $user_obj)\n";
 			
 			my $entry = $mesg->entry( 0 );
@@ -798,6 +804,7 @@ package AppCore::User;
 		my $entry = shift;
 		my $user_obj = shift;
 		
+		my $DEBUG = 0;
 		
 		my %ldap_user_map = qw/
 			user	cn
@@ -805,12 +812,14 @@ package AppCore::User;
 			first	givenName
 			last	sn
 			display	displayName
+			managerid manager
 		/;
 
 		my %ldap_user_map_reverse = map { $ldap_user_map{$_} => $_ } keys %ldap_user_map;
 		
 		my %user_data;
-					
+		
+		# Extract hash of user attributes from AD
 		foreach my $attr ( $entry->attributes )
 		{
 			if($attr eq 'memberOf')
@@ -840,27 +849,42 @@ package AppCore::User;
 				$user_data{_groups} = \@group_name_list;
 				
 			}
-			my $attr_value = $entry->get_value( $attr );
-			#print join( ": ", $attr, $attr_value ), "\n";
-			my $user_key = $ldap_user_map_reverse{$attr};
-			if($user_key)
+			elsif($attr eq 'manager')
 			{
-				$user_data{$user_key} = $attr_value;
+				my $attr_value = $entry->get_value( $attr );
+				my ($username) = $attr_value =~ /CN=(.*?),/i;
+				my $user = AppCore::User->by_field(user => $username);
+				$user_data{managerid} = $user;
+			}
+			else
+			{
+				my $attr_value = $entry->get_value( $attr );
+				#print join( ": ", $attr, $attr_value ), "\n";
+				my $user_key = $ldap_user_map_reverse{$attr};
+				if($user_key)
+				{
+					$user_data{$user_key} = $attr_value;
+				}
 			}
 		}
 		
+		# Resolve the user in the database if possible
 		my $user = $user_data{'user'};
 		
 		# If user_obj not given, attempt to find and create if not already in the database
 		if(!$user_obj)
 		{
-			$user_obj = $class->find_or_create( user => $user );
+			#$user_obj = $class->find_or_create( user => $user );
+			$user_obj = $class->by_field( user => $user );
+			$user_obj = $class->by_field( email => $user ) if !$user_obj;
+			$user_obj = $class->find_or_create( user => $user ) if !$user_obj;
 		}
 		
-		print STDERR "AppCore::User::_sync_ad_entry: Syncing user '$user' (userid $user_obj)\n";
+		print STDERR "AppCore::User::_sync_ad_entry: Syncing user '$user' (userid $user_obj)\n" if $DEBUG;
 		
 		my $remap_sub = AppCore::Config->get('AD_FIELD_REMAP');
 		
+		# Apply the user attributes from AD to the database
 		foreach my $key (keys %user_data)
 		{
 			# Skip _groups, handled below
@@ -877,10 +901,15 @@ package AppCore::User;
 		}
 		
 		# Enable this line to delete all existing groups from this user
-		#AppCore::User::GroupList->search(userid => $user_obj)->delete_all;
+		AppCore::User::GroupList->search(userid => $user_obj)->delete_all;
 		
 		my $val = $user_data{_groups};
 		$val = $remap_sub->($user_obj, '_groups', $val) if $remap_sub;
+		
+# 		# Fist, clear all existing groups, then just add bak in the groups we have
+# 		my @old_refs = AppCore::User::GroupList->search(userid => $user_obj);
+# 		my %old_groups = map { $_->groupid => 1 } @old_refs;
+# 		$_->delete foreach @old_refs;
 		
 		my @groups = @{$val||[]};
 		foreach my $group (@groups)
@@ -895,7 +924,7 @@ package AppCore::User;
 				});
 			}
 			
-			print STDERR " + Adding user to group '$group' (groupid $group_obj)\n";
+			print STDERR " + Adding user to group '$group' (groupid $group_obj)\n" if $DEBUG;
 			
 			AppCore::User::GroupList->find_or_create( groupid => $group_obj, userid => $user_obj );
 		}
