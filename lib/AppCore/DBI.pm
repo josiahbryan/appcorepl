@@ -39,7 +39,8 @@ package AppCore::DBI;
 			FetchHashKeyName   => 'NAME_lc',
 			ShowErrorStatement => 1,
 			ChopBlanks         => 1,
-			AutoCommit         => 1
+			AutoCommit         => 1,
+			mysql_auto_reconnect => 1,
 	);
 	# Get Class::DBI's default dbh options
 	#our %DBI_ATTRS = __PACKAGE__->_default_attributes;
@@ -74,10 +75,10 @@ package AppCore::DBI;
 		{
 			#print STDERR __PACKAGE__."::db_Main(): class:'$class', DBPARAMS CACHE = ".Dumper($DBPARAMS_CLASS_CACHE{$class});
 			$dbh = $class->dbh($DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_DB}   || DEFAULT_DB,
-					$DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_HOST} || DEFAULT_HOST,
-					$DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
-					$DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_PASS} || DEFAULT_PASS,
-					%DBI_ATTRS);
+					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_HOST} || DEFAULT_HOST,
+					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
+					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_PASS} || DEFAULT_PASS,
+					   %DBI_ATTRS);
 # 			if ( $ENV{'MOD_PERL'} and !$Apache::ServerStarting ) 
 # 			{
 # 				Apache2::RequestUtil->request->pnotes( $key, $dbh );
@@ -1381,7 +1382,7 @@ package AppCore::DBI;
 	
 	# Variable: %DB_CACHE
 	# Holds cached db handles as "host.db.user.pass" keys 
-	my %DB_CACHE;
+	our %DB_CACHE;
 	
 	# Function: dbh
 	# Returns a DBI database handle object.
