@@ -423,6 +423,11 @@ package AppCore::User;
 		
 		my $acl = shift || $default_acl;
 		
+		if(UNIVERSAL::isa($acl, 'AppCore::User::Group'))
+		{
+			$acl = [$acl->name];
+		}
+		
 		
 		if(ref $acl && $acl->[0] eq 'ADMIN' && $self->userid == 1)
 		{

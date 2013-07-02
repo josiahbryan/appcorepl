@@ -236,6 +236,49 @@ package AppCore::DBI;
 				$class->columns(All => @columns) if @columns;
 				$class->columns(Essential => @columns) if @columns;
 				
+				# Setup the Primary and TEXT column groups, and find the IDENTITY column
+				if($class->isa('Class::DBI::Sybase'))
+				{
+					my $dbh = $class->db_Main();
+
+					my $table = $class->table;
+					
+					# find the primary key and column names.
+					my $sth = $dbh->prepare("sp_columns $table");
+					$sth->execute();
+
+					my $col = $sth->fetchall_arrayref;
+					$sth->finish();
+
+					die( 'The "' . $class->table() . '" table has no primary key' ) unless $col->[0][3];
+
+					#$class->columns( All => map { $_->[3] } @$col );
+					$class->columns( Primary => $col->[0][3] );
+
+					# find any text columns that will get quoted upon INSERT
+					$class->columns( TEXT => map { $_->[5] eq 'text' ? $_->[3] : () } @$col );
+
+					# now find the IDENTITY column
+					$sth = $dbh->prepare(q{
+						select COLUMN_NAME, TABLE_NAME
+						from   INFORMATION_SCHEMA.COLUMNS
+						where  TABLE_SCHEMA = 'dbo'
+						  and  COLUMNPROPERTY(object_id(TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1
+						  and  TABLE_NAME = ?"
+					});
+					$sth->execute($table);
+
+					# the first two resultsets contain no info about finding the identity column
+					#$sth->fetchall_arrayref() for 1 .. 2;
+					$col = $sth->fetchall_arrayref();
+
+					#my ($identity) = grep( $_->[9] == 1, @$col ); # the 10th column contains a boolean denoting whether it's an IDENTITY
+					my $identity = $col->[0] if $col;
+					$identity = $identity->[0] if $identity;
+					#print STDERR "Debug2: $table: \$identity col: '$identity'\n";
+					$class->columns( IDENTITY => $identity ) if $identity;    # store the IDENTITY column
+				}
+				
 				
 				# Create CDBI relationships using meta 'linked' field
 				foreach my $line (@{$meta->{schema}})
