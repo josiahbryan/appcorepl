@@ -264,7 +264,7 @@ package AppCore::DBI;
 						from   INFORMATION_SCHEMA.COLUMNS
 						where  TABLE_SCHEMA = 'dbo'
 						  and  COLUMNPROPERTY(object_id(TABLE_NAME), COLUMN_NAME, 'IsIdentity') = 1
-						  and  TABLE_NAME = ?"
+						  and  TABLE_NAME = ?
 					});
 					$sth->execute($table);
 
@@ -2884,6 +2884,7 @@ package $opts->{pkg};
 # 				selected => defined $curid && $item->id == $curid,
 # 			}
 # 		}
+		#print STDERR "$pkg: tmpl_select_list: \$query_sql='$query_sql'\n";
 		my $listref = $pkg->stringified_list(undef, $query_sql);
 		foreach my $item (@$listref)
 		{

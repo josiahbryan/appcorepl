@@ -215,7 +215,7 @@ package AppCore::Web::Result;
 		# the rest of the content on the pagge
 		
 		#timemark("tmpl2jq");
-		if($out =~ /<html/)
+		if($out =~ /<(?:\!--)?html/)
 		{
 			#$out =~ s/©/&copy;/g; # Corrupted entity fixup
 			if($out =~ /<a:cssx src=['"][^\"]+['"]/i)
@@ -227,7 +227,8 @@ package AppCore::Web::Result;
 					eval
 					{
 						my @files = $out =~ /<a:cssx src=["']([^\"']+)["']/gi;
-						$out =~ s/<a:cssx[^\>]+>//gi;
+						#$out =~ s/<a:cssx[^\>]+>//gi;
+						
 						#my $css_link = _process_multi_cssx($self,$tmpl,0,@files);
 						#$out =~ s/<\/head>/\t$css_link\n<\/head>/g;
 						
@@ -240,7 +241,10 @@ package AppCore::Web::Result;
 							$css .= _combine_inpage_css(\$out);
 						}
 						
-						$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
+						#$out =~ s/<\/head>/\t<style>$css<\/style>\n<\/head>/g;
+						# Instead of inserting at end of head, replace first a:cssx with combined style, then remove all other a:Cssx
+						$out =~ s/<a:cssx[^\>]+>/<style>$css<\/style>/i;
+						$out =~ s/<a:cssx[^\>]+>//gi;
 					};
 					warn "Error parsing CSSX files: $@" if $@;
 					
@@ -428,8 +432,8 @@ $jq_footer
 
 </script>
 #;
-				my $tmp = "$ga\n</body>";
-				$out .= $tmp if ! ($out =~ s/<\/body>/$tmp/gi);
+				my $tmp = "$ga";
+				$out .= $tmp if ! ($out =~ s/<\/body>/$tmp\n<\/body>/gi);
 			}
 		}
 		#

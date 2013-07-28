@@ -458,10 +458,11 @@ package User;
 		if($sub_page eq 'post')
 		{
 			my $name = $req->{name};
-			my $email = $req->{user};
+			my $user = $req->{user};
+			my $email = $req->{email};
 			my $pass = $req->{pass};
 			
-			my $signup_ok = $self->signup_user($name, $email, $pass);
+			my $signup_ok = $self->signup_user($name, $email, $user, $pass);
 			
 			if($signup_ok)
 			{
@@ -504,12 +505,17 @@ package User;
 	sub signup_user
 	{
 		my $self = shift;
-		my ($name, $email, $pass) = @_;
+		my ($name, $email, $username, $pass) = @_;
+		
+		$username = $email if !$username;
 		
 		my $signup_ok = 0;
 		
 		my $user = AppCore::User->by_field(email => $email);
-		   $user = AppCore::User->by_field(user  => $email) if !$user;
+		   $user = AppCore::User->by_field(user  => $username)  if !$user;
+		   $user = AppCore::User->by_field(user  => $email)     if !$user;
+		   $user = AppCore::User->by_field(email => $username)  if !$user;
+		   
 
 		my $name_short = AppCore::Config->get("WEBSITE_NAME");
 		my $name_noun  = AppCore::Config->get("WEBSITE_NOUN");
@@ -517,15 +523,15 @@ package User;
 		
 		if($user && !$user->pass)
 		{
-			print STDERR MY_LINE()."signup_user(): mark: case 1 ($user)\n";
+			print STDERR MY_LINE()."signup_user(): mark: case 1 ($username)\n";
 			$signup_ok = 1;
 			$user->pass($pass);
 			$user->email($email);
-			$user->user($email);
+			$user->user($username);
 			$user->display($name) if $name;
 			$user->update;
 			
-			AppCore::AuthUtil->authenticate($user,$pass);
+			AppCore::AuthUtil->authenticate($username,$pass);
 			
 			AppCore::Common->send_email(\@admin_emails,"[$name_short] User Activated: $email","User '$email', name '$name' has now activated their account.");
 			AppCore::Common->send_email([$user->email],"[$name_short] Welcome to $name_noun!","You've successfully activated your $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
@@ -537,8 +543,8 @@ package User;
 			print STDERR MY_LINE()."signup_user(): mark: case2\n";
 			$signup_ok = 1;
 			
-			my $user_ref = AppCore::User->insert({user=>$email,email=>$email,display=>$name,pass=>$pass});
-			AppCore::AuthUtil->authenticate($email,$pass);
+			my $user_ref = AppCore::User->insert({user=>$username,email=>$email,display=>$name,pass=>$pass});
+			AppCore::AuthUtil->authenticate($username,$pass);
 			
 			AppCore::Common->send_email(\@admin_emails,"[$name_short] New User: $email","New user '$email', name '$name' just signed up!");
 			AppCore::Common->send_email([$user_ref->email],"[$name_short] Welcome to $name_noun!","You've successfully signed up for your own $name_noun account!\n\n" . (AppCore::Config->get("WELCOME_URL") ? "Where to go from here:\n\n    ".join('/', AppCore::Config->get("WEBSITE_SERVER"), AppCore::Config->get("DISPATCHER_URL_PREFIX"), AppCore::Config->get("WELCOME_URL")):""));
@@ -699,13 +705,23 @@ package User;
 			if($sub_page eq 'post')
 			{
 				my $name = $req->{name};
-				my $email = $req->{new_user_value};
+				my $email = $req->{new_email_value};
+				my $username = $req->{new_user_value};
 				my $pass = $req->{new_pass_value};
+				my $phone = $req->{new_phone_vaue};
+				
+				if($phone)
+				{
+					$phone =~ s/[^\d]//g;
+					$phone= '1' . $phone if $phone !~ /^1/;
+				}
+		
 				
 				$user->pass($pass) if $pass && $pass !~ /^\*+$/;
 				$user->email($email) if $email;
-				$user->user($email) if $email;
+				$user->user($username) if $username;
 				$user->display($name) if $name;
+				$user->mobile_phone($phone) if $phone;
 				if($user->is_changed)
 				{
 					$user->update;

@@ -502,6 +502,7 @@ package AppCore::Web::Common;
 		if($tmpl && !-f $file)
 		{
 			my $test = join('/', $tmpl->{pargs}->{path}, $file);
+			#print STDERR "get_included_file: tmpl test: '$test'\n";
 			$file = $test if -f $test;
 		}
 		

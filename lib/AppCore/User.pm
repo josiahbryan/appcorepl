@@ -35,6 +35,7 @@ package AppCore::User;
 			{	field	=> 'user',		type	=> 'varchar(255)' },
 			{	field	=> 'pass',		type	=> 'varchar(255)' },
 			{	field	=> 'email',		type	=> 'varchar(255)' },
+			{	field	=> 'mobile_phone',	type	=> 'varchar(255)' },
 			{	field	=> 'first',		type	=> 'varchar(255)' },
 			{	field	=> 'last',		type	=> 'varchar(255)' },
 			{	field	=> 'display',		type	=> 'varchar(255)' },
@@ -686,6 +687,32 @@ package AppCore::User;
 		return 1;
 	}
 	
+	sub match_ad_user
+	{
+		my $class = shift;
+		my $user = shift;
+		
+		my $user_obj = $class->by_field( user => $user );
+		
+		my $user_lookup = AppCore::Config->get('AD_USER_LOOKUP');
+		if(!$user_obj && ref($user_lookup) eq 'CODE')
+		{
+			eval { $user_obj = $user_lookup->($user); };
+			warn "[WARN] ".$@ if $@;
+		}
+		
+		$user_obj = $class->by_field( email => $user ) if !$user_obj;
+		if(!$user_obj)
+		{
+			print STDERR "[WARN] Couldn't match user '$user', creating new database entry...\n";
+			die "Not on my watch";
+			$user_obj = $class->find_or_create( user => $user );
+		}
+			
+		
+		return $user_obj;
+	}
+	
 	sub sync_from_ad
 	{
 		my $class = shift;
@@ -747,16 +774,14 @@ package AppCore::User;
 				return undef;
 			}
 			
-			my $user_obj;
-			$user_obj = $class->by_field( user => $user );
-			$user_obj = $class->by_field( email => $user ) if !$user_obj;
-			$user_obj = $class->find_or_create( user => $user ) if !$user_obj;
-		
-			print STDERR "AppCore::User::sync_from_ad: Syncing user '$user' (userid $user_obj)\n";
+			# Match user to database (creating an entry if not matched)
+			#my $user_obj = $class->match_ad_user($user);
+			
+			#print STDERR "AppCore::User::sync_from_ad: Syncing user '$user' (userid $user_obj)\n";
 			
 			my $entry = $mesg->entry( 0 );
 			
-			$class->_sync_ad_entry($entry);
+			my $user_obj = $class->_sync_ad_entry($entry); #, $user_obj);
 			
 			$mesg = $ldap->unbind;   # take down session
 			
@@ -807,9 +832,9 @@ package AppCore::User;
 	{
 		my $class = shift;
 		my $entry = shift;
-		my $user_obj = shift;
+		#my $user_obj = shift;
 		
-		my $DEBUG = 0;
+		my $DEBUG = 1;
 		
 		my %ldap_user_map = qw/
 			user	cn
@@ -876,14 +901,7 @@ package AppCore::User;
 		# Resolve the user in the database if possible
 		my $user = $user_data{'user'};
 		
-		# If user_obj not given, attempt to find and create if not already in the database
-		if(!$user_obj)
-		{
-			#$user_obj = $class->find_or_create( user => $user );
-			$user_obj = $class->by_field( user => $user );
-			$user_obj = $class->by_field( email => $user ) if !$user_obj;
-			$user_obj = $class->find_or_create( user => $user ) if !$user_obj;
-		}
+		my $user_obj = $class->match_ad_user($user); # if !$user_obj;
 		
 		print STDERR "AppCore::User::_sync_ad_entry: Syncing user '$user' (userid $user_obj)\n" if $DEBUG;
 		
@@ -906,7 +924,7 @@ package AppCore::User;
 		}
 		
 		# Enable this line to delete all existing groups from this user
-		AppCore::User::GroupList->search(userid => $user_obj)->delete_all;
+		AppCore::User::GroupList->retrieve_from_sql('userid='.$user_obj.' and groupid not in (select groupid from user_groups where name="ADMIN")')->delete_all;
 		
 		my $val = $user_data{_groups};
 		$val = $remap_sub->($user_obj, '_groups', $val) if $remap_sub;
@@ -935,6 +953,8 @@ package AppCore::User;
 		}
 		
 		$user_obj->update;
+		
+		return $user_obj;
 	}
 };	
 
@@ -1193,7 +1213,7 @@ package AppCore::User::PrefOption;
 			foreach my $key (@keys)
 			{
 				#if( $opts->{datatype} eq 'string' ? $self->get($key) ne $opts->{$key} : $self->get($key) != $opts->{$key})
-				if( $self->get($key) ne $opts->{$key} )
+				#if( $self->get($key) ne $opts->{$key} )
 				{
 					$self->$key($opts->{$key});
 				} 

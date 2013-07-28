@@ -1,21 +1,21 @@
 <title>Advanced Settings<tmpl_if for_user> for %%user_display%%</tmpl_if></title>
 <h1>Advanced Settings<tmpl_if for_user> for %%user_display%%</tmpl_if></h1>
 
+<div style='margin:1em 0'>
+	<tmpl_if url_from>
+		<a class=button href='%%url_from%%'>&laquo; Go back to previous page</a>
+	<tmpl_else>
+		<a class=button href='%%binpath%%/settings'>&laquo; Go back to Basic Settings</a>
+	</tmpl_if>
+</div>
+
 <tmpl_if saved>
-	<div class='ffjc-info' style='margin:2em'>
+	<div class='ffjc-info' style='margin:1em 0'>
 		<b>Settings Updated!</b>
 		<br><br>
 		You're settings has been saved and updated. Thanks!
 	</div>
 </tmpl_if>
-
-<div style='margin:1em'>
-	<tmpl_if url_from>
-		<a href='%%url_from%%'>&laquo; Go back to previous page</a>
-	<tmpl_else>
-		<a href='%%binpath%%/settings'>&laquo; Go back to Basic Settings</a>
-	</tmpl_if>
-</div>
 
 <form action='%%binpath%%/settings/advanced/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
@@ -23,65 +23,69 @@
 		<input type=hidden name=userid value="<tmpl_var user_userid>">
 	</tmpl_if>
 
-	<table class='editform' width='100%'>
-		<tmpl_loop opts>
-			<tmpl_if mod_change>
-				<tmpl_if module_name>
-					<tr>
-						<td colspan=2>
-							<h2>%%module_name%%</h2>
-						</td>
-					</tr>
+	<div class='editform-wrapper'>
+		<table class='editform' width='100%'>
+			<tmpl_loop opts>
+				<tmpl_if mod_change>
+					<tmpl_if module_name>
+						<tr>
+							<td colspan=2>
+								<br>
+								<h2>%%module_name%%</h2>
+							</td>
+						</tr>
+					</tmpl_if>
 				</tmpl_if>
-			</tmpl_if>
-			<tmpl_if sec_change>
-				<tmpl_if subsection_name>
-					<tr>
-						<td colspan=2>
-							<h3>%%subsection_name%%</h3>
-						</td>
-					</tr>
+				<tmpl_if sec_change>
+					<tmpl_if subsection_name>
+						<tr>
+							<td colspan=2>
+								<br>
+								<h3>%%subsection_name%%</h3>
+							</td>
+						</tr>
+					</tmpl_if>
 				</tmpl_if>
-			</tmpl_if>
+				
+				<tr>
+					<tmpl_if type_bool>
+						<!--<td>&nbsp;</td>-->
+						<td valign=middle>
+							<input type=checkbox class=checkbox name=opt_%%optid%% value=1 <tmpl_if value>checked</tmpl_if> id=opt_%%optid%%>
+							<label for=opt_%%optid%%> %%name%%</label>
+						</td>
+					<tmpl_else>	
+						<td valign=top>%%name%%:</td><td></td>
+						</tr><tr> 
+						<td valign=top colspan=2>
+							<tmpl_if type_int>
+								<input type=text class=num name=opt_%%optid%% value='%%value%%' size=5>
+							<tmpl_else>
+								<input type=text class=textinput name=opt_%%optid%% id=opt_%%optid%% onfocus='select()' value="<tmpl_var value escape=html>" size=50>
+							</tmpl_if>
+					</tmpl_if>
+						
+						<tmpl_if description>
+							<div class=hint>%%description%%</div>
+						</tmpl_if>
+					</td>
+				</tr>
+				
+			</tmpl_loop>
+			
 			
 			<tr>
-				<tmpl_if type_bool>
-					<td>&nbsp;</td>
-					<td valign=middle>
-						<input type=checkbox class=checkbox name=opt_%%optid%% value=1 <tmpl_if value>checked</tmpl_if> id=opt_%%optid%%>
-						<label for=opt_%%optid%%> %%name%%</label>
-					</td>
-				<tmpl_else>	
-					<td valign=top>%%name%%:</td><td></td>
-					</tr><tr> 
-					<td valign=top colspan=2>
-						<tmpl_if type_int>
-							<input type=text class=num name=opt_%%optid%% value='%%value%%' size=5>
-						<tmpl_else>
-							<input type=text class=textinput name=opt_%%optid%% id=opt_%%optid%% onfocus='select()' value="<tmpl_var value escape=html>" size=50>
-						</tmpl_if>
-				</tmpl_if>
-					
-					<tmpl_if description>
-						<div class=hint>%%description%%</div>
-					</tmpl_if>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
 				</td>
 			</tr>
-			
-		</tmpl_loop>
 		
 		
-		<tr>
-			<td colspan=2 align=center class=focus_highlight>
-			<br>
-			
-			<input type=submit value="Save Changes"> 
-			<input type=reset value="Reset to Original Values">
-			</td>
-		</tr>
-	
-	
-	</table>
+		</table>
+	</div>
 	
 </form>
 

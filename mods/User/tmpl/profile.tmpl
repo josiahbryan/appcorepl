@@ -9,45 +9,62 @@
 	</div>
 </tmpl_if>
 
-<div style='margin:1em'>
-	<a href='%%binpath%%/settings/advanced?userid=%%user_userid%%&url_from=%%url_from%%'>Go to Advanced Settings...</a>
+<div style='margin:1em 0'>
+	<a class=button href='%%binpath%%/settings/advanced?userid=%%user_userid%%&url_from=%%url_from%%'>Go to Advanced Settings...</a>
 </div>
 
-<form action='%%binpath%%/settings/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
-	<input type=hidden name=url_from value="<tmpl_var url_from>">
+<div class='editform-wrapper'>
 
-	<table class='editform' width='100%'>
-		<tr>
-			<td>What's your name?</td> <td>
-				<input type=text name=name class=textinput id=name onfocus='select()' value='<tmpl_var user_display escape=html>' size=30> 
-				<script>var e= $('name').get(0);if(e)e.focus()</script>
-			</td>
-		</tr>
-		<tr>
-			<td valign=top>Your E-Mail:</td> <td>
-				<input type=text class=textinput name=new_user_value id=user onfocus='select()' value="<tmpl_var user_user>" size=30><br>
-				<span class=hint>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>
-			</td>
-		</tr>
-		
-		<tr>
-			<td>Choose a password:</td> <td>
-				<input type=password class=textinput name=new_pass_value id=pass value='<tmpl_var fake_pass>' onfocus='select()' size=30> 
-				
-			</td>
-		</tr>
-		
-		<tr>
-			<td colspan=2 align=center class=focus_highlight>
-			<br>
+	<form action='%%binpath%%/settings/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
+		<input type=hidden name=url_from value="<tmpl_var url_from>">
+
+		<table class='editform' width='100%'>
+			<tr>
+				<td>What's your name?</td> <td>
+					<input type=text name=name class=textinput id=name onfocus='select()' value='<tmpl_var user_display escape=html>' size=30> 
+					<script>var e= $('name').get(0);if(e)e.focus()</script>
+				</td>
+			</tr>
+			<tr>
+				<td valign=top>Your E-Mail:</td> <td style='padding-bottom:1em'>
+					<input type=text class=textinput name=new_user_value id=user onfocus='select()' value="<tmpl_var user_email>" size=30><br>
+					<span class=hint>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>
+				</td>
+			</tr>
 			
-			<input type=submit value="Save Changes"> 
-			<input type=reset value="Reset to Original Values">
-			</td>
-		</tr>
-	
-	
-	</table>
-	
-</form>
-
+			<tr>
+				<td valign=top>Your Mobile Phone:</td> <td style='padding-bottom:1em'>
+					<input type=text class=textinput name=new_phone_vaue id=phone onfocus='select()' value="<tmpl_var user_mobile_phone>" size=30><br>
+					<span class=hint>(Used to notify you via text message when you request it.)</span>
+				</td>
+			</tr>
+			
+			
+			<tr>
+				<td valign=top>Choose a user name:</td> <td style='padding-bottom:1em'>
+					<input type=text class=textinput name=new_user_value id=user onfocus='select()' value="<tmpl_var user_user>" size=30><br>
+					<!--<span class=hint>(We will <b>NEVER</b> show or share your e-mail address with <b>ANYONE!</b>)</span>-->
+				</td>
+			</tr>
+			
+			<tr>
+				<td>Choose a password:</td> <td>
+					<input type=password class=textinput name=new_pass_value id=pass value='<tmpl_var fake_pass>' onfocus='select()' size=30> 
+					
+				</td>
+			</tr>
+			
+			<tr>
+				<td colspan=2 align=center class=focus_highlight>
+				<br>
+				
+				<input type=submit value="Save Changes"> 
+				<input type=reset value="Reset to Original Values">
+				</td>
+			</tr>
+		
+		
+		</table>
+		
+	</form>
+</div>

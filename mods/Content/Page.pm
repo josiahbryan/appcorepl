@@ -1141,29 +1141,11 @@ package Content::Page::ThemeEngine;
 			my $subnav = $self->load_subnav($r->{page_obj});
 			
 			#timemark("ABD done load subnav");
+			#die Dumper $subnav;
 			
-			# Integrate any page-specified breadcrumbs onto the end of the list
-			my @list = @{ $self->breadcrumb_list->list || [] };
-			if(@list)
-			{
-				$subnav = clone( $subnav );
-				
-				my @tmp = @{$subnav->{nav_path}};
-				push @tmp, @list;
-				
-				my @final;
-				my $last;
-				foreach my $item (@tmp)
-				{
-					next if $last && $item->{url} eq $last->{url};
-					$last = $item;
-					$item->{current} = 0;
-					push @final, $item;
-				}
-				$final[$#final]->{current} = 1 if @final;
-				
-				$subnav->{nav_path} = \@final;
-			}
+			$subnav = $self->add_breadcrumbs($subnav);
+			
+			#die Dumper $subnav;
 
 			#timemark("ABD done breadcrumb list prep");
 			$pgdat->{$_} = $subnav->{$_} foreach keys %$subnav;
@@ -1171,6 +1153,7 @@ package Content::Page::ThemeEngine;
 		else
 		{
 			$pgdat->{nav_path} = $self->breadcrumb_list->list;
+			#die Dumper $self->breadcrumb_list->list;
 			#timemark("ABD just get breadcrumbs");
 		}
 			
@@ -1192,6 +1175,37 @@ package Content::Page::ThemeEngine;
 		
 		#timemark("ABD tmpl->param calls done");
 		
+	}
+	
+	sub add_breadcrumbs
+	{
+		my $self = shift;
+		my $subnav = shift;
+		
+		# Integrate any page-specified breadcrumbs onto the end of the list
+		my @list = @{ $self->breadcrumb_list->list || [] };
+		if(@list)
+		{
+			$subnav = clone( $subnav );
+			
+			my @tmp = @{$subnav->{nav_path}};
+			push @tmp, @list;
+			
+			my @final;
+			my $last;
+			foreach my $item (@tmp)
+			{
+				next if $last && $item->{url} eq $last->{url};
+				$last = $item;
+				$item->{current} = 0;
+				push @final, $item;
+			}
+			$final[$#final]->{current} = 1 if @final;
+			
+			$subnav->{nav_path} = \@final;
+		}
+		
+		return $subnav;
 	}
 	
 	sub load_template
