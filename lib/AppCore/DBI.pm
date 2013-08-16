@@ -2150,6 +2150,8 @@ package AppCore::DBI;
 		my $self = shift;
 		#my $model = shift || $self->model;
 		my $model = $self;
+		my $expand = shift;
+		$expand = 1 if !defined $expand;
 		
 		my %hash;
 		
@@ -2160,11 +2162,18 @@ package AppCore::DBI;
 			
 			if($fm && $fm->{linked})
 			{
-				$hash{$col.'_raw'} = $val;
-				
-				eval 'use '.$fm->{linked};
-				my $x = eval {$fm->{linked}->stringify($val)};
-				$val = $x if !$@;
+				if($expand)
+				{
+					$hash{$col.'_raw'} = $val;
+					
+					eval 'use '.$fm->{linked};
+					my $x = eval {$fm->{linked}->stringify($val)};
+					$val = $x if !$@;
+				}
+				else
+				{
+					$val = $val+0;
+				}
 			}
 			
 			$hash{$col} = $val;

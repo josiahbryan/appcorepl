@@ -833,6 +833,7 @@ package AppCore::User;
 		my $class = shift;
 		my $entry = shift;
 		#my $user_obj = shift;
+		return if !$entry;
 		
 		my $DEBUG = 1;
 		

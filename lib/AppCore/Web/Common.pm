@@ -561,6 +561,7 @@ package AppCore::Web::Common;
 	sub load_template
 	{
 		my $file = shift;
+		my $is_str = shift || 0;
 		#my $module = shift || undef;
 		#my $bless_pkg = shift || 'HTML::Template::RetrievableParameters';
 		$TMPL_FILE = $file;
@@ -570,13 +571,16 @@ package AppCore::Web::Common;
 		
 		# Assume $file is a filename if no spaces found
 		#die "File doesn't exist: $file" if !-f $file && index($file,' ') < 0;
-		warn "File doesn't exist: $file" && return undef if !-f $file && index($file,' ') < 0;
+		if(!$is_str)
+		{
+			warn "File doesn't exist: $file" && return undef if !-f $file && index($file,' ') < 0;
+		}
 		 
 		my %args;
 		
 		#print STDERR "load_template: $file\n";
 		
-		if(-f $file)
+		if(!$is_str && -f $file)
 		{
 			%args = (filename => $file,
 				die_on_bad_params=>0,
