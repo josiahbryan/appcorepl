@@ -922,7 +922,7 @@ package HTML::Template::DelayedLoading;
 	sub param
 	{
 		my $self = shift;
-		my $key = shift;
+		my $key = lc(shift);
 		
 		if(@_)
 		{

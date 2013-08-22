@@ -126,7 +126,7 @@ package AppCore::User;
 		my $include_invalid = shift || 0;
 		my $query_sql = shift || '1';
 		
-		my @all = $pkg->retrieve_from_sql($query_sql.' order by display'); #`last`, `first`');
+		my @all = $pkg->retrieve_from_sql($query_sql.' and display!="" order by display'); #`last`, `first`');
 		my @list;
 		if($include_invalid)
 		{
@@ -925,7 +925,7 @@ package AppCore::User;
 		}
 		
 		# Enable this line to delete all existing groups from this user
-		AppCore::User::GroupList->retrieve_from_sql('userid='.$user_obj.' and groupid not in (select groupid from user_groups where name="ADMIN")')->delete_all;
+		AppCore::User::GroupList->retrieve_from_sql('userid='.$user_obj.' and groupid not in (select groupid from user_groups where name="ADMIN" or name = "Helpdesk Admin")')->delete_all;
 		
 		my $val = $user_data{_groups};
 		$val = $remap_sub->($user_obj, '_groups', $val) if $remap_sub;
