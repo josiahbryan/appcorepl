@@ -74,10 +74,10 @@ package AppCore::DBI;
 		if ( !$dbh ) 
 		{
 			#print STDERR __PACKAGE__."::db_Main(): class:'$class', DBPARAMS CACHE = ".Dumper($DBPARAMS_CLASS_CACHE{$class});
-			$dbh = $class->dbh($DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_DB}   || DEFAULT_DB,
-					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_HOST} || DEFAULT_HOST,
-					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
-					   $DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_PASS} || DEFAULT_PASS,
+			$dbh = $class->dbh($AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_DB}   || DEFAULT_DB,
+					   $AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_HOST} || DEFAULT_HOST,
+					   $AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
+					   $AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_PASS} || DEFAULT_PASS,
 					   %DBI_ATTRS);
 # 			if ( $ENV{'MOD_PERL'} and !$Apache::ServerStarting ) 
 # 			{
@@ -99,13 +99,17 @@ package AppCore::DBI;
 	{
 		my $class = shift;
 		$class = ref $class if ref $class;
-		#print STDERR __PACKAGE__."::setup_default_dbparams(): class:'$class', args: ".join('|', @_)."\n";
-		$DBPARAMS_CLASS_CACHE{$class} = 
+		my $db = shift;
+		my $host = shift;
+		my $user = shift;
+		my $pass = shift;
+		#print STDERR __PACKAGE__."::setup_default_dbparams(): class:'$class', args: db=$db,host=$host,user=$user,pass=$pass\n";
+		$AppCore::DBI::DBPARAMS_CLASS_CACHE{$class} = 
 		{
-			DEFAULT_DB   => shift,
-			DEFAULT_HOST => shift,
-			DEFAULT_USER => shift,
-			DEFAULT_PASS => shift,
+			DEFAULT_DB   => $db,
+			DEFAULT_HOST => $host,
+			DEFAULT_USER => $user,
+			DEFAULT_PASS => $pass,
 		};
 	}
 
@@ -143,8 +147,9 @@ package AppCore::DBI;
 			if($meta->{database} || $meta->{db})
 			{
 				$meta->{database} ||= $meta->{db};
-				#print STDERR __PACKAGE__."::meta(): class:'$class', calling setup dbparams, other args: host:'$meta->{db_host}',user:'$meta->{db_user}',pass: ***\n";
-				$class->setup_default_dbparams($meta->{database},$meta->{db_host},$meta->{db_user},$meta->{db_pass});
+				#print STDERR __PACKAGE__."::meta(): class:'$class', db:'$meta->{database}', calling setup dbparams, other args: host:'$meta->{db_host}',user:'$meta->{db_user}',pass: ***\n";
+				$class->setup_default_dbparams($meta->{database} || $meta->{db},$meta->{db_host},$meta->{db_user},$meta->{db_pass});
+				#print STDERR Dumper \%AppCore::DBI::DBPARAMS_CLASS_CACHE;
 			}
 			
 			# Setup AppCore::DBI aliasing of the class->table and the CDBI table name
@@ -250,10 +255,11 @@ package AppCore::DBI;
 					my $col = $sth->fetchall_arrayref;
 					$sth->finish();
 
-					die( 'The "' . $class->table() . '" table has no primary key' ) unless $col->[0][3];
+					#print STDERR Dumper \%AppCore::DBI::DBPARAMS_CLASS_CACHE if !$col->[0][3];
+					warn( 'The "' . $class->table() . '" table has no primary key' ) unless $col->[0][3];
 
 					#$class->columns( All => map { $_->[3] } @$col );
-					$class->columns( Primary => $col->[0][3] );
+					$class->columns( Primary => $col->[0][3] ) if $col->[0][3];
 
 					# find any text columns that will get quoted upon INSERT
 					$class->columns( TEXT => map { $_->[5] eq 'text' ? $_->[3] : () } @$col );

@@ -17,7 +17,7 @@ package AppCore::EmailQueue;
 		table           => 'emailqueue',
 
 		db		=> AppCore::Config->get("EMAIL_DB")      || 'appcore',
-		table		=> AppCore::Config->get("EMAIL_DBTABLE") || 'emailqueue',
+		#table		=> AppCore::Config->get("EMAIL_DBTABLE") || 'emailqueue',
 		
 		schema  =>
 		[
@@ -187,12 +187,13 @@ Server: $host
 		
 		foreach my $ref (@unsent)
 		{
-			print STDERR AppCore::Common::date().": Email Queue: transmitting $ref\n" if $DEBUG;
+			#print STDERR AppCore::Common::date().": Email Queue: transmitting $ref\n" if $DEBUG;
 			$ref->transmit;
-			print STDERR AppCore::Common::date().": Email Queue: DONE transmitting $ref\n" if $DEBUG;
+			#print STDERR AppCore::Common::date().": Email Queue: DONE transmitting $ref\n" if $DEBUG;
 		}
 	}
 	
+	my %SMTP_HANDLE_CACHE;
 	sub transmit
 	{
 		my $self = shift;
@@ -216,6 +217,11 @@ Server: $host
 		my ($domain) = $self->msg_from =~ /\@([A-Z0-9.-]+\.[A-Z]{2,4})\b/i;
 
 		$domain = lc $domain;
+		
+		if($self->msg_from eq 'RC Student Financial Services <sfs@rc.edu>')
+		{
+			#$domain = 'rc.edu.local';
+		}
 		
 		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
 		   $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{'*'} if !$prof;
@@ -282,6 +288,7 @@ Server: $host
 		
 		#print STDERR "Fox\n";
 		my %args;
+		my $need_auth = 1;
 		eval{
 		
 			#print STDERR "Debug: Pkg: $pkg, server: $prof->{server}, port: $prof->{port}, user: $prof->{user}, pass: $prof->{pass}, domain: $domain\n";
@@ -293,7 +300,7 @@ Server: $host
 			%args = (
 				Port  => $prof->{port} || 25,
 				Hello => $domain,
-				Debug => $DEBUG
+				#Debug => $DEBUG
 			);
 			#if($pkg eq 'Net::SMTP::TLS')
 			{
@@ -304,7 +311,30 @@ Server: $host
  			#use Data::Dumper;
 			#print STDERR Dumper \%args;
 				
-			$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
+			my $cache_key = $domain.$prof->{user};
+			my $handle_data = $SMTP_HANDLE_CACHE{$cache_key};
+			#if(!$handle_data || (time - $handle_data->{timestamp}) > 60 * 5 || $handle_data->{count} > 20)
+			{
+			
+				$smtp = $pkg->new($prof->{server}, %args); # connect to an SMTP server
+				
+				#print STDERR "Creating new handle for $cache_key\n";
+				
+# 				$handle_data =
+# 					$SMTP_HANDLE_CACHE{$cache_key} =
+# 				{
+# 					smtp		=> $smtp,
+# 					timestamp	=> time,
+# 					count		=> 0,
+# 				}
+			}
+#			else
+			{
+# 				$handle_data->{count} ++;
+# 				$smtp = $handle_data->{smtp};
+# 				print STDERR "Reusing handle for $cache_key, count $handle_data->{count}\n";
+				#$need_auth = 0;
+			}
 		};
 		
 		if(!$smtp || $@)
@@ -322,12 +352,12 @@ Server: $host
 		$self->result("OK: Sent thru ".$prof->{server}.":".($prof->{port}||25)." via $pkg");
 		$self->update;
 
-		if($smtp->can('auth') && $prof->{user})
+		if($need_auth && $smtp->can('auth') && $prof->{user})
 		{
 			print STDERR "[DEBUG] Authenticating as user '$prof->{user}', password '$prof->{pass}'\n" if $DEBUG;
 			if(!$smtp->auth($prof->{user},$prof->{pass}))
 			{
-				$self->sentflag(1);
+				$self->sentflag(0);
 				$self->result("Error logging into mail server: ".$smtp->message().($@? " ($@)":""));
 				print STDERR "MsgID $self: ".$self->result."\n";
 				$self->update;
@@ -383,7 +413,7 @@ Server: $host
 		
 		$smtp->quit() if $smtp;
 		
-		print "Done.\n" if $DEBUG;
+		#print "Done.\n" if $DEBUG;
 		#exit if $DEBUG;
 	}
 
