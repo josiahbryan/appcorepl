@@ -705,7 +705,7 @@ package AppCore::User;
 		if(!$user_obj)
 		{
 			print STDERR "[WARN] Couldn't match user '$user', creating new database entry...\n";
-			die "Not on my watch";
+			#die "Not on my watch";
 			$user_obj = $class->find_or_create( user => $user );
 		}
 			

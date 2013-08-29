@@ -947,8 +947,8 @@ package AppCore::DBI;
 	{
 		my $class = shift;
 		my $val = shift;
-		my $fkclause = shift || '1';
-		
+		my $fkclause = shift || '1=1';
+			# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
 		my $debug = shift || 0;
 		
 		my $dbh = $class->db_Main;
@@ -1000,7 +1000,8 @@ package AppCore::DBI;
 		
 		my %tags_consumed;	
 		
-		my $clause = '1';
+		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
+		my $clause = '1=1';
 		my @tables;
 		my @args;
 		
@@ -1081,8 +1082,9 @@ package AppCore::DBI;
 		
 		my $val = shift;
 		
-		my $fkclause = shift || '1';
-		$fkclause = '1' if $fkclause =~ /={{/;
+		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
+		my $fkclause = shift || '1=1';
+		$fkclause = '1=1' if $fkclause =~ /={{/;
 		
 		my $include_objects = shift || 0;
 		
@@ -1187,7 +1189,7 @@ package AppCore::DBI;
 		
 		my $debug = shift || 0; 
 		
-		print STDERR "$class->validate_string($val): Start (fkclause=$fkclause, check_pri=$check_pri,multi_match=$multi_match,adder=$adder)\n" if $debug;
+		print STDERR "$class->validate_string($val): Start (fkclause=$fkclause, check_pri=$check_pri,multi_match=$multi_match,adder=$adder,q_table=$q_table,q_pri=$q_primary)\n" if $debug;
 		
 		if(!$val || $val eq '^(None/Any)' || $val eq '')
 		{
@@ -1210,12 +1212,12 @@ package AppCore::DBI;
 		
 		my $concat = $class->get_stringify_sql(1);
 		
-		
-		$fkclause = '1' if !$fkclause || $fkclause eq '' || $fkclause =~ /={/;
+		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
+		$fkclause = '1=1' if !$fkclause || $fkclause eq '' || $fkclause =~ /={/;
 		$fkclause = '('.$fkclause.')';
 		
 		my $sql = "select $q_primary from $q_table where $q_table.$q_primary = ? and $fkclause";
-		#print "$class->validate_string($val): sql=$sql, val=[$val]\n";
+		print "$class->validate_string($val): sql=$sql, val=[$val]\n" if $debug;
 		my $sth = $dbh->prepare($sql);
 		
 		
@@ -1231,7 +1233,7 @@ package AppCore::DBI;
 		{
 			my $f = $sth->fetchrow_hashref;
 			#my $fkv = $class->stringify($f->{$pri});
-			#print "$class->validate_string($val): pri=[$pri], f->{pri}=[$f->{$pri}], fkv=[$fkv]\n"; #,Dumper($f);
+			#print "$class->validate_string($val): pri=[$pri], f->{pri}=[$f->{$pri}], fkv=[$fkv]\n" if $debug; #,Dumper($f);
 			print STDERR "$class->validate_string($val): RETURN at $q_primary is = $val\n" if $debug;
 			#return {id=>$f->{$pri},value=>$fkv}; #$f->{fkd})};
 			my $v = $f->{$pri}; $v||=$f->{lc $pri};
@@ -2109,7 +2111,8 @@ package AppCore::DBI;
 		#die Dumper \%inq, \@clause, \@args, \@key_list, $cl;
 		
 		
-		$cl = '1' if !defined $cl || $cl eq '';
+		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
+		$cl = '1=1' if !defined $cl || $cl eq '';
 		#my $col0 = $columns[0]->dbcolumn;
 		
 		#my ($tables,$cl2,@args2) = AppCore::DBI->apply_user_filters($gentab);
