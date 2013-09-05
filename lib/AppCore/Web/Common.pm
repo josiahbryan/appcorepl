@@ -730,8 +730,7 @@ package AppCore::Web::Common;
 		$html =~ s/\%([^\d\s\'](?:.|\n)*?)%//gi;
 		$html =~ s/—/ - /g;
 		$html =~ s/’/'/g;
-		$html =~ s/“/"/g;
-		$html =~ s/”/"/g;
+		$html =~ s/[“”]/"/g; # First two chars in the regex actually are quotes - just are invisible. Trust me, it works.
 		# Textify some entitites
 		$html =~ s/&#39;/'/g;
 		$html =~ s/&#8217;/'/sg;

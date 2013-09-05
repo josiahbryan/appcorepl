@@ -95,6 +95,8 @@ package AppCore::Common;
 		hsv2rgb
 		random_color_for_key
 		
+		debug_sql
+		
 		/;
 		
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
@@ -544,7 +546,16 @@ package AppCore::Common;
 		my $test2 = shift || undef;
 		my ($a,$b,$c,$d,$e,$f) = $test=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
 		
+		return undef if !$a || !$b || !$c;
 		
+		$d = 0 if !$d;
+		$d = 23 if $d >= 24;
+		
+		$e = 0 if !$e;
+		$e = 59 if $e >= 60;
+		
+		$f = 0 if !$f;
+		$f = 59 if $f >= 60;
 		my $then = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
 		#$then->add(hours=>6);
 		
@@ -559,6 +570,14 @@ package AppCore::Common;
 		else
 		{
 			my ($a,$b,$c,$d,$e,$f) = $test2=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;	
+			$d = 0 if !$d;
+			$d = 23 if $d >= 24;
+			
+			$e = 0 if !$e;
+			$e = 59 if $e >= 60;
+			
+			$f = 0 if !$f;
+			$f = 59 if $f >= 60;
 			$dt = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
 		}
 		
@@ -898,6 +917,21 @@ package AppCore::Common;
 	}
 
 	srand(time);
+	
+	sub debug_sql
+	{
+		my $sql = shift;
+		my @args = @_;
+		
+		my $dbh = AppCore::DBI->dbh;
+		my $get_arg = sub {
+			my $x = shift(@args);
+			return $x =~ /[^\d]/ ? $dbh->quote($x) : $x;
+		};
+		
+		$sql =~ s/\?/$get_arg->()/segi;
+		return $sql;
+	}
 	
 };
 
