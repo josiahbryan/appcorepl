@@ -84,8 +84,10 @@ package AppCore::DBI::QueryLookupUtil;
 		my $class = shift;
 		my $opts = ref $class ? $class : shift;
 		my $string = shift;
-		my $id_val = shift;
-		my $str_val = shift;
+		my $proper_case = shift;
+		$proper_case = 1 if !defined $proper_case;
+		#my $id_val = shift;
+		#my $str_val = shift;
 		
 		return undef if !$string;
 		
@@ -100,7 +102,7 @@ package AppCore::DBI::QueryLookupUtil;
 		
 		# Since MSSQL doesnt support "sth->rows", use "top 2" and only consider valid if no second row
 		my $sql = "select top 2 $id_col as value, $string_col as text from ($sql_orig) tmp where $string_col like ? $order_by";
-		#print "__PACKAGE__->validate_string('$string'): $sql\n";
+		#print STDERR "__PACKAGE__->validate_string('$string'): $sql\n";
 		
 		my $sth = $dbi->dbh->prepare_cached($sql, undef, 1);
 		$sth->execute('%'.$string.'%');
@@ -108,7 +110,27 @@ package AppCore::DBI::QueryLookupUtil;
 		my @tmp_list;
 		push @tmp_list, $_ while $_ = $sth->fetchrow_hashref;
 		
-		return @tmp_list && @tmp_list == 1 ? shift @tmp_list : undef;
+		#print STDERR Dumper \@tmp_list;
+		
+		undef $@;
+		if(@tmp_list == 1)
+		{
+			my $ref = shift @tmp_list;
+			$ref->{text} = guess_title(lc($ref->{text}));
+			return $ref;
+			#return shift @tmp_list;
+		}
+		elsif(!@tmp_list)
+		{
+			$@ = "No results";
+		}
+		elsif(@tmp_list > 0)
+		{
+			$@ = "More than 1 match";
+		}
+		return undef;
+		
+		#return @tmp_list && @tmp_list == 1 ? shift @tmp_list : undef;
 	}
 
 	sub autocomplete_string
@@ -117,7 +139,7 @@ package AppCore::DBI::QueryLookupUtil;
 		my $opts = ref $class ? $class : shift;
 		my $string = shift;
 		my $limit = shift || 100;
-		my $proper_case = shift;
+		my $proper_case = shift || $opts->{proper_case};
 		$proper_case = 1 if !defined $proper_case;
 		
 		my @autocomplete_list;
@@ -134,6 +156,8 @@ package AppCore::DBI::QueryLookupUtil;
 		
 		my $sql = "select top $limit $id_col as value, $string_col as text from ($sql_orig) tmp where $string_col like ? $order_by";
 		#print "__PACKAGE__->autocomplete_string('$string'): $sql\n";
+		
+		$string =~ s/\*/%/g unless $opts->{disable_wildcard};
 		
 		my $sth = $dbi->dbh->prepare_cached($sql, undef, 1);
 		$sth->execute('%'.$string.'%');

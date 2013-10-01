@@ -925,7 +925,7 @@ package AppCore::User;
 		}
 		
 		# Enable this line to delete all existing groups from this user
-		AppCore::User::GroupList->retrieve_from_sql('userid='.$user_obj.' and groupid not in (select groupid from user_groups where name="ADMIN" or name = "Helpdesk Admin")')->delete_all;
+		AppCore::User::GroupList->retrieve_from_sql('userid='.$user_obj.' and groupid not in (select groupid from user_groups where name="ADMIN" or name like "%Admin%")')->delete_all; # was HelpDesk Admin
 		
 		my $val = $user_data{_groups};
 		$val = $remap_sub->($user_obj, '_groups', $val) if $remap_sub;
