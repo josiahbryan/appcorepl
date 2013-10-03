@@ -2,7 +2,23 @@
 
 <h1>People</h1>
 
-<a href='%%binpath%%/create' class=button>Add a new person...</a>
+<table border=0 style='margin-top:1em'>
+	<tr>
+		<td>
+			
+		</td>
+		<td>
+			<form action=/admin/users method=GET>
+				Search: <input name=q size=45 id='user-search' value='%%query%%'> <input type=submit value='Search' class=button>
+				<script>$(function(){$('#user-search').focus() })</script>
+				<a href='%%binpath%%/create' class=button>Add a new user...</a>
+			</form>
+		</td>
+	</tr>
+</table>
+			
+
+
 
 <style>
 .pic
@@ -37,39 +53,56 @@ table.pretty td.fbuser
 }
 </style>
 
-<table class='pretty'>
-	<thead>
-		<th>Actions</th>
-		<th>Photo</th>
-		<th>Name</th>
-		<th>Email</th>
-		<th>User</th>
-		<th>From FB?</th>
-	</thead>
-	<tbody>
-		<tmpl_loop list>
-		<tr>
-			<td class='util'>
-				<!--<a href='%%url%%'>Visit</a> | -->
-				<a href='%%binpath%%/edit?userid=%%userid%%'>Edit</a> | 
-				<a href='%%binpath%%/delete?userid=%%userid%%' onclick="return confirm('Are you SURE you want to delete %%first%% %%last%%? This can\'t be undone!')">Delete</a>
-			</td>
-			<td align=center>
-				<tmpl_if photo>
-					<div class='pic'>
-						<img src='%%photo%%' width=25 height=25>
-						<img src='%%photo%%' width=60 height=60 class='full'>
-					</div>
-				</tmpl_if>
-			</td>
-			<td>%%first%% %%last%%</td>
-			<td><tmpl_if email>
-				<a href='mailto:%%email%%'>%%email%%<a/>
-				<tmpl_else>-</tmpl_if></td>
-			<td>%%user%%</td>
-			<td align=center <tmpl_if is_fbuser>class='fbuser'</tmpl_if>>
-				<tmpl_if is_fbuser>Yes<tmpl_else>No</tmpl_if></td>
-		</tr>
-		</tmpl_loop>
-	</tbody>
-</table>
+<tmpl_if query>
+	<tmpl_if list>
+		<table class='pretty'>
+			<thead>
+				<th>Actions</th>
+				<th>Photo</th>
+				<th>Name</th>
+				<th>Email</th>
+				<th>User</th>
+				<th>From FB?</th>
+			</thead>
+			<tbody>
+				<tmpl_loop list>
+				<tr>
+					<td class='util'>
+						<!--<a href='%%url%%'>Visit</a> | -->
+						<a href='%%binpath%%/edit?userid=%%userid%%'>Edit</a> | 
+						<a href='%%binpath%%/delete?userid=%%userid%%' onclick="return confirm('Are you SURE you want to delete %%first%% %%last%%? This can\'t be undone!')">Delete</a>
+					</td>
+					<td align=center>
+						<tmpl_if photo>
+							<div class='pic'>
+								<img src='%%photo%%' width=25 height=25>
+								<img src='%%photo%%' width=60 height=60 class='full'>
+							</div>
+						</tmpl_if>
+					</td>
+					<td>%%first%% %%last%%</td>
+					<td><tmpl_if email>
+						<a href='mailto:%%email%%'>%%email%%<a/>
+						<tmpl_else>-</tmpl_if></td>
+					<td>%%user%%</td>
+					<td align=center <tmpl_if is_fbuser>class='fbuser'</tmpl_if>>
+						<tmpl_if is_fbuser>Yes<tmpl_else>No</tmpl_if></td>
+				</tr>
+				</tmpl_loop>
+			</tbody>
+		</table>
+	<tmpl_else>
+
+		<!--<center>-->
+			<br><br>
+			<h3 style='color:red'>No results for '%%query%%'</h3>
+		<!--</center>-->
+	
+	</tmpl_if>
+<tmpl_else>
+	<!--<center>-->
+		<br><br>
+		<h3> Use the search box, above, to lookup a user.<br>
+		<b>Note:</b> You can search by <b>first/last name, email address, or user name</b>. </h3>
+	<!--</center>-->
+</tmpl_if>

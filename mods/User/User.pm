@@ -251,6 +251,17 @@ package User;
 					my $email = $user_data->{email};
 					$email =~ s/\\u0040/@/g;
 					
+					#die Dumper $user_data;
+# 					open(FILE,">/tmp/fbuserdata.txt");
+# 					print FILE Dumper($user_data);
+# 					close(FILE);
+
+
+					#my $remap_sub = AppCore::Config->get('FB_FIELD_REMAP');
+					#$remap_sub->($user_data) if ref $remap_sub eq 'CODE';
+					
+					
+					
 					my $display = $user_data->{name};
 					my $first   = $user_data->{first_name};
 					my $last    = $user_data->{last_name};
@@ -278,13 +289,13 @@ package User;
 					
 					
 					$user_obj->user($fb_user)    if ($user_obj->user =~ /\@/ && $user_obj->user ne $email) || !$user_obj->user;
-					$user_obj->email($email)     if $user_obj->email    ne $email;
-					$user_obj->first($first)     if $user_obj->first    ne $first;
-					$user_obj->last($last)       if $user_obj->last     ne $last;
-					$user_obj->display($display) if $user_obj->display  ne $display;
-					$user_obj->phone($phone)     if $user_obj->phone    ne $phone;
-					$user_obj->location($local)  if $user_obj->location ne $local;
-					$user_obj->tz_off($tz_off)   if $user_obj->tz_off   ne $tz_off;
+					$user_obj->email($email)     if $user_obj->email    ne $email   && $email;
+					$user_obj->first($first)     if $user_obj->first    ne $first   && $first;
+					$user_obj->last($last)       if $user_obj->last     ne $last    && $last;
+					$user_obj->display($display) if $user_obj->display  ne $display && $display;
+					$user_obj->phone($phone)     if $user_obj->phone    ne $phone   && $phone;
+					$user_obj->location($local)  if $user_obj->location ne $local   && $local;
+					$user_obj->tz_off($tz_off)   if $user_obj->tz_off   ne $tz_off  && $tz_off;
 					$user_obj->fb_user($fb_user) if $user_obj->fb_user  ne $fb_user;
 					$user_obj->fb_userid($fb_userid) if $user_obj->fb_userid ne $fb_userid;
 					
@@ -310,6 +321,9 @@ package User;
 					$user_obj->is_fbuser(1);
 					$user_obj->fb_token($token);
 					$user_obj->fb_token_expires($expires);
+					
+					$user_obj->extra_data($user_json);
+					
 					$user_obj->update;
 					
 					if($new_user)

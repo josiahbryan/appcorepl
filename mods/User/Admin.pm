@@ -37,26 +37,65 @@ package User::Admin;
 		my $modpath = $self->modpath;
 		my $appcore = join('/', AppCore::Config->get("WWW_ROOT"));
 		
-		my @pages = AppCore::User->retrieve_from_sql('1 order by first, last');
 		
-		use Data::Dumper;
-		
-		my @cols = AppCore::User->columns;
-		my @list;
-		foreach my $page (@pages)
+		my $str = $req->{'q'};
+		if($str)
 		{
-			my $row = {};
-			$row->{$_} = $page->get($_) foreach @cols;
-			$row->{binpath} = $binpath;
-			$row->{modpath} = $modpath;
-			$row->{appcore} = $appcore;
-# 			$row->{tab_idx} = $tab_cnt++;
+			my $sql = q{
+				select userid from users u
+					where	   
+					user like ?
+					or display like ?
+					or last like ?
+					or first like ?
+					or email like ?
+			};
+
+			my @args;
+
+			my $str_q = '%'.$str.'%';
+			push @args, $str_q; # user
+			push @args, $str_q; # display
+			push @args, $str_q; # last
+			push @args, $str_q; # first
+			push @args, $str_q; # email
+
+
+			my $sth = AppCore::DBI->dbh->prepare($sql);
+
+			$sth->execute(@args);
 			
-			#die Dumper $row;
-			push @list, $row;
+			my @userid_list;
+			push @userid_list, $_->{userid} while $_ = $sth->fetchrow_hashref;
+			
+			#die debug_sql($sql,@args)."\n".Dumper(\@list);
+
+			if(@userid_list)
+			{
+				my @pages = AppCore::User->retrieve_from_sql('userid in ('.join(',',@userid_list).')');
+				
+				use Data::Dumper;
+				
+				my @cols = AppCore::User->columns;
+				my @list;
+				foreach my $page (@pages)
+				{
+					my $row = {};
+					$row->{$_} = $page->get($_) foreach @cols;
+					$row->{binpath} = $binpath;
+					$row->{modpath} = $modpath;
+					$row->{appcore} = $appcore;
+		# 			$row->{tab_idx} = $tab_cnt++;
+					
+					#die Dumper $row;
+					push @list, $row;
+				}
+				
+				$tmpl->param(list => \@list);
+			}
+			
+			$tmpl->param(query => $str);
 		}
-		
-		$tmpl->param(list => \@list);
 		
 		#$view->output($tmpl);
 		$r->output($tmpl);
