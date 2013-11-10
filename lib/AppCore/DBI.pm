@@ -2930,6 +2930,36 @@ package $opts->{pkg};
 # 		}
 # 	}
 	
+	sub sth_to_lookup
+	{
+		my ($class, $sth, $val, $empty_option) = @_;
+		
+		$sth->execute;
+		my @list;
+		my $found_option;
+		while(my $ref = $sth->fetchrow_hashref)
+		{
+			my $flag = $ref->{id} == $val;
+			$found_option = 1 if $flag;
+			push @list, {
+				value		=> $ref->{id},
+				text		=> $ref->{text},
+				selected	=> $flag,
+			};
+		}
+		if($empty_option)
+		{
+			unshift @list, {
+				value		=> '',
+				text		=> $empty_option =~ /[a-z]/i ? $empty_option : "(Any)",
+				selected	=> $found_option ? 0:1,
+			};
+		}
+		
+		
+		return \@list;
+	}
+
 };
 1;
 	
