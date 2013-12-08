@@ -203,6 +203,8 @@ package Content;
 		while(@url)
 		{
 			my $cur_url = join('/', @url);
+			$cur_url = '/' if !$cur_url;
+			
 			#print STDERR __PACKAGE__."::process_page(): Testing '$cur_url'...\n";
 		
 			# Try to get the database entry for the current URL 
@@ -266,6 +268,7 @@ package Content;
 				else
 				{
 					return 0 if $popped;
+					
 					# Pass to default controller
 					#print STDERR __PACKAGE__."::process_page(): Page Path: ".$req->page_path.": type: $type, dumper:".Dumper($req)."\n";
 					Content::Page::Controller->process_page(undef,$req,$r,$page_obj);
