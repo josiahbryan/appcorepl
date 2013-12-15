@@ -2959,6 +2959,51 @@ package $opts->{pkg};
 		
 		return \@list;
 	}
+	
+	sub enum_to_lookup
+	{
+		my ($class, $field, $val, $empty_option, $name_map, $options_override) = @_;
+		
+		my $fieldspec = $class->meta->{field_map}->{$field};
+		#die Dumper $fieldspec;
+		
+		my $str = $fieldspec->{type};
+		if($str !~ /^enum/i)
+		{
+			return [];
+		}
+		
+		$str =~ s/^enum\(//g;
+		$str =~ s/\)$//g;
+		my @enum = split /,/, $str;
+		s/(^'|'$)//g foreach @enum;
+		
+		@enum = @$options_override if $options_override && ref $options_override eq 'ARRAY';
+		
+		my @list;
+		my $found_option;
+		foreach my $opt (@enum)
+		{
+			my $flag = $opt == $val;
+			$found_option = 1 if $flag;
+			push @list, {
+				value		=> $opt,
+				text		=> $name_map && $name_map->{$opt} ? $name_map->{$opt} : guess_title($opt),
+				selected	=> $flag,
+			};
+		}
+		if($empty_option)
+		{
+			unshift @list, {
+				value		=> '',
+				text		=> $empty_option =~ /[a-z]/i ? $empty_option : "(Any)",
+				selected	=> $found_option ? 0:1,
+			};
+		}
+		
+		
+		return \@list;
+	}
 
 };
 1;
