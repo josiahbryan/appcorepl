@@ -2984,7 +2984,7 @@ package $opts->{pkg};
 		my $found_option;
 		foreach my $opt (@enum)
 		{
-			my $flag = $opt == $val;
+			my $flag = $opt eq $val;
 			$found_option = 1 if $flag;
 			push @list, {
 				value		=> $opt,
