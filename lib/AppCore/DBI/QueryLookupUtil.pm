@@ -1,15 +1,6 @@
 #!/usr/bin/env perl
 use strict;
 
-# use lib '/opt/helpdesk.rc.edu/lib';
-# BEGIN {require '/opt/helpdesk.rc.edu/conf/appcore.pl' };
-# 
-# 
-# BEGIN {
-# 	use RC::CAMS;
-# 	#$RC::CAMS::DB = 'CAMs_Enterprise';
-# };
-
 package AppCore::DBI::QueryLookupUtil;
 {
 	use strict;

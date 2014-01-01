@@ -2355,6 +2355,14 @@ package AppCore::DBI;
 					warn "Warn: Error in meta data from '$class': No 'table' element - not updating";
 					return undef;
 				}
+
+				if($meta->{indexes} && !$meta->{schema_update_opts})
+				{
+					# Patch 'invalid' (new) method of specing indexes
+					$meta->{schema_update_opts} = {
+						indexes => $meta->{indexes},
+					};
+				}	
 				
 				mysql_schema_update($meta->{db},$meta->{table},$meta->{schema},$meta->{schema_update_opts});
 			}

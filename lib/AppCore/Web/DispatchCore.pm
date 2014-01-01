@@ -140,7 +140,7 @@ package AppCore::Web::DispatchCore;
 			}
 			else
 			{
-			# Got cookie, set flag based on pref
+				# Got cookie, set flag based on pref
 				$is_mobile = $pref eq 'mobile';
 			}
 		}
