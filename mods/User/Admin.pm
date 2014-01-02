@@ -53,7 +53,7 @@ package User::Admin;
 
 			my @args;
 
-			my $str_q = '%'.$str.'%';
+			my $str_q = $str eq '*' ? '%' : '%'.$str.'%';
 			push @args, $str_q; # user
 			push @args, $str_q; # display
 			push @args, $str_q; # last
