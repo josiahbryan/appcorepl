@@ -38,6 +38,17 @@ package User::Admin;
 		my $appcore = join('/', AppCore::Config->get("WWW_ROOT"));
 		
 		
+
+		my $cookie_name = 'users.q';
+		if(defined $req->q)
+		{
+			setcookie($cookie_name, $req->q);
+		}
+		else
+		{
+			$req->{'q'} = getcookie($cookie_name);
+		}
+		
 		my $str = $req->{'q'};
 		if($str)
 		{
