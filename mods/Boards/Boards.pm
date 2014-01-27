@@ -26,7 +26,7 @@ package Boards::TextFilter::AutoLink;
 			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
 			
 			# New regex:
-			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|https|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
+			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|https|ftp|telnet|file):\/\/|www\.)([^\s()<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
 			#$$textref =~ s/([^'"\/<:-]|^)((?:([_a-z0-9-]+(?:\.[_a-z0-9-]+)*\@[a-z0-9-]+(?:\.[a-z0-9-]+)*(?:\.[a-z]{2,4}))))/$1.'<a href="mailto:$2">'.$2.'<\/a>'/egi;
 			# Changes:
 			# - Added '-' to the first exclusion block [^...] to properly handle this case:
