@@ -2789,18 +2789,18 @@ package $opts->{pkg};
 			foreach my $dat(@list)
 			{
 				my $q = $dat->{type} =~ /enum/i ? '"' : "'";
-				print "$prefix\t{\tfield\t=> '$dat->{field}',\t\ttype\t=> $q$dat->{type}$q";
-				
-				if(defined $dat->{default} && $dat->{default} ne 'NULL')
-				{
-					my $q = $dat->{default} =~ /[^\d]/? "'":'';
-					print ",\tdefault => $q$dat->{default}$q";
-				}
+				print "$prefix\t{ field => '$dat->{field}',\t\ttype => $q$dat->{type}$q";
 				
 				if(defined $dat->{null} && $dat->{null} ne 'YES')
 				{
 					my $q = $dat->{null} =~ /[^\d]/? "'":'';
-					print ",\tnull => $q$dat->{null}$q";
+					print ", null => $q$dat->{null}$q";
+				}
+				
+				if(defined $dat->{default} && $dat->{default} ne 'NULL')
+				{
+					my $q = $dat->{default} =~ /[^\d]/? "'":'';
+					print ", default => $q$dat->{default}$q";
 				}
 				
 				print " },\n";
