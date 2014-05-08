@@ -124,6 +124,15 @@ package AppCore::Web::Router::Branch;
 	sub leafs  { shift->{leafs} }
 	#sub branch { shift->_accessor('branch',    @_) } # => AppCore::Web::Router::Branch
 	
+	sub num_leafs
+	{
+		scalar keys ( %{ shift->{leafs} } );
+	}
+	
+	sub has_leafs
+	{
+		shift->num_leafs > 0;
+	}
 	
 	sub key       { shift->_accessor('key',       @_) }
 	sub condition { shift->_accessor('condition', @_) }
@@ -199,6 +208,11 @@ package AppCore::Web::Router;
 	
 	sub output {
 		#print STDERR join "", @_;
+	}
+	
+	sub has_routes
+	{
+		shift->{root_branch}->has_leafs;
 	}
 	
 	
@@ -369,15 +383,15 @@ package AppCore::Web::Router;
 			eval('use '.$package);
 			undef $@;
 			
-			if($package->can('new'))
-			{
-				$ref = $package->new();
-				$self->{_cache}->{$package} = $ref;
-			}
-			else
-			{
+# 			if($package->can('new'))
+# 			{
+# 				$ref = $package->new();
+# 				$self->{_cache}->{$package} = $ref;
+# 			}
+# 			else
+# 			{
 				$ref = $package;
-			}
+#			}
 		}
 		
 		$ref->$method();
@@ -476,7 +490,7 @@ package AppCore::Web::Router;
 			}
 			else
 			{
-				die "Invalid page '$np' (".$req->page_path.'/'.join('',$req->path_info).")";
+				die "Invalid page '$np' (".$req->page_path.'/'.join('/',$req->path_info).")";
 			}
 		}
 	}

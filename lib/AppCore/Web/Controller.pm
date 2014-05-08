@@ -46,14 +46,19 @@ package AppCore::Web::Controller;
 	
 	sub router
 	{
-		my $self = shift;
+		my $class = shift;
+		my $self = $class;
 		if(!ref $self)
 		{
-			$SelfCache{$self} ||= {};
-			$self = $SelfCache{$self};
+			$SelfCache{$class} ||= {};
+			$self = $SelfCache{$class};
 		}
 		
-		$self->{_router} ||= AppCore::Web::Router->new($self);
+		# Pass '$class' to the Router instead of '$self' because $self could be fake.
+		# Router calls '->can' on $class, which works if $class is a string ('Foo::Bar')
+		# or a blessed reference - but fails if its just a regular unblessed HASH,
+		# which $self could be due to the previous block.
+		$self->{_router} ||= AppCore::Web::Router->new($class);
 		
 		return $self->{_router};
 	}
