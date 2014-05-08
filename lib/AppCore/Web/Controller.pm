@@ -53,10 +53,7 @@ package AppCore::Web::Controller;
 			$self = $SelfCache{$self};
 		}
 		
-		$self->{_router} ||= AppCore::Web::Router->new(
-			class	=> $self,
-			stash	=> $self->stash,
-		);
+		$self->{_router} ||= AppCore::Web::Router->new($self);
 		
 		return $self->{_router};
 	}

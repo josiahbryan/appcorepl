@@ -1,3 +1,111 @@
+=begin docs
+
+Example usage of AppCore::Web::Router:
+
+#!/usr/bin/perl
+
+use lib '/opt/foobar/lib';
+BEGIN { require '/opt/foobar/conf/appcore.pl' };
+use strict;
+
+use AppCore::Common;
+
+package RouterDemo;
+{
+	use strict;
+	use base 'AppCore::Web::Controller';
+	
+	use AppCore::Common;
+	
+	sub new
+	{
+		my $class = shift;
+		
+		my $self = bless {}, $class;
+		
+		my $router = $self->router;
+		
+		$router->route(':driverid/:action'	=> {
+			':driverid'	=> {
+				regex	=> qr/^\d+$/,
+				check	=> sub {
+					my ($router, $driverid) = @_;
+					#print STDERR "Validating driverid '$driverid'\n";
+					#my $driver = Foobar::Driver->retrieve($driverid) || die "Invalid driver ID $driverid\n";
+					#$router->stash->{driver} = $driver;
+					$router->stash->{driver} = $driverid;
+				},
+			},
+			':action'	=> [
+				edit		=> 'page_driver_edit',
+				post		=> 'page_driver_post',
+				delete		=> 'page_driver_delete',
+				''		=> 'page_driver_view',
+			],
+		});
+		
+		$router->route('new'		=> 'page_driver_new');
+		$router->route(''		=> 'page_driver_list');
+		
+		$router->route(':driverid/email' => 'page_driver_email');
+		
+		$router->dispatch($ENV{PATH_INFO} || '1234/email');
+	}
+	
+	sub page_driver_list
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver List '.scalar(date())), "\n";
+	}
+	
+	sub page_driver_view
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver View '.scalar(date())), "\n";
+	}
+		
+	sub page_driver_new
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver New '.scalar(date())), "\n";
+	}
+	
+	sub page_driver_edit
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver Edit # '.$class->stash->{driver}.' at '.scalar(date())), "\n";
+	}
+	
+	sub page_driver_post
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver Post # '.$class->stash->{driver}.' at '.scalar(date())), "\n";
+	}
+	
+	sub page_driver_delete
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver Delete # '.$class->stash->{driver}.' at '.scalar(date())), "\n";
+	}
+	
+	sub page_driver_email
+	{
+		my ($class) = @_;
+		
+		print join "\n\n", ('text/plain', 'Driver Email # '.$class->stash->{driver}.' at '.scalar(date())), "\n";
+	}
+}
+
+RouterDemo->new;
+
+=cut
+
 package AppCore::Web::Router::Branch;
 {
 	use strict;
@@ -69,13 +177,19 @@ package AppCore::Web::Router;
 {
 	use strict;
 	use AppCore::Common;
+	use AppCore::Web::Request;
 	
 	sub new
 	{
 		my $class = shift;
+		
+		@_ = ( class => shift ) if @_ == 1;
+		
 		my %args = @_;
 		
-		#die Dumper \%args;
+		$args{root_branch} = AppCore::Web::Router::Branch->new();
+		$args{stash}       = $args{class}->stash if $args{class} && $args{class}->can('stash');
+		$args{stash}     ||= AppCore::SimpleObject->new();
 		
 		return bless { %args }, $class;
 	}
@@ -92,119 +206,135 @@ package AppCore::Web::Router;
 	{
 		my ($self, $route, $args) = @_;
 		
+		$args = { action => $args } if !ref $args;
+		
 		my $class = $self->class;
 		
-		$args = { action => $args } if !ref $args;
+		# We want to be able to use a blessed ref as namespace for calls so we dont grab the class the ref
+		#$class = ref $class if ref $class;
 		
 		#output "route: $route, args: ".Dumper($args)."\n";
 		
+		# Split the route into individual parts because we want to separate
+		# the last part of the route (the leaf) from the preceeding parts (branches)
+		my @parts = split /\//, $route;
 		
-		$self->{root_branch} ||= AppCore::Web::Router::Branch->new( key => '' );
-		my $root = $self->{root_branch};
+		# The last item in the route is the leaf - there will always be at least one element in
+		# @parts - even with an empty string ''
+		my $leaf_key = pop @parts;
 		
-# 		if($route =~ /\//)
-# 		{
-			my @parts = split /\//, $route;
+		# As we go thru the @parts, we will add brnaches to the previous branch.
+		# So we need to start with something - every call to route() starts with the root branch
+		my $last_branch = $self->{root_branch};
+		
+		# Go thru each part in the list of branch @parts and build branch objects
+		foreach my $branch_key (@parts)
+		{
+			my $branch_args = $args->{$branch_key};
 			
-			my $leaf_key = pop @parts;
+			# If a branch by the same name already exists in the current ($last_branch) branch
+			# then reuse the object - we'll merge arguments (overriding) as necessary
+			my $branch = $last_branch->leaf($branch_key)
+				# Otherwise, if no same-named branch exists, create a new one
+				|| AppCore::Web::Router::Branch->new( key => $branch_key );
 			
-			my $last_branch = $root;
-			
-			foreach my $branch_key (@parts)
+			# Check branch args and update $branch accordingly
+			if($branch_args)
 			{
-				my $branch_args = $args->{$branch_key};
+				$branch->condition($branch_args->{regex} || $branch_args->{condition})
+						if $branch_args->{regex} || $branch_args->{condition};
 				
-				my $branch = $last_branch->leaf($branch_key)
-					|| AppCore::Web::Router::Branch->new( key => $branch_key );
-				
-				if($branch_args)
-				{
-					$branch->condition($branch_args->{regex} || $branch_args->{condition})
-						        if $branch_args->{regex} || $branch_args->{condition};
-					
-					$branch->validator($branch_args->{check} || $branch_args->{validator})
-						        if $branch_args->{check} || $branch_args->{validator};
-				}
-				
-				#$branches{$branch_key} = $branch;
-				
-				$last_branch->add_leaf($branch);
-					
-				$last_branch = $branch;
+				$branch->validator($branch_args->{check} || $branch_args->{validator})
+						if $branch_args->{check} || $branch_args->{validator};
 			}
 			
-			my $leaf_args = @parts && !$args->{action}
-				? $args->{$leaf_key}
-				: $args;
+			# Add the current branch to $last_branch (will override same-named branches,
+			# hence why we pull the existing $branch if one exists, above)
+			$last_branch->add_leaf($branch);
 			
-			#output "leaf_key: $leaf_key, args: ".Dumper($leaf_args)."\n";
+			# Store this $branch as $last_branch for the next branch we create (or the leaf)
+			$last_branch = $branch;
+		}
+		
+		#my $leaf_args = @parts && !$args->{action}
+		#	? $args->{$leaf_key}
+		#	: $args;
+		
+		my $leaf_args = $args->{action} || ref $args eq 'ARRAY' ? $args : $args->{$leaf_key};
+		
+		#output "leaf_key: $leaf_key, args: ".Dumper($leaf_args)."\n";
+		
+		# There are three types of ways to specify a leaf:
+		# # 1.
+		# $router->route('new'	=> 'page_driver_new');
+		# # 2.
+		# $router->route('new'	=> {
+		# 	'action' => 'page_driver_new',
+		#	'namespace' => 'Foobar'
+		# });
+		# # 3.
+		# $router->route(':action'	=> [
+		#		edit		=> 'page_driver_edit',
+		#		post		=> 'page_driver_post',
+		# 	]
+		# );
+		# # 3b.
+		# $router->route(':action'	=> {
+		#	':action'	=> [ 
+		#		edit		=> 'page_driver_edit',
+		#		post		=> 'page_driver_post',
+		# 	]
+		# })
+		# 
+		# Call 1 is obvious - /new goes to page_driver_new() in the $class associated with $router (when $router was created)
+		# Call 2 is also obvious - /new goes to Foobar::page_driver_new()
+		# Call 3 is kind of obvious - /(edit|post) are accepted and go to page_driver_edit or page_driver_post (respectively) on the associated $class
+		#     (3b is just a variant on 3)
+		#
+		
+		if(ref $leaf_args eq 'ARRAY')
+		{
+			#my %options = %{@{$leaf_args || []}};
+			my @leaf_arg_list = @$leaf_args;
+			my %options = ( @leaf_arg_list );
 			
-			if(ref $leaf_args eq 'ARRAY')
+			foreach my $option_key (keys %options)
 			{
-				#my %options = %{@{$leaf_args || []}};
-				my @leaf_arg_list = @$leaf_args;
-				my %options = ( @leaf_arg_list );
+				my $leaf = AppCore::Web::Router::Leaf->new( key => $option_key );
 				
-				foreach my $option_key (keys %options)
-				{
-					my $leaf = AppCore::Web::Router::Leaf->new( key => $option_key );
-					
-					$leaf->action($options{$option_key});
-					$leaf->namespace($class);
-					
-					$last_branch->add_leaf($leaf);
-				}
-			}
-			elsif(ref $leaf_args eq 'HASH')
-			{
-				my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
-					
-				$leaf->action($leaf_args->{action});
-				$leaf->namespace($leaf_args->{namespace} || $class);
-				
-				$leaf->condition($leaf_args->{regex} || $leaf_args->{condition})
-					      if $leaf_args->{regex} || $leaf_args->{condition};
-				
-				$leaf->validator($leaf_args->{check} || $leaf_args->{validator})
-					      if $leaf_args->{check} || $leaf_args->{validator};
-				
-				$last_branch->add_leaf($leaf);
-			}
-			else
-			{
-				my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
-					
-				$leaf->action($leaf_args);
+				$leaf->action($options{$option_key});
 				$leaf->namespace($class);
 				
 				$last_branch->add_leaf($leaf);
 			}
-		#}
-		
-		
-		#$args->{namespace} ||= ref $class ? ref $class : $class;
-		
-		#output "route: $route, args: ".Dumper($args)."\n";
-# 		
-# 		
-# 		$self->{_routes_list} ||= [];
-# 		$self->{_routes_hash} ||= {};
-# 		my $r = $self->{_routes_hash};
-# 		
-# 		my $list_size = scalar(@{$self->{_routes_list}});
-# 		
-# 		$args->{_route_index} = $list_size+1;
-# 		$r->{$route} = $args;
-# 		
-# 		my @route_list = map 
-# 		{{
-# 			name => $_,
-# 			args => $r->{$_}
-# 		}} keys %$r;
-# 		
-# 		@route_list = sort { $a->{args}->{_route_index} <=> $b->{args}->{_route_index} } @route_list;
-# 		
-# 		$self->{_route_list} = \@route_list;
+			
+			$last_branch->{_limited_leaf} = 1;
+		}
+		elsif(ref $leaf_args eq 'HASH')
+		{
+			my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
+				
+			$leaf->action($leaf_args->{action});
+			$leaf->namespace($leaf_args->{namespace} || $class);
+			
+			$leaf->condition($leaf_args->{regex} || $leaf_args->{condition})
+				      if $leaf_args->{regex} || $leaf_args->{condition};
+			
+			$leaf->validator($leaf_args->{check} || $leaf_args->{validator})
+				      if $leaf_args->{check} || $leaf_args->{validator};
+			
+			$last_branch->add_leaf($leaf);
+		}
+		else
+		{
+			my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
+				
+			$leaf->action($leaf_args);
+			$leaf->namespace($class);
+			
+			$last_branch->add_leaf($leaf);
+		}
+	
 	}
 	
 	sub _call
@@ -256,9 +386,18 @@ package AppCore::Web::Router;
 	sub dispatch
 	{
 		my $self = shift;
-		my $class = shift || $self->class;
-		my $req = $class->stash->{req};
-		#my $np = lc $req->next_path;
+		my $req = shift;
+		
+		$req = AppCore::Web::Request->new(PATH_INFO => $req)
+			if $req && !ref $req;
+			
+		#print Dumper $req;
+
+		$req = $self->class->stash->{req}
+			if !$req &&
+			   $self->class &&
+			   $self->class->can('stash') &&
+			   $self->class->stash;
 		
 		#output "dispatch: $np\n";
 		
@@ -308,7 +447,7 @@ package AppCore::Web::Router;
 				foreach my $next_branch (values %$leafs)
 				{
 					if($next_branch->condition && 
-					$np =~ $next_branch->condition)
+					   $np =~ $next_branch->condition)
 					{
 						output("\t -> found next branch via {condition}...\n");
 						
@@ -323,15 +462,21 @@ package AppCore::Web::Router;
 				}
 			}
 			
-			if($leafs->{''})
+			# If we hit this statement, it means we didn't match by key or condition...
+			
+			if(!$branch->{_limited_leaf} &&
+			   $leafs->{''})
 			{
 				output("\t -> fall thru to empty leaf, found empty leaf on this branch to call...\n");
 				
 				$req->shift_path;
 				$req->push_page_path($np);
 			
-				#$self->_call($branch);
 				return $self->_call($leafs->{''});
+			}
+			else
+			{
+				die "Invalid page '$np' (".$req->page_path.'/'.join('',$req->path_info).")";
 			}
 		}
 	}
