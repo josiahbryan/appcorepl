@@ -44,6 +44,21 @@ package AppCore::Web::Controller;
 		return $self->{_stash};
 	}
 	
+	sub set_stash
+	{
+		my ($self, $stash, $merge_flag) = @_;
+		
+		if($merge_flag)
+		{
+			my $cur_stash = $self->stash;
+		
+			$stash->{$_} = $cur_stash->{$_}
+				foreach keys %{$cur_stash || {}};
+		}
+		
+		$self->{_stash} = $stash;
+	}
+	
 	sub router
 	{
 		my $class = shift;
@@ -61,6 +76,54 @@ package AppCore::Web::Controller;
 		$self->{_router} ||= AppCore::Web::Router->new($class);
 		
 		return $self->{_router};
+	}
+	
+	sub setup_routes
+	{
+		# TODO: Reimplement in subclass
+	}
+	
+	sub output
+	{
+		my $class = shift;
+		
+		return if ! $class->stash->{r};
+		
+		$class->stash->{r}->output(@_);
+	}
+	
+	sub output_data
+	{
+		my $class = shift;
+		
+		return if ! $class->stash->{r};
+		
+		$class->stash->{r}->output_data(@_);
+	}
+	
+	sub request
+	{
+		my $class = shift;
+		
+		return $class->stash->{req};
+	}
+	
+	sub dispatch
+	{
+		my ($class, $req, $r) = @_;
+		
+		$class->stash(
+			req	=> $req,
+			r	=> $r,
+		);
+		
+		$class->setup_routes
+			if !$class->router->has_routes;
+		
+		warn $class.'::dispatch: No routes setup in router(), nothing to dispatch'
+			if !$class->router->has_routes;
+		
+		$class->router->dispatch($req);
 	}
 };
 1;

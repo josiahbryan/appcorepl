@@ -417,7 +417,7 @@ package AppCore::Web::Router;
 		
 		my $root = $self->{root_branch};
 		
-		if(!$root)
+		if(!$root || !$root->has_leafs)
 		{
 			warn __PACKAGE__."::dispatch: Unable to dispatch: No root branch, call route() before dispatch() to setup routes";
 			return;
