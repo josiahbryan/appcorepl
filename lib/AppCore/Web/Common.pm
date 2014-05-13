@@ -918,6 +918,10 @@ package HTML::Template::DelayedLoading;
 		}, $class;
 	}
 	
+	# The param() method, when given an AppCore::DBI-dervied object as the 2nd (value) argument,
+	# automatically does the equivelant of:
+	#	$tmpl->param($key.'_'.$_ => $val->get($_)) foreach $driver->columns;
+	# Where $key is the first argument given to param()
 	sub param
 	{
 		my $self = shift;
@@ -925,7 +929,16 @@ package HTML::Template::DelayedLoading;
 		
 		if(@_)
 		{
-			$self->{params}->{$key} = shift;
+			my $val = shift;
+			if(UNIVERSAL::isa($val, 'AppCore::DBI'))
+			{
+				foreach my $col_name ($val->columns)
+				{
+					$self->{params}->{$key.'_'.$col_name} = $val->get($col_name);
+				}
+			}
+			
+			$self->{params}->{$key} = $val;
 		}
 		
 		if(@_)

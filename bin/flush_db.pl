@@ -34,10 +34,12 @@ BEGIN {
 ## System packages that don't have a home in a module
 use AppCore::EmailQueue;
 use AppCore::User;
+use AppCore::Web::Form;
 
 print STDERR "$0: Processing EmailQueue, Content, User...\n";
 AppCore::EmailQueue->apply_mysql_schema;
 AppCore::User->apply_mysql_schema;
+AppCore::Web::Form::ModelMeta->apply_mysql_schema;
 
 # use Content;
 # Content->apply_mysql_schema;
