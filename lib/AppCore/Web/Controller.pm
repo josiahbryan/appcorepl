@@ -108,6 +108,35 @@ package AppCore::Web::Controller;
 		return $class->stash->{req};
 	}
 	
+	sub redirect
+	{
+		my $class = shift;
+		my $url   = shift;
+		die "No 'r' object in class->stash'" if !$class->stash->{r};
+		
+		return $class->stash->{r}->redirect($url);
+	}
+	
+	sub redirect_up
+	{
+		my $class = shift;
+		my $count = shift;
+		
+		@_ = %{ shift || {} } if ref $_[0] eq 'HASH';
+		my %args = @_;
+		
+		die "No request in class stash (stash->{req} undef)" if ! $class->stash->{req};
+		
+		my $url = $class->stash->{req}->prev_page_path($count);
+		
+		$url .= '?' if scalar(keys %args) > 0;
+		$url .= join('&', map { $_ .'='. url_encode($args{$_}) } keys %args );
+		
+		die "No 'r' object in class->stash'" if !$class->stash->{r};
+		
+		return $class->stash->{r}->redirect($url);
+	}
+	
 	sub dispatch
 	{
 		my ($class, $req, $r) = @_;

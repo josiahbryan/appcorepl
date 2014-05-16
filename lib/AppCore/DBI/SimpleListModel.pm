@@ -134,7 +134,8 @@ package AppCore::DBI::SimpleListModel;
 			return undef;
 		}
 		
-		warn "[WARN] $self: set_complex_filter($filter_ref): \$filter_ref sppears invalid - the {query} attribute appears to be undefined or empty. This may cause problems when compile_list() or get_total_rows() is called!\n" if !$filter_ref->{query};
+		warn "[WARN] $self: set_complex_filter($filter_ref): \$filter_ref sppears invalid - the {query} attribute appears to be undefined or empty. This may cause problems when compile_list() or get_total_rows() is called!\n"
+			if !$filter_ref->{query};
 		$self->{complex_filter} = $filter_ref;
 		return $filter_ref;
 	}
@@ -145,8 +146,19 @@ package AppCore::DBI::SimpleListModel;
 	
 	# Method: get_hardcoded_filter()
 	# Return a list of colname=>value pairs to be "hardcoded" in the SQL query.
-	# Subclass to return a value.
-	sub get_hardcoded_filter { }
+	# Subclass to return a value, or use set_harcoded_filter()
+	sub get_hardcoded_filter { return %{ shift->{hardcoded_filter} || {} } }
+	
+	# Method: set_harcoded_filter(%args)
+	# Set the list of hardcoded filters, for example:
+	# class->set_hardcoded_filter( deleted => 0 )
+	# will add the SQL "deleted = 0" to the end of the WHERE clause
+	sub set_hardcoded_filter
+	{
+		my $self = shift;
+		my %args = @_;
+		$self->{hardcoded_filter} = \%args;
+	}
 	
 	# Method: parent_recordid()
 	# Return the parent recordid to be used in the current query e.g. a list of inv transactions for a parent record

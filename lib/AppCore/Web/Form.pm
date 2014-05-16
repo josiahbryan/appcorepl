@@ -179,7 +179,7 @@ package AppCore::Web::Form;
 		}
 		push @xml, "\t\t<row>\n";
 		push @xml, "\t\t\t<input type='submit' value='Save Changes'/>\n";
-		push @xml, "\t\t\t<a style='color:rgba(0,0,0,0.5)'   href='javascript:void(window.history.go(-1)'>Cancel</a>\n";
+		push @xml, "\t\t\t<a style='color:rgba(0,0,0,0.5)'   href='javascript:void(window.history.go(-1))'>Cancel</a>\n";
 		push @xml, "\t\t\t<a style='color:rgba(255,0,0,0.6)' href='\%\%page_path\%\%/delete' onclick='return confirm(\"Are you sure?\")'>Delete $meta->{class_noun}</a>\n";
 		push @xml, "\t\t</row>\n";
 		push @xml, "\t</table>\n";
@@ -731,17 +731,45 @@ package AppCore::Web::Form;
 						$class_key = $2;
 						
 						$class_obj = $self->{form_opts}->{$class_obj_name};
-						eror("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to post_process() or render()") if !$class_obj;
 						
-						eval
+						if(!$class_obj)
 						{
-							#$value_ref = $class_obj->get($class_key);
-							$val = $class_obj->get($class_key);
-						};
-						if($@)
+							if($self->{form_opts}->{allow_undef_bind})
+							{
+								$val = undef;
+							}
+							else
+							{
+								error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to post_process() or render()");
+							}
+						}
+						elsif(!ref $class_obj)
 						{
-							error("Error getting value for '$ref'",
-								"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
+							if($self->{form_opts}->{allow_undef_bind})
+							{
+								my $meta = $class_obj->field_meta($class_key);
+								if($meta)
+								{
+									$val = $meta->{default} || undef;
+								}
+							}
+							else
+							{
+								error("No object given for '$ref'","Found '$class_obj' in options given - but it's the string, not the a reference to a live object. You can set 'allow_undef_bind' to a true value in the options given to render() or you can pass a AppCore::DBI object");
+							}
+						}
+						else
+						{
+							eval
+							{
+								#$value_ref = $class_obj->get($class_key);
+								$val = $class_obj->get($class_key);
+							};
+							if($@)
+							{
+								error("Error getting value for '$ref'",
+									"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
+							}
 						}
 					}
 					else
@@ -758,7 +786,7 @@ package AppCore::Web::Form;
 					#{
 					#$val = $model_item->value;
 					#};
-	#				error("Error Loading Ref '$ref'","<pre>".$@->title.",".$@->text."</pre>");
+					#error("Error Loading Ref '$ref'","<pre>".$@->title.",".$@->text."</pre>");
 					#$val = $model_item->default if !$val;
 					
 					# TODO: Load value from form opts
@@ -766,7 +794,7 @@ package AppCore::Web::Form;
 					$val = $node->default if !$val;
 					
 					# TODO: Add f:form 'readonly' flag
-					my $readonly = $node->readonly eq 'true' ? 2 : 0; # TODO: Why 2?
+					my $readonly = $node->readonly eq 'true' || $self->{form_opts}->{readonly} ? 2 : 0; # TODO: Why 2?
 					
 					#error($model_item->node,$readonly) if $model_item->node ne 'tax';
 					
@@ -784,6 +812,13 @@ package AppCore::Web::Form;
 						my $val = lc $parent->$key;
 						$can_wrap = ($val eq 'false' || (defined $val && !$val)) ? 0:1;
 					}
+					
+					my $already_has_label = 0;
+					if($parent->node eq 'row' && $parent->label)
+					{
+						$already_has_label = 1;
+					}
+					
 					
 					push @html, $t;
 
@@ -828,13 +863,13 @@ package AppCore::Web::Form;
 							}
 						}
 						
-						if(!$node->label)
+						if(!$node->label && !$already_has_label)
 						{
 							$node->{label} =  $meta->{label} || $meta->{title};
 						}
 					}
 					
-					print STDERR "$path: $ref ($type) [$val]\n";
+					#print STDERR "$path: $ref ($type) [$val]\n";
 					
 					
 					$self->{field_meta}->{$ref} =
@@ -874,13 +909,8 @@ package AppCore::Web::Form;
 					push @html, "<tr id='$rowid' ".($vis_border ? "class='f-border'":"").">\n" if $is_pairtab;
 					
 					my $empty_label = 0;
-					my $already_has_label = 0;
-					if($parent->node eq 'row' && $parent->label)
-					{
-						$already_has_label = 1;
-					}
 					
-					if(!$already_has_label)
+					if(!$already_has_label || $node->{label})
 					{
 						#$node->{label} = $node->{attrs}->{label} = $model_item->label if !defined $node->label;
 						$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess

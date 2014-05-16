@@ -106,7 +106,7 @@ RouterDemo->new;
 
 =cut
 
-package AppCore::Web::Router::Branch;
+package AppCore::Web::Router::Leaf;
 {
 	use strict;
 	use base 'AppCore::SimpleObject';
@@ -122,7 +122,7 @@ package AppCore::Web::Router::Branch;
 	}
 	
 	sub leafs  { shift->{leafs} }
-	#sub branch { shift->_accessor('branch',    @_) } # => AppCore::Web::Router::Branch
+	#sub leaf { shift->_accessor('leaf',    @_) } # => AppCore::Web::Router::Branch
 	
 	sub num_leafs
 	{
@@ -167,18 +167,10 @@ package AppCore::Web::Router::Branch;
 		
 		delete $self->{leafs}->{$leaf->key};
 	}
-};
 
-package AppCore::Web::Router::Leaf;
-{
-	use strict;
-	use base 'AppCore::Web::Router::Branch';
-	
 	sub namespace { shift->_accessor('namespace', @_) }
 	sub action    { shift->_accessor('action',    @_) }
 };
-
-
 
 1;
 
@@ -196,9 +188,9 @@ package AppCore::Web::Router;
 		
 		my %args = @_;
 		
-		$args{root_branch} = AppCore::Web::Router::Branch->new();
-		$args{stash}       = $args{class}->stash if $args{class} && $args{class}->can('stash');
-		$args{stash}     ||= AppCore::SimpleObject->new();
+		$args{root}    = AppCore::Web::Router::Leaf->new( key => '/' );
+		$args{stash}   = $args{class}->stash if $args{class} && $args{class}->can('stash');
+		$args{stash} ||= AppCore::SimpleObject->new();
 		
 		return bless { %args }, $class;
 	}
@@ -212,7 +204,7 @@ package AppCore::Web::Router;
 	
 	sub has_routes
 	{
-		shift->{root_branch}->has_leafs;
+		shift->{root}->has_leafs;
 	}
 	
 	
@@ -230,44 +222,46 @@ package AppCore::Web::Router;
 		#output "route: $route, args: ".Dumper($args)."\n";
 		
 		# Split the route into individual parts because we want to separate
-		# the last part of the route (the leaf) from the preceeding parts (branches)
+		# the last part of the route (the leaf) from the preceeding parts
 		my @parts = split /\//, $route;
 		
 		# The last item in the route is the leaf - there will always be at least one element in
 		# @parts - even with an empty string ''
 		my $leaf_key = pop @parts;
 		
-		# As we go thru the @parts, we will add brnaches to the previous branch.
-		# So we need to start with something - every call to route() starts with the root branch
-		my $last_branch = $self->{root_branch};
+		# As we go thru the @parts, we will add leafs to the previous leaf.
+		# So we need to start with something - every call to route() starts with the root leaf
+		my $last_leaf = $self->{root};
 		
-		# Go thru each part in the list of branch @parts and build branch objects
-		foreach my $branch_key (@parts)
+		# Go thru each part in the list of leaf @parts and build leaf objects
+		foreach my $leaf_key (@parts)
 		{
-			my $branch_args = $args->{$branch_key};
+			my $leaf_args = $args->{$leaf_key};
 			
-			# If a branch by the same name already exists in the current ($last_branch) branch
+			#output "   last_leaf key: ".$last_leaf->key."\n";
+			
+			# If a leaf by the same name already exists in the current ($last_leaf) leaf
 			# then reuse the object - we'll merge arguments (overriding) as necessary
-			my $branch = $last_branch->leaf($branch_key)
-				# Otherwise, if no same-named branch exists, create a new one
-				|| AppCore::Web::Router::Branch->new( key => $branch_key );
+			my $leaf = $last_leaf->leaf($leaf_key)
+				# Otherwise, if no same-named leaf exists, create a new one
+				|| AppCore::Web::Router::Leaf->new( key => $leaf_key );
 			
-			# Check branch args and update $branch accordingly
-			if($branch_args)
+			# Check leaf args and update $leaf accordingly
+			if($leaf_args)
 			{
-				$branch->condition($branch_args->{regex} || $branch_args->{condition})
-						if $branch_args->{regex} || $branch_args->{condition};
+				$leaf->condition($leaf_args->{regex} || $leaf_args->{condition})
+					      if $leaf_args->{regex} || $leaf_args->{condition};
 				
-				$branch->validator($branch_args->{check} || $branch_args->{validator})
-						if $branch_args->{check} || $branch_args->{validator};
+				$leaf->validator($leaf_args->{check} || $leaf_args->{validator})
+					      if $leaf_args->{check} || $leaf_args->{validator};
 			}
 			
-			# Add the current branch to $last_branch (will override same-named branches,
-			# hence why we pull the existing $branch if one exists, above)
-			$last_branch->add_leaf($branch);
+			# Add the current leaf to $last_leaf (will override same-named leafs,
+			# hence why we pull the existing $leaf if one exists, above)
+			$last_leaf->add_leaf($leaf);
 			
-			# Store this $branch as $last_branch for the next branch we create (or the leaf)
-			$last_branch = $branch;
+			# Store this $leaf as $last_leaf for the next leaf we create (or the leaf)
+			$last_leaf = $leaf;
 		}
 		
 		#my $leaf_args = @parts && !$args->{action}
@@ -314,19 +308,27 @@ package AppCore::Web::Router;
 			
 			foreach my $option_key (keys %options)
 			{
-				my $leaf = AppCore::Web::Router::Leaf->new( key => $option_key );
+				# If a leaf by the same name already exists in the current ($last_leaf) leaf
+				# then reuse the object - we'll merge arguments (overriding) as necessary
+				my $leaf = $last_leaf->leaf($option_key)
+					# Otherwise, if no same-named leaf exists, create a new one
+					|| AppCore::Web::Router::Leaf->new( key => $option_key );
 				
 				$leaf->action($options{$option_key});
 				$leaf->namespace($class);
 				
-				$last_branch->add_leaf($leaf);
+				$last_leaf->add_leaf($leaf);
 			}
 			
-			$last_branch->{_limited_leaf} = 1;
+			$last_leaf->{_limited_leaf} = 1;
 		}
 		elsif(ref $leaf_args eq 'HASH')
 		{
-			my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
+			# If a leaf by the same name already exists in the current ($last_leaf) leaf
+			# then reuse the object - we'll merge arguments (overriding) as necessary
+			my $leaf = $leaf_key eq '' ? $last_leaf : $last_leaf->leaf($leaf_key)
+					# Otherwise, if no same-named leaf exists, create a new one
+					|| AppCore::Web::Router::Leaf->new( key => $leaf_key );
 				
 			$leaf->action($leaf_args->{action});
 			$leaf->namespace($leaf_args->{namespace} || $class);
@@ -337,18 +339,23 @@ package AppCore::Web::Router;
 			$leaf->validator($leaf_args->{check} || $leaf_args->{validator})
 				      if $leaf_args->{check} || $leaf_args->{validator};
 			
-			$last_branch->add_leaf($leaf);
+			$last_leaf->add_leaf($leaf)
+				unless $last_leaf == $leaf;
 		}
 		else
 		{
-			my $leaf = AppCore::Web::Router::Leaf->new( key => $leaf_key );
+			# If a leaf by the same name already exists in the current ($last_leaf) leaf
+			# then reuse the object - we'll merge arguments (overriding) as necessary
+			my $leaf = $leaf_key eq '' ? $last_leaf : $last_leaf->leaf($leaf_key)
+					# Otherwise, if no same-named leaf exists, create a new one
+					|| AppCore::Web::Router::Leaf->new( key => $leaf_key );
 				
 			$leaf->action($leaf_args);
 			$leaf->namespace($class);
 			
-			$last_branch->add_leaf($leaf);
+			$last_leaf->add_leaf($leaf)
+				unless $last_leaf == $leaf;
 		}
-	
 	}
 	
 	sub _call
@@ -403,7 +410,7 @@ package AppCore::Web::Router;
 		my $req = shift;
 		
 		$req = AppCore::Web::Request->new(PATH_INFO => $req)
-			if $req && !ref $req;
+			if defined $req && !ref $req;
 			
 		#print Dumper $req;
 
@@ -415,84 +422,82 @@ package AppCore::Web::Router;
 		
 		#output "dispatch: $np\n";
 		
-		my $root = $self->{root_branch};
+		my $root = $self->{root};
 		
 		if(!$root || !$root->has_leafs)
 		{
-			warn __PACKAGE__."::dispatch: Unable to dispatch: No root branch, call route() before dispatch() to setup routes";
+			warn __PACKAGE__."::dispatch: Unable to dispatch: No root leaf, call route() before dispatch() to setup routes";
 			return;
 		}
 		
-		$self->_match_branch($root, $req);
+		$self->_match_leaf($root, $req);
 	}
 	
-	sub _match_branch
+	sub _match_leaf
 	{
 		my $self = shift;
-		my $branch = shift;
+		my $leaf = shift;
 		my $req = shift;
 		my $np = $req->next_path;
 		
-		output("_match_branch: np: $np, branch key: ".$branch->key."\n");
+		$np = '/' if !$np;
 		
-		if($branch->{action})
+		output("_match_leaf: np: $np, leaf key: ".$leaf->key.", debug: action: '$leaf->{action}'\n");
+		
+# 		if($np eq 'post')
+# 		{
+# 			die Dumper $leaf, $self;
+# 		}
+		
+		my $leafs = $leaf->leafs;
+		
+		output("  -> checking leafs for np '$np'... \n");
+	
+		if(my $next_leaf = $leafs->{$np})
 		{
-			output("\t -> no leafs match, trying to call branch action '$branch->{action}\n");
-			return $self->_call($branch);
+			output("    -> found next leaf directly via {key} '$np'...\n");
+			
+			$req->shift_path;
+			$req->push_page_path($np) unless $np eq '/';
+		
+			#$self->_call($leaf);
+			return $self->_match_leaf($next_leaf, $req);
 		}
 		else
 		{
-			my $leafs = $branch->leafs;
-			
-			output("\t -> checking leafs ... \n");
-			
-			if(my $next_branch = $leafs->{$np})
+			#output("    -> checking conditional leafes\n");
+			foreach my $next_leaf (values %$leafs)
 			{
-				output("\t -> found next branch directly via {key}...\n");
-				
-				$req->shift_path;
-				$req->push_page_path($np);
-			
-				#$self->_call($branch);
-				return $self->_match_branch($next_branch, $req);
-			}
-			else
-			{
-				foreach my $next_branch (values %$leafs)
+				output("    -> checking for condition on leaf '".$next_leaf->key."'...\n");
+				if($next_leaf->condition && 
+					$np =~ $next_leaf->condition)
 				{
-					if($next_branch->condition && 
-					   $np =~ $next_branch->condition)
-					{
-						output("\t -> found next branch via {condition}...\n");
-						
-						$next_branch->validator()->($self, $np)
-							if $next_branch->validator;
-						
-						$req->shift_path;
-						$req->push_page_path($np);
-						
-						return $self->_match_branch($next_branch, $req);
-					}
+					output("      -> found next leaf via {condition}...\n");
+					
+					$next_leaf->validator()->($self, $np)
+						if $next_leaf->validator;
+					
+					$req->shift_path;
+					$req->push_page_path($np) unless $np eq '/';
+					
+					return $self->_match_leaf($next_leaf, $req);
 				}
 			}
-			
-			# If we hit this statement, it means we didn't match by key or condition...
-			
-			if(!$branch->{_limited_leaf} &&
-			   $leafs->{''})
-			{
-				output("\t -> fall thru to empty leaf, found empty leaf on this branch to call...\n");
-				
-				$req->shift_path;
-				$req->push_page_path($np);
-			
-				return $self->_call($leafs->{''});
-			}
-			else
-			{
-				die "Invalid page '$np' (".$req->page_path.'/'.join('/',$req->path_info).")";
-			}
 		}
+		
+		# Either no $np or no leafs matched, so check this leaf for an action
+		if($leaf->{action})
+		{
+			output("  -> no leafs match, trying to call leaf action '$leaf->{action}\n");
+			return $self->_call($leaf);
+		}
+		else
+		{
+			# If we hit this statement, it means we didn't match by key or condition...
+			die "Invalid page '$np' (".$req->page_path.'/'.join('/',$req->path_info).")"; # (limited_leaf [$leaf->{_limited_leaf}] or no empty leaf]";
+		}
+		
+		output("  -> Nothing matched, returning\n");
 	}
 
 };
