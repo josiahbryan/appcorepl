@@ -1,0 +1,248 @@
+	<script>
+	function databaseLookupHook($elm, url, formUuid)
+	{
+		function idHelper($elm, suffix)
+		{
+			return ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_' + suffix;
+		}
+		
+		function getClearButton($elm)
+		{
+			var clearButtonId = idHelper($elm, 'clear');
+			
+			var $clearButton = $('#'+clearButtonId);
+			if($clearButton.size() <= 0)
+			{
+				var inputElm = $elm;
+				$clearButton = $('<button><span>X</span></button>')
+					.addClass('ui-db-validation-reset')
+					.attr('title', 'Clear value')
+					.attr('id', clearButtonId)
+					.insertAfter($elm)
+					.bind('click', function() {
+						var $elm = inputElm; //$(this);
+						$elm.val('');
+						$elm.trigger('change');
+						$elm.removeClass('ui-database-validated');
+						$elm.focus();
+						$(this).hide();
+						return false;
+					});
+			}
+			
+			return $clearButton;
+		}
+		
+		function getIdHolder($elm)
+		{
+			var idHolder = idHelper($elm, 'validated');
+			
+			var $idHolder = $('#'+idHolder);
+			if($idHolder.size() <= 0)
+			{
+				$idHolder = $('<input type=hidden>')
+					.attr('name', idHolder)
+					.attr('id',   idHolder)
+					.insertAfter($elm);
+			}
+			
+			return $idHolder;
+		}
+		
+		var validate;
+		$elm.autocomplete({
+			source: url+'/'+formUuid+'/autocomplete',
+			minLength: 2,
+			search: function( event, ui ) {
+				//validate.call($(event.target), true); // true = surpress error
+				$(this).removeClass('ui-database-validated');
+				getClearButton($(this)).hide();
+			},
+			select: function( event, ui ) {
+				//console.debug(ui);
+				//console.debug(event);
+				//console.debug("select:",ui);
+				if(event && event.target)
+				{
+					var $elm = $(event.target);
+					
+					$elm.addClass('ui-database-validated');
+					
+					getIdHolder($elm)
+						.val(ui.item.id);
+					
+					getClearButton($elm)
+						.show();
+				}
+			}
+		});
+		$elm.attr('autocomplete','off');
+		
+		var validateUrl = url+'/'+formUuid+'/validate';
+		
+		validate = function(supressError) {
+			var $elm = $(this);
+			
+			if(!$elm)
+				return;
+			
+			//var $img = $('<img src="http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif" class=ui-validate-loading-img align=absmiddle>')
+			//	.insertAfter($elm);
+			
+			var trimmed = "";
+			try {
+				trimmed = $elm.val();
+			} catch(e) {}
+			
+			var isBlank = trimmed == "";
+			
+			var def = $elm.attr('x:default-text');
+			try {
+				// IE throws errors here (method not supported)
+				trimmed = trimmed.trim();
+			} catch(e) {}
+			if(def && def != "" &&
+				trimmed != "" && trimmed == def)
+				isBlank = true;
+				
+			if(isBlank)
+				return;
+				
+			var idHolder = $elm.attr('name') + '_validated';
+			var $idHolder = $('#'+idHolder);
+			if($idHolder.val() && $idHolder.val() != '')
+				return;
+			
+			$elm.addClass('ui-autocomplete-loading');
+			
+			var validateData = { value: trimmed };
+			//console.debug(validateUrl, validateData);
+			$.ajax({
+				type: "GET",
+				url: validateUrl,
+				data: validateData,
+				success: function(data) {
+					$elm.removeClass('ui-autocomplete-loading');
+					//$img.remove();
+					if(typeof(data) == 'string')
+					{
+						try{
+							eval('data='+data);
+						}
+						catch(e) {}
+					}
+					
+					//console.debug('success, data: ',data);
+					var res = data.result, err = data.err;
+					if(err && err != null)
+					{
+						if(!supressError)
+						{
+							$elm.addClass('ui-badfield-inpage');
+							$elm.addClass('ui-badfield');
+							$elm.siblings('.ui-validate-error').remove();
+							$elm.removeClass('ui-database-validated');
+							
+							var $errMsg = $('<div class=ui-validate-error></div>');
+							$errMsg.html(err);
+							$errMsg.hide().insertAfter($elm).width($elm.width()+2).slideDown(200);
+						}
+					}
+					else
+					{
+						$elm.removeClass('ui-badfield-inpage');
+						$elm.removeClass('ui-badfield');
+						
+						$elm.siblings('.ui-validate-error').remove();
+						
+						$elm.val(res.text);
+						$elm.addClass('ui-database-validated');
+						
+						getIdHolder($elm)
+							.val(res.value);
+						
+						getClearButton($elm)
+							.show();
+					}
+				},
+				
+				error: function(err) {
+					$elm.removeClass('ui-autocomplete-loading');
+					//console.debug('ajax error:', err);
+					//$img.remove();
+					$elm.addClass('ui-badfield-inpage');
+					$elm.addClass('ui-badfield');
+				}
+			});
+		};
+		
+		var waitVal = function() {
+			var t = this;
+			setTimeout(function() {
+				validate.call(t);
+			}, 500);
+		};
+		
+		$elm.focus(function() {
+				var $elm = $(this);
+				$elm.siblings('.ui-validate-error')
+				    .slideUp(200, function() { $(this).remove() });
+					
+				getIdHolder($elm).val('');
+			})
+			.blur(waitVal)
+			.change(function() {
+				$(this).removeClass('ui-database-validated');
+				getClearButton($(this)).hide();
+				waitVal.call(this);
+			})
+			.keypress(function() {
+				$(this).removeClass('ui-database-validated');
+				getClearButton($(this)).hide();
+				
+// 				var t = this;
+// 				clearTimeout(t.tid);
+// 				t.tid = setTimeout(function() {
+// 					validate.call(t, true);
+// 				}, 1500);
+			});
+		
+		validate.call($elm);
+	}
+	</script>
+	<style>
+	.ui-validate-error {
+		display: block;
+		
+		color: #922D2D !important;
+		background: #FFDDDD !important;
+		
+		/*border: 1px solid #CE4040 !important;*/
+		/*-moz-box-shadow: 0px 0px 5px #963434;*/
+		/*box-shadow: 0 0 5px #963434;*/
+		
+		padding: 4px 6px;
+		margin: -3px 2px 2px;
+		z-index: 0;
+		opacity: 0.75;
+		
+	}
+	
+	.ui-database-validated,
+	.panel input[type=text].ui-database-validated {
+		background: #D2DCE9;
+		border-color: #8BA0BC;
+		color: #325689;
+	}
+	
+	.input.ui-autocomplete-loading,
+	.ui-autocomplete-loading {
+		background-image: url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') !important;
+		background-position: right center !important;
+		background-repeat: no-repeat !important;
+	}
+	
+	/*.input.ui-badfield-inpage.ui-autocomplete-loading {
+		background: #FFDDDD url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat !important;
+	}*/
+	</style>
