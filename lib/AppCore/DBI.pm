@@ -784,18 +784,18 @@ package AppCore::DBI;
 				else
 				{
 					my $pat = $x->{type} =~ /int/i        ? '[+-]?\d+' :
-						$x->{type} =~ /float/i      ? '[+-]?(?:\d+)\.?(?:\d+)' :
-						$x->{type} =~ /datetime/i   ? '\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}' :
-						$x->{type} =~ /date/i       ? '\d{4}-\d{2}-\d{2}' :
-						$x->{type} =~ /time/i       ? '\d{2}:\d{2}:\d{2}' :
-						$x->{type} =~ /varchar/i    ? (
+						  $x->{type} =~ /float/i      ? '[+-]?(?:\d+)\.?(?:\d+)' :
+						  $x->{type} =~ /datetime/i   ? '\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}' :
+						  $x->{type} =~ /date/i       ? '\d{4}-\d{2}-\d{2}' :
+						  $x->{type} =~ /time/i       ? '\d{2}:\d{2}:\d{2}' :
+						  $x->{type} =~ /varchar/i    ? (
 							$x->{string_fmt_hint} =~ /word/  ? '\w+' :
 							$x->{string_fmt_hint} =~ /phone/ ? '(?:\(?\d\d\d\)?)?(?: |-|\.)?\d\d\d(?: |-|\.)?\d{4,4}(?:(?: |-|\.)?[ext\.]+ ?\d+)?' :
 							$x->{string_fmt_hint} =~ /email/ ? '[\w-\.]+@(?:[\w-]+\.)+[\w-]{2,4}' :
 							
 							'.+' . ($opts->{greedy} ? '' : '?')
-						) :
-						'.+' . ($opts->{greedy} ? '' : '?');
+						  ) :
+						  '.+' . ($opts->{greedy} ? '' : '?');
 					
 					push @buf, "($pat)" . ($opts->{pat_required} || $opts->{inside_conditional} ? '' : '?');
 					$opts->{inside_conditional} = 0 if $opts->{inside_conditional}; # only the first field in the conditional needs to not be optional
