@@ -3,11 +3,14 @@ use strict;
 =begin comment
 	Package: AppCore::Web::Form
 	
+	(For a complete example, see __DATA__, below - search for "## File" to see individual files.)
+	
 	Turns ...
 	
 		<f:form action="/save" method=POST" id="edit-form">
 			<fieldset>
 				<input bind="#driver.name">
+				<input bind="#driver.customerid">
 				<input type="submit" value="Save Name">
 			</fieldset>
 		</f:form>
@@ -16,6 +19,15 @@ use strict;
 		
 		<form action=".." method="..">
 			<table>
+				<tr>
+					<td>
+						<label for="..">Customer:</label>
+					</td>
+					<td>
+						<input id="edit-form-driver-customer" name="#driver.customerid" value="Trucking Company, Inc">
+						<script>/*...lots of ajax stuff...*/</script>
+					</td>
+				</tr>
 				<tr>
 					<td>
 						<label for="..">Name:</label>
@@ -37,9 +49,27 @@ use strict;
 	
 		my $tmpl = HTML::Template->new("file_containing_f:form_code.tmpl");
 		
-		my $html = AppCore::Web::Form->post_process($tmpl->output, { driver => Driver::List->retrieve(234) });
+		my $html = AppCore::Web::Form->post_process($tmpl, {
+			driver       => Driver::List->retrieve(234),
+			validate_url => '/path/to/page/validate',
+		});
 		
 		print $html;
+		
+	
+	For the AJAX database validation:
+	
+	You just have to connect the '/path/to/page/validate' URL to  the method
+	AppCore::Web::Form::validate_page and call it with $req and $r as the two arguments.
+	
+	If you're using the new 'AppCore::Web::Controller' as the base for your class,
+	and you're using the AppCore::Web::Router object supplied from the controller,
+	it's as simple as doing:
+	
+		$router->route('validate' => 'AppCore::Web::Form.validate_page');
+	
+	in your setup_routes() routine. Then the ::Router will call validate_page with the proper args.
+	
 =cut
 
 
@@ -68,10 +98,134 @@ package AppCore::Web::Form;
 		
 		#exit;
 		
-		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
+		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p></body></html>\n";
 		exit -1;
 	}
-
+	
+	sub validate_page
+	{
+		my $self = shift;
+		my $req = shift;
+		my $r = shift;
+		my $form_opts = shift || {};
+		
+		my $uuid = $req->next_path;
+		
+		$req->shift_path   if $uuid;
+		$uuid = $req->uuid if !$uuid;
+		
+		error("No UUID Given","To validate input, the URL must contain a UUID as the next path, or in a 'uuid' query argument")
+			if !$uuid;
+			
+		my $validate_action = $req->next_path || 'validate';
+		
+		my ($form_uuid, $class_obj_name, $class_key) = split /\./, $uuid;
+		
+		my $field_meta = AppCore::Web::Form::ModelMeta->by_field(uuid => $form_uuid);
+		
+		error("Invalid Form UUID","The form UUID '$form_uuid' in data does not exist in the database")
+			if !$field_meta;
+			
+		my $hash = decode_json($field_meta->json);
+		$hash ||= {};
+		
+		my $class_obj = undef;
+		#my $class_key = undef;
+		#my $class_obj_name = undef;
+		
+		my $bind_name = "#${class_obj_name}.${class_key}";
+		
+		my $class_obj = $form_opts->{$class_obj_name} ||
+				$hash->{$bind_name}->{class_name};
+		
+		$class_obj = ref $class_obj ? ref $class_obj : $class_obj;
+		error("Invalid field '$bind_name'","Cannot find '$bind_name' in form options or in stored form meta data") if !$class_obj;
+		
+		my $meta = $class_obj->field_meta($class_key);
+		error("No Meta for '$class_key'",
+			"Unable to load metadata for column '$class_key' on object '$class_obj_name' ($class_obj)") if !$meta;
+			
+		my $type = $meta->{type};
+		
+		if($meta->{linked})
+		{
+			$type = 'database';
+			#$node->{class} = $meta->{linked}; #ref $class_obj ? ref $class_obj : $class_obj;
+			#$node->{source} = $meta->{linked}.'.'.$meta->{linked}->primary_column;
+		}
+		elsif($type =~ /^enum/i)
+		{
+			my $str = $type;
+			$str =~ s/^enum\(//g;
+			$str =~ s/\)$//g;
+			my @enum = split /,/, $str;
+			s/(^'|'$)//g foreach @enum;
+			
+			#$node->{choices} = join ',', @enum;
+			
+			$type = 'enum';
+		}
+		elsif($type =~ /^varchar/i)
+		{
+			$type = 'string';
+		}
+		elsif($type =~ /^int/i)
+		{
+			$type = 'int';
+		}
+		
+		if($type eq 'database')
+		{
+			my $value = $req->value || $req->term;
+			
+			my $validator = $meta->{linked};
+			
+			my $ctype = 'text/plain';
+			if($validate_action eq 'autocomplete')
+			{
+				#my @list = $validator->autocomplete_string($value, 10);
+				my $list = $validator->stringified_list($value, 
+						undef, #$fkclause
+						undef, #$include_objects
+						undef, #$start
+						10, #$limit
+				);
+					
+				
+				#return $r->output_data($ctype, encode_json({ result => \@list }));
+				return $r->output_data($ctype, encode_json([ 
+					map {
+						# Hack for "City, ST"
+						#$_->{text} =~ s/, (\w{2})$/', '.uc($1)/segi;
+						$_->{text} =~ s/,\s*$//g;
+						{
+							value => $_->{text},
+							id    => $_->{id}
+						}
+					} @{ $list || [] }
+				]));
+			}
+			elsif($validate_action eq 'validate')
+			{
+				my $value = $validator->validate_string($value);
+				my $ref = {
+					value => $value,
+					text  => $validator->stringify($value)
+				};
+				return $r->output_data($ctype, encode_json({ result => $ref, err => $@ }));
+			}
+			else
+			{
+				#die "Unknown request type '$type'";
+				error("Unknown Validation Request","Unknown validation request '$validate_action'");
+			}
+		}
+		else
+		{
+			error("No Server-Side Validation","No server-side validation available for data type '$type' on field $bind_name");
+		}
+		
+	}
 	
 	sub store_values
 	{
@@ -113,6 +267,26 @@ package AppCore::Web::Form;
 				
 				$class_obj = $form_opts->{$class_obj_name};
 				eror("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
+				
+				my $meta = $class_obj->field_meta($class_key);
+				if($meta->{linked} && $req_val !~ /^\d+$/)
+				{
+					my $err = undef;
+					eval
+					{
+						$req_val = $meta->{linked}->validate_string($req_val);
+						$err = $@;
+					};
+					$@ = $err if !$@;
+					if($@)
+					{
+						error("Error with $meta->{title}",
+							"There was an error in what you typed for $meta->{title}:".
+							"<h1 style='color:red'>$@</h1>".
+							"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
+							"<br><br>");
+					}
+				}
 				
 				eval
 				{
@@ -214,7 +388,7 @@ package AppCore::Web::Form;
 		};
 		if($@)
 		{
-			error("Error in Blob","Error in blob: $@<br><textarea>$data</textarea>");
+			error("Error in Blob","Error in blob: $@<br><textarea rows=10 cols=60>$data</textarea>");
 		}
 		#return $output unless $viz_style eq 'html';
 		#error($output);
@@ -514,6 +688,201 @@ package AppCore::Web::Form;
 			
 			push @html, $t, "\t\t<input type='hidden' name='AppCore::Web::Form::ModelMeta.uuid' value='$form->{uuid}'>\n" if $form->{uuid};
 			
+			push @html, $t, q`
+				<script>
+				function databaseLookupHook($elm, url, formUuid)
+				{
+					$elm.autocomplete({
+						source: url+'/'+formUuid+'/autocomplete',
+						minLength: 2,
+						select: function( event, ui ) {
+							//console.debug(ui);
+							//console.debug(event);
+							if(event && event.target)
+							{
+								var $elm = $(event.target);
+								var idHolder = ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_validated';
+								//var idHolder = event.target.name + '_validated';
+								
+								var $idHolder = $('#'+idHolder);
+								if($idHolder.size() <= 0)
+								{
+									$idHolder = $('<input type=hidden>')
+										.attr('name', idHolder)
+										.attr('id',   idHolder)
+										.insertAfter($(event.target));
+								}
+								
+								$idHolder.val(ui.item.id);
+								
+								$elm.addClass('ui-database-validated');
+							}
+						}
+					});
+					$elm.attr('autocomplete','off');
+					
+					var validateUrl = url+'/'+formUuid+'/validate';
+					
+					var validate = function() {
+						var $elm = $(this);
+						
+						if(!$elm)
+							return;
+						
+						//var $img = $('<img src="http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif" class=ui-validate-loading-img align=absmiddle>')
+						//	.insertAfter($elm);
+						
+						var trimmed = "";
+						try {
+							trimmed = $elm.val();
+						} catch(e) {}
+						
+						var isBlank = trimmed == "";
+						
+						var def = $elm.attr('x:default-text');
+						try {
+							// IE throws errors here (method not supported)
+							trimmed = trimmed.trim();
+						} catch(e) {}
+						if(def && def != "" &&
+							trimmed != "" && trimmed == def)
+							isBlank = true;
+							
+						if(isBlank)
+							return;
+							
+						var idHolder = $elm.attr('name') + '_validated';
+						var $idHolder = $('#'+idHolder);
+						if($idHolder.val() && $idHolder.val() != '')
+							return;
+						
+						$elm.addClass('ui-autocomplete-loading');
+						
+						var validateData = { value: trimmed };
+						//console.debug(validateUrl, validateData);
+						$.ajax({
+							type: "GET",
+							url: validateUrl,
+							data: validateData,
+							success: function(data) {
+								$elm.removeClass('ui-autocomplete-loading');
+								//$img.remove();
+								if(typeof(data) == 'string')
+								{
+									try{
+										eval('data='+data);
+									}
+									catch(e) {}
+								}
+								
+								//console.debug('success, data: ',data);
+								var res = data.result, err = data.err;
+								if(err && err != null)
+								{
+									$elm.addClass('ui-badfield-inpage');
+									$elm.addClass('ui-badfield');
+									$elm.siblings('.ui-validate-error').remove();
+									$elm.removeClass('ui-database-validated');
+									
+									var $errMsg = $('<div class=ui-validate-error></div>');
+									$errMsg.html(err);
+									$errMsg.hide().insertAfter($elm).width($elm.width()+2).slideDown(200);
+								}
+								else
+								{
+									$elm.removeClass('ui-badfield-inpage');
+									$elm.removeClass('ui-badfield');
+									$elm.siblings('.ui-validate-error').remove();
+									$elm.val(res.text);
+									$elm.addClass('ui-database-validated');
+									
+									var idHolder = ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_validated';
+									var $idHolder = $('#'+idHolder);
+									if($idHolder.size() <= 0)
+									{
+										$idHolder = $('<input type=hidden>')
+											.attr('name', idHolder)
+											.attr('id',   idHolder)
+											.insertAfter($elm);
+									}
+									
+									$idHolder.val(res.value);
+								}
+							},
+							
+							error: function(err) {
+								$elm.removeClass('ui-autocomplete-loading');
+								//console.debug('ajax error:', err);
+								//$img.remove();
+								$elm.addClass('ui-badfield-inpage');
+								$elm.addClass('ui-badfield');
+							}
+						});
+					};
+					
+					var waitVal = function() {
+						var t = this;
+						setTimeout(function() {
+							validate.call(t);
+						}, 500);
+					};
+					
+					$elm.focus(function() {
+							$(this).siblings('.ui-validate-error').slideUp(200, function() { $(this).remove() });
+							var idHolder = ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_validated';
+							var $idHolder = $('#'+idHolder);
+							$idHolder.val('');
+						})
+						.blur(waitVal)
+						.change(function() {
+							$(this).removeClass('ui-database-validated');
+							waitVal.call(this);
+						})
+						.keypress(function() {
+							$(this).removeClass('ui-database-validated');
+						});
+					
+					validate.call($elm);
+				}
+				</script>
+				<style>
+				.ui-validate-error {
+					display: block;
+					
+					color: #922D2D !important;
+					background: #FFDDDD !important;
+					
+					/*border: 1px solid #CE4040 !important;*/
+					/*-moz-box-shadow: 0px 0px 5px #963434;*/
+					/*box-shadow: 0 0 5px #963434;*/
+					
+					padding: 4px 6px;
+					margin: -3px 2px 2px;
+					z-index: 0;
+					opacity: 0.75;
+					
+				}
+				
+				.ui-database-validated,
+				.panel input[type=text].ui-database-validated {
+					background: #D2DCE9;
+					border-color: #8BA0BC;
+					color: #325689;
+				}
+				
+				.input.ui-autocomplete-loading,
+				.ui-autocomplete-loading {
+					background-image: url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') !important;
+					background-position: right center !important;
+					background-repeat: no-repeat !important;
+				}
+				
+				/*.input.ui-badfield-inpage.ui-autocomplete-loading {
+					background: #FFDDDD url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat !important;
+				}*/
+				</style>
+			`;
+			
 			foreach my $child ( @{$node->children} )
 			{
 				push @html, $self->_render_html($child,$t."\t\t",@stack,$node);
@@ -771,6 +1140,9 @@ package AppCore::Web::Form;
 									"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
 							}
 						}
+						
+						#$node->{class} = $class_key;
+						#$node->{attrs}->{class} = $class_key;
 					}
 					else
 					{
@@ -838,8 +1210,8 @@ package AppCore::Web::Form;
 							if($meta->{linked})
 							{
 								$type = 'database';
-								$node->{class} = ''; # TODO HUH?
-								$node->{source} = $meta->{linked}; # TODO review
+								$node->{class} = $meta->{linked}; #ref $class_obj ? ref $class_obj : $class_obj;
+								$node->{source} = $meta->{linked}.'.'.$meta->{linked}->primary_column;
 							}
 							elsif($type =~ /^enum/i)
 							{
@@ -876,7 +1248,8 @@ package AppCore::Web::Form;
 					{
 						#class_obj_name => $class_obj_name,
 						#class_key      => $class_key,
-						type	       => $type,
+						class_name     => ref $class_obj ? ref $class_obj : $class_obj,
+						type           => $type,
 					};
 					
 					my $format = $node->format;
@@ -1000,32 +1373,35 @@ package AppCore::Web::Form;
 						my $class  = $node->class;
 						my $source = $node->source;
 						
+						#my $class = ref $class_obj ? ref $class_obj : $class_obj;
+						
 						if($render eq 'ajax_input')
 						{
 							#error("Ajax Input Not Implemented","Error in $path: Ajax Input not implemented yet.");
-							if(!$node->class)
+							
+							if(!$class)
 							{
 								error("No AppCore::DBI Class Given","No AppCore::DBI Class given at path '$path' for ajax_input database model item");
 							}
 							
-							my $class  = $node->class;
-							my $source = $node->source;
+							#my $class  = $node->class;
+							#my $source = $node->source;
 							
 							my $val_stringified = $val;
 							my $clause = '';
-							if($source)
-							{
-								error("Invalid source name","Invalid source '$source'") if $source !~ /^((?:\w[\w\d]+::)*\w[\w\d]+)\.([\w\d_]+)$/;
-								my ($source_class,$source_column) = ($1,$2);
-								
-								error("$path","$source_class can't field_meta() [mark1: class=$class,source=$source, ref=$ref]")       if !$source_class->can('field_meta');
-			
-								my $meta = $source_class->field_meta($source_column);
-								error("$path","$source_class didn't give any meta for $source_column (source='$source')") if !$meta;
-								
-								$clause = $meta->{link_clause} if $meta && $meta->{link_clause} && $meta->{link_clause} !~ /={{/;
-								error("$path","Invalid characters in '$clause'")   if $clause && $clause =~ /(;|--)/;
-							}
+# 							if($source)
+# 							{
+# 								error("Invalid source name","Invalid source '$source'") if $source !~ /^((?:\w[\w\d]+::)*\w[\w\d]+)\.([\w\d_]+)$/;
+# 								my ($source_class,$source_column) = ($1,$2);
+# 								
+# 								error("$path","$source_class can't field_meta() [mark1: class=$class,source=$source, ref=$ref]")       if !$source_class->can('field_meta');
+# 			
+# 								my $meta = $source_class->field_meta($source_column);
+# 								error("$path","$source_class didn't give any meta for $source_column (source='$source')") if !$meta;
+# 								
+# 								$clause = $meta->{link_clause} if $meta && $meta->{link_clause} && $meta->{link_clause} !~ /={{/;
+# 								error("$path","Invalid characters in '$clause'")   if $clause && $clause =~ /(;|--)/;
+# 							}
 							
 							#my $ret = $class->validate_string($val_stringified,$clause);
 							#if(!$ret)
@@ -1033,82 +1409,155 @@ package AppCore::Web::Form;
 							#	$val_stringified = $class->stringify($val);
 							#}
 							
-							$val_stringified = $val_stringified->stringify if UNIVERSAL::isa($val_stringified,$class);
+							$val_stringified = $val_stringified->stringify if UNIVERSAL::isa($val_stringified, $class);
 							
 							#die Dumper $val, $val_stringified, $ret if $label_id eq 'SearchForm.related_to';
 							
-							# Disabling for now because I don't like ForeignKeyField's handling of drop down with valid value, hit show all, red underline - neeed to polish, make more usable.
-							if(0 && $self->{_defined_ext22})
-							{
-								push @html, "$prefix<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')
-									.($length ? "size=$length ":"")
-									.($format ? "f:format="._quote($format)." ":"")
-									.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-									."class='text f-ajax-fk ".($self->{_extjs} ? "x-form-text x-form-field" : "")." ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-									.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
-									." "
-									#.($readonly ? 'readonly' : "")
-									." id='$label_id' onfocus='select()'/></div>".($suffix ? "<label for='$label_id'>$suffix</label>" : "")."\n";
-									
-								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
-								my $can_create = _check_acl($class->meta->{create_acl}) ? 'true' : 'false';
-								my $can_read = _check_acl($class->meta->{edit_acl}) || _check_acl($class->meta->{read_acl}) ? 'true' : 'false';
-								my $can_qc = $class->meta->{quick_create} && $class->check_acl($class->meta->{create_acl}) && ($class->can('can_create') ? $class->can_create : 1)  ? 'true':'false';
-								
-								push @html, "<script>Ext.onReady(function(){";
-								push @html, "new Ext.app.ForeignKeyField({applyTo:'$label_id',";
-								push @html, "className:'$class',";
-								push @html, "sourceName:'$source',";
-								push @html, "canQuickCreate:$can_qc,";
-								push @html, "canCreate:$can_create,";
-								push @html, "canEdit:$can_read,";
-								push @html, "classNoun:'$noun',";
-								push @html, "emptyText:'Enter a ".lc($noun)."'})})</script>\n";
-							}
-							else
 							{
 		
 								
-								push @html, "$prefix<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')
-									.($length ? "size=$length ":"")
-									.($format ? "f:format="._quote($format)." ":"")
-									.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-									."class='text f-ajax-fk ".($self->{_extjs} ? "x-form-text x-form-field" : "")." ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-									.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
-									." "
-									#.($readonly ? 'readonly' : "")
-									." id='$label_id' onkeydown='ajax_verify(this,\"$class\",\"$source\")' onfocus='select()'/></div><label for='$label_id'>$suffix</label>\n";
+								push @html, $prefix,
+									"<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'>",
+										"<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
+											.($length ? "size=$length ":"")
+											.($format ? "f:format="._quote($format)." ":"")
+											.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
+											."class='text f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+											.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
+											." "
+											.($readonly ? 'readonly' : "")
+											." id='$label_id'/>",
+									"</div>",
+									($suffix ? "<label for='$label_id'>$suffix</label>\n" : "");
 									
 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
+								
+								if(!$self->{form_opts}->{validate_url})
+								{
+									error("No Validate URL Given","No 'validate_url' in options given to render() - required for an 'ajax_input' database option, found on ${ref}.");
+								}
+								
+								my $url = $self->{form_opts}->{validate_url};
+								#$url .= '/' if $url !~ /\/$/;
+								#$url .= $form->{uuid};
+								my $uuid = $form->{uuid};
+								my $bind_uuid = join('.', $uuid, $class_obj_name, $class_key);
+								if($uuid =~ /\./)
+								{
+									error("Invalid Form UUID",
+										"The UUID you used with your form ($uuid) won't work for AJAX validation of database values (relevant field: $ref) because the validator encodes the Form UUID with the field bind into a string seperated by '.' (example: $bind_uuid) - and your UUID contains a '.' - choose a different UUID or use render='select' on '$ref'");
+								}
+								
+								push @html, "<script>",
+									"var hookFunction = window.databaseLookupHook;",
+									"if(typeof(hookFunction) == 'function')",
+										"hookFunction(\$('#${label_id}'),'$url', '$bind_uuid');",
+									"</script>";
+								
 								# Search btn
 								#/linux-icons/Bluecurve/16x16/stock/panel-searchtool.png
-								my $root = '/appcore'; # AppCore::Common->context->http_root;
-								push @html, $t,qq{\t<img src="$root/images/silk/page_find.png" width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_do_search(event,"$label_id","$class","$source","$noun")' align='absmiddle' title="Search for a $noun">\n};
+								#my $root = '/appcore'; # AppCore::Common->context->http_root;
+								#push @html, $t,qq{\t<img src="$root/images/silk/page_find.png" width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_do_search(event,"$label_id","$class","$source","$noun")' align='absmiddle' title="Search for a $noun">\n};
 								
 								if($class)
 								{
-									if(_check_acl($class->meta->{create_acl}))
-									{
-										# New btn
-										push @html, $t,qq{\t<img src="$root/images/silk/page_add.png"  width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_fknew(event,"$label_id","$class","$source")' align='absmiddle' title="New $noun">\n};
-									}
+# 									if(_check_acl($class->meta->{create_acl}))
+# 									{
+# 										# New btn
+# 										push @html, $t,qq{\t<img src="$root/images/silk/page_add.png"  width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_fknew(event,"$label_id","$class","$source")' align='absmiddle' title="New $noun">\n};
+# 									}
 									
-									# Edit btn
-									#/linux-icons/Bluecurve/16x16/stock/stock-edit.png
-									my $disp = $val && (ref $val ? eval '$val->id' : 1) ? 'default' : 'none';
-									
-									if(_check_acl($class->meta->{edit_acl}) || _check_acl($class->meta->{read_acl}))
-									{
-										#error("[$disp]","val=$val") if $node->node eq 'statusid';
-										push @html, $t,qq{\t<img src="$root/images/silk/page_edit.png" width=16 height=16 style="cursor:hand;cursor:pointer;display:$disp" onclick='ajax_fkedit(event,"$label_id","$class","$source")' align='absmiddle' title="View/Edit $noun" id="ajax_edit_btn_$label_id">\n};
-									}
+# 									# Edit btn
+# 									#/linux-icons/Bluecurve/16x16/stock/stock-edit.png
+# 									my $disp = $val && (ref $val ? eval '$val->id' : 1) ? 'default' : 'none';
+# 									
+# 									if(_check_acl($class->meta->{edit_acl}) || _check_acl($class->meta->{read_acl}))
+# 									{
+# 										#error("[$disp]","val=$val") if $node->node eq 'statusid';
+# 										push @html, $t,qq{\t<img src="$root/images/silk/page_edit.png" width=16 height=16 style="cursor:hand;cursor:pointer;display:$disp" onclick='ajax_fkedit(event,"$label_id","$class","$source")' align='absmiddle' title="View/Edit $noun" id="ajax_edit_btn_$label_id">\n};
+# 									}
 								}
 								
 								# Progress/Error icon
-								push @html, $t,"\t<img style='display:none;cursor:default' width=16 height=16 id='ajax_verify_output_$label_id' align='absmiddle' title='Checking data...'>";
+								#push @html, $t,"\t<img style='display:none;cursor:default' width=16 height=16 id='ajax_verify_output_$label_id' align='absmiddle' title='Checking data...'>";
 								
-								push @html, $t,"\t<script>setTimeout(function(){ajax_verify(\$('#$label_id'),\"$class\",\"$source\")},1000)</script>\n";
+								#push @html, $t,"\t<script>setTimeout(function(){ajax_verify(\$('#$label_id'),\"$class\",\"$source\")},1000)</script>\n";
 							}
+							
+							
+							
+							# Disabling for now because I don't like ForeignKeyField's handling of drop down with valid value, hit show all, red underline - neeed to polish, make more usable.
+# 							if(0 && $self->{_defined_ext22})
+# 							{
+# 								push @html, "$prefix<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')
+# 									.($length ? "size=$length ":"")
+# 									.($format ? "f:format="._quote($format)." ":"")
+# 									.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
+# 									."class='text f-ajax-fk ".($self->{_extjs} ? "x-form-text x-form-field" : "")." ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+# 									.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
+# 									." "
+# 									#.($readonly ? 'readonly' : "")
+# 									." id='$label_id' onfocus='select()'/></div>".($suffix ? "<label for='$label_id'>$suffix</label>" : "")."\n";
+# 									
+# 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
+# 								my $can_create = _check_acl($class->meta->{create_acl}) ? 'true' : 'false';
+# 								my $can_read = _check_acl($class->meta->{edit_acl}) || _check_acl($class->meta->{read_acl}) ? 'true' : 'false';
+# 								my $can_qc = $class->meta->{quick_create} && $class->check_acl($class->meta->{create_acl}) && ($class->can('can_create') ? $class->can_create : 1)  ? 'true':'false';
+# 								
+# 								push @html, "<script>Ext.onReady(function(){";
+# 								push @html, "new Ext.app.ForeignKeyField({applyTo:'$label_id',";
+# 								push @html, "className:'$class',";
+# 								push @html, "sourceName:'$source',";
+# 								push @html, "canQuickCreate:$can_qc,";
+# 								push @html, "canCreate:$can_create,";
+# 								push @html, "canEdit:$can_read,";
+# 								push @html, "classNoun:'$noun',";
+# 								push @html, "emptyText:'Enter a ".lc($noun)."'})})</script>\n";
+# 							}
+# 							else
+# 							{
+# 		
+# 								
+# 								push @html, "$prefix<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
+# 									.($length ? "size=$length ":"")
+# 									.($format ? "f:format="._quote($format)." ":"")
+# 									.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
+# 									."class='text f-ajax-fk ".($self->{_extjs} ? "x-form-text x-form-field" : "")." ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+# 									.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
+# 									." "
+# 									#.($readonly ? 'readonly' : "")
+# 									." id='$label_id' onkeydown='ajax_verify(this,\"$class\",\"$source\")' onfocus='select()'/></div><label for='$label_id'>$suffix</label>\n";
+# 									
+# 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
+# 								# Search btn
+# 								#/linux-icons/Bluecurve/16x16/stock/panel-searchtool.png
+# 								my $root = '/appcore'; # AppCore::Common->context->http_root;
+# 								push @html, $t,qq{\t<img src="$root/images/silk/page_find.png" width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_do_search(event,"$label_id","$class","$source","$noun")' align='absmiddle' title="Search for a $noun">\n};
+# 								
+# 								if($class)
+# 								{
+# 									if(_check_acl($class->meta->{create_acl}))
+# 									{
+# 										# New btn
+# 										push @html, $t,qq{\t<img src="$root/images/silk/page_add.png"  width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_fknew(event,"$label_id","$class","$source")' align='absmiddle' title="New $noun">\n};
+# 									}
+# 									
+# 									# Edit btn
+# 									#/linux-icons/Bluecurve/16x16/stock/stock-edit.png
+# 									my $disp = $val && (ref $val ? eval '$val->id' : 1) ? 'default' : 'none';
+# 									
+# 									if(_check_acl($class->meta->{edit_acl}) || _check_acl($class->meta->{read_acl}))
+# 									{
+# 										#error("[$disp]","val=$val") if $node->node eq 'statusid';
+# 										push @html, $t,qq{\t<img src="$root/images/silk/page_edit.png" width=16 height=16 style="cursor:hand;cursor:pointer;display:$disp" onclick='ajax_fkedit(event,"$label_id","$class","$source")' align='absmiddle' title="View/Edit $noun" id="ajax_edit_btn_$label_id">\n};
+# 									}
+# 								}
+# 								
+# 								# Progress/Error icon
+# 								push @html, $t,"\t<img style='display:none;cursor:default' width=16 height=16 id='ajax_verify_output_$label_id' align='absmiddle' title='Checking data...'>";
+# 								
+# 								push @html, $t,"\t<script>setTimeout(function(){ajax_verify(\$('#$label_id'),\"$class\",\"$source\")},1000)</script>\n";
+# 							}
 
 							
 							
@@ -1276,6 +1725,10 @@ package AppCore::Web::Form;
 								}
 								
 								$orderby = $text if !$orderby;
+								
+								#die Dumper $class;
+								#error([$class,$source]);
+								
 								
 								if($source)
 								{
@@ -1482,53 +1935,84 @@ package AppCore::Web::Form;
 							#.($readonly ? 'readonly' : "")
 							." id='$label_id'/>".($suffix ? "<label for='$label_id'>$suffix</label>" :"")."\n";
 
-# 						unless($hidden)
-# 						{
-# 							my $x_type = "x-type";
-# 							$x_type = $node->$x_type;
-# 							$type = $x_type if $x_type;
-# 							$type = $node->xtype if $node->xtype;
-# 							#die Dumper $type,$node if $ref eq 'datelogged';
-# 							
-# 							if($type eq 'fraction')
-# 							{
-# 								push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.FractionField({applyTo:'$label_id'});</script>" if $extjs_enabled;
-# 							}
-# 							elsif($type eq 'date')
-# 							{
-# 								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.DateTime({applyTo:'$label_id',dateFormat:'Y-m-d',timeFormat:'H:i:s'});var field=\$('#$label_id');field.name='$ref';field.style.display='none';</script>";
-# 								
-# 								push @html, "<script>\$('#$label_id').ext = EAS.Data.XType.Date.applyTo('$label_id')</script>";
-# 							}
-# 							elsif($type eq 'datetime')
-# 							{
-# 								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.DateTime({applyTo:'$label_id',dateFormat:'Y-m-d',timeFormat:'H:i:s'});var field=\$('#$label_id');field.name='$ref';field.style.display='none';</script>";
-# 								
-# 								push @html, "<script>\$('#$label_id').ext = EAS.Data.XType.DateTime.applyTo('$label_id')</script>";
-# 							}
-# 							elsif($type eq 'number')
-# 							{
-# 								push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id'});</script>" if $extjs_enabled;
-# 							}
-# 							elsif($type eq 'float')
-# 							{
-# 								push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id',allowDecimals:true});</script>" if $extjs_enabled;
-# 							}
-# 							elsif($type eq 'integer')
-# 							{
-# 								push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id',allowDecimals:false});</script>" if $extjs_enabled;
-# 							}
-# 							elsif($type =~ /^custom:(.*)/)
-# 							{
-# 								my $xtype_class = $1;
-# 								push @html, "<script>\$('#$label_id').ext = ${xtype_class}.applyTo('$label_id')</script>";
-# 							}
-# 							else
-# 							{
-# 								push @html, "<script>\$('#$label_id').ext = new Ext.form.TextField({applyTo:'$label_id'});</script>" if $extjs_enabled;
-# 							}
-# 
-# 						};
+						unless($hidden)
+						{
+							my $x_type = "x-type";
+							$x_type = $node->$x_type;
+							$type = $x_type if $x_type;
+							$type = $node->xtype if $node->xtype;
+							#die Dumper $type,$node if $ref eq 'datelogged';
+							
+							if($type eq 'fraction')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.FractionField({applyTo:'$label_id'});</script>" if $extjs_enabled;
+							}
+							elsif($type eq 'date')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.DateTime({applyTo:'$label_id',dateFormat:'Y-m-d',timeFormat:'H:i:s'});var field=\$('#$label_id');field.name='$ref';field.style.display='none';</script>";
+								
+								#push @html, "<script>\$('#$label_id').ext = EAS.Data.XType.Date.applyTo('$label_id')</script>";
+								
+								my $jquery = qq`
+								
+								\$(function() {
+									\$( "#${label_id}" ).datepicker({
+										showOn: "both",
+										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+										buttonImageOnly: true,
+										dateFormat: "yy-mm-dd",
+									});
+								});
+								
+								`;
+								
+								push @html, "<script>$jquery</script>";
+								
+							}
+							elsif($type eq 'datetime')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.DateTime({applyTo:'$label_id',dateFormat:'Y-m-d',timeFormat:'H:i:s'});var field=\$('#$label_id');field.name='$ref';field.style.display='none';</script>";
+								
+								#push @html, "<script>\$('#$label_id').ext = EAS.Data.XType.DateTime.applyTo('$label_id')</script>";
+								
+								my $jquery = qq`
+								
+								\$(function() {
+									\$( "#${label_id}" ).datepicker({
+										showOn: "both",
+										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+										buttonImageOnly: true,
+										dateFormat: "yy-mm-dd",
+									});
+								});
+								
+								`;
+								
+								push @html, "<script>$jquery</script>";
+							}
+							elsif($type eq 'number')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id'});</script>" if $extjs_enabled;
+							}
+							elsif($type eq 'float')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id',allowDecimals:true});</script>" if $extjs_enabled;
+							}
+							elsif($type eq 'integer')
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.form.NumberField({applyTo:'$label_id',allowDecimals:false});</script>" if $extjs_enabled;
+							}
+							elsif($type =~ /^custom:(.*)/)
+							{
+								#my $xtype_class = $1;
+								#push @html, "<script>\$('#$label_id').ext = ${xtype_class}.applyTo('$label_id')</script>";
+							}
+							else
+							{
+								#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextField({applyTo:'$label_id'});</script>" if $extjs_enabled;
+							}
+
+						};
 						
 						
 					}
@@ -1832,3 +2316,424 @@ package AppCore::Web::Form::ModelMeta;
 };
 
 1;
+
+
+__DATA__
+
+## File: Drivers.pm
+
+## Call example:
+#
+# return DriveLink::IntPortal::Drivers->subpage($controller, $req, $r);
+#
+## Where $controller provides some other business logic functions outside the scope of this example
+## and $req is an AppCore::Web::Request object
+## and $r   is an AppCore::Web::Result object
+##
+## Example setup of those objects:
+## use AppCore::Web::Request;
+## use AppCore::Web::Result;
+## my $req = AppCore::Web::Request->new(PATH_INFO => $ENV{PATH_INFO});
+## my $r   = AppCore::Web::Result->new();
+
+
+package DriveLink::IntPortal::Drivers;
+{
+	use strict;
+	use AppCore::Web::Common;
+	use base 'AppCore::Web::Controller';
+	
+	use DriveLink::Driver;
+	
+	use AppCore::Web::Form;
+	use AppCore::Web::SimpleListView;
+	use AppCore::DBI::SimpleListModel;
+		
+	# setup_routes() is called by superclass in dispatch() first time finds no routes setup on this class
+	sub setup_routes
+	{
+		my $class = shift;
+		my $router = $class->router;
+
+		$router->route(':driverid/:action'	=> {
+			':driverid'	=> {
+				regex	=> qr/^\d+$/,
+				check	=> sub {
+					my ($router, $driverid) = @_;
+					my $driver = DriveLink::Driver->retrieve($driverid) || die "Invalid driver ID $driverid\n";
+					$router->stash->{driver} = $driver;
+					#$router->stash->{driver} = $driverid;
+				},
+			},
+			':action'	=> [
+				#[qw/edit post delete/],
+				edit		=> 'page_driver_edit',
+				post		=> 'page_driver_post',
+				delete		=> 'page_driver_delete',
+				'/'		=> 'page_driver_view',
+			],
+		});
+
+		$router->route('/'		=> 'page_driver_list');
+		$router->route('new'		=> 'page_driver_new');
+		$router->route('new/post'	=> 'page_driver_post_new');
+		$router->route('validate'	=> 'AppCore::Web::Form.validate_page');
+		
+		#die Dumper $router;
+	}
+	
+	sub subpage
+	{
+		my ($class, $ctrl, $req, $r) = @_;
+		
+		$class->stash(ctrl => $ctrl);
+		$class->dispatch($req, $r);
+	}
+	
+	sub respond
+	{
+		my $self = shift;
+		my $ctrl = $self->stash->{ctrl};
+		
+		$ctrl->{view}->tmpl_param(intportal_drivers => 1);
+		$ctrl->output(@_);
+	}
+	
+	sub page_driver_list
+	{
+		my ($class) = @_;
+		
+		my $req = $class->stash->{req};
+		
+		my $model = AppCore::DBI::SimpleListModel->new('DriveLink::Driver');
+		my $view  = AppCore::Web::SimpleListView->new($req, { file => 'tmpl/drivers-list.tmpl' });
+		
+		# Tell the model to filter by the string given in the request
+		$model->set_filter($req->query);
+		
+		# Add a 'deleted = 0' filter to hide deleted drivers
+		$model->set_hardcoded_filter( deleted => 0 );
+		
+		# We could have set model options after we called set_model(), but is probably safer to do it before to support future expansion.
+		# If we were running in a client-side GUI, the model would be ovservable by the view anyway, so it wouldn't matter at all.
+		$view->set_model($model);
+		
+		# Add a small filter to adjust the data from the database before it hits the template
+		$view->row_mudge_hook(sub {
+			my $row = shift;
+			
+			$row->{hire_date} = '' if $row->{hire_date} eq '0000-00-00';
+			$row->{term_date} = '' if $row->{term_date} eq '0000-00-00';
+			$row->{email}     = '' if $row->{email} eq '&nbsp;';
+		});
+		
+		# Setup the view with various view options
+		$view->set_paging($req->start || 0, $req->length || 100);
+		
+		# Add a message to confirm the previous action if present
+		my $ac = $req->action_completed;
+		if($ac eq 'created' || $ac eq 'updated' || $ac eq 'deleted')
+		{
+			$view->set_message("Driver # <a href='".$req->page_path.'/'.$req->driverid."'>$req->{driverid}</a> has been $ac.");
+		}
+		
+		return $class->respond($view->output);
+	}
+	
+	sub page_driver_view
+	{
+		my ($class) = @_;
+		
+		my $driver = $class->stash->{driver};
+		my $ctrl   = $class->stash->{ctrl};
+		
+		die "Error: No driver in stash" if !$driver;
+		
+		my $tmpl = $ctrl->get_template('tmpl/drivers-view.tmpl');
+		
+		# $tmpl is a HTML::Template::DelayedLoading object (defined in AppCore::Web::Common)
+		# The param() method, when given an AppCore::DBI-dervied object as the 2nd (value) argument,
+		# automatically does the equivelant of:
+		#	$tmpl->param($key.'_'.$_ => $val->get($_)) foreach $driver->columns;
+		# Where $key is the first argument given to param()
+		$tmpl->param('driver' => $driver);
+		$tmpl->param('is_avail' => $driver->availability !~ /^out/i);
+		$tmpl->param(customer_name => $driver->customerid->name);
+		
+		return $class->respond($tmpl);
+	}
+	
+	sub page_driver_edit
+	{
+		my ($class) = @_;
+		
+		my $driver = $class->stash->{driver};
+		my $ctrl   = $class->stash->{ctrl};
+		
+		die "Error: No driver in stash" if !$driver;
+		
+		my $tmpl = $ctrl->get_template('tmpl/drivers-edit.tmpl');
+		
+		$tmpl->param(post_url => $class->url_up(1).'/post');
+		$tmpl->param('driver' => $driver);
+		
+		my $out = AppCore::Web::Form->post_process($tmpl, {
+			driver       => $driver,
+			validate_url => $class->url_up(2).'/validate',
+		});
+		
+		return $class->respond($out);
+	}
+		
+	sub page_driver_new
+	{
+		my ($class) = @_;
+		
+		my $tmpl = $class->stash->{ctrl}->get_template('tmpl/drivers-edit.tmpl');
+		
+		my $out = AppCore::Web::Form->post_process($tmpl, {
+			driver           => 'DriveLink::Driver',
+			validate_url     => $class->url_up(1).'/validate',
+			allow_undef_bind => 1
+		});
+		
+		return $class->respond($out);
+	}
+	
+	sub page_driver_post_new
+	{
+		my ($class) = @_;
+		
+		$class->stash->{driver} = DriveLink::Driver->insert({});
+		
+		$class->page_driver_post('created');
+	}
+	
+	sub page_driver_post
+	{
+		my $class  = shift;
+		
+		my $action = shift || 'updated';
+		
+		my $driver = $class->stash->{driver};
+		my $req    = $class->stash->{req};
+		
+		die "Error: No driver in stash" if !$driver;
+		
+		my $tmp = AppCore::Web::Form->store_values($req, { driver => $driver });
+		
+		# Up 1 just removes 'post' from URL, leaving the /driverid on the URL
+		return $class->redirect_up(1);
+	}
+	
+	sub page_driver_delete
+	{
+		my ($class) = @_;
+		
+		my $driver = $class->stash->{driver};
+		
+		die "Error: No driver in stash" if !$driver;
+		$driver->deleted(1);
+		$driver->update;
+
+		return $class->redirect_up(2, { action_completed => 'deleted', driverid => $driver } );
+	}
+};
+
+
+## File drivers-edit.tmpl (partial, just the form)
+
+	<f:form action='%%post_url%%' method='POST' id="edit-form" uuid='DriveLink::Driver'>
+		<table class='form-table'>
+			<input bind="#driver.customerid" size="61"/><!-- render='select'/>-->
+			
+			<row label="Name">
+				<input bind="#driver.first"/>
+				<input bind="#driver.middle" size="7"/>
+				<input bind="#driver.last"/>
+			</row>
+			
+			<row label="SSN">
+				<row bind="#driver.ssn"/>
+				<row bind="#driver.sex"/>
+			</row>
+			<row label="Birth Date">
+				<row bind='#driver.birth_date'/>
+				<span id="driver_age_wrapper">
+					Age: <span id="driver_age">...</span>
+				</span>
+				<script>
+				//<![CDATA[
+				$(function() {
+					function recalcAge()
+					{
+						$("#driver_age_wrapper").hide();
+						
+						var date = $("#edit-form-driver-birth_date").val();
+						if(!date)
+							return;
+						
+						var list = date.split("-");
+						if(list.length < 3 || parseInt(list[0]) == 0)
+							return;
+						
+						var d1=new Date(list[0], list[1], list[2]);
+						var d2=new Date();
+
+						var milli=d2-d1;
+						var milliPerYear=1000*60*60*24*365.26;
+
+						var age = parseInt(milli/milliPerYear);
+						
+						$("#driver_age_wrapper").show();
+						$("#driver_age").html("<b>"+age+"</b> years old");
+					}
+					$("#edit-form-driver-birth_date").bind('change', recalcAge);
+					recalcAge();
+				});
+				//]]>
+				</script>
+			</row>
+				
+			<row bind="#driver.spouse"/>
+			<row bind="#driver.dba" label="DBA"/>
+			
+			<row bind="#driver.comments" rows="5" cols="60"/>
+			
+			<h2>Contact Info</h2>
+			<row bind="#driver.email" size="62"/>
+			<row label="Home Phone">
+				<row bind="#driver.home_phone" size="12"/>
+				<row bind="#driver.cell_phone" label="Cell" size="12"/>
+				<row bind="#driver.fax" label="Fax" size="12"/>
+			</row>
+			<row bind="#driver.address" size="62"/>
+			<row label="City">
+				<input bind="#driver.city"/>
+				<input bind="#driver.state" type="string" datasource="internal.states" length='3'/> <!--choices="AL,IN,MI,SD,TX"/>-->
+				<input bind="#driver.zip" size="6"/>
+			</row>
+			
+			<h2>Important Dates</h2>
+			<row label="Hire">
+				<row bind='#driver.hire_date'/>
+				<row bind='#driver.term_date' label="Term"/>
+			</row>
+			<row bind='#driver.review_date'/>
+			<row bind='#driver.physexam_date'/>
+			
+			<h2>Licence Data</h2>
+			<row label="Licence Num">
+				<row bind='#driver.licence_num'/>
+				<row bind='#driver.licence_expir' label="Expir" size="10"/>
+				<row bind='#driver.licence_state' label="State" size="3"/>
+			</row>
+			<row bind='#driver.passenger_flag'/>
+			<row bind='#driver.can_tow'/>
+			<row bind='#driver.towins_date'/>
+			<row bind='#driver.passport'/>
+			<row bind='#driver.twic' label="TWIC"/>
+			<row bind='#driver.trans_type'/>
+			
+			<h2>CDL Information</h2>
+			<row label="CDL">
+				<!--<input bind='#driver.cdl_class' render='radio'/>-->
+				<input bind='#driver.cdl_class'/>
+				<input bind='#driver.cdl_ifta_num' label="IFTA#" size="10"/>
+			</row>
+			
+			<row bind='#driver.endorse_tanker'/>
+			<row bind='#driver.endorse_dbl'/>
+			<row bind='#driver.endorse_tripple'/>
+			<row bind='#driver.endorse_combo'/>
+			<row bind='#driver.endorse_airbrakes'/>
+			<row bind='#driver.endorse_hazmat'/>
+			<row bind='#driver.endorse_mocyc'/>
+			
+			<h2/>
+
+			<tr>
+				<td align='right'>
+					<a style='color:rgba(0,0,0,0.5)'   href='javascript:void(window.history.go(-1))'>Cancel</a>
+				</td>
+				<td>
+					<tmpl_if driver_driverid>
+						<input type='submit' value='Save Changes'/>
+						<a style='color:rgba(255,0,0,0.6)' href='%%page_path%%/delete' onclick="return confirm('Are you sure?')">Delete Driver</a>
+					<tmpl_else>
+						<input type='submit' value='Create Driver'/>
+					</tmpl_if>
+				</td>
+			</tr>
+		</table>
+	</f:form>
+
+## File: Driver.pm (partial, just for example)
+
+use strict;
+
+package DriveLink::Driver;
+{
+	use base 'AppCore::DBI';
+	
+	__PACKAGE__->meta(
+	{
+		table	=> 'drivers',
+		schema  =>
+		[
+			{ field => 'driverid',		type => 'int',	@AppCore::DBI::PriKeyAttrs },
+			{ field => 'customerid',	type => 'int', linked => 'DriveLink::Customer' },
+			{ field => 'first',		type => 'varchar(255)' },
+			{ field => 'middle',		type => 'varchar(255)' },
+			{ field => 'last',		type => 'varchar(255)' },
+			{ field => 'display',		type => 'varchar(255)' },
+			{ field => 'sex',		type => "enum('Male','Female')", null=>0, default=>'Male' },
+			{ field => 'ssn',		type => 'varchar(255)' },
+			{ field => 'driver_code',	type => 'varchar(16)' },
+			{ field => 'dba',		type => 'varchar(255)' },
+			{ field => 'taxid',		type => 'varchar(255)' },
+			{ field => 'spouse',		type => 'varchar(255)' },
+			{ field => 'email',		type => 'varchar(255)' },
+			{ field => 'home_phone',	type => 'varchar(255)' },
+			{ field => 'cell_phone',	type => 'varchar(255)' },
+			{ field => 'fax',		type => 'varchar(255)' },
+			{ field => 'address',		type => 'varchar(255)' },
+			{ field => 'city',		type => 'varchar(255)' },
+			{ field => 'state',		type => 'varchar(255)' },
+			{ field => 'zip',		type => 'varchar(255)' },
+			{ field => 'comments',		type => 'text' },
+			{ field => 'birth_date',	type => 'date' },
+			{ field => 'hire_date',		type => 'date' },
+			{ field => 'term_date',		type => 'date' },
+			{ field => 'licence_num',	type => 'varchar(255)' },
+			{ field => 'licence_expir',	type => 'date' },
+			{ field => 'licence_state',	type => 'varchar(5)' },
+			{ field => 'physexam_date',	type => 'date' },
+			{ field => 'towins_date',	type => 'date' },
+			{ field => 'review_date',	type => 'date' },
+			{ field => 'passport',		type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'twic',		type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'trans_type',	type => "enum('Auto','Manual')", null=>0, default=>'Auto' },
+			{ field => 'cdl_class',		type => "enum('No CDL','A','B','C','CHAUFFER')", null=>0, default=>'No CDL' },
+			{ field => 'cdl_ifta_num',	type => 'varchar(255)' },
+			{ field => 'passenger_flag',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'can_tow',		type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_tanker',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_dbl',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_tripple',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_combo',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_airbrakes',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_hazmat',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			{ field => 'endorse_mocyc',	type => "enum('Yes','No')", null=>0, default=>'No' },
+			
+			{ field => 'availability',	type => "enum('Out of Service','Available')", null=>0, default=>'Available' }, 
+			
+			
+			{ field => 'deleted',		type => 'int(1)', null => 0, default => 0 },
+		],
+		
+		
+		sort => [['last','asc'], ['first','asc']],
+	});
+};
+1;		

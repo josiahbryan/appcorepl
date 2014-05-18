@@ -214,6 +214,12 @@ package AppCore::Web::Router;
 		
 		$args = { action => $args } if !ref $args;
 		
+		if($args->{action} =~ /(^[^\s]+)\.([\w_\d]+)$/)
+		{
+			$args->{namespace} = $1;
+			$args->{action} = $2;
+		}
+		
 		my $class = $self->class;
 		
 		# We want to be able to use a blessed ref as namespace for calls so we dont grab the class the ref
@@ -314,8 +320,16 @@ package AppCore::Web::Router;
 					# Otherwise, if no same-named leaf exists, create a new one
 					|| AppCore::Web::Router::Leaf->new( key => $option_key );
 				
-				$leaf->action($options{$option_key});
-				$leaf->namespace($class);
+				my $action = $options{$option_key};
+				my $namespace = $class;
+				if($action =~ /(^[^\s]+)\.([\w_\d]+)$/)
+				{
+					$namespace = $1;
+					$action = $2;
+				}
+				
+				$leaf->action($action);
+				$leaf->namespace($namespace);
 				
 				$last_leaf->add_leaf($leaf);
 			}
@@ -350,8 +364,16 @@ package AppCore::Web::Router;
 					# Otherwise, if no same-named leaf exists, create a new one
 					|| AppCore::Web::Router::Leaf->new( key => $leaf_key );
 				
-			$leaf->action($leaf_args);
-			$leaf->namespace($class);
+			my $action = $leaf_args;
+			my $namespace = $class;
+			if($action =~ /(^[^\s]+)\.([\w_\d]+)$/)
+			{
+				$namespace = $1;
+				$action = $2;
+			}
+			
+			$leaf->action($action);
+			$leaf->namespace($namespace);
 			
 			$last_leaf->add_leaf($leaf)
 				unless $last_leaf == $leaf;
@@ -401,7 +423,8 @@ package AppCore::Web::Router;
 #			}
 		}
 		
-		$ref->$method();
+		$ref->$method($self->stash->{req}, 
+		              $self->stash->{r});
 	}
 	
 	sub dispatch
