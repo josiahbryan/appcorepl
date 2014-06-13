@@ -423,6 +423,11 @@ package AppCore::Web::Router;
 #			}
 		}
 		
+		if(UNIVERSAL::isa($ref, 'AppCore::Web::Controller'))
+		{
+			$ref->set_stash($self->stash);
+		}
+		
 		$ref->$method($self->stash->{req}, 
 		              $self->stash->{r});
 	}

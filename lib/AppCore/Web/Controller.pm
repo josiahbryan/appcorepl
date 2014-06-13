@@ -42,6 +42,12 @@ package AppCore::Web::Controller;
 	{
 		my ($self, $stash, $merge_flag) = @_;
 		
+		if(!ref $self)
+		{
+			$SelfCache{$self} ||= {};
+			$self = $SelfCache{$self};
+		}
+		
 		if($merge_flag)
 		{
 			my $cur_stash = $self->stash;
