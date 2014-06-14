@@ -139,7 +139,8 @@ package User::Admin;
 		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
 		$tmpl->param(url_from => $url_from);
 		
-		#$view->output($tmpl);
+		Content::Page::Controller->current_view->breadcrumb_list->push("Create User",'.');
+		
 		return $r->output($tmpl);
 	
 		#return $r;
@@ -184,6 +185,8 @@ package User::Admin;
 		#$tmpl->param(url_from => $url_from);
 		
 		#$view->output($tmpl);
+		Content::Page::Controller->current_view->breadcrumb_list->push("Edit User",'.');
+		
 		return $r->output($tmpl);
 	
 		#return $r;

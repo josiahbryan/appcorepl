@@ -1,12 +1,12 @@
 <title>Forgotten Password</title>
 <h1>Forgotten Password</h1>
 
-<div class='ffjc-info'>
+<div class='ffjc-info alert alert-info' style='max-width:30em'>
 	Enter the email address you used for this website and your password will be emailed to you immediately.
 </div>
 
 <tmpl_if invalid_email>
-	<div class='ffjc-error'>
+	<div class='ffjc-error alert alert-danger' style='max-width:30em'>
 		<b>No email address found!</b> Sorry, but the email address you entered was not found in our database. You may try again or visit the <a href='%%binpath%%/signup?user=<tmpl_var user>'>signup page</a> to signup for your own %%website_name%% account.
 	</div>
 </tmpl_if>
@@ -14,27 +14,26 @@
 <form action='%%binpath%%/forgot_pass/post' method=POST style='display:inline;border:0;padding:0;margin:0' name=auth>
 	<input type=hidden name=url_from value="<tmpl_var url_from>">
 
-	<div id="round_me" align=center style="background:rgb(220,220,220);padding-top:5px;padding-bottom:5px;-moz-border-radius: 5px;border:rgb(220,220,220);margin-bottom:.5em">
-	
-		<table border=0 cellpadding=3 cellspacing=0 style="margin:1em">
-			<tr>
-				<td>Your E-Mail:</td> <td>
-					<input type=text name=user id=user onfocus='select()' value="<tmpl_var user>" size=40>
-					<script>var e= $('#user').get(0);if(e)e.focus()</script>
-				</td>
-			</tr>
-			
-			<tr>
-				<td colspan=2 align=center class=focus_highlight>
+	<table class='editform'>
+		<tr>
+			<td style='vertical-align: middle' nowrap>E-Mail:&nbsp;</td>
+			<td>
+				<input type=text class='form-control' name=user id=user onfocus='select()' value="<tmpl_var user>" size=40>
+				<script>var e= $('#user').get(0);if(e)e.focus()</script>
+			</td>
+		</tr>
+		
+		<tr>
+			<td></td>
+			<td class=focus_highlight>
 				<br>
 				
-				<input type=submit value="Send me my password!"> 
+				<input type=submit value="Send me my password!" class='btn btn-primary'> 
 				<!--<input type=reset value="Reset to Original Values"> -->
-				</td>
-			</tr>
-		
-		
-		</table>
-	</div>
+			</td>
+		</tr>
+	
+	
+	</table>
 	
 </form>

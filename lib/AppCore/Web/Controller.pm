@@ -7,7 +7,7 @@ package AppCore::Web::Controller;
 	
 	use AppCore::Web::Router;
 	
-	my %SelfCache = {};
+	our %SelfCache = ();
 	
 	sub new 
 	{

@@ -2,21 +2,12 @@
 
 <h1>People</h1>
 
-<table border=0 style='margin-top:1em'>
-	<tr>
-		<td>
-			
-		</td>
-		<td>
-			<form action=/admin/users method=GET>
-				Search: <input name=q size=45 id='user-search' value='%%query%%'> <input type=submit value='Search' class=button>
-				<script>$(function(){$('#user-search').focus() })</script>
-				<a href='%%binpath%%/create' class=button>Add a new user...</a>
-			</form>
-		</td>
-	</tr>
-</table>
-			
+<form action="/admin/users" method=GET class='form-inline' role='form'>
+	Search: <input type=text class='form-control' name=q size=45 id='user-search' value='%%query%%' placeholder='User or email'>
+	<input type=submit value='Search' class='btn button btn-primary '>
+	<script>$(function(){$('#user-search').focus() })</script>
+	<a href='%%binpath%%/create' class='btn btn-default'>Add a new user...</a>
+</form>
 
 
 
@@ -55,7 +46,7 @@ table.pretty td.fbuser
 
 <tmpl_if query>
 	<tmpl_if list>
-		<table class='pretty'>
+		<table class='pretty table table-striped table-hover'>
 			<thead>
 				<th>Actions</th>
 				<th>Photo</th>
@@ -101,8 +92,9 @@ table.pretty td.fbuser
 	</tmpl_if>
 <tmpl_else>
 	<!--<center>-->
-		<br><br>
-		<h3> Use the search box, above, to lookup a user.<br>
-		<b>Note:</b> You can search by <b>first/last name, email address, or user name</b>. </h3>
+		<div class='alert alert-info' style='margin-top:1em;max-width:50em'>
+			Use the search box, above, to lookup a user.<br>
+			<b>Note:</b> You can search by <b>first/last name, email address, or user name</b>. 
+		</div>
 	<!--</center>-->
 </tmpl_if>

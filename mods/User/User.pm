@@ -431,6 +431,9 @@ package User;
 		my $login_tmpl = AppCore::Config->get('LOGIN_TMPL');
 		$login_tmpl = 'login'.($mobile?'-mobile' : '').'.tmpl' if !$login_tmpl;
 		
+		# Flag to send in view or not
+		my $login_tmpl_fullpage = AppCore::Config->get('LOGIN_TMPL_FULLPAGE');
+		
 		my $tmpl = $self->get_template($login_tmpl);
 		#$tmpl->param(challenge => AppCore::AuthUtil->get_challenge());
 		setcookie('login.url_from',$url_from); # in case they use FB to login....
@@ -449,9 +452,13 @@ package User;
 		
 		$view->breadcrumb_list->push('Home',"/",0);
 		$view->breadcrumb_list->push('Login',"/user/login",0);
-		$view->output($tmpl);
-	
 		
+		return $r->output_data('text/html', $tmpl->output) 
+			if $login_tmpl_fullpage;
+		
+		#die Dumper $login_tmpl;
+		
+		$view->output($tmpl);
 		
 		return $r;
 	}
@@ -494,7 +501,9 @@ package User;
 		
 		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 		
-		my $tmpl = $self->get_template('signup.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
+		my $tmpl_file = AppCore::Config->get('USER_SIGNUP_TMPL') || 'signup.tmpl';
+		
+		my $tmpl = $self->get_template($tmpl_file); #'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -617,7 +626,9 @@ package User;
 		
 		my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 		
-		my $tmpl = $self->get_template('forgot_pass.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
+		my $tmpl_file = AppCore::Config->get('USER_FORGOT_PASS_TMPL') || 'forgot_pass.tmpl';
+		
+		my $tmpl = $self->get_template($tmpl_file); #'.($mobile?'-mobile' : '').'.tmpl');
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		
@@ -698,7 +709,9 @@ package User;
 			
 			my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 			
-			my $tmpl = $self->get_template('advopts.tmpl'); #.($mobile?'-mobile' : '').'.tmpl');
+			my $tmpl_file = AppCore::Config->get('USER_ADVOPTS_TMPL') || 'advopts.tmpl';
+			
+			my $tmpl = $self->get_template($tmpl_file); #.($mobile?'-mobile' : '').'.tmpl');
 			$tmpl->param('saved' => 1) if $np eq 'post';
 			
 			$tmpl->param(opts => \@all_options);
@@ -752,7 +765,10 @@ package User;
 			
 			my $mobile = getcookie('mobile.sitepref') eq 'mobile';
 			
-			my $tmpl = $self->get_template('profile.tmpl'); #'.($mobile?'-mobile' : '').'.tmpl');
+			
+			my $tmpl_file = AppCore::Config->get('USER_PROFILE_TMPL') || 'profile.tmpl';
+			
+			my $tmpl = $self->get_template($tmpl_file); #'.($mobile?'-mobile' : '').'.tmpl');
 			$tmpl->param('user_'.$_ => $user->get($_)) foreach $user->columns;
 			$tmpl->param('profile_saved' => 1) if $sub_page eq 'post';
 			$tmpl->param(fake_pass => join '', ('*') x length($user->pass));
