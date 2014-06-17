@@ -444,7 +444,7 @@ package User;
 		$tmpl->param(sent_pass    => $req->{sent_pass});
 		$tmpl->param(fb_app_id	  => AppCore::Config->get("FB_APP_ID"));
 		$tmpl->param(fb_redir_url => $self->get_facebook_redir_url());
-		#$tmpl->param(auth_requested => $req->{auth_requested});
+		$tmpl->param(auth_requested => $req->{auth_requested});
 		# Shouldn't get here if login was ok (redirect above), but since we're here with the authenticate page, assume they failed login
 		$tmpl->param(bad_login => 1) if $action eq 'authenticate';
 		

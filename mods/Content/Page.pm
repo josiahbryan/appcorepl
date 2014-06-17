@@ -732,6 +732,7 @@ package Content::Page::ThemeEngine;
 		$self->{response}  = $response;
 		$self->{params}    = {};
 		$self->{bc_list}   = Content::Page::ThemeEngine::BreadcrumbList->new($self); 
+		$Content::Page::Controller::CurrentView = $self;
 		return $self;
 	}
 	
@@ -1187,6 +1188,8 @@ package Content::Page::ThemeEngine;
 		if(@list)
 		{
 			$subnav = clone( $subnav );
+			
+			$subnav->{nav_path} ||= [];
 			
 			my @tmp = @{$subnav->{nav_path}};
 			push @tmp, @list;
