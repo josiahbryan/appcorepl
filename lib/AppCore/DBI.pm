@@ -289,7 +289,9 @@ package AppCore::DBI;
 				# Create CDBI relationships using meta 'linked' field
 				foreach my $line (@{$meta->{schema}})
 				{
-					$class->has_a($line->{field} => $line->{linked}) if $line->{linked};
+					$class->has_a($line->{field} => $line->{linked})
+						if $line->{linked} && 
+						   $line->{type} =~ /^int/;
 				}
 			}
 			
@@ -399,7 +401,7 @@ package AppCore::DBI;
 		my $record = ref $class ? $class : undef;
 		
 		print STDERR ref($class)."->stringify: id=[$id] (ref id? ".ref($id).")\n" if $DEBUG;
-		$record = ref $id ? $id : $class->retrieve($id) if defined $id;
+		$record = ref $id ? $id : $class->retrieve($id) if defined $id && $id =~ /^\d+$/;
 		#if($id && !defined $record)
 		#{
 			#$record = $class->retrieve($class->validate_string($id));
@@ -2947,7 +2949,7 @@ package $opts->{pkg};
 		my $found_option;
 		while(my $ref = $sth->fetchrow_hashref)
 		{
-			my $flag = $ref->{id} == $val;
+			my $flag = $val =~ /[a-z]/i ? $ref->{id} eq $val : $ref->{id} == $val;
 			$found_option = 1 if $flag;
 			push @list, {
 				value		=> $ref->{id},

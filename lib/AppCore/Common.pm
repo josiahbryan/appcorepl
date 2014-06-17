@@ -487,7 +487,6 @@ package AppCore::Common;
 		$string =~ s/(^\s|\s+$)//g;
 		if($string =~ /[^\s]+.*?<.*?\@.*?>/)
 		{
-			
 			my ($name, $email) = $string =~ /^\s*(.*)\s*?<((?:helpdesk-test|[A-Z0-9._%-+]+)\@[A-Z0-9.-]+\.[A-Z]{2,4})>/ig;
 			$name =~ s/(^\s|\s+$)//g;
 			$name =~ s/(^['"]|['"]$)//g;
@@ -926,7 +925,7 @@ package AppCore::Common;
 		my $dbh = AppCore::DBI->dbh;
 		my $get_arg = sub {
 			my $x = shift(@args);
-			return $x =~ /[^\d]/ ? $dbh->quote($x) : $x;
+			return $x eq '' || $x =~ /[^\d]/ ? $dbh->quote($x) : $x;
 		};
 		
 		$sql =~ s/\?/$get_arg->()/segi;
