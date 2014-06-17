@@ -352,7 +352,7 @@ package AppCore::Web::Form;
 				unless $meta->{auto};
 		}
 		push @xml, "\t\t<row>\n";
-		push @xml, "\t\t\t<input type='submit' value='Save Changes'/>\n";
+		push @xml, "\t\t\t<input type='submit' class='btn btn-primary' value='Save Changes'/>\n";
 		push @xml, "\t\t\t<a style='color:rgba(0,0,0,0.5)'   href='javascript:void(window.history.go(-1))'>Cancel</a>\n";
 		push @xml, "\t\t\t<a style='color:rgba(255,0,0,0.6)' href='\%\%page_path\%\%/delete' onclick='return confirm(\"Are you sure?\")'>Delete $meta->{class_noun}</a>\n";
 		push @xml, "\t\t</row>\n";
@@ -1234,7 +1234,7 @@ package AppCore::Web::Form;
 											.($length ? "size=$length ":"")
 											.($format ? "f:format="._quote($format)." ":"")
 											.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-											."class='text f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+											."class='text form-control f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
 											.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
 											." "
 											.($readonly ? 'readonly' : "")
@@ -1261,10 +1261,10 @@ package AppCore::Web::Form;
 								}
 								
 								push @html, "<script>",
-									"var hookFunction = window.databaseLookupHook;",
+									"\$(function() { var hookFunction = window.databaseLookupHook;",
 									"if(typeof(hookFunction) == 'function')",
 										"hookFunction(\$('#${label_id}'),'$url', '$bind_uuid');",
-									"</script>";
+									"});</script>";
 								
 								# Search btn
 								#/linux-icons/Bluecurve/16x16/stock/panel-searchtool.png
@@ -1741,7 +1741,7 @@ package AppCore::Web::Form;
 							.($length ? "size=$length ":"")
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-							."class='text ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+							."class='text form-control ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
 							.($val?" value='".encode_entities($val)."'":'')
 							." "
 							#.($readonly ? 'readonly' : "")

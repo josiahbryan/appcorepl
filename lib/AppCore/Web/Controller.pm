@@ -131,6 +131,19 @@ package AppCore::Web::Controller;
 		return $url;
 	}
 	
+	sub url
+	{
+		my $class = shift;
+		my $count = shift;
+		
+		die "No request in class stash (stash->{req} undef)"
+			if ! $class->stash->{req};
+			
+		my $url = $class->stash->{req}->page_path;
+		
+		return $url;
+	}
+
 	sub redirect_up
 	{
 		my $class = shift;
