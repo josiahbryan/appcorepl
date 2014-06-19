@@ -819,6 +819,10 @@ package AppCore::Web::Form;
 			}
 			elsif($name eq 'input' || $name eq 'row')
 			{
+				my $bootstrap_flag = $form->{'enable-bootstrap'} eq 'true' || $form->{'enable-bootstrap'} eq '1';
+				
+				my $bootstrap_form_control_class = $bootstrap_flag ? 'form-control' : '';
+				
 				#if(!$node->type && ($node->ref || $node->bind))
 				if($name eq 'row' && !$node->bind)
 				{
@@ -835,9 +839,11 @@ package AppCore::Web::Form;
 					}
 					
 					push @html, $t;
+					
+					my $wrap_class = $bootstrap_flag ? 'form-group' : 'form-row';
 
 					#push @html, $is_pairtab ? "<tr class='f-panelrow'><td colspan=2>" : "<div>";
-					push @html, $is_pairtab ? "<tr>" : "<div>", "\n";
+					push @html, $is_pairtab ? "<tr class='$wrap_class'>" : "<div class='$wrap_class'>", "\n";
 					
 					#$node->{label} = $node->{attrs}->{label} = $model_item->label if !defined $node->label;
 					$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess
@@ -851,11 +857,15 @@ package AppCore::Web::Form;
 						{
 							#push @html, '<td class="td-label" valign="top"'.(!$can_wrap?' nowrap':'').'>' if $is_pairtab;
 							push @html, $t, '<td class="td-label" valign="top"'.(!$can_wrap?' nowrap':'').'>'."\n" if $is_pairtab;
+							
+							my $label_class = $node->{attrs}->{'label-class'} || '';
 						
-							push @html, $t."\t".'<label>', 
+							push @html, $t."\t <label class='row-label $label_class'>", 
 								    _convert_newline($node->label), 
-								    ':</label> ';
-							push @html, "\n".$t.'</td>'."\n" if $is_pairtab;
+								    ':</label> ',
+								    "\n";
+								    
+							push @html, $t.'</td>'."\n" if $is_pairtab;
 						}
 						else
 						{
@@ -1049,7 +1059,14 @@ package AppCore::Web::Form;
 						
 						if(!$node->label && !$already_has_label)
 						{
-							$node->{label} =  $meta->{label} || $meta->{title};
+							$node->{label} =
+								$node->{attrs}->{label} = $meta->{label} || $meta->{title};
+						}
+						
+						if(!$node->placeholder)
+						{
+							$node->{placeholder} =  
+								$node->{attrs}->{placeholder} = $meta->{label} || $meta->{title};
 						}
 					}
 					
@@ -1110,8 +1127,15 @@ package AppCore::Web::Form;
 #								my $first_row_child = lc $parent->node eq 'row' && $node->id eq $parent->children->[0]->id;
 								push @html, $t, "\t", '<td class="td-label" valign="top"'.(!$can_wrap?' nowrap':'').'>', "\n" if $is_pairtab;
 								#push || $first_row_child;
+								
+								my $is_row_label = $node->node eq 'row';
+								
+								my $label_class = $node->{attrs}->{'label-class'} || '';
 							
-								push @html, $t, "\t\t", "<label for='$label_id' ".($render eq 'radio' ? "style='cursor:default !important'" : '').">", 
+								push @html, $t, "\t\t", "<label for='$label_id' ",
+									'class="'. ($is_row_label ? 'row-label' : '').' '.$label_class.'"',
+									($render eq 'radio' ? "style='cursor:default !important'" : ''),
+									'>', 
 									_convert_newline($node->label), 
 									':</label> ', "\n"  if !$hidden;
 								push @html, $t, "\t", '</td>', "\n" if $is_pairtab; # || $first_row_child;
@@ -1123,12 +1147,26 @@ package AppCore::Web::Form;
 							}
 							
 						}
+						
+						$node->{placeholder} = 
+							$node->{attrs}->{placeholder} =
+								$node->{label}
+									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
 					}
+					else
+					{
+						$node->{placeholder} = 
+							$node->{attrs}->{placeholder} =
+								AppCore::Common::guess_title($node->bind)
+									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
+					}	
 					
 # 					error("Error",{
 # 						already_has_label => $already_has_label,
 # 						html => encode_entities(join('',@html))
 # 					}) if $ref eq '#driver.comments';
+
+					#error($node) if $ref eq '#patient.state';
 					
 					#error($model_item->node,{length=>$length,type=>$type,format=>$format}) if $model_item->node eq 'parentopcode';
 					
@@ -1173,7 +1211,7 @@ package AppCore::Web::Form;
 							." id='$label_id'"
 							." rows=$rows"
 							." cols=$cols"
-							." class='text ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>"
+							." class='text form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>"
 							.$val
 							."</textarea>";
 						
@@ -1232,9 +1270,10 @@ package AppCore::Web::Form;
 									"<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'>",
 										"<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
 											.($length ? "size=$length ":"")
+											.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
 											.($format ? "f:format="._quote($format)." ":"")
 											.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-											."class='text form-control f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+											."class='text $bootstrap_form_control_class f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
 											.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
 											." "
 											.($readonly ? 'readonly' : "")
@@ -1739,9 +1778,10 @@ package AppCore::Web::Form;
 						#push @html, "$prefix<div style='display:inline'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' f:bind='$label_id' "
 						push @html, "$prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
 							.($length ? "size=$length ":"")
+							.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-							."class='text form-control ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+							."class='text $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
 							.($val?" value='".encode_entities($val)."'":'')
 							." "
 							#.($readonly ? 'readonly' : "")
