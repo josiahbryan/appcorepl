@@ -196,6 +196,42 @@ package AppCore::Web::Controller;
 		return Content::Page::Controller->current_view->breadcrumb_list->push(@_);
 	}
 	
+	sub send_template
+        {
+                my ($class, $file, $in_view) = @_;
+
+                $in_view = 1 if !defined $in_view;
+
+                return sub {
+                        my ($class, $req, $r) = @_;
+                        my $path = $file =~ /\// ? $file : '../tmpl/'.$file;
+                        my $tmpl = $class->get_template($path);
+                        die "$class: No template found for $path." if !$tmpl || !ref $tmpl;
+
+                        my $key = $file;
+                        $key =~ s/\./_/g;
+                        if(!$in_view)
+                        {
+                                $tmpl->param('current_'.$key => 1);
+                                return $r->output_data("text/html", $tmpl->output);
+                        }
+
+                        $class->stash->{view}->tmpl_param('current_'.$key => 1);
+                        return $class->respond($tmpl->output);
+                }
+        }
+
+        sub send_redirect
+        {
+                my ($class, $url) = @_;
+
+                return sub {
+                        my ($class, $req, $r) = @_;
+                        return $r->redirect($url);
+                }
+        }
+
+	
 };
 1;
 
