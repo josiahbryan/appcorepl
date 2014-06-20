@@ -187,6 +187,15 @@ package AppCore::Web::Controller;
 		
 		$class->router->dispatch($req);
 	}
+	
+	sub add_breadcrumb
+	{
+		my $class = shift;
+		my @crumb_args = @_;
+		
+		return Content::Page::Controller->current_view->breadcrumb_list->push(@_);
+	}
+	
 };
 1;
 
