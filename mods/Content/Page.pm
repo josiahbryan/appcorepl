@@ -1189,9 +1189,7 @@ package Content::Page::ThemeEngine;
 		{
 			$subnav = clone( $subnav );
 			
-			$subnav->{nav_path} ||= [];
-			
-			my @tmp = @{$subnav->{nav_path}};
+			my @tmp = @{$subnav->{nav_path} || []};
 			push @tmp, @list;
 			
 			my @final;

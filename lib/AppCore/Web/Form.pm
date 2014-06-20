@@ -3,6 +3,10 @@ use strict;
 =begin comment
 	Package: AppCore::Web::Form
 	
+	Example Use of generate_stub_form:
+		APPCORE_CONFIG=/opt/ncs.jbiconsult.com/conf/appcore.conf.pl perl -Mlib=www/appcore/lib -MAppCore::Common -Mlib=lib -MNCS::Patient -MAppCore::Web::Form -e 'print AppCore::Web::Form->generate_stub_form("NCS::Patient")'
+	
+	
 	(For a complete example, see __DATA__, below - search for "## File" to see individual files.)
 	
 	Turns ...

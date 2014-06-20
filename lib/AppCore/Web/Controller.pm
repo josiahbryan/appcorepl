@@ -114,7 +114,7 @@ package AppCore::Web::Controller;
 		my $class = shift;
 		my $url   = shift;
 		die "No 'r' object in class->stash'" if !$class->stash->{r};
-		
+		#die Dumper $url;
 		return $class->stash->{r}->redirect($url);
 	}
 	

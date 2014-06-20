@@ -22,7 +22,7 @@ package AppCore::Web::Common;
 	@EXPORT = qw/HTTP get_full_url url_encode url_decode 
 		escape unescape
 		param Vars
-		redirect getcookie setcookie 
+		getcookie setcookie 
 		load_template
 		error
 		encode_entities decode_entities
