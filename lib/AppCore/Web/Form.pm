@@ -272,40 +272,52 @@ package AppCore::Web::Form;
 				$class_obj = $form_opts->{$class_obj_name};
 				eror("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
 				
-				my $meta = $class_obj->field_meta($class_key);
-				if($meta->{linked} && $req_val !~ /^\d+$/)
+				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 				{
-					my $err = undef;
+					my $meta = $class_obj->field_meta($class_key);
+					if($meta->{linked} && $req_val !~ /^\d+$/)
+					{
+						my $err = undef;
+						eval
+						{
+							$req_val = $meta->{linked}->validate_string($req_val);
+							$err = $@;
+						};
+						$@ = $err if !$@;
+						if($@)
+						{
+							error("Error with $meta->{title}",
+								"There was an error in what you typed for $meta->{title}:".
+								"<h1 style='color:red'>$@</h1>".
+								"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
+								"<br><br>");
+						}
+					}
+					
 					eval
 					{
-						$req_val = $meta->{linked}->validate_string($req_val);
-						$err = $@;
+						$class_obj->set($class_key, $req_val);
+						
+						# Used to update() below on $class_obj
+						$class_obj_refs->{$class_obj_name} = $class_obj;
+						
+						print STDERR "$ref: Storing '$req_val'\n";
 					};
-					$@ = $err if !$@;
 					if($@)
 					{
-						error("Error with $meta->{title}",
-							"There was an error in what you typed for $meta->{title}:".
-							"<h1 style='color:red'>$@</h1>".
-							"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
-							"<br><br>");
+						error("Error getting value for '$ref'",
+							"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
 					}
 				}
-				
-				eval
+				elsif(ref $class_obj eq 'HASH')
 				{
-					$class_obj->set($class_key, $req_val);
-					
-					# Used to update() below on $class_obj
-					$class_obj_refs->{$class_obj_name} = $class_obj;
-					
-					print STDERR "$ref: Storing '$req_val'\n";
-				};
-				if($@)
-				{
-					error("Error getting value for '$ref'",
-						"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
+					$class_obj->{$class_key} = $req_val;
 				}
+				else
+				{
+					die "Object for '$class_obj_name' in form_opts is not a HASH or an AppCore::DBI";
+				}
+				
 			}
 # 			else
 # 			{
@@ -483,6 +495,8 @@ package AppCore::Web::Form;
 		$self->{form_opts} = $form_opts;
 		
 		my $dom = $self->dom;
+		
+		$self->{field_meta} = {};
 		
 		my $html = $self->_render_html($dom);
 		
@@ -953,7 +967,7 @@ package AppCore::Web::Form;
 								error("No object given for '$ref'","Found '$class_obj' in options given - but it's the string, not the a reference to a live object. You can set 'allow_undef_bind' to a true value in the options given to render() or you can pass a AppCore::DBI object");
 							}
 						}
-						else
+						elsif(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 						{
 							eval
 							{
@@ -965,6 +979,15 @@ package AppCore::Web::Form;
 								error("Error getting value for '$ref'",
 									"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
 							}
+						}
+						elsif(ref $class_obj eq 'HASH')
+						{
+							$val = $class_obj->{$class_key};
+						}
+						else
+						{
+							error("Error getting value for '$ref'",
+								"Object in form_opts for '$class_obj_name' is a ".ref($class_obj)." but not a HASH or an AppCore::DBI object");
 						}
 						
 						#$node->{class} = $class_key;
@@ -1021,9 +1044,10 @@ package AppCore::Web::Form;
 					push @html, $t;
 
 					
-					my $type   = $node->type;
+					my $type = $node->type;
 					
-					if($class_obj)
+					if($class_obj &&
+					   UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 					{
 						my $meta = $class_obj->field_meta($class_key);
 						error("No Meta for '$class_key'",
@@ -1777,19 +1801,46 @@ package AppCore::Web::Form;
 							.($val?">".encode_entities($val)."</$nn>":'>')
 							.($suffix ? "<label for='$label_id'>$suffix</label>" : "");
 					}
+					elsif($type eq 'range')
+					{
+						my $min = $node->min || 0;
+						my $max = $node->max || 100;
+						my $step = $node->step || 10;
+						
+						push @html, "$prefix<select data-type='range' "
+							." name='$ref'"
+							." id='$label_id'"
+							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>\n";
+						
+ 						my $last_step = 0;
+ 						my $cur_step  = 0;
+ 						for ($cur_step = $min; $cur_step <= $max; $cur_step += $step)
+ 						{
+ 							my $selected = $val > $last_step && $val <= $cur_step ? ' selected' : '';
+ 							push @html, "$prefix\t<option${selected}>$cur_step</option>\n";
+ 							$last_step = $cur_step;
+ 						}
+						
+						push @html, "</select>";
+						
+						# Disabling for now due to IExplore bug
+						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
+					}
 					else # All other rendering types (string, etc)
 					{
 						#push @html, "$prefix<div style='display:inline'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' f:bind='$label_id' "
-						push @html, "$prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
+						push @html, "$prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 
+								$node->{attrs}->{'type-hint'} ? $node->{attrs}->{'type-hint'} : 'text')."' "
 							.($length ? "size=$length ":"")
 							.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							."class='text $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-							.($val?" value='".encode_entities($val)."'":'')
-							." "
+							.($val?" value='".encode_entities($val)."'":'');
+							
+						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
 							#.($readonly ? 'readonly' : "")
-							." id='$label_id'/>".($suffix ? "<label for='$label_id'>$suffix</label>" :"")."\n";
+						push @html," id='$label_id'/>".($suffix ? "<label for='$label_id'>$suffix</label>" :"")."\n";
 
 						unless($hidden)
 						{
