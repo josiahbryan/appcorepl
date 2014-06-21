@@ -410,6 +410,7 @@ package AppCore::Web::Router;
 		else
 		{
 			eval('use '.$package);
+			die $@ if $@ && $@ !~ /Can\'t locate/;
 			undef $@;
 			
 # 			if($package->can('new'))

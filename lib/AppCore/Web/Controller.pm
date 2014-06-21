@@ -81,7 +81,10 @@ package AppCore::Web::Controller;
 	
 	sub setup_routes
 	{
-		# TODO: Reimplement in subclass
+		# NOTE: Reimplement in subclass
+		
+		my $class = shift;
+		warn __PACKAGE__.": You need to reimplement 'setup_routes()' in the '$class' class";
 	}
 	
 	sub output
@@ -181,7 +184,7 @@ package AppCore::Web::Controller;
 		
 		$class->setup_routes
 			if !$class->router->has_routes;
-		
+	
 		warn $class.'::dispatch: No routes setup in router(), nothing to dispatch'
 			if !$class->router->has_routes;
 		
