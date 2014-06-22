@@ -956,11 +956,13 @@ package AppCore::Web::Form;
 						{
 							if($self->{form_opts}->{allow_undef_bind})
 							{
+								my $defaults = $self->{form_opts}->{defaults} || {};
+								
 								my $meta = $class_obj->field_meta($class_key);
-								if($meta)
-								{
-									$val = $meta->{default} || undef;
-								}
+								$val = $defaults->{$ref} ? $defaults->{$ref} : 
+								       $meta ? $meta->{default} : undef;
+								       
+								#die Dumper $defaults, $val, $ref;
 							}
 							else
 							{
@@ -1002,7 +1004,6 @@ package AppCore::Web::Form;
 					
 					$node->{value} = $val;
 					
-					
 					#eval
 					#{
 					#$val = $model_item->value;
@@ -1013,6 +1014,9 @@ package AppCore::Web::Form;
 					# TODO: Load value from form opts
 					
 					$val = $node->default if !$val;
+					
+					#error("\$val",Dumper([$val,$node]));
+					
 					
 					# TODO: Add f:form 'readonly' flag
 					my $readonly = $node->readonly eq 'true' || $self->{form_opts}->{readonly} ? 2 : 0; # TODO: Why 2?
