@@ -1136,7 +1136,9 @@ package AppCore::Web::Form;
 					my $v_visb = lc $node->$k_visb;
 					my $vis_border = $v_visb eq 'true' || $v_visb eq '1';
 					
-					push @html, "<tr id='$rowid' ".($vis_border ? "class='f-border'":"").">\n" if $is_pairtab;
+					push @html, $is_pairtab ?
+						"<tr id='$rowid' ".($vis_border ? "class='f-border'":"").">\n" :
+						"<div class='input-group' id='$rowid' ".($vis_border ? "class='f-border'":"").">\n";
 					
 					my $empty_label = 0;
 					
@@ -1224,7 +1226,7 @@ package AppCore::Web::Form;
 					
 					if($readonly)
 					{
-						push @html, "$prefix<b><span class='f-input-readonly text ".($node->class?$node->class.' ':'')."' id='$label_id' "
+						push @html, $t."\t $prefix<b><span class='f-input-readonly text ".($node->class?$node->class.' ':'')."' id='$label_id' "
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							.">".$val."</span></b>".($suffix ? "<label for='$label_id'>$suffix</label>" : ""). 
@@ -1234,7 +1236,7 @@ package AppCore::Web::Form;
 					{
 						my $rows = $node->rows || 10;
 						my $cols = $node->cols || 40;
-						push @html, "<textarea"
+						push @html, $t."\t <textarea"
 							." name='$ref'"
 							." id='$label_id'"
 							." rows=$rows"
@@ -1294,7 +1296,7 @@ package AppCore::Web::Form;
 							{
 		
 								
-								push @html, $prefix,
+								push @html, $t."\t $prefix",
 									"<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'>",
 										"<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
 											.($length ? "size=$length ":"")
@@ -1793,7 +1795,7 @@ package AppCore::Web::Form;
 					elsif($render eq 'div' || $render eq 'span')
 					{
 						my $nn = $render eq 'div' ? 'div' : 'span';
-						push @html, "$prefix<$nn "
+						push @html, "$t\t $prefix<$nn "
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							."class='".($node->class ? $node->class.' ':'')."' "
@@ -1829,10 +1831,10 @@ package AppCore::Web::Form;
 					else # All other rendering types (string, etc)
 					{
 						#push @html, "$prefix<div style='display:inline'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' f:bind='$label_id' "
-						push @html, "$prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 
+						push @html, $t."\t $prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 
 								$node->{attrs}->{'type-hint'} ? $node->{attrs}->{'type-hint'} : 'text')."' "
 							.($length ? "size=$length ":"")
-							.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
+							.($node->placeholder ? "placeholder='".$node->placeholder."' ":"")
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							."class='text $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
@@ -1945,7 +1947,7 @@ package AppCore::Web::Form;
 # 						#push @html, $is_pairtab ? "$t</td></tr>\n" : "$t<br/>\n";
 # 					}
 					
-					push @html, "$t</td></tr>\n" if $is_pairtab;
+					push @html, "$t" . ($is_pairtab ? "</td></tr><!--/.end input-group [pairtab]-->\n" : "</div><!--/.end input-group [div]-->\n");
 					$consumed = 1;
 				}
 			}
