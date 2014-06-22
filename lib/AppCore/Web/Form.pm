@@ -1142,7 +1142,7 @@ package AppCore::Web::Form;
 					
 					push @html, $is_pairtab ?
 						"<tr id='$rowid' ".($vis_border ? "class='f-border'":"").">\n" :
-						"<div class='input-group' id='$rowid' ".($vis_border ? "class='f-border'":"").">\n";
+						"<div class='form-input-group' id='$rowid' ".($vis_border ? "class='f-border'":"").">\n";
 					
 					my $empty_label = 0;
 					
