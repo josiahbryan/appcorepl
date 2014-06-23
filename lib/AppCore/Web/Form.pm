@@ -1233,7 +1233,7 @@ package AppCore::Web::Form;
 						push @html, $t."\t $prefix<b><span class='f-input-readonly text ".($node->class?$node->class.' ':'')."' id='$label_id' "
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-							.">".$val."</span></b>".($suffix ? "<label for='$label_id'>$suffix</label>" : ""). 
+							.">".$val."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
 							($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
 					}
 					elsif($type eq 'text')
@@ -1313,7 +1313,7 @@ package AppCore::Web::Form;
 											.($readonly ? 'readonly' : "")
 											." id='$label_id'/>",
 									"</div>",
-									($suffix ? "<label for='$label_id'>$suffix</label>\n" : "");
+									($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" : "");
 									
 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
 								
@@ -1514,7 +1514,7 @@ package AppCore::Web::Form;
 							#onchange='FormMgr.fieldChanged(this.getAttribute(\"f:bind\"),this.value)' 
 							#push @html, $t, "\t<input type='hidden' value='".encode_entities($val)."' id='$label_id'/>\n";
 							
-							push @html, $t, "\t<label for='$label_id'>$suffix</label>\n" if $suffix;
+							push @html, $t, "\t<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" if $suffix;
 							push @html, $t, "\t<br>\n" if $auto_hint && $hint_pos eq 'below';
 							push @html, $t, "\t<span class='hint' id='hint_$label_id'></span>\n";
 							push @html, $t, "\t<script>setTimeout(function(){\$('#$label_id').change()},5);</script>\n";
@@ -1791,7 +1791,7 @@ package AppCore::Web::Form;
 # 								push @html, $t,"<script>\$('#$label_id').ext = new Ext.form.ComboBox({typeAhead: true,triggerAction: 'all',transform:'$label_id',forceSelection:true});</script>\n";
 # 							}
 							
-							push @html, "$t<label for='$label_id'>$suffix</label>" if $suffix;
+							push @html, "$t<label for='$label_id' class='form-input-suffix'>$suffix</label>" if $suffix;
 							push @html, ($auto_hint && $hint_pos eq 'below' ? "<br>" : "")
 									."<span class='hint' id='hint_$label_id'>";
 						}
@@ -1805,7 +1805,7 @@ package AppCore::Web::Form;
 							."class='".($node->class ? $node->class.' ':'')."' "
 							."id='$label_id'"
 							.($val?">".encode_entities($val)."</$nn>":'>')
-							.($suffix ? "<label for='$label_id'>$suffix</label>" : "");
+							.($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
 					}
 					elsif($type eq 'range')
 					{
@@ -1846,7 +1846,7 @@ package AppCore::Web::Form;
 							
 						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
 							#.($readonly ? 'readonly' : "")
-						push @html," id='$label_id'/>".($suffix ? "<label for='$label_id'>$suffix</label>" :"")."\n";
+						push @html," id='$label_id'/>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" :"")."\n";
 
 						unless($hidden)
 						{
