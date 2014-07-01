@@ -260,9 +260,6 @@ package AppCore::Web::Form;
 			my $class_obj_name = undef;
 			
 			my $req_val = $req->{$ref};
-			error("Value Not Defined for $ref",
-				"Value not defined for '$ref' in data posted to server")
-				if !defined $req_val;
 			
 			if($ref =~ /^#(.*?)\.(.*?)$/)
 			{
@@ -274,6 +271,10 @@ package AppCore::Web::Form;
 				
 				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 				{
+					error("Value Not Defined for $ref",
+						"Value not defined for '$ref' in data posted to server")
+						if !defined $req_val;
+					
 					my $meta = $class_obj->field_meta($class_key);
 					if($meta->{linked} && $req_val !~ /^\d+$/)
 					{
@@ -1841,6 +1842,7 @@ package AppCore::Web::Form;
 							." name='$ref'"
 							." id='$label_id'"
 							." ".($val ? "checked" : "")
+							." value='1' "
 							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>\n";
 							
 						if(!$already_has_label && $node->label)
