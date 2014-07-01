@@ -878,7 +878,7 @@ package AppCore::Web::Form;
 							
 							my $label_class = $node->{attrs}->{'label-class'} || '';
 						
-							push @html, $t."\t <label class='row-label $label_class'>", 
+							push @html, $t."\t <label class='row-label $label_class' title=\"".encode_entities($node->label)."\">", 
 								    _convert_newline($node->label), 
 								    ':</label> ',
 								    "\n";
@@ -1120,7 +1120,8 @@ package AppCore::Web::Form;
 					$length = 9 if $type =~ /(int|float|num)/ && !$length;
 					#error("",[$length,$node->length,$node->length]) if $node->node eq 'title';
 					my $render = lc $node->render || 'ajax_input';
-					$render = 'select' if $type eq 'enum' && $render ne 'radio';
+					$render = 'select'   if $type eq 'enum' && $render ne 'radio';
+					$type = 'bool' if $type eq 'int' && $length == 1;
 					
 					if($type eq 'enum' && $render eq 'select' && !$node->render)
 					{
@@ -1150,7 +1151,7 @@ package AppCore::Web::Form;
 					{
 						#$node->{label} = $node->{attrs}->{label} = $model_item->label if !defined $node->label;
 						$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess
-						if($node->label)
+						if($node->label && $type ne 'bool')
 						{
 							
 							my $text = $node->label;
@@ -1169,6 +1170,7 @@ package AppCore::Web::Form;
 								push @html, $t, "\t\t", "<label for='$label_id' ",
 									'class="'. ($is_row_label ? 'row-label' : '').' '.$label_class.'"',
 									($render eq 'radio' ? "style='cursor:default !important'" : ''),
+									" title=\"".encode_entities($node->label)."\"",
 									'>', 
 									_convert_newline($node->label), 
 									':</label> ', "\n"  if !$hidden;
@@ -1224,6 +1226,7 @@ package AppCore::Web::Form;
 					
 					if($hint && ($hint_pos eq 'above' || $hint_pos eq 'top'))
 					{
+						$hint = text2html($hint, 1);
 						push @html, "<span class='hint'>$hint</span><br>" if !$hidden;
 					}
 					
@@ -1500,7 +1503,7 @@ package AppCore::Web::Form;
 									.($hint_column ? " f:hint="._quote(_entity_encode($op->{hint})) : "")
 									.($op->{selected} ? " checked":"")
 									." id='$radio_id'"
-									." onchange='\$(\"#$label_id\").val(this.value);if(this.getAttribute(\"f:hint\")) {\$(\"#hint_$label_id\").html(this.getAttribute(\"f:hint\"));}' "
+									." onchange='\$(\"#$label_id\").val(this.value);var elm=\$(\"#hint_$label_id\");if(this.getAttribute(\"f:hint\")) {elm.html(this.getAttribute(\"f:hint\").show())}else{elm.hide()}' "
 									." onkeypress='var t=this;setTimeout(function(){t.onchange()},5)'"
 									."><label for='$radio_id' style='cursor:pointer'> "
 									._convert_spaces_to_nbsp(_entity_encode(_convert_newline($op->{text})))
@@ -1516,7 +1519,7 @@ package AppCore::Web::Form;
 							
 							push @html, $t, "\t<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" if $suffix;
 							push @html, $t, "\t<br>\n" if $auto_hint && $hint_pos eq 'below';
-							push @html, $t, "\t<span class='hint' id='hint_$label_id'></span>\n";
+							push @html, $t, "\t<span class='hint' id='hint_$label_id' style='display:none'></span>\n";
 							push @html, $t, "\t<script>setTimeout(function(){\$('#$label_id').change()},5);</script>\n";
 							
 							if($self->{_extjs})
@@ -1832,6 +1835,37 @@ package AppCore::Web::Form;
 						# Disabling for now due to IExplore bug
 						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
 					}
+					elsif($type eq 'bool')
+					{
+						push @html, "$prefix<input type='checkbox' "
+							." name='$ref'"
+							." id='$label_id'"
+							." ".($val ? "checked" : "")
+							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>\n";
+							
+						if(!$already_has_label && $node->label)
+						{
+							my $text = $node->label;
+							$text=~s/(^\s+|\s+$)//g;
+							
+							if($text)
+							{
+								my $is_row_label = $node->node eq 'row';
+								
+								my $label_class = $node->{attrs}->{'label-class'} || '';
+							
+								push @html, $t, "\t\t", "<label for='$label_id' ",
+									'class="'. ($is_row_label ? 'row-label' : '').' '.$label_class.'"',
+									($render eq 'radio' ? "style='cursor:default !important'" : ''),
+									" title=\"".encode_entities($node->label)."\"",
+									'>', 
+									_convert_newline($node->label), 
+									'</label> ', "\n"  if !$hidden;
+							}
+						}	
+						# Disabling for now due to IExplore bug
+						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
+					}
 					else # All other rendering types (string, etc)
 					{
 						#push @html, "$prefix<div style='display:inline'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' f:bind='$label_id' "
@@ -1932,6 +1966,7 @@ package AppCore::Web::Form;
 					
 					if($hint && $hint_pos ne 'above')
 					{
+						$hint = text2html($hint, 1);
 						push @html, ($hint_pos eq 'below' ? '<br>': '') . "<span class='hint'>$hint</span>"; # .($is_pairtab ? "" : "<br>");
 					}
 					

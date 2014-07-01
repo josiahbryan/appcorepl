@@ -837,7 +837,7 @@ package AppCore::Web::Common;
 		}
 
 		# Auto italic/underline/bold based on common conventions in text
-		$html =~ s/\*([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
+		$html =~ s/\*([A-Za-z0-9,\s+\-\!\@\#\$\%\^\&\*\(\)]+)\*/<b>$1<\/b>/g;
 		#$html =~ s/\/([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)\//<i>$1<\/i>/g;
 		#$html =~ s/_([A-Za-z0-9\!\@\#\$\%\^\&\*\(\)]+)_/<u>$1<\/u>/g;
 		$html =~ s/===([^=]+?)===/<h3>$1<\/h3>/g;
