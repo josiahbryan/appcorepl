@@ -699,7 +699,7 @@ package AppCore::Web::Form;
 			my $FORM_TAG_NAME = lc $node->is_form_fragment eq 'true' || $node->is_form_fragment eq '1' || !$node->{attrs}->{action} ? 'div' : 'form';
 			$self->{is_form_fragment} = 1 if $FORM_TAG_NAME eq 'div';
 			
-			push @html, $t, "\t<$FORM_TAG_NAME style='border:0;padding:0;background:0;margin:0'";
+			push @html, $t, "\t<$FORM_TAG_NAME style='border:0;padding:0;background:0;margin:0' ";
 			push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
 			push @html, " name='$form->{id}' " if !$node->attrs->{name};
 			push @html, " id='$form->{id}'" if !$node->{attrs}->{id};
@@ -1737,7 +1737,10 @@ package AppCore::Web::Form;
 								." f:model_item_class='$class'"
 								." class='".($node->class?$node->class:'')."'"
 								." id='$label_id'"
-								." onkeypress='var t=this;setTimeout(function(){t.onchange()},5)'>\n".
+								." onkeypress='var t=this;setTimeout(function(){t.onchange()},5)' ";
+							
+							push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
+							push @html, ">\n".
 								(join("\n",
 									map { "$t\t".
 										"<option value="
@@ -1776,18 +1779,18 @@ package AppCore::Web::Form;
 									}
 								}
 								
-								push @html, $t,qq|<script>setTimeout(function(){
-										\$('#$label_id').oldAjaxFkSelectOnchange = \$('#$label_id').onchange;
-										\$('#$label_id')._ajax_fk_select_onchange = _ajax_fk_select_onchange;
-										\$('#$label_id').onchange = function(evt)
-										{
-											if(\$('#$label_id').oldAjaxFkSelectOnchange) {
-												\$('#$label_id').oldAjaxFkSelectOnchange();
-											}
-											\$('#$label_id')._ajax_fk_select_onchange(evt);
-										};
-										\$('#$label_id').onchange()
-									},5);</script>\n|;
+# 								push @html, $t,qq|<script>setTimeout(function(){
+# 										\$('#$label_id').oldAjaxFkSelectOnchange = \$('#$label_id').onchange;
+# 										\$('#$label_id')._ajax_fk_select_onchange = _ajax_fk_select_onchange;
+# 										\$('#$label_id').onchange = function(evt)
+# 										{
+# 											if(elm.oldAjaxFkSelectOnchange) {
+# 												\$('#$label_id').oldAjaxFkSelectOnchange();
+# 											}
+# 											\$('#$label_id')._ajax_fk_select_onchange(evt);
+# 										};
+# 										\$('#$label_id').onchange()
+# 									},5);</script>\n|;
 
 							}
 # 							elsif($self->{_extjs} && !$extjs_disable)
@@ -1797,7 +1800,7 @@ package AppCore::Web::Form;
 							
 							push @html, "$t<label for='$label_id' class='form-input-suffix'>$suffix</label>" if $suffix;
 							push @html, ($auto_hint && $hint_pos eq 'below' ? "<br>" : "")
-									."<span class='hint' id='hint_$label_id'>";
+									."<span class='hint' id='hint_$label_id' style='display:none'></span>";
 						}
 					}
 					elsif($render eq 'div' || $render eq 'span')
@@ -1820,7 +1823,9 @@ package AppCore::Web::Form;
 						push @html, "$prefix<select data-type='range' "
 							." name='$ref'"
 							." id='$label_id'"
-							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>\n";
+							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."' ";
+						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
+						push @html, ">\n";
 						
  						my $last_step = 0;
  						my $cur_step  = 0;
@@ -1878,7 +1883,7 @@ package AppCore::Web::Form;
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							."class='text $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-							.($val?" value='".encode_entities($val)."'":'');
+							.($val?" value='".encode_entities($val)."' ":'');
 							
 						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
 							#.($readonly ? 'readonly' : "")
@@ -2218,7 +2223,7 @@ package AppCore::Web::Form;
 					}
 					push @html, $t, "</".$name.">\n";
 				}
-				elsif(($node->value && !$node->{attrs}->{value}) || $name eq 'script')
+				elsif(($node->value && !$node->{attrs}->{value}) || $name eq 'script' || $name eq 'style')
 				{
 					push @html, '>';
 					push @html, _perleval($node->value) unless $node->src;

@@ -505,8 +505,8 @@ $jq_footer
 		{
 			my ($ext) = $file =~ /\.(\w+)$/;
 			my $mime = $ext eq 'png' ? 'image/png' :
-				$ext eq 'gif' ? 'image/gif' : 
-				$ext eq 'jpg' ? 'image/jpg' : 'image/unknown';
+				   $ext eq 'gif' ? 'image/gif' : 
+				   $ext eq 'jpg' ? 'image/jpg' : 'image/unknown';
 			
 			my $contents = read_file($file);
 			my $base64   = encode_base64($contents); 
