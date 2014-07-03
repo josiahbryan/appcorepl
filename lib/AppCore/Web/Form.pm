@@ -1848,7 +1848,9 @@ package AppCore::Web::Form;
 							." id='$label_id'"
 							." ".($val ? "checked" : "")
 							." value='1' "
-							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>\n";
+							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."' ";#>\n";
+						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
+						push @html, ">\n";
 							
 						if(!$already_has_label && $node->label)
 						{
