@@ -1097,20 +1097,35 @@ package AppCore::DBI;
 		my $include_empty = shift || 0;
 		
 		my $debug = shift || 0;
+		$debug = 0;
 		
 		
 		my $q_table = $dbh->quote_identifier($table);
 		my $q_primary = $dbh->quote_identifier($pri);
-		my ($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
 		
-		#print STDERR "\$include_empty='$include_empty'\n";
-		unless ($include_empty)
+		my ($fklookup_sql,@args);
+		
+		if(0)
 		{
+			($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
 			
-			my $text = $class->get_stringify_sql;
-			$fklookup_sql =~ s/where/where ($text <> "") and/i;
-			#print STDERR "after sub:
+			#print STDERR "\$include_empty='$include_empty'\n";
+			unless ($include_empty)
+			{
+				
+				my $text = $class->get_stringify_sql;
+				$fklookup_sql =~ s/where/where ($text <> "") and/i;
+				#print STDERR "after sub:
+			}
 		}
+		else
+		{
+			my $text = $class->get_stringify_sql;
+			
+			$fklookup_sql = qq{$q_table where ($text like ?) and ($text <> "")};
+			@args = ('%'.$val.'%');
+		}
+		
 						
 		my $ob = $class->get_orderby_sql();
 		my $list_sql = "select $q_primary as `id`, ".$class->get_stringify_sql." as `text` from ".$fklookup_sql;
@@ -1190,6 +1205,7 @@ package AppCore::DBI;
 		my $adder = shift || 0; # Partial matching.. ?
 		
 		my $debug = shift || 0; 
+		#$debug = 1;
 		
 		print STDERR "$class->validate_string($val): Start (fkclause=$fkclause, check_pri=$check_pri,multi_match=$multi_match,adder=$adder,q_table=$q_table,q_pri=$q_primary)\n" if $debug;
 		
