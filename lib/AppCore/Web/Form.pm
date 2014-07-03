@@ -267,7 +267,7 @@ package AppCore::Web::Form;
 				$class_key = $2;
 				
 				$class_obj = $form_opts->{$class_obj_name};
-				eror("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
+				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
 				
 				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 				{
