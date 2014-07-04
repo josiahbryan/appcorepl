@@ -610,8 +610,8 @@ package AppCore::DBI::SimpleListModel;
 								#print STDERR "mark3\n";
 								my $inq = {$col=>$val};
 								my ($tables,$cl,@args2) = $class->can('get_where_clause')     ? $class->get_where_clause($inq,2) : 
-											$class->can('compose_where_clause') ? $class->compose_where_clause($inq,$class->_legacy_typehash,undef,2) :
-											(undef,"$db_quoted.$table_quoted.".$dbh->quote_identifier($col).'=?',$val);	
+											  $class->can('compose_where_clause') ? $class->compose_where_clause($inq,$class->_legacy_typehash,undef,2) :
+											  (undef,"$db_quoted.$table_quoted.".$dbh->quote_identifier($col).'=?',$val);	
 								next if $cl eq '1';
 								
 								push @clause, "($cl)";
@@ -637,6 +637,21 @@ package AppCore::DBI::SimpleListModel;
 		$self->{is_filtered} = $searching_flag;
 		
 		my $clause = @clause ? '(' . join (($advanced_filters ? ' and ' : ' or '), @clause) . ')' : '1';
+		
+		# Added 4/4/14 - Josiah
+		# Enable searching by stringified value.
+		# E.g. if we have an object that string format is ('#first', ' ', '#last'),
+		# and user searches for "John Smith" - the above search code wont find it, because John Smith isn't in any one column -
+		# it's in two columns.
+		{
+			my $text = $class->get_stringify_sql;
+			
+			my $string_clause = qq{(($text like ?) and ($text <> ""))};
+			push @args, ('%'.$filter.'%');
+			
+			$clause = @clause ? "($clause or $string_clause)" : $string_clause;
+		}
+		
 		@clause = ();
 		
 		
