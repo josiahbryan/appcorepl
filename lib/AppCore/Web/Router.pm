@@ -212,7 +212,7 @@ package AppCore::Web::Router;
 	{
 		my ($self, $route, $args) = @_;
 		
-		$args = { action => $args } if !ref $args;
+		$args = { action => $args } if ref $args ne 'HASH';
 		
 		if($args->{action} =~ /(^[^\s]+)\.([\w_\d]+)$/)
 		{
