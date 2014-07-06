@@ -212,6 +212,12 @@ package AppCore::Web::Router;
 	{
 		my ($self, $route, $args) = @_;
 		
+		if($route ne '/' && $route =~ /^\//)
+		{
+			warn __PACKAGE__.'::route: Warning: Removing leading / from '.$route.' - only use a leading / in routes for the root page - leave off the leading / for all other routes. Called from: ' .called_from();
+			$route =~ s/^\///g;
+		}
+		
 		$args = { action => $args } if ref $args ne 'HASH';
 		
 		if($args->{action} =~ /(^[^\s]+)\.([\w_\d]+)$/)
