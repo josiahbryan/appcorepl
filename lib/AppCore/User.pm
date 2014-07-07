@@ -67,8 +67,18 @@ package AppCore::User;
 			{	field	=> 'lkey',		type	=> 'varchar(255)' }, # one-time-use login key
 		],
 		
-		after_create => sub {
-			__PACKAGE__->find_or_create({ user => 'admin', pass => 'admin', email => $AppCore::Config::WEBMASTER_EMAIL, display => 'admin', first => 'admin' });
+		schema_update_opts => {
+			
+			indexes	=> {
+				idx_user	=> [qw/user/],
+				idx_user_pass	=> [qw/user pass/],
+				idx_email	=> [qw/user/],
+				idx_email_pass	=> [qw/email pass/],
+			},
+			
+			after_create => sub {
+				__PACKAGE__->find_or_create({ user => 'admin', pass => 'admin', email => $AppCore::Config::WEBMASTER_EMAIL, display => 'admin', first => 'admin' });
+			},
 		},
 	
 	});
