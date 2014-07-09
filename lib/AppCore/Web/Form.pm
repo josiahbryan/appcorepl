@@ -1829,6 +1829,7 @@ package AppCore::Web::Form;
 						
  						my $last_step = 0;
  						my $cur_step  = 0;
+ 						push @html, "$prefix\t<option>-</option>\n";
  						for ($cur_step = $min; $cur_step <= $max; $cur_step += $step)
  						{
  							my $selected = $val > $last_step && $val <= $cur_step ? ' selected' : '';
