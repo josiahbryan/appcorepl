@@ -404,7 +404,8 @@ package AppCore::Web::Form;
 		#return;
 		
 		#error("No Data in Blob","No Data in Blob") if !$data;
-		return $blob if !$data;
+		return $blob if length($data) < 3; # Cannot have a complete tag in less 3 characters
+		#error(length($data));
 		
 		#error("Error in Blob","Error in blob: $@<br><textarea>$data</textarea>");
 		
