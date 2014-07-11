@@ -384,11 +384,24 @@ package AppCore::Web::Form;
 		my $class = shift;
 		my $tmpl = shift;
 		#my $viz_style = lc( shift || 'html' );
+		
 		my $blob = ref $tmpl ? $tmpl->output : $tmpl;
 		
 		my $form_opts = shift || {};
 		
-		my ($data) = $blob =~ /(<f:form.*>.*<\/f:form>)/sgi;
+		# For some reason, this regex (and the one at the end to replace the content)
+		# was taking > 9 seconds (combined - this one 4.9 sec) on a 375K HTML file. 
+		# Why?? Don't know. But using index and substr (as shown below) resulted in sub 30ms times (total)
+		#my ($data) = $blob =~ /(<f:form.*>.*<\/f:form>)/si;
+		
+		my $tag_start = '<f:form';
+		my $tag_end   = '</f:form>';
+		my $idx_start = index($blob, $tag_start);
+		my $idx_end   = index($blob, $tag_end);
+		my $data_length = $idx_end - $idx_start + length($tag_end);
+		my $data = substr($blob, $idx_start, $data_length);
+		#print $data;
+		#return;
 		
 		#error("No Data in Blob","No Data in Blob") if !$data;
 		return $blob if !$data;
@@ -410,7 +423,10 @@ package AppCore::Web::Form;
 		#return $output unless $viz_style eq 'html';
 		#error($output);
 		#error("","<br><textarea rows=35 cols=150>$output</textarea>");
-		$blob =~ s/(<f:form.*>.*<\/f:form>)/$output/sgi;
+		
+		# Using substr instead of the regex was MUCH faster for the search/replace
+		#$blob =~ s/(<f:form.*>.*<\/f:form>)/$output/sgi;
+		substr($blob, $idx_start, $data_length, $output);
 		
 		return $blob;
 	}

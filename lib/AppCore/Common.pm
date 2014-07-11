@@ -838,7 +838,8 @@ package AppCore::Common;
 		{
 			my $diff = time - $LastTime;
 			$TimeSum += $diff;
-			print STDERR "[TIME MARK] ".sprintf('%04d',int($diff * 1000))."ms (".sprintf('%04d',int($TimeSum* 1000))."ms total) ".($title?" - $title":"")." at ".called_from(1)."\n";
+			#print STDERR "[TIME MARK] ".sprintf('%04d',int($diff * 1000))."ms (".sprintf('%04d',int($TimeSum* 1000))."ms total) ".($title?" - $title":"")." at ".called_from(1)."\n";
+			print STDERR "[TIME MARK] ".sprintf('%02f',($diff ))."s (".sprintf('%02f',($TimeSum ))."s total) ".($title?" - $title":"")." at ".called_from(1)."\n";
 		}
 		
 		$LastTime = time;

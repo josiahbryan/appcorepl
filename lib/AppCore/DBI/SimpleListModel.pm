@@ -356,6 +356,8 @@ package AppCore::DBI::SimpleListModel;
 			$limit_clause
 		);
 		
+		#use AppCore::Common;
+		#die debug_sql($sql_table, @$query_args);
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
 		#print STDERR AppCore::Common::get_stack_trace();
