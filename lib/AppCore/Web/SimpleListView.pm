@@ -23,8 +23,11 @@ package AppCore::Web::SimpleListView;
 		
 		#print STDERR Dumper($req->page_path);
 		
-		$self->tmpl->param(page_path => $req->page_path);
-		$self->tmpl->param(app_root  => $req->app_root);
+		if($self->tmpl)
+		{
+			$self->tmpl->param(page_path => $req->page_path);
+			$self->tmpl->param(app_root  => $req->app_root);
+		}
 		
 		return $self;
 	}
@@ -34,7 +37,9 @@ package AppCore::Web::SimpleListView;
 		my $self = shift;
 		my $file = shift;
 		$self->{file} = $file;
-		return $self->{tmpl} = AppCore::Web::Common::load_template($file);
+		# TODO: This is a hack - we just assume that if $file is a reference, it's HTML::Template-compatible,
+		# but I'm too lazy to do UNIVERSAL::isa for the different compatible derivations right now...
+		return $self->{tmpl} = ref $file ?  $file : AppCore::Web::Common::load_template($file);
 	}
 	
 	sub set_file{shift->set_template(@_)}
@@ -205,7 +210,7 @@ package AppCore::Web::SimpleListView;
 	sub output
 	{
 		my $self = shift;
-		my $xls_args = shift|| {};
+		my $output_args = shift|| {};
 		
 		my $fmt   = $self->output_format;
 		my $model = $self->model;
@@ -221,10 +226,10 @@ package AppCore::Web::SimpleListView;
 			
 			my $class = $model->cdbi_class;
 			
-			$xls_args->{columns} ||= ($self->{advanced_filter_enabled} ? $self->{advanced_filter_table_list} : undef) || $class->meta->{table_list} || [];
+			$output_args->{columns} ||= ($self->{advanced_filter_enabled} ? $self->{advanced_filter_table_list} : undef) || $class->meta->{table_list} || [];
 			
 			# Add a worksheet
-			my $worksheet = $workbook->add_worksheet($xls_args->{sheet_name} || 'Sheet 1');
+			my $worksheet = $workbook->add_worksheet($output_args->{sheet_name} || 'Sheet 1');
 			
 			#  Add and define a format
 			my $hdr1 = $workbook->add_format(); # Add a format
@@ -285,7 +290,7 @@ package AppCore::Web::SimpleListView;
 # 			
 # 			$tmpl->param(header => \@columns); 
 			
-			$worksheet->write($y,$x++,$xls_args->{page_title} || 'Database Export ('.(ref($class) ? ref($class) : $class).')',$fmt_bold); # if $xls_args->{page_title};
+			$worksheet->write($y,$x++,$output_args->{page_title} || 'Database Export ('.(ref($class) ? ref($class) : $class).')',$fmt_bold); # if $output_args->{page_title};
 			$x=0; 
 			$y++;
 			$worksheet->write($y,$x++,'Date: ');
@@ -307,7 +312,7 @@ package AppCore::Web::SimpleListView;
 			$y++;
 			$y++;
 			
-			my @cols = @{ $xls_args->{columns} || [] };
+			my @cols = @{ $output_args->{columns} || [] };
 			
 			#print STDERR Dumper \@cols;
 			my %fm_cache;
@@ -327,7 +332,7 @@ package AppCore::Web::SimpleListView;
 			$worksheet->freeze_panes($y, 0); # 1 row
 			
 			
-			my $fmter = $xls_args->{column_formatter};
+			my $fmter = $output_args->{column_formatter};
 			
 			my $count = 0;
 			foreach my $row (@$rows)
@@ -549,6 +554,10 @@ package AppCore::Web::SimpleListView;
 			$tmpl->param(list => $rows);
 			$tmpl->param(list_length => $rows && ref $rows ? $#{$rows} +1 : 0);
 			
+			# Also fill in a custom parameter name if given in the output args
+			$tmpl->param($output_args->{list_param_name} => $rows)
+				if $output_args->{list_param_name};
+			
 			## Misc closing variables
 			#$tmpl->param(filter_string => $model->filter_text);
 			
@@ -645,12 +654,16 @@ package AppCore::Web::SimpleListView;
 	{
 		my $self = shift;
 		my $row = shift;
+		
 		if(ref $row eq 'CODE')
 		{
 			$self->{_row_mudge_hook} = $row;
 			return;
 		}
-		elsif($row && ref $self->{_row_mudge_hook} eq 'CODE')
+		
+		return if !$self->{_row_mudge_hook};
+		
+		if($row && ref $self->{_row_mudge_hook} eq 'CODE')
 		{
 			$self->{_row_mudge_hook}->($row);
 		}

@@ -7,6 +7,9 @@ package AppCore::Web::Controller;
 	
 	use AppCore::Web::Router;
 	
+	# For output_json()
+	use JSON qw/encode_json/;
+		
 	our %SelfCache = ();
 	
 	sub new 
@@ -103,6 +106,16 @@ package AppCore::Web::Controller;
 		return if ! $class->stash->{r};
 		
 		$class->stash->{r}->output_data(@_);
+	}
+	
+	# I found myself repeatedly calling output_data 
+	# just to output json, so I added this as a shortcut
+	sub output_json
+	{
+		my $class = shift;
+		my $val   = shift;
+		my $json  = encode_json($val);
+		$class->output_data('application/json', $json);
 	}
 	
 	sub request
