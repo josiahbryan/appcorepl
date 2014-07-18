@@ -1093,7 +1093,8 @@ package AppCore::Web::Form;
 								my @enum = split /,/, $str;
 								s/(^'|'$)//g foreach @enum;
 								
-								$node->{choices} = join ',', @enum;
+								$node->{choices} = join ',', @enum
+									if ! $node->{choices};
 								
 								$type = 'enum';
 							}
