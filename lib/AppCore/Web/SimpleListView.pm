@@ -120,7 +120,9 @@ package AppCore::Web::SimpleListView;
 	{
 		my $self = shift;
 		my $fmt = lc shift || 'html';
-		if($fmt ne 'html' && $fmt ne 'xls')
+		if($fmt ne 'html' && 
+		   $fmt ne 'xls'  &&
+		   $fmt ne 'json')
 		{
 			warn $@ = ref($self)."->set_output_fmt('$fmt'): Invalid/unknown output format '$fmt', defaulting to HTML.";
 			return undef;
@@ -206,6 +208,10 @@ package AppCore::Web::SimpleListView;
 		return @filter_list;
 		
 	}
+	
+	# This are only defined AFTER calling output()
+	sub output_list { shift->{output_list} }
+	sub output_length { shift->{output_length} }
 	
 	sub output
 	{
@@ -295,7 +301,8 @@ package AppCore::Web::SimpleListView;
 			$y++;
 			$worksheet->write($y,$x++,'Date: ');
 			$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
-			$worksheet->insert_image(0,4, '/appcluster/eas/www/images/pcilogo-resized.png');
+			$worksheet->insert_image(0,4, $output_args->{logo_image_file})
+				if $output_args->{logo_image_file};
 			
 			## Compile and add the list values to the template
 			my $rows = $model->compile_list();
@@ -348,6 +355,9 @@ package AppCore::Web::SimpleListView;
 				}
 				$y++; 
 			}
+			
+			$self->{output_list}   = $rows;
+			$self->{output_length} = $rows && ref $rows ? $#{$rows} +1 : 0;
 				
 			
 			#$tmpl->param(list => $rows);
@@ -445,7 +455,8 @@ package AppCore::Web::SimpleListView;
 		else
 		{
 
-			my $tmpl  = $self->tmpl;
+			# Will be either returned to be converted to JSON or applied to the template, depending on output_format
+			my $output_data = {}; 
 			
 			my $path  = $req->page_path;
 			
@@ -454,8 +465,8 @@ package AppCore::Web::SimpleListView;
 			my $filter = $model->complex_filter();
 			
 			my @filter_list = $self->create_filter_list($model,$filter);
-			$tmpl->param(filter_list=>\@filter_list);
-			$tmpl->param(filter_name=>$filter->{name}) if $filter;
+			$output_data->{filter_list} = \@filter_list;
+			$output_data->{filter_name} = $filter->{name} if $filter;
 			
 		
 			
@@ -479,12 +490,12 @@ package AppCore::Web::SimpleListView;
 				} 
 				$model->columns;
 			
-			$tmpl->param(header => \@columns); 
+			$output_data->{header} = \@columns;
 			
 			
 			## Basic paging support implementation
 			my $total_rows = $model->get_total_rows();
-			$tmpl->param(total_rows => $total_rows);
+			$output_data->{total_rows} = $total_rows;
 	# 		
 	# 		use Data::Dumper;
 	# 		print STDERR Dumper([$self->page_start,$self->page_length]);
@@ -495,7 +506,7 @@ package AppCore::Web::SimpleListView;
 			if($end_of_page < $total_rows)
 			{
 				$paged_flag = 1;
-				$tmpl->param(next_url => $page . '?start='.$end_of_page.'&length='.$self->page_length);
+				$output_data->{next_url} = $page . '?start='.$end_of_page.'&length='.$self->page_length;
 			}
 			
 			if($self->page_start > 0 )
@@ -503,27 +514,27 @@ package AppCore::Web::SimpleListView;
 				$paged_flag = 1;
 				
 				my $new_start = $self->page_start - $self->page_length;
-				$tmpl->param(prev_url => $page . '?start='.( $new_start < 0 ?  0 : $new_start ).'&length='.$self->page_length);
+				$output_data->{prev_url} = $page . '?start='.( $new_start < 0 ?  0 : $new_start ).'&length='.$self->page_length;
 			}
 			
-			$tmpl->param(fake_page_start  => $self->page_start + 1);
-			$tmpl->param(page_start  => $self->page_start);
-			$tmpl->param(page_length => $self->page_length);
-			$tmpl->param(page_end    => $end_of_page);
-			$tmpl->param(paged_flag  => $paged_flag);
+			$output_data->{fake_page_start}  = $self->page_start + 1;
+			$output_data->{page_start}  = $self->page_start;
+			$output_data->{page_length} = $self->page_length;
+			$output_data->{page_end}    = $end_of_page;
+			$output_data->{paged_flag}  = $paged_flag;
 			
 			#print STDERR "pagelen = ".$self->page_length."\n";
 			
 			my $new_end = $self->page_start + $self->page_length ;	
 			my $actual_page_length = ( $new_end > $total_rows ? $total_rows - $self->page_start : $self->page_length );
-			$tmpl->param(actual_page_end => $self->page_start + $actual_page_length);
+			$output_data->{actual_page_end} = $self->page_start + $actual_page_length;
 				
 			## Compile and add the list values to the template
 			my $rows = $model->compile_list($self->page_start, $self->page_length);
 			
 			## Let the template know if we were searched and how 
-			$tmpl->param(query => $model->filter);
-			$tmpl->param(is_filtered => $model->is_filtered);
+			$output_data->{query}       = $model->filter;
+			$output_data->{is_filtered} = $model->is_filtered;
 			
 			# do filter row highlighting here
 			my $filter_value_regex = _regexp_escape($model->filter);
@@ -549,33 +560,35 @@ package AppCore::Web::SimpleListView;
 				
 				$self->row_mudge_hook($row);
 			}
-				
 			
-			$tmpl->param(list => $rows);
-			$tmpl->param(list_length => $rows && ref $rows ? $#{$rows} +1 : 0);
+			$self->{output_list} = $rows;
+			$self->{output_length} = $rows && ref $rows ? $#{$rows} +1 : 0;
+			
+			$output_data->{list}        = $rows;
+			$output_data->{list_length} = $self->{output_length};
 			
 			# Also fill in a custom parameter name if given in the output args
-			$tmpl->param($output_args->{list_param_name} => $rows)
+			# User could also decide to just set a param_prefix, below.
+			$output_data->{$output_args->{list_param_name}} = $rows
 				if $output_args->{list_param_name};
 			
 			## Misc closing variables
-			#$tmpl->param(filter_string => $model->filter_text);
 			
-			$tmpl->param(view_message => $self->{msg});
+			$output_data->{view_message}   = $self->{msg};
 			
-			$tmpl->param(prev_page_path => $self->req->prev_page_path);
+			$output_data->{prev_page_path} = $self->req->prev_page_path;
 			
 			if($self->{advanced_filter_enabled})
 			{
 				# Add the advanced filter schema data
-				$tmpl->param(advanced_filter_cookie_name => $self->{advanced_filter_cookie_name});
+				$output_data->{advanced_filter_cookie_name} = $self->{advanced_filter_cookie_name};
 				
 				my $url = $self->{advanced_filter_bookmark_controller_url};
 				if($url !~ /^(http:|\/)/i)
 				{
 					$url = $self->req->page_path . '/'. $url;
 				}
-				$tmpl->param(advanced_filter_bookmark_controller_url => $url);
+				$output_data->{advanced_filter_bookmark_controller_url} = $url;
 				
 				my $class = $self->model->cdbi_class;
 				my @schema;
@@ -601,7 +614,7 @@ package AppCore::Web::SimpleListView;
 				}
 				
 				#die Dumper \@schema, $self->{advanced_filter_table_list};
-				$tmpl->param(advanced_filters_schema => to_json(\@schema));
+				$output_data->{advanced_filters_schema} = to_json(\@schema);
 				
 				#print STDERR AppCore::Common::print_stack_trace();
 				my @bookmarks = $model->get_advanced_filters_bookmarks();
@@ -631,15 +644,29 @@ package AppCore::Web::SimpleListView;
 					push @bm_list, {divider=>1} if @sys_list && @user_list;
 					push @bm_list, @user_list;
 					
-					$tmpl->param(advanced_filters_bookmarks => to_json(\@bm_list));
+					$output_data->{advanced_filters_bookmarks} = to_json(\@bm_list);
 				}
 				
 			}
 			
+			if($fmt eq 'json')
+			{
+				return $output_data;
+			}
+			
+			my $param_prefix = $output_args->{param_prefix} || '';
+			
+			my $tmpl = $self->tmpl;
+			foreach my $key (keys %$output_data)
+			{
+				$tmpl->param(
+					($param_prefix ? $param_prefix.'_' : '') . $key => $output_data->{$key}
+				);
+			}
 			
 			#return AppCore::Form->post_process($self->SUPER::output());
 			#return AppCore::Form->post_process($self->output());
-			return $self->tmpl->output();
+			return $tmpl->output();
 		}
 	}
 	
@@ -647,7 +674,9 @@ package AppCore::Web::SimpleListView;
 	{
 		my $self = shift;
 		my $fmt = $self->output_format;
-		return $fmt eq 'xls' ? 'application/vnd.ms-excel' : 'text/html';
+		return $fmt eq 'xls'  ? 'application/vnd.ms-excel' : 
+		       $fmt eq 'json' ? 'application/json' :
+		                        'text/html';
 	}
 	
 	sub row_mudge_hook
