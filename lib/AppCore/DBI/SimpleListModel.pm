@@ -289,6 +289,9 @@ package AppCore::DBI::SimpleListModel;
 				}
 					
 				push @columns, "(SELECT $concat FROM $other_db.$table $monkier WHERE $other_ref.$primary=$self_ref.$self_field) AS ".$dbh->quote_identifier($col);
+				
+				# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
+				push @columns, "$self_ref.$self_field AS ".$dbh->quote_identifier($col.'_raw');
 			}
 			else
 			{
@@ -318,8 +321,8 @@ package AppCore::DBI::SimpleListModel;
 		my $where_clause = ' WHERE '.$query;
 		
 		## Prepare FROM clause
-		my $from_tables = ' FROM '.$db.'.'.$dbh->quote_identifier($class->table). ($extra_tables && @$extra_tables ?', '.join(',',map {$dbh->quote_identifier($_)} @$extra_tables):'');
-		
+		my $from_tables = ' FROM '.$db.'.'.$dbh->quote_identifier($class->table).
+			($extra_tables && @$extra_tables ? ', '.join(',',map {$dbh->quote_identifier($_)} @$extra_tables):'');
 		
 		## Integrate advanced filters
 		my @adv_sort;
