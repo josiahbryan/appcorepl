@@ -419,7 +419,7 @@ package User;
 			print STDERR "auth logoff\n";
 			
 			# Redirect back here inorder for any user-dependent template features to adjust given the logout
-			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1');
+			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1&timeout='.$req->timeout);
 		}
 		
 		#print STDERR "auth tmpl output\n";	
@@ -441,6 +441,7 @@ package User;
 		$tmpl->param(url_from  => $url_from);
 		$tmpl->param(user      => $req->{user});
 		$tmpl->param(was_loggedin => $req->{was_loggedin});
+		$tmpl->param(timeout      => $req->{timeout});
 		$tmpl->param(sent_pass    => $req->{sent_pass});
 		$tmpl->param(fb_app_id	  => AppCore::Config->get("FB_APP_ID"));
 		$tmpl->param(fb_redir_url => $self->get_facebook_redir_url());
