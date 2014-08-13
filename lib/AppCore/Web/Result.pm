@@ -604,7 +604,7 @@ $jq_footer
 		my $server = AppCore::Config->get('CDN_HOSTS')->[$CDNIndex];
 		#print STDERR "cdn_url($url_part): Decided on server $server, #$CDNIndex\n";
 		
-		my $final_url = join('', 'http://', $server, $url_part);
+		my $final_url = join('', '//', $server, $url_part);
 		
 		#print STDERR "cdn_url: $url_part -> $final_url\n";
 		

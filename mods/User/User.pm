@@ -392,7 +392,17 @@ package User;
 			return $r->redirect($url_from);
 		}
 		
-		my $url_from = AppCore::Web::Common->url_encode(AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER});
+		my $raw_url_from = AppCore::Web::Common->url_decode($req->{url_from}) || $ENV{HTTP_REFERER};
+		
+		my $domain = AppCore::Config->get("DOMAIN");
+		$raw_url_from = ''
+			if $raw_url_from =~ /^https?:\/\/(www\.)?$domain\/?$/;
+		
+		#die $raw_url_from;
+		
+		my $url_from = AppCore::Web::Common->url_encode($raw_url_from);
+		
+			
 		
 		# Fell thru from auth attempt, so check to see if it has a user but no password
 		if($action eq 'authenticate')
