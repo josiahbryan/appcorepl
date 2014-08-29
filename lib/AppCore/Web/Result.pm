@@ -389,37 +389,47 @@ package AppCore::Web::Result;
 			my $ga_id = AppCore::Config->get('GA_ACCOUNT_ID');
 			if(AppCore::Config->get('GA_INSERT_TRACKER') && $ga_id)
 			{
-				my $jq_flag = AppCore::Config->get('GA_USE_JQUERY');
-				my $jq_head = $jq_flag ? '$(function(){setTimeout(function(){' : '';
-				my $jq_footer = $jq_flag ? '}, 50)});' : '';
+				
+				my $code_to_insert = "";
+				my $custom_ga = AppCore::Config->get('GA_CUSTOM_TRACKER');
+				if($custom_ga)
+				{
+					$code_to_insert = $custom_ga;
+				}
+				else
+				{
+					my $jq_flag = AppCore::Config->get('GA_USE_JQUERY');
+					my $jq_flag = AppCore::Config->get('GA_USE_JQUERY');
+					my $jq_head = $jq_flag ? '$(function(){setTimeout(function(){' : '';
+					my $jq_footer = $jq_flag ? '}, 50)});' : '';
 
-# TODO: Upgrade GA code to new code:
-# <script>
-# (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-# (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-# m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-# })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-# 
-# ga('create', 'UA-243284-29', 'rc.edu');
-# ga('send', 'pageview');
-# 
-# </script>
+					# TODO: Upgrade GA code to new code:
+					# <script>
+					# (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+					# (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+					# m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+					# })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+					# 
+					# ga('create', 'UA-243284-29', 'rc.edu');
+					# ga('send', 'pageview');
+					# 
+					# </script>
 
-				my $ga = qq#
+					my $ga = qq#
 			
 <script type="text/javascript">
 var _gaq = _gaq || [];
 _gaq.push(['_setAccount', '$ga_id']);
 _gaq.push(['_trackPageview']);
 #;
-				if(AppCore::Config->get('GA_SET_USER_VAR'))
-				{
-					my $user = AppCore::Common->context->user;
-					my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
-					$ga .= qq{_gaq.push(['_setVar','$uid']);};
-				}
-				
-				$ga .= qq#
+					if(AppCore::Config->get('GA_SET_USER_VAR'))
+					{
+						my $user = AppCore::Common->context->user;
+						my $uid = $user ? $user->display : $ENV{REMOTE_ADDR};
+						$ga .= qq{_gaq.push(['_setVar','$uid']);};
+					}
+					
+					$ga .= qq#
 $jq_head
 
 (function() {
@@ -432,8 +442,11 @@ $jq_footer
 
 </script>
 #;
-				my $tmp = "$ga";
-				$out .= $tmp if ! ($out =~ s/<\/body>/$tmp\n<\/body>/gi);
+					$code_to_insert = $ga;
+				}
+				
+				
+				$out .= $code_to_insert if ! ($out =~ s/<\/body>/$code_to_insert\n<\/body>/gi);
 			}
 		}
 		#

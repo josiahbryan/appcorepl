@@ -204,7 +204,8 @@ package AppCore::Web::Router;
 	
 	sub has_routes
 	{
-		shift->{root}->has_leafs;
+		my $self = shift;
+		$self->{root}->has_leafs || $self->{root}->{action};
 	}
 	
 	
@@ -212,15 +213,10 @@ package AppCore::Web::Router;
 	{
 		my ($self, $route, $args) = @_;
 		
-		if($route ne '/' && $route =~ /^\//)
-		{
-			warn __PACKAGE__.'::route: Warning: Removing leading / from '.$route.' - only use a leading / in routes for the root page - leave off the leading / for all other routes. Called from: ' .called_from();
-			$route =~ s/^\///g;
-		}
+		$args = { action => $args } if !ref $args || ref $args eq 'CODE';
 		
-		$args = { action => $args } if ref $args ne 'HASH';
-		
-		if($args->{action} =~ /(^[^\s]+)\.([\w_\d]+)$/)
+		if(!ref $args->{action} &&
+		   $args->{action} =~ /(^[^\s]+)\.([\w_\d]+)$/)
 		{
 			$args->{namespace} = $1;
 			$args->{action} = $2;
@@ -430,13 +426,17 @@ package AppCore::Web::Router;
 #			}
 		}
 		
-		if(UNIVERSAL::isa($ref, 'AppCore::Web::Controller'))
+		if(ref $method eq 'CODE')
 		{
-			$ref->set_stash($self->stash);
+			$method->($ref,
+			          $self->stash->{req}, 
+		                  $self->stash->{r});
 		}
-		
-		$ref->$method($self->stash->{req}, 
-		              $self->stash->{r});
+		else
+		{
+			$ref->$method($self->stash->{req}, 
+				      $self->stash->{r});
+		}
 	}
 	
 	sub dispatch
@@ -459,7 +459,7 @@ package AppCore::Web::Router;
 		
 		my $root = $self->{root};
 		
-		if(!$root || !$root->has_leafs)
+		if(!$root || (!$root->has_leafs && !$root->{action}))
 		{
 			warn __PACKAGE__."::dispatch: Unable to dispatch: No root leaf, call route() before dispatch() to setup routes";
 			return;
