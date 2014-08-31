@@ -426,6 +426,11 @@ package AppCore::Web::Router;
 #			}
 		}
 		
+		if(UNIVERSAL::isa($ref, 'AppCore::Web::Controller'))
+		{
+			$ref->set_stash($self->stash);
+		}
+
 		if(ref $method eq 'CODE')
 		{
 			$method->($ref,
