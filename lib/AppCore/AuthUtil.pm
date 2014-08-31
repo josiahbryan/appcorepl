@@ -185,11 +185,11 @@ package AppCore::AuthUtil;
 		}
 		
 		#print STDERR "authenticate: user '$user', pass '$pass'\n";
-		my $user_object = AppCore::User->by_field(user => $user);
+		my $user_object = AppCore::User->by_field(user => $user, deleted => 0);
 		#print STDERR "authenticate: user '$user', mark1 obj '$user_object'\n";
 		if(!$user_object)
 		{
-			$user_object = AppCore::User->by_field(email => $user);
+			$user_object = AppCore::User->by_field(email => $user, deleted => 0);
 		}
 		#print STDERR "authenticate: user '$user', mark2 obj '$user_object'\n";
 		

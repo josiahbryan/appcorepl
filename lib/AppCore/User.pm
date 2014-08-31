@@ -65,6 +65,7 @@ package AppCore::User;
 			{	field	=> 'longitude',		type	=> 'varchar(50)' },
 			{	field	=> 'phone',		type	=> 'varchar(50)' },
 			{	field	=> 'lkey',		type	=> 'varchar(255)' }, # one-time-use login key
+			{	field	=> 'deleted',		type	=> 'int(1)', 	null => 0, default => 0 }
 		],
 		
 		schema_update_opts => {
