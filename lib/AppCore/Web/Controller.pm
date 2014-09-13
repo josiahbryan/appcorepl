@@ -114,7 +114,7 @@ package AppCore::Web::Controller;
 	{
 		my $class = shift;
 		my $val   = shift;
-		my $json  = encode_json($val);
+		my $json  = ref $val ? encode_json($val) : $val;
 		$class->output_data('application/json', $json);
 	}
 	
