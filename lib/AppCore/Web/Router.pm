@@ -413,7 +413,7 @@ package AppCore::Web::Router;
 		{
 			eval('use '.$package);
 			die $@ if $@ && $@ !~ /Can\'t locate/;
-			warn "Warning: Encountered possible error loading '$package': $@";
+			warn "Warning: Encountered possible error loading '$package': $@" if $@;
 			undef $@;
 			
 # 			if($package->can('new'))
