@@ -19,6 +19,8 @@ package AppCore::Web::SimpleListView;
 		$args->{tmpl} = AppCore::Web::Common::load_template($args->{file});
 		$args->{req}  = $req;
 		
+		die "Unable to load template '$args->{file}'" if !$args->{tmpl};
+		
 		my $self = bless $args, $class;
 		
 		#print STDERR Dumper($req->page_path);
