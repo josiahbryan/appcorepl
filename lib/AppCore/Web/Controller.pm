@@ -87,6 +87,7 @@ package AppCore::Web::Controller;
 		# NOTE: Reimplement in subclass
 		
 		my $class = shift;
+		print_stack_trace();
 		warn __PACKAGE__.": You need to reimplement 'setup_routes()' in the '$class' class";
 	}
 	
