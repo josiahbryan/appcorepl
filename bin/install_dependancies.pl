@@ -26,7 +26,8 @@ my @deps = qw/
 	Net::SMTP::TLS
 	Net::SMTP::SSL
 	Crypt::SSLeay
-	LWP::Protocol::https	
+	LWP::Protocol::https
+	XML::DOM
 /;
 
 foreach my $dep (@deps)
@@ -37,6 +38,7 @@ foreach my $dep (@deps)
 	{
 		print "Installing: $dep\n";
 		CPAN::install($dep);
+		#system("yum install -y 'perl($dep)'");
 		#print "Missing $dep\n";
 	}
 }

@@ -63,13 +63,12 @@ package AppCore::EmailQueue;
 	{
 		my $class = shift;
 		
-		my ($list,$subject,$text,$high_import_flag,$from,%opts) = @_;
+		my ($list, $subject, $text, $high_import_flag, $from, %opts) = @_;
 		
 		$list = [$list] if !ref $list;
 		
 		#print STDERR "send_email(): list=".join(',',@$list),", subject=$subject, high_import_flag=$high_import_flag, text=[$text]\n";
-		#print STDERR "send_email(): CATCH ALL: Sending to jbryan only.\n";
-		#$list = ['jbryan@productiveconcepts.com'];
+		
 		if(!ref $text && AppCore::Config->get('EMAIL_ENABLE_DEBUG_FOOTER'))
 		{
 			my $host = `hostname`;
@@ -86,6 +85,7 @@ Server: $host
 		}
 		
 		$from ||= AppCore::Config->get('EMAIL_DEFAULT_FROM') || AppCore::Config->get('WEBMASTER_EMAIL');
+		
 		#print "From:$from\nTo:$to\nSubj:$subject\nText:$text\n";
 		#print_stack_trace();
 	
@@ -101,22 +101,20 @@ Server: $host
 			if($opts{raw_mime})
 			{
 				$str = $text;
-				#warn "Options said raw_mime";
 			}
 			elsif(UNIVERSAL::isa($text, 'MIME::Lite'))
 			{
 				$str = $text->as_string;
-				#warn "Text was MIME::Lite, called as_string";
 			}
 			else
 			{
 				my $msg = MIME::Lite->new(
-						From    =>$from,
-						To      =>$to,
-						'Reply-To'=>$from,
-						CC      =>$opts{cc} || '',
-						Subject =>$subject,
-						Type    =>'multipart/mixed'
+						From    => $from,
+						To      => $to,
+						'Reply-To' => $from,
+						CC      => $opts{cc} || '',
+						Subject => $subject,
+						Type    => 'multipart/mixed'
 						);
 			
 				### Add parts (each "attach" has same arguments as "new"):
@@ -125,16 +123,11 @@ Server: $host
 	
 				$msg->attach(%{$_}) foreach @{ $opts{attachments} || [] };
 				
-				#$from =~ s/.*?<?([\w_\.]z+\@[.^\>]*)/$1/g;
-			
 				$str = $msg->as_string;
-				#warn "Composed string implicitly";
 			}
 			
-			#die "String: $str\n";
-		
-			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g if $high_import_flag;
-			#die $str;
+			$str =~ s/Subject:/Importance: high\nX-MSMail-Priority: urgent\nX-Priority: 1 (Highest)\nSubject:/g
+				if $high_import_flag;
 			
 			if(length($str) > 1024*512) # Larger than half a meg
 			{
@@ -160,7 +153,6 @@ Server: $host
 		
 			eval
 			{
-				#$q_ins->execute($from,$to,$str,$subject);
 				push @msg_refs, AppCore::EmailQueue->insert({
 					msg_subject	=> $subject,
 					msg_from	=> $from,
@@ -171,6 +163,7 @@ Server: $host
 			};
 			
 			#print STDERR "$str, $from, $to, LEN:".(length($str)/1024)."KB\n$@" if $@;
+			
 			die $@ if $@;
 		}
 
@@ -214,14 +207,10 @@ Server: $host
 
 		#my ($user,$domain) = split /\@/, $self->msg_from;
 		#$domain =~ s/>$//g;
+		
 		my ($domain) = $self->msg_from =~ /\@([A-Z0-9.-]+\.[A-Z]{2,4})\b/i;
 
 		$domain = lc $domain;
-		
-		if($self->msg_from eq 'RC Student Financial Services <sfs@rc.edu>')
-		{
-			#$domain = 'rc.edu.local';
-		}
 		
 		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
 		   $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{'*'} if !$prof;
@@ -278,15 +267,16 @@ Server: $host
 				#unlink($file);
 				system("mv $file /var/spool/appcore/mailsent");
 			}
+			
 			my ($tuser,$tdomain) = split /\@/, $self->msg_to;
 			$tdomain =~ s/>$//g;
 
 			$self->_relay($tdomain,$self->msg_from,$self->msg_to,$data);
+			
 			print STDERR "Relayed directly thru localhost, t.user: $tuser, t.domain: $tdomain\n" if $DEBUG;
 			return;
 		}
 		
-		#print STDERR "Fox\n";
 		my %args;
 		my $need_auth = 1;
 		eval{
@@ -300,9 +290,11 @@ Server: $host
 			%args = (
 				Port  => $prof->{port} || 25,
 				Hello => $domain,
-				#Debug => $DEBUG
+				Debug => 1, #$DEBUG
 			);
+			
 			#if($pkg eq 'Net::SMTP::TLS')
+			if($prof->{user} || $prof->{pass})
 			{
 				$args{User}     = $prof->{user} || 'notifications';
 				$args{Password} = $prof->{pass} || 'Notify1125';
@@ -329,19 +321,20 @@ Server: $host
 # 				}
 			}
 #			else
-			{
+#			{
 # 				$handle_data->{count} ++;
 # 				$smtp = $handle_data->{smtp};
 # 				print STDERR "Reusing handle for $cache_key, count $handle_data->{count}\n";
 				#$need_auth = 0;
-			}
+#			}
 		};
 		
 		if(!$smtp || $@)
 		{
 			my $err = $@;
 			$self->sentflag(1);
-			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect for some reason"));
+			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect to $prof->{server} for some reason"));
+			
 			use Data::Dumper;
 			print STDERR "MsgID $self: ".$self->result."\n".Dumper(\%args);
 			$self->update;
@@ -355,7 +348,7 @@ Server: $host
 		if($need_auth && $smtp->can('auth') && $prof->{user})
 		{
 			print STDERR "[DEBUG] Authenticating as user '$prof->{user}', password '$prof->{pass}'\n" if $DEBUG;
-			if(!$smtp->auth($prof->{user},$prof->{pass}))
+			if(!$smtp->auth($prof->{user}, $prof->{pass}))
 			{
 				$self->sentflag(0);
 				$self->result("Error logging into mail server: ".$smtp->message().($@? " ($@)":""));
@@ -373,7 +366,10 @@ Server: $host
 
 		foreach my $recip (@recips)
 		{
-			my $required_from = $prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain;
+			my $required_from = $prof->{user} ? 
+				$prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain 
+				: $self->msg_from;
+				
 			print STDERR "[DEBUG] Domain: '$domain', To: $recip, From: ".$self->msg_from.", Server: $prof->{server}:$prof->{port}, Req: $required_from\n" if $DEBUG;
 				#user: $prof->{user}, pass: $prof->{pass}, port: $prof->{port}\n";
 
@@ -391,21 +387,23 @@ Server: $host
 				open(FILE,"<$file");
 				while($_ = <FILE>)
 				{
-					s/From: .*$/From: $required_from/ if $domain eq 'productiveconcepts.com';
+					#s/From: .*$/From: $required_from/ if $domain eq 'productiveconcepts.com';
 					#print "[DATA] $_\n";
 					$smtp->datasend($_);
 				}
 				close(FILE);
-				#unlink($file);
+				
 				system("mv $file /var/spool/appcore/mailsent");
 
+				#unlink($file);
 				# Wierd, I know - but since we deleted the data file, there really is no point in keeping this record around in the database either...
 				#$self->delete;
 			}
 			else
 			{
-				$data =~ s/From:.*\n/From: $required_from\n/i if $domain eq 'productiveconcepts.com';
+				#$data =~ s/From:.*\n/From: $required_from\n/i if $domain eq 'productiveconcepts.com';
 				#print "[DATA] $data\n";
+				
 				$smtp->datasend($data);
 			}
 			$smtp->dataend();
@@ -427,8 +425,10 @@ Server: $host
 		my $rr;
 	
 		my $res = Net::DNS::Resolver->new;
+		
 		my @mx = mx($res, $domain);
 		@mx = ($domain) if !@mx;
+		
 		if(my $mx_list = AppCore::Config->get('EMAIL_MX_OVERRIDES')->{$domain})
 		{
 			@mx = @$mx_list;
@@ -442,20 +442,25 @@ Server: $host
 		{
 			my $exch = ref $rr ? $rr->exchange : $rr;
 			print STDERR "Debug: rr loop, exch=$exch\n" if $DEBUG;
+			
 			my $client = new Net::SMTP($exch, 
-				#Hello => 'mybryanlife.com', 
-				#Hello => 'mypleasanthillchurch.org',
-				Hello => 'productiveconcepts.com',
-				#Debug=>$DEBUG) || next;
-				Debug=>1) || next;
-			$client->mail($from), #'jbryan@productiveconcepts.com');
+				Hello => 'EmailQueue.pm',
+				#Debug => $DEBUG);
+				Debug => 1);
+			if(!$client)
+			{
+				print STDERR "Unable to connect to $exch to relay\n";
+				next;
+			}
+			
+			$client->mail($from);
 			$client->to($target);
 			$client->data($msg);
 			$client->quit;
 	
 			return 1;
-			#last;
 		}
+		
 		return 0;
 	}
 	

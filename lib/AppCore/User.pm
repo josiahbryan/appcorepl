@@ -670,15 +670,32 @@ package AppCore::User;
 		my $user = shift;
 		my $pass = shift;
 		
-		return undef if !AppCore::Config->get('AD_ENABLED');
+		if(!AppCore::Config->get('AD_ENABLED'))
+		{
+			$@ = 'AD not enabled';
+			warn $@;
+			return undef;
+		}
 		
 		use Net::LDAP;
 		use Net::LDAP::Util qw(ldap_error_text ldap_error_name ldap_error_desc );
 		
-		my $server = AppCore::Config->get('AD_LDAP_SERVER') || warn "No AD server configured (AD_LDAP_SERVER), AD will fail";
+		my $server = AppCore::Config->get('AD_LDAP_SERVER');
+		if(!$server)
+		{
+			$@ = "No AD server configured in 'AD_LDAP_SERVER'";
+			warn $@;
+			return undef;
+		}
 		
 		# Connect to the AD server
 		my $ldap = Net::LDAP->new($server, version => 3);
+		if(!$ldap)
+		{
+			$@ = "Error connecting to AD server '$server': $@";
+			warn $@;
+			return undef;
+		}
 		my $mesg = $ldap->start_tls(verify=>'none');
 		
 		#my $mesg = $ldap->bind("CN=".$user.",OU=Information Tech,DC=campus,DC=rc,DC=edu",password=>$pass);
@@ -705,9 +722,11 @@ package AppCore::User;
 		
 		if($mesg->code)
 		{
-			#my $errcode = $mesg->code;
-			#my $errstr = ldap_error_text($errcode);
+			my $errcode = $mesg->code;
+			my $errstr = ldap_error_text($errcode);
 			#print STDERR "try_ad_auth: AD bind error code: $errcode - $errstr (".$self->user."/$pass)\n";
+			$@ = "AD auth faulure: AD bind error code: $errcode - $errstr ($pass)\n";
+			warn $@;
 			return undef;
 		}
 		

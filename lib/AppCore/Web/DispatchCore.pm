@@ -3,7 +3,7 @@ use strict;
 package AppCore::Web::DispatchCore;
 {
 	use HTML::Template;
-	use CGI::Carp qw/fatalsToBrowser/;
+#	use CGI::Carp qw/fatalsToBrowser/;
 	use Data::Dumper;
 	
 	use lib 'lib';

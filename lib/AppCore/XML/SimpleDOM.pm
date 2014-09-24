@@ -8,7 +8,7 @@ package AppCore::XML::SimpleDOM;
 	use strict;
 	use XML::DOM;
 
-	use Carp;
+#	use Carp;
 
 	use Digest::MD5 qw/md5_hex/;
 	use Storable qw/store retrieve/;
@@ -58,7 +58,7 @@ Example:
 
 	use Data::Dumper;
 
-	use overload '""' => sub {my $x=shift;UNIVERSAL::isa($x,'HASH')&&$x->{value}?$x->{value}:$x};
+#	use overload '""' => sub {my $x=shift;UNIVERSAL::isa($x,'HASH')&&$x->{value}?$x->{value}:$x};
 
 	#sub get{my $n=shift;$AUTOLOAD=shift;$n->AUTOLOAD}
 	sub to_xml
