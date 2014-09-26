@@ -14,12 +14,12 @@ package AppCore::Web::SimpleListView;
 		my $req   = shift;
 		my $args  = shift || {};
 		
-		$args->{file} ||= 'givemea404.tmpl';
+		$args->{file} ||= ''; #givemea404.tmpl';
 		
 		$args->{tmpl} = AppCore::Web::Common::load_template($args->{file});
 		$args->{req}  = $req;
 		
-		die "Unable to load template '$args->{file}'" if !$args->{tmpl};
+		die "Unable to load template '$args->{file}'" if !$args->{tmpl} && $args->{file};
 		
 		my $self = bless $args, $class;
 		
@@ -111,7 +111,7 @@ package AppCore::Web::SimpleListView;
 		my $req   = shift;
 		my $args  = shift || {};
 		
-		$args->{file} ||= 'givemea404.tmpl';
+		$args->{file} ||= ''; #givemea404.tmpl';
 		$args->{output_format} ||= 'html';
 		
 		#return $class->SUPER::new($req,$args);

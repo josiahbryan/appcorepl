@@ -214,39 +214,86 @@ package AppCore::Web::Controller;
 	}
 	
 	sub send_template
-        {
-                my ($class, $file, $in_view) = @_;
+	{
+		my ($class, $file, $in_view) = @_;
 
-                $in_view = 1 if !defined $in_view;
+		$in_view = 1 if !defined $in_view;
 
-                return sub {
-                        my ($class, $req, $r) = @_;
-                        my $path = $file =~ /\// ? $file : '../tmpl/'.$file;
-                        my $tmpl = $class->get_template($path);
-                        die "$class: No template found for $path." if !$tmpl || !ref $tmpl;
+		return sub {
+			my ($class, $req, $r) = @_;
+			my $path = $file =~ /\// ? $file : '../tmpl/'.$file;
+			my $tmpl = $class->get_template($path);
+			die "$class: No template found for $path." if !$tmpl || !ref $tmpl;
 
-                        my $key = $file;
-                        $key =~ s/\./_/g;
-                        if(!$in_view)
-                        {
-                                $tmpl->param('current_'.$key => 1);
-                                return $r->output_data("text/html", $tmpl->output);
-                        }
+			my $key = $file;
+			$key =~ s/\./_/g;
+			if(!$in_view)
+			{
+				$tmpl->param('current_'.$key => 1);
+				return $r->output_data("text/html", $tmpl->output);
+			}
 
-                        $class->stash->{view}->tmpl_param('current_'.$key => 1);
-                        return $class->respond($tmpl->output);
-                }
-        }
+			$class->stash->{view}->tmpl_param('current_'.$key => 1);
+			return $class->respond($tmpl->output);
+		}
+	}
 
-        sub send_redirect
-        {
-                my ($class, $url) = @_;
+	sub send_redirect
+	{
+		my ($class, $url) = @_;
 
-                return sub {
-                        my ($class, $req, $r) = @_;
-                        return $r->redirect($url);
-                }
-        }
+		return sub {
+			my ($class, $req, $r) = @_;
+			return $r->redirect($url);
+		}
+	}
+	
+	sub autocomplete_util
+	{
+		my ($class, $validator, $validate_action, $value, $r) = @_;
+		
+		$r = $class->stash->{r} if !$r;
+		
+		my $ctype = 'text/plain';
+		if($validate_action eq 'autocomplete')
+		{
+			#my @list = $validator->autocomplete_string($value, 10);
+			my $list = $validator->stringified_list($value, 
+					undef, #$fkclause
+					undef, #$include_objects
+					undef, #$start
+					10, #$limit
+			);
+				
+			
+			#return $r->output_data($ctype, encode_json({ result => \@list }));
+			return $r->output_data($ctype, encode_json([ 
+				map {
+					# Hack for "City, ST"
+					#$_->{text} =~ s/, (\w{2})$/', '.uc($1)/segi;
+					$_->{text} =~ s/,\s*$//g;
+					{
+						value => $_->{text},
+						id    => $_->{id}
+					}
+				} @{ $list || [] }
+			]));
+		}
+		elsif($validate_action eq 'validate')
+		{
+			my $value = $validator->validate_string($value);
+			my $ref = {
+				value => $value,
+				text  => $validator->stringify($value)
+			};
+			return $r->output_data($ctype, encode_json({ result => $ref, err => $@ }));
+		}
+		else
+		{
+			die "Unknown request type '$validate_action'";
+			#error("Unknown Validation Request","Unknown validation request '$validate_action'");
+		}
+	}
 
 	
 };

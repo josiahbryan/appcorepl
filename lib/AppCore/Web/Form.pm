@@ -182,47 +182,11 @@ package AppCore::Web::Form;
 		{
 			my $value = $req->value || $req->term;
 			
-			my $validator = $meta->{linked};
-			
-			my $ctype = 'text/plain';
-			if($validate_action eq 'autocomplete')
-			{
-				#my @list = $validator->autocomplete_string($value, 10);
-				my $list = $validator->stringified_list($value, 
-						undef, #$fkclause
-						undef, #$include_objects
-						undef, #$start
-						10, #$limit
-				);
-					
-				
-				#return $r->output_data($ctype, encode_json({ result => \@list }));
-				return $r->output_data($ctype, encode_json([ 
-					map {
-						# Hack for "City, ST"
-						#$_->{text} =~ s/, (\w{2})$/', '.uc($1)/segi;
-						$_->{text} =~ s/,\s*$//g;
-						{
-							value => $_->{text},
-							id    => $_->{id}
-						}
-					} @{ $list || [] }
-				]));
-			}
-			elsif($validate_action eq 'validate')
-			{
-				my $value = $validator->validate_string($value);
-				my $ref = {
-					value => $value,
-					text  => $validator->stringify($value)
-				};
-				return $r->output_data($ctype, encode_json({ result => $ref, err => $@ }));
-			}
-			else
-			{
-				#die "Unknown request type '$type'";
-				error("Unknown Validation Request","Unknown validation request '$validate_action'");
-			}
+			return AppCore::Web::Controller->autocomplete_util(
+				$meta->{linked},
+				$validate_action,
+				$value,
+				$r);
 		}
 		else
 		{
