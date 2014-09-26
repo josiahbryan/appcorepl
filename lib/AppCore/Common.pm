@@ -721,6 +721,7 @@ package AppCore::Common;
 	# Function: guess_title($name)
 	# Static - guess the title for $name. E.g. converts foo_bar or FooBar to 'Foo Bar', quoteestid or quoteest to 'Quote Est.' and a few other minor optimizations.
 	my %TITLE_CACHE;
+	our $DISABLE_EXTRA_TITLE_GUESS = 0;
 	sub guess_title#($name)
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -729,17 +730,22 @@ package AppCore::Common;
 		my $oname = $name;
 		$name =~ s/([a-z])([A-Z])/$1 $2/g;
 		$name =~ s/([a-z])_([a-z])/$1.' '.uc($2)/segi;
+		$name =~ s/([a-z])(['-])([a-z])/$1.$2.uc($3)/segi;
+		$name =~ s/\(([a-z])([^\)]+)\)/'('.uc($1).$2.')'/segi;
 		$name =~ s/(\w)(\d+)$/$1 $2/g;
 		$name =~ s/^([a-z])/uc($1)/seg;
 		$name =~ s/\/([a-z])/'\/'.uc($1)/seg;
 		$name =~ s/\s([a-z])/' '.uc($1)/seg;
 		$name =~ s/\s(of|the|and|a)\s/' '.lc($1).' '/segi;
-		$name .= '?' if $name =~ /^is/i;
-		$name =~ s/id$//gi;
-		my $chr = '#';
-		$name =~ s/num$/$chr/gi; 
-		$name =~ s/datetime$/Date\/Time/gi;
-		$name =~ s/\best\b/Est./gi;
+		unless($DISABLE_EXTRA_TITLE_GUESS)
+		{
+			$name .= '?' if $name =~ /^is/i;
+			#$name =~ s/id$//gi;
+			my $chr = '#';
+			$name =~ s/num$/$chr/gi; 
+			$name =~ s/datetime$/Date\/Time/gi;
+			$name =~ s/\best\b/Est./gi;
+		}
 		
 		$TITLE_CACHE{$oname} =  $name;
 		#s/id$//g;
