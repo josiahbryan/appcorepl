@@ -1238,10 +1238,29 @@ package Boards;
 				
 				my $list = join ',',  @posts;
 				
-				# Now do the actual query that loads both posts and comments in one gos
-				my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
-					"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
-					'order by timestamp, postid desc';
+				# Now do the actual query that loads both posts and comments in one go
+				my $sql = qq{
+					select p.*,
+						b.folder_name as original_board_folder_name,
+						b.title as board_title,
+						u.photo as user_photo,
+						u.user as username
+					from board_posts p
+						left join users  u on p.posted_by = u.userid
+						left join boards b on p.boardid   = b.boardid
+					where
+						(
+							(
+								(p.boardid=? or $user_wall_clause)}.   
+					
+								(@posts ? " and postid in (".$list.")" : "").
+							")". 
+							(@posts ? " or top_commentid in (".$list.")" : "").
+						")
+						and p.deleted=0
+					order by timestamp, postid desc";
+					#and p.boardid=b.boardid 
+
 				$sth = $dbh->prepare_cached($sql);
 				
 				#print STDERR "$sql\n".$board->id."\n";
