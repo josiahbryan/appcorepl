@@ -481,6 +481,8 @@ body
 
 .event_list li {
 	position: relative;
+	padding-top: 2px;
+	padding-bottom: 0px;
 }
 
 .event_list h5
@@ -510,13 +512,13 @@ body
 .event_list h3.event-title
 {
 	color: black;
-	padding: 2px 35px 2px 0px;
-	margin: 0;
+	padding: 0px 35px 2px 0px;
+	margin: -2px 0 0 0;
 	width: 90%;
 	height: 1.25em;
 	overflow: hidden;
 	
-	margin-left: 51px;
+	margin-left: 61px;
 }
 
 .event_list p
@@ -526,7 +528,7 @@ body
 	margin-top: -5px;
 	margin: 0;
 	
-	margin-left: 41px;
+	margin-left: 51px;
 }
 
 .event_list ul
