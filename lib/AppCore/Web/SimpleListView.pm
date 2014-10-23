@@ -14,7 +14,7 @@ package AppCore::Web::SimpleListView;
 		my $req   = shift;
 		my $args  = shift || {};
 		
-		$args->{file} ||= ''; #givemea404.tmpl';
+		$args->{file} ||= '';
 		
 		$args->{tmpl} = AppCore::Web::Common::load_template($args->{file});
 		$args->{req}  = $req;
