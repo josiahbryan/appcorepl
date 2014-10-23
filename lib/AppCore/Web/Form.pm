@@ -267,23 +267,28 @@ package AppCore::Web::Form;
 				
 				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 				{
-					error("Value Not Defined for $ref",
-						"Value not defined for '$ref' in data posted to server")
-						if !defined $req_val;
-					
-					eval
+					if(defined $req_val)
 					{
-						$class_obj->set($class_key, $req_val);
-						
-						# Used to update() below on $class_obj
-						$class_obj_refs->{$class_obj_name} = $class_obj;
-						
-						print STDERR "$ref: Storing '$req_val'\n";
-					};
-					if($@)
+						eval
+						{
+							$class_obj->set($class_key, $req_val);
+							
+							# Used to update() below on $class_obj
+							$class_obj_refs->{$class_obj_name} = $class_obj;
+							
+							print STDERR "$ref: Storing '$req_val'\n";
+						};
+						if($@)
+						{
+							error("Error getting value for '$ref'",
+								"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
+						}
+					}
+					else
 					{
-						error("Error getting value for '$ref'",
-							"Unable to read '$class_key' on '$class_obj_name': <pre>$@</pre>");
+						#error("Value Not Defined for $ref",
+						#	"Value not defined for '$ref' in data posted to server")
+						#	if !defined $req_val;
 					}
 				}
 				elsif(ref $class_obj eq 'HASH')
