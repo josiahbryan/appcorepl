@@ -200,6 +200,7 @@ package AppCore::Web::Form;
 		my $self = shift;
 		my $req = shift;
 		my $form_opts = shift;
+		my $meta_objs = shift || {};
 		
 		my $uuid = $req->{'AppCore::Web::Form::ModelMeta.uuid'};
 		error("Unable to Find Form UUID","Cannot find 'AppCore::Web::Form::ModelMeta.uuid' in posted data")
@@ -222,6 +223,7 @@ package AppCore::Web::Form;
 			my $class_obj = undef;
 			my $class_key = undef;
 			my $class_obj_name = undef;
+			my $meta_obj = undef;
 			
 			my $req_val = $req->{$ref};
 			
@@ -233,13 +235,15 @@ package AppCore::Web::Form;
 				$class_obj = $form_opts->{$class_obj_name};
 				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
 				
-				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
+				$meta_obj  = $meta_objs->{$class_obj_name};
+				if($meta_obj || $class_obj)
 				{
-					error("Value Not Defined for $ref",
-						"Value not defined for '$ref' in data posted to server")
-						if !defined $req_val;
+					my $meta;
+					eval {
+						$meta = ($meta_obj || $class_obj)->field_meta($class_key);
+					};
+					$meta = {} if !$meta;
 					
-					my $meta = $class_obj->field_meta($class_key);
 					if($meta->{linked} && $req_val !~ /^\d+$/)
 					{
 						my $err = undef;
@@ -258,6 +262,14 @@ package AppCore::Web::Form;
 								"<br><br>");
 						}
 					}
+				}
+				
+				
+				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
+				{
+					error("Value Not Defined for $ref",
+						"Value not defined for '$ref' in data posted to server")
+						if !defined $req_val;
 					
 					eval
 					{
@@ -1216,10 +1228,28 @@ package AppCore::Web::Form;
 					
 					if($readonly)
 					{
+						my $class  = $node->class;
+						#my $source = $node->source;
+						my $val_stringified = $val;
+						
+						#my $class = ref $class_obj ? ref $class_obj : $class_obj;
+						
+						if($class && ref $val_stringified) #$render eq 'ajax_input' && $class)
+						{
+							#error("Ajax Input Not Implemented","Error in $path: Ajax Input not implemented yet.");
+							
+							#if(!$class)
+							#{
+							#	error("No AppCore::DBI Class Given","No AppCore::DBI Class given at path '$path' for ajax_input database model item, bind: $ref");
+							#}
+							$val_stringified = $val_stringified->stringify if UNIVERSAL::isa($val_stringified, $class);
+						}
+							
+							
 						push @html, $t."\t $prefix<b><span class='f-input-readonly text ".($node->class?$node->class.' ':'')."' id='$label_id' "
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-							.">".$val."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
+							.">".$val_stringified."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
 							($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
 					}
 					elsif($type eq 'text')
@@ -1805,7 +1835,7 @@ package AppCore::Web::Form;
 						push @html, "$prefix<select data-type='range' "
 							." name='$ref'"
 							." id='$label_id'"
-							." class='form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."' ";
+							." class='form-input ".($node->class?$node->class.' ':'').($readonly?' readonly ':'')."' ";
 						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
 						push @html, ">\n";
 						
@@ -1868,9 +1898,10 @@ package AppCore::Web::Form;
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
 							."class='text $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-							.($val?" value='".encode_entities($val)."' ":'');
+							.($val?" value='".encode_entities($val)."' ":'')
+							.' ';
 							
-						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
+						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(readonly|type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
 							#.($readonly ? 'readonly' : "")
 						push @html," id='$label_id'/>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" :"")."\n";
 
