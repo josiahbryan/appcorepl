@@ -16,6 +16,7 @@ print date().": $0 Starting...\n";
 
 my $controller = ThemePHC::Videos->new;
 $controller->sync_from_vimeo();
+$controller->sync_from_ustream();
 
 print date().": $0 Finished\n\n";
 

@@ -30,7 +30,9 @@ my $controller = Boards->new;
 my %seen_feed; # flag feeds we've already synced so we dont duplicate post
 
 # Upload all new posts to FB from Boards
-my @posts = Boards::Post->retrieve_from_sql(q{deleted=0 and extra_data like '%"needs_uploaded":1%'});
+my @posts = Boards::Post->retrieve_from_sql(q{deleted=0 and extra_data like '%"needs_uploaded":1%' and timestamp>="2013-09-02 00:00:00"
+	and postid!=18222 -- bad post
+});
 
 print date().": $0 Uploading posts to FB...\n" if @posts;
 foreach my $post (@posts)
@@ -44,13 +46,32 @@ foreach my $post (@posts)
 		$noun = 'comment';
 		next if $post->top_commentid->deleted;
 	}
-	
+
+	if(0)
+	{
+	#	print "Was going toupload $noun $post, but just testing\n";
+	}
+	else
+	{
+
 	# Upload the post to FB
-	if($controller->get_controller($post->boardid)->notify_via_facebook('new_'.$noun, $post, { really_upload=>1 }))
+	my $res = $controller->get_controller($post->boardid)
+		->notify_via_facebook(
+			'new_'.$noun,
+			$post,
+			{ really_upload=>1 }
+		);
+
+	if($res || $@ =~ /OAuth "Facebook Platform" "unknown_error" "An unexpected error has occurred. Please retry your request later."/)
 	{
 		# Clear the 'needs uploaded' flag
 		$post->data->set('needs_uploaded',0);
 		$post->data->update;
+		#warn "Data updated!";
+	}
+
+	#die "Upload test done";
+
 	}
 }
 
@@ -136,6 +157,11 @@ sub update_board
 	use LWP::Simple;
 	my $json = LWP::Simple::get($feed_url);
 	die "Error getting $feed_url: $@" if $@;
+	if(!$json)
+	{
+		warn "Empty JSON for ".$board->title;
+		return undef;
+	}
 	my $feed_hash;
 	
 	eval { $feed_hash = decode_json($json); };
@@ -149,6 +175,9 @@ sub update_board
 	{
 		my $external_id = $fb_post->{id};
 		next if $external_id eq '180929095286122_150297708396755'; # Bad UTF8 encoding, buggers FastCGI in output, so skip for now
+		#next if $external_id eq '180929095286122_663770357001991'; # There was an error creating this post on FB, but it got created just not assigned an external ID so skip recreating it
+		#next if $external_id eq '180929095286122_663626980349662'; # ''
+		next if $fb_post->{from}->{name} eq 'Pleasant Hill Church'; # We don't want to sync down our own posts
 		
 		my $post = Boards::Post->by_field(external_id => $external_id, deleted => 0);
 		
@@ -157,10 +186,10 @@ sub update_board
 		{
 			my $fb_type = $fb_post->{type};
 			$fb_type = 'photo' if $fb_type eq 'image';
-#   			print STDERR "[DEBUG] Test, New Post (FB ID $external_id): By ".$fb_post->{from}->{name}.": '$fb_post->{message}' (Type: $fb_type)\n";
-#   			print STDERR Dumper $fb_post; # if $fb_type ne 'photo' && $fb_type ne 'status' && $fb_type eq 'link';# && !$fb_post->{message}; 
+   			#print STDERR "[DEBUG] Test, New Post (FB ID $external_id): By ".$fb_post->{from}->{name}.": '$fb_post->{message}' (Type: $fb_type)\n";
+   			#print STDERR Dumper $fb_post; # if $fb_type ne 'photo' && $fb_type ne 'status' && $fb_type eq 'link';# && !$fb_post->{message}; 
 # # 			#$fb_post->{type} eq 'photo' && !$fb_post->{message} && !$fb_post->{caption};
-#  			next;
+  			#next;
 			
 			my $poster_fb_id = $fb_post->{from}->{id};
 			my $poster_photo_url = "https://graph.facebook.com/" . $poster_fb_id . "/picture";
@@ -278,6 +307,7 @@ sub update_board
 		else
 		{
 			#print "Found valid post in our database from facebook - # $post - '".$post->subject."'\n";
+			#next;
 		}
 		
 		if($post->external_source eq 'Facebook' &&

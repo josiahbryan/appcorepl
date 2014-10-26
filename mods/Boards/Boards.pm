@@ -26,8 +26,7 @@ package Boards::TextFilter::AutoLink;
 			#$$textref =~ s/(?<!(\ssrc|href)=['"])((?:http:\/\/www\.|www\.|(?:http|ftp|telnet|file|nfs):\/\/)[^\s]+)/<a href="$2">$2<\/a>/gi;
 			
 			# New regex:
-			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|https|ftp|telnet|file):\/\/|www\.)([^\s()<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
-			#$$textref =~ s/([^'"\/<:-]|^)((?:([_a-z0-9-]+(?:\.[_a-z0-9-]+)*\@[a-z0-9-]+(?:\.[a-z0-9-]+)*(?:\.[a-z]{2,4}))))/$1.'<a href="mailto:$2">'.$2.'<\/a>'/egi;
+			$$textref =~ s/([^'"\/<:-]|^)((?:(?:http|https|ftp|telnet|file):\/\/|www\.)([^\s<>'"]+))/$1.'<a href="'._add_http($2).'">'.$2.'<\/a>'/egi;
 			# Changes:
 			# - Added '-' to the first exclusion block [^...] to properly handle this case:
 			#		<img src="http://cdn-www.i-am-bored.com/media/howwomenseetheworld.jpg" alt="" />
@@ -127,7 +126,7 @@ package Boards::VideoProvider::YouTube;
 		__PACKAGE__->register({
 			name		=> "YouTube",						# Name isn't used currently
 			provider_class	=> "video-youtube",					# provider_class is used in page to match provider to iframe template, and construct template and image ID's
-			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=[a-zA-Z0-9\-\_]+)/,	# Used to find this provider's URL in content
+			url_regex	=> qr/(http:\/\/www.youtube.com\/watch\?v=[a-zA-Z0-9\-\_]+|http:\/\/youtu.be\/[a-zA-Z0-9\-\_]+)/,	# Used to find this provider's URL in content
 			
 			iframe_size	=> [375,312],						# The size of the iframe - used to animate the link block element size larger to accomidate the new iframe
 												# The iframe template is used by jQuery's template plugin to generate the iframe html
@@ -142,10 +141,42 @@ package Boards::VideoProvider::YouTube;
 			my $self = shift;
 			my $url = shift;
 			my ($code) = $url =~ /v=([a-zA-Z0-9\-\_]+)/;
+			($code) = $url =~ /.be\/([a-zA-Z0-9\-\_]+)/ if !$code;
 			#print STDERR "youtube url: $url, code: $code\n";
 			return ($url, "http://img.youtube.com/vi/$code/1.jpg", $code);
 		};
 	};
+
+package Boards::VideoProvider::UStream;
+        {
+                use base 'Boards::VideoProvider';
+                __PACKAGE__->register({
+                        name            => "UStream",                                           # Name isn't used currently
+                        provider_class  => "video-ustream",                                     # provider_class is used in page to match provider to iframe template, and construct template and image ID's
+                        url_regex       => qr/(http:\/\/www.ustream.tv\/recorded\/\d+)/,        # Used to find this provider's URL in content
+
+                        iframe_size     => [480,302],                                           # The size of the iframe - used to animate the link block element size larger to accomidate the new iframe
+                                                                                                # The iframe template is used by jQuery's template plugin to generate the iframe html
+                        iframe_tmpl     => '<iframe title="UStream Video player" width="480" height="302" '.
+                                                'src="http://www.ustream.tv/embed/recorded/${videoid}?v=3&amp;wmode=direct" '.
+                                                'scrolling="no" frameborder="0" style="border: 0px none transparent;"></iframe>'
+                });
+
+                # Expected to return an array of (link URL, image URL, video ID) - videoId is set on the <a> tag in a custom 'videoid' attribute
+                sub process_url
+                {
+                        my $self = shift;
+                        my $url = shift;
+                        my ($code) = $url =~ /recorded\/(\d+)/;
+                        #print STDERR "ustream url: $url, code: $code\n";
+			
+			my $video_path = '/0/1/'.substr($code,0,2).'/'.substr($code,0,5).'/'.$code.'/1_8249750_'.$code;
+
+			my $img = 'http://static-cdn1.ustream.tv/i/video/picture'.$video_path.',112x63,b,1:2.jpg';
+
+                        return ($url, $img, $code);
+                };
+        };
 	
 package Boards::VideoProvider::Vimeo;
 	{
@@ -266,8 +297,8 @@ package Boards;
 	);
 	
 	# Register user preferences
-	our $PREF_EMAIL_ALL      = AppCore::User::PrefOption->register(__PACKAGE__, 'Notifications', 'Send me an email for all new posts', {default_value=>0});  # defaults to bool for datatype and true for default value
-	our $PREF_EMAIL_COMMENTS = AppCore::User::PrefOption->register(__PACKAGE__, 'Notifications', 'Send me an email when someone comments on my posts');
+	our $PREF_EMAIL_ALL      = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email for all new posts', {default_value=>0});  # defaults to bool for datatype and true for default value
+	our $PREF_EMAIL_COMMENTS = AppCore::User::PrefOption->register(__PACKAGE__, 'Notification Preferences', 'Send me an email when someone comments on my posts');
 	
 	# Setup the Web Module 
 	sub DISPATCH_METHOD { 'main_page'}
@@ -593,6 +624,11 @@ package Boards;
 		$req->push_page_path($folder_name);
 		
 		return $board;
+	}
+	
+	sub subpage_action_hook
+	{
+		return 0;
 	}
 	
 	sub macro_board_nav
@@ -1071,6 +1107,11 @@ package Boards;
 		}
 		elsif($sub_page)
 		{
+                        if($controller->subpage_action_hook($sub_page, $req, $r))
+                        {
+                                return $r;
+                        }
+
 			return $self->post_page($req,$r,$controller);
 		}
 		else
@@ -1157,7 +1198,7 @@ package Boards;
 				"where (boardid=? or $user_wall_clause) and timestamp>? ".
 				($postid? 'and top_commentid=?':' ').
 				($from_str? 'and poster_name=?':' ').
-				'and deleted=0 order by timestamp');
+				'and deleted=0 order by timestamp desc, postid desc');
 			
 			my @args = ($board->id, $req->{first_ts});
 			push @args, $postid if $postid;
@@ -1217,15 +1258,20 @@ package Boards;
 			{
 				# If paging disabled, just use a single query to load everything
 				$sth = $dbh->prepare_cached(qq{
-					select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b where p.boardid=b.boardid and (p.boardid=? or $user_wall_clause) and deleted=0 order by timestamp desc, postid desc 
+					select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b where p.boardid=b.boardid and (p.boardid=? or $user_wall_clause) and deleted=0 order by timestamp desc, postid desc
 				});
 			}
 			else
 			{
 				# Paging not disabled, so first we get a list of postids (e.g. not the comments) to load - since the doing a limit (?,?) for comments would miss some ikder comments
 				# that should be included because the post is included
-				my $find_posts_sth = $dbh->prepare_cached("select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc, postid desc limit ?,?");
+				my $sql_ids = "select b.postid from board_posts b where (boardid=? or $user_wall_clause) and top_commentid=0 and deleted=0 order by timestamp desc
+, postid desc limit ?,?";
+				my $find_posts_sth = $dbh->prepare_cached($sql_ids);
 				$find_posts_sth->execute($board->id, $idx, $len);
+				
+				#print STDERR "sql_ids: '$sql_ids', $idx, $len, ".$board->id."\n";
+
 				my @posts;
 				push @posts, $_ while $_ = $find_posts_sth->fetchrow;
 				
@@ -1238,29 +1284,10 @@ package Boards;
 				
 				my $list = join ',',  @posts;
 				
-				# Now do the actual query that loads both posts and comments in one go
-				my $sql = qq{
-					select p.*,
-						b.folder_name as original_board_folder_name,
-						b.title as board_title,
-						u.photo as user_photo,
-						u.user as username
-					from board_posts p
-						left join users  u on p.posted_by = u.userid
-						left join boards b on p.boardid   = b.boardid
-					where
-						(
-							(
-								(p.boardid=? or $user_wall_clause)}.   
-					
-								(@posts ? " and postid in (".$list.")" : "").
-							")". 
-							(@posts ? " or top_commentid in (".$list.")" : "").
-						")
-						and p.deleted=0
-					order by timestamp, postid desc";
-					#and p.boardid=b.boardid 
-
+				# Now do the actual query that loads both posts and comments in one gos
+				my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
+					"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
+					'order by timestamp asc, postid asc'; # order will be inverted with a 'reverse' call, below
 				$sth = $dbh->prepare_cached($sql);
 				
 				#print STDERR "$sql\n".$board->id."\n";
@@ -1411,13 +1438,11 @@ package Boards;
 				{
 					## HACK!!!
 					eval {
-						if(eval('use ThemePHC::Directory'))
+						use ThemePHC::Directory;
+						$hash->{user_photo} = PHC::Directory->photo_for_user($user);
+						if($post->{user_photo})
 						{
-							$hash->{user_photo} = PHC::Directory->photo_for_user($user);
-							if($post->{user_photo})
-							{
-								$post->{poster_photo} = $post->{user_photo};
-							}
+							$post->{poster_photo} = $post->{user_photo};
 						}
 					};
 					print STDERR "Debug: error calling p4u: $@, post: $hash->{folder_name}, postid: $hash->{postid}\n" if $@;
@@ -1438,13 +1463,11 @@ package Boards;
 			{
 				## HACK!!!
 				eval {
-					if(eval('use ThemePHC::Directory'))
+					use ThemePHC::Directory;
+					$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
+					if($post->{user_photo})
 					{
-						$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
-						if($post->{user_photo})
-						{
-							$post->{poster_photo} = $post->{user_photo};
-						}
+						$post->{poster_photo} = $post->{user_photo};
 					}
 				};
 				print STDERR "Debug: error calling p4u: $@, post: $post->{folder_name}, postid: $post->{postid}\n" if $@;
@@ -1780,7 +1803,7 @@ package Boards;
 			my $sth = Boards::Post->db_Main->prepare_cached('select p.*,b.folder_name as original_board_folder_name, b.board_userid as board_userid,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
 				'where p.boardid=b.boardid and p.deleted=0 and '.
 				'top_commentid=? '.
-				'order by timestamp');
+				'order by timestamp desc, postid desc');
 		
 			$sth->execute($post->id);
 			
@@ -2400,7 +2423,12 @@ package Boards;
 		}
 		else
 		{
-			
+			if($sub_page && $controller->subpage_action_hook($sub_page, $req, $r, $post))
+                        {
+                                return $r;
+                        }
+		
+	
 			## TODO ## Handle this redirect in a more generic way - not sure exactly what/why this is here, but I know its needed....come back later and figure it out...20110429
 # 			if($board_folder_name eq 'ask_pastor') #|| $board_folder_name eq 'pastors_blog')
 # 			{
@@ -2567,8 +2595,8 @@ package Boards;
 			
 			my $short_text  = substr($short,0,$short_len) . (length($short) > $short_len ? '...' : '');
 			
-			my $quote = "\"".
-				 substr($short,0,$short_len) . "\"" .
+			my $quote = "". #"\"".
+				 substr($short,0,$short_len) . #"\"" .
 				(length($short) > $short_len ? '...' : '');
 				
 # 			my $message = $action eq 'new_post' ?
@@ -2589,9 +2617,11 @@ package Boards;
 				print STDERR "Posting $action to Facebook URL $notify_url\n";
 			
 				my $message = $action eq 'new_post' ?
-					$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
+					#$post->poster_name.": $quote - read more at $short_abs_url in '".$board->title."'":
+					($post->poster_name eq 'Pleasant Hill Church' ? '': $post->poster_name.': ') .
+						"$quote - read more at $short_abs_url in '".$board->title."'":
 					($post->poster_name.": $quote - ".
-						($post->parent_commentid && $post->parent_commentid->id && $post->parent_comment->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
+						($post->parent_commentid && $post->parent_commentid->id && $post->parent_commentid->poster_name ne $post->poster_name ? " replied to ".$post->parent_commentid->poster_name : " commented ").
 						" on \"".$post->top_commentid->subject."\" at $short_abs_url");
 				
 				my $photo = $post->poster_photo ? $post->poster_photo :
@@ -2652,7 +2682,7 @@ package Boards;
 			#die "[DEBUG] Facebook post data: ".Dumper($form);
 			
 			my $response = $ua->post($notify_url, $form);
-			
+			undef $@;
 			if ($response->is_success) 
 			{
 				my $rs = decode_json($response->decoded_content);
@@ -2664,7 +2694,7 @@ package Boards;
 			else 
 			{
 				print STDERR "ERROR Posting to facebook, message: ".$response->status_line."\nAs String:".$response->as_string."\n";
-				$! = 'Error uploading to facebook: '.$response->as_string;
+				$@ = 'Error uploading to facebook: '.$response->as_string;
 				return 0; 
 			}
 			
@@ -2777,20 +2807,16 @@ Cheers!};
 				!AppCore::EmailQueue->was_emailed($comment->top_commentid->poster_email);
 		
 		my $board = $comment->boardid;
-		
-		undef $@;
-		eval
-		{
-			AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,replace_lkey($email_body,$comment->managerid))
-						if $board && 
-						$board->id && 
-						$board->managerid && 
-						$board->managerid->id && 
-						$board->managerid->email && 
-						$board->managerid->email ne $comment->poster_email &&
-						!AppCore::EmailQueue->was_emailed($board->managerid->email);
-		}; 
-		warn $@ if $@;			
+		eval {
+		AppCore::EmailQueue->send_email([$board->managerid->email],$email_subject,replace_lkey($email_body,$comment->managerid))
+					if $board && 
+					$board->id && 
+					$board->managerid && 
+					$board->managerid->id && 
+					$board->managerid->email && 
+					$board->managerid->email ne $comment->poster_email &&
+					!AppCore::EmailQueue->was_emailed($board->managerid->email);
+		};			
 		AppCore::EmailQueue->reset_was_emailed;
 	}
 	
@@ -2904,7 +2930,7 @@ Cheers!};
 		my $user = AppCore::Common->context->user;
 		
 		# Admins automatically bypass spam filtering methods
-		return 0 if $SPAM_OVERRIDE || ($user && ($user->check_acl($self->config->{admin_acl}) || $user->email eq 'faith08@gmail.com'));
+		return 0 if $SPAM_OVERRIDE || $ENV{SPAM_OVERRIDE} || ($user && ($user->check_acl($self->config->{admin_acl}) || $user->email eq 'susan.bryan5@gmail.com'));
 		
 		### Method: 'Bot Trap' - hidden field, but it it has data, its probably a bot.
 		if($bot_trap)
@@ -2950,7 +2976,8 @@ Cheers!};
 		        (
 			$text =~ /(<a)/ig ||
 			$text =~ /url=/   ||
-			$text =~ /link=/))
+			$text =~ /link=/) ||
+			$text =~ /\[[uU][rR][lL]/) # faster than /i
 		{
 			#print STDERR "Debug Rejection: comment='$comment', commentor='$commentor'\n";
 			#die "Sorry, you sound like a spam bot - go away. ($req->{comment})" if !$SPAM_OVERRIDE;

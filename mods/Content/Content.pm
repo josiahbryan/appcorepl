@@ -243,6 +243,7 @@ package Content;
 				
 				if(!$page_obj->check_acl)
 				{
+					AppCore::AuthUtil::http_require_login() if !AppCore::AuthUtil::authenticate();
 					return $r->error("Authentication Required","Error: You dont have the necessary clearance to access <b>".$page_obj->url."</b><br><h3>You can <a href='".AppCore::Config->get("LOGIN_URL")."'>log in</a> or <a href='/user/signup'>signup</a> if you have not done so already.</h3>"); 
 				}
 				

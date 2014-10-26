@@ -366,7 +366,7 @@ package AppCore::Web::Common;
 		
 		#exit;
 		
-		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
+		print "Status: 404\r\nContent-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
 		if(AppCore::Common->context->{mod_fastcgi})
 		{
 			goto END_HTTP_REQUEST;

@@ -422,11 +422,12 @@ package User;
 		
 		if(AppCore::Common->context->user)
 		{
+			my $user = AppCore::Common->context->user;
 			$self->run_hooks(User::ActionHook::EVT_USER_LOGOUT,{user=>AppCore::Common->context->user});
 			
 			AppCore::AuthUtil->logoff;
 			
-			print STDERR "auth logoff\n";
+			print STDERR "auth logoff for user $user\n";
 			
 			# Redirect back here inorder for any user-dependent template features to adjust given the logout
 			return $r->redirect($self->module_url($LOGIN_ACTION) . '?url_from='.$url_from.'&was_loggedin=1&timeout='.$req->timeout);
