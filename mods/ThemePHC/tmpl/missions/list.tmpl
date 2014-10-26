@@ -84,7 +84,7 @@ fieldset{ border:0;padding:0;margin:0 }
 <fieldset class='mblob'>
 
 	<tmpl_if m_photo_url>
-		<img class="border blob-photo" src="%%appcore%%/mods/ThemePHC%%m_photo_url%%" alt="Photo of %%m_family_name%%"/>
+		<img class="border blob-photo" src="%%appcore%%/mods/ThemePHC%%m_photo_url%%" alt="Photo of %%m_family_name%%" onerror='this.style.display="none"'/>
 	</tmpl_if>
 
 	<div class='basics'>
@@ -104,7 +104,12 @@ fieldset{ border:0;padding:0;margin:0 }
 						%%m_country%%
 					</tmpl_if>
 			</span>
-		</a>
+		</a><br>
+		<tmpl_if m_contact_email>
+		<span class=contact_email>
+			E-mail: <a href='mailto:%%m_contact_email%%'>%%m_contact_email%%</a>
+		</span>
+		</tmpl_if>
 
 	</div>
 
@@ -114,7 +119,7 @@ fieldset{ border:0;padding:0;margin:0 }
 		</div>
 	<tmpl_else>
 		<div class='ffjc-error'>
-			This entry needs to be updated with a description and probably a photo. Please notify <a href='mailto:ashley@josiahbryan.com?subject=%%m_family_name%%'>Ashley</a> or <a href='mailto:pastor@mypleasanthillchurch.org?subject=%%m_family_name%%'>Pastor Bryan</a> if you see this message!
+			This entry needs to be updated with a description and probably a photo. Please notify <a href='mailto:pastor@mypleasanthillchurch.org?subject=%%m_family_name%%'>Pastor Bryan</a> if you see this message!
 			
 		</div>
 	</tmpl_if>

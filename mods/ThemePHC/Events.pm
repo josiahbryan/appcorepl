@@ -48,6 +48,7 @@ package ThemePHC::Events;
 	};
 	
 	use Content::Page;
+	use AppCore::Common;
 	
 	# This 'Boards' subclass is rather simple. As may know, Boards functions something like this:
 	# 
@@ -201,6 +202,8 @@ package ThemePHC::Events;
 		#$rs->{post_text} = $tmpl->output;
 		
 		my $x = PHC::Event->retrieve($post->data->get('itemid'));
+		#die Dumper $post->data, $x if !$x;
+		#die Dumper $post;
 		$rs->{type_event} = 1;
 		if($x)
 		{
@@ -765,7 +768,7 @@ package ThemePHC::Events;
 		my $item = $event->{item};
 		if(!$item)
 		{
-			die "Error loading item for $self, Dump:".Dumper($self);
+			die "Error loading item for $self, Dump:".Dumper($self, $event).AppCore::Common::get_stack_trace();
 		}
 		
 		my $dow;

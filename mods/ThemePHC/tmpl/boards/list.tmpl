@@ -355,6 +355,40 @@
 	
 	$(".loadmore a").live("click",pagingFunc);
 	$("a.loadmore_link").live("click",pagingFunc);
+
+	$("a.epaup").live('click', function()
+	{
+		var $this = $(this);
+		
+		if($this.attr('x:alert-this-session') == 'true')
+			return false;
+			
+		$this.attr('x:alert-this-session', 'true');
+		
+		if($this.attr('x:ealert') == 'true' &&
+			! confirm("Are you SURE you want to resend this out as an e-alert?"))
+		{
+			return false;
+		}
+		
+		$this.attr('x:ealert', 'true')
+		
+		//return;
+		
+		var $loading = $("<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' align='absmiddle'>");
+		$loading.insertAfter($this);
+		$this.hide();
+		$.ajax({
+                        type: "POST",
+                        url: $this.attr('href'),
+                        success: function(data)
+                        {
+				$loading.remove();	
+				alert("Done! eAlert sent!");
+			}
+		});
+		return false;
+	});
 	
 	</script>
 	

@@ -115,7 +115,22 @@ package ThemePHC::PastorsBlog;
 		
 		return $post;
 	}
-	
+
+#	$controller->load_post($post,0,undef,$dont_inc_comments);	
+=begin cut
+	sub load_post#($post,$req,$dont_count_view||0,$more_local_ctx||undef);
+        {
+                my $self = shift;
+
+                my $post = shift;
+		my $out = $self->SUPER::load_post($post, @_);
+
+		my $can_admin = 1 if ($_ = AppCore::Common->context->user) && $_->check_acl($self->config->{admin_acl});;
+                        
+		$self->send_talk_notifications($post) if $can_admin;
+		return $out;
+#	}
+=cut
 	sub send_email_notifications
 	{
 		my $self = shift;
@@ -179,7 +194,7 @@ package ThemePHC::PastorsBlog;
 		my $post = shift;
 		
 		my $folder = $post->folder_name;
-		my $server = AppCore::Config->get('WEBSITE_SERVER');
+		my $server = 'http://www.mypleasanthillchurch.org'; #AppCore::Config->get('WEBSITE_SERVER');
 		my $post_url = "${server}/learn/pastors_blog/$folder";
 		
 		my $data = {

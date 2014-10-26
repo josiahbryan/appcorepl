@@ -1,7 +1,14 @@
 <title><tmpl_if familyid>Edit %%display%%<tmpl_else>Create New Family</tmpl_if></title>
 <h1><tmpl_if familyid>Edit %%display%%<tmpl_else>Create New Family</tmpl_if></h1>
 
-<form action='%%binpath%%/post' method=POST>
+<style>
+.photo {
+	border: 1px solid black;
+	float: right;
+}
+</style>
+
+<form action='%%binpath%%/post' method=POST ENCTYPE="multipart/form-data">
 
 	<input type=hidden name=familyid value="<tmpl_var familyid>">
 	
@@ -14,7 +21,16 @@
 		</tr>
 		<tmpl_if is_admin>
 		<tr>
-			<td>Photo Num:</td> <td><input type=text name=photo_num class='textinput' value='%%photo_num%%' size=15></td>
+			<td valign=top>Photo Num:</td>
+			<td valign=top>
+				<input type=text name=photo_num class='textinput' value='%%photo_num%%' size=15>
+				<a href='%%large_photo%%' class='photo_link' rel='dir_photos' target='_new' title='%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%'>
+                                                        <img src='%%photo%%' class='photo' border='0' alt='%%first%%<tmpl_if spouse:str> &amp; %%spouse%%</tmpl_if> %%last%%' align=top>
+                                                </a>
+
+				<INPUT TYPE="FILE" NAME="upload" size=55 id=i_file>
+				<div style='color:#444'>Note: Press the 'Save Changes' button below to upload the file</div>
+			</td>
 		</tr>
 		<tr>
 			<td>User Account:</td> <td>
@@ -132,7 +148,7 @@
 		<tr><td colspan=2><hr size=1></td></tr>
 		<tmpl_if is_pastor>
 			<tr>
-				<td valign=top><a name='admin_notes'>Admin Notes</a>:</td> <td><textarea name=admin_notes id='admin_notes' class='textinput' rows=4 cols=40>%%admin_notes%%</textarea></td>
+				<td valign=top><a name='admin_notes'>Admin Notes</a>:</td> <td><textarea name=admin_notes id='admin_notes' class='textinput' rows=8 cols=50>%%admin_notes%%</textarea></td>
 			</tr>
 			<tr><td colspan=2><hr size=1></td></tr>
 		</tmpl_if>

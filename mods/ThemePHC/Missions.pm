@@ -28,12 +28,13 @@ package PHC::Missions;
 			{ field	=> 'country',			type => 'varchar(255)' },
 			{ field	=> 'mission_name',		type => 'varchar(255)' },
 			{ field	=> 'family_name',		type => 'varchar(255)' },
+			{ field => 'contact_email',		type => 'varchar(255)' },
 			{ field	=> 'short_tagline',		type => 'varchar(255)' },
 			{ field	=> 'location_title',		type => 'varchar(255)' },
 			{ field => 'photo_url',			type => 'varchar(255)' },
 			{ field	=> 'lat',			type => 'float' },
 			{ field	=> 'lng',			type => 'float' },
-			{ field => 'deleted',			type => 'int' },
+			{ field => 'deleted',			type => 'int', null => 0, deleted => 0 },
 		],	
 	});
 }
@@ -403,7 +404,7 @@ package ThemePHC::Missions;
 		}
 		
 		
-		foreach my $key (qw/city country mission_name family_name description/)
+		foreach my $key (qw/city country mission_name family_name description contact_email/)
 		{
 			$m->set($key,$args->{$key}) if $m->get($key) ne $args->{$key};
 		}
@@ -413,7 +414,7 @@ package ThemePHC::Missions;
 		$board->groupid($CHANNEL_GROUP) 	if $board->groupid 		ne $CHANNEL_GROUP;
 		$board->section_name($BOARD_FOLDER) 	if $board->section_name 	ne $BOARD_FOLDER;
 		
-		$tmp = $class->to_fake_folder_name($class->create_folder_name($m));
+		$tmp = $class->to_folder_name($class->create_folder_name($m));
 		$board->folder_name($tmp)		if $board->folder_name 		ne $tmp;
 		
 		$tmp = $class->create_folder_title($m);
@@ -483,7 +484,8 @@ package ThemePHC::Missions;
 		
 		$m->update if $m->is_changed;
 		
-		AppCore::Web::Common::redirect($AppCore::Web::Config::DISPATCHER_URL_PREFIX.'/'.$BOARD_FOLDER.'/'.$board->folder_name); 
+		#AppCore::Web::Common::redirect($AppCore::Web::Config::DISPATCHER_URL_PREFIX.'/'.$BOARD_FOLDER.'/'.$board->folder_name); 
+		AppCore::Web::Common::redirect($AppCore::Web::Config::DISPATCHER_URL_PREFIX.'/serve/outreach/'.$board->folder_name);
 	}
 	
 	sub board_settings_edit_hook
@@ -586,7 +588,9 @@ package ThemePHC::Missions;
 		elsif($sub_page)
 		{
 			my $board = $self->get_board_from_req($req);
-			if(!$board)
+			if(!$board  ||
+				$board->id == 34 # Hide Art and Ruth Hegdahl due to India being closed to missionaries
+				)
 			{
 				return $r->error("No Such Bulletin Board","Sorry, the folder or action name you gave did not match any existing Bulletin Board folders. Please check your URL or the link on the page that you clicked and try again.");
 			}
@@ -603,7 +607,7 @@ package ThemePHC::Missions;
 			$tmpl->param(can_admin => $can_admin);
 			
 			# Wont do anything if loaded, otherwise, loads from DB
-			$self->load_missions_list; 
+			$self->load_missions_list(1);
 			
 			$tmpl->param(missions_list => $MissionsListCache->{page_list});
 			
@@ -641,11 +645,13 @@ package ThemePHC::Missions;
 	sub load_missions_list
 	{
 		my $self = shift;
-		if(!$MissionsListCache)
+		my $flag = shift || 0;
+		if(!$MissionsListCache || $flag)
 		{
 			$self->binpath('/serve/outreach'); # needed for priming cache properly
 			
-			my @missions = PHC::Missions->search(deleted=>0);
+			my @missions = PHC::Missions->retrieve_from_sql('deleted!=1 order by missionid'); #search(deleted=>0);
+			#die Dumper \@missions if $flag;
 			
 			my %country_groups;
 			
@@ -683,6 +689,7 @@ package ThemePHC::Missions;
 				
 				#$ref->{binpath} = $bin;
 				$ref->{'board_'.$_} = $m->boardid->get($_) foreach qw/folder_name section_name/;
+				#$ref->{list_title} = 'test:'.$m->family_name.':'.$m->mission_name;# ? $m->family_name : $m->mission_name;
 				$ref->{list_title} = $m->family_name ? $m->family_name : $m->mission_name;
 				
 				push @map_list, $ref;
@@ -718,8 +725,9 @@ package ThemePHC::Missions;
 		my $m = shift;
 
 		my @args;
-		push @args, $m->mission_name;
+		#push @args, $m->mission_name;
 		push @args, $m->family_name if $m->family_name;
+		push @args, $m->mission_name;
 		push @args, $m->city if $m->city;
 
 		return join ' - ', @args;

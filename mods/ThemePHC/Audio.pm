@@ -18,6 +18,7 @@ package PHC::Recording;
 			{ field	=> 'datetime',			type => 'datetime' },
 			{ field	=> 'duration',			type => 'float' },
 			{ field	=> 'published',			type => 'int(1)' },
+			{ field => 'deleted',			type => 'int(1)' },
 			{ field => 'sermon_track_num',		type => 'int' },
 			{ field	=> 'sermon_file_path',		type => 'text' },
 			{ field	=> 'sermon_web_path',		type => 'text' },
@@ -629,7 +630,7 @@ package ThemePHC::Audio;
 			$start = 0 if !$start || $start<0;
 			
 			
-			my $count_sth = PHC::Recording->db_Main->prepare('select count(recordingid) as `count` from recordings where published=1');
+			my $count_sth = PHC::Recording->db_Main->prepare('select count(recordingid) as `count` from recordings where published=1 and deleted=0');
 			$count_sth->execute;
 			
 			my $count = $count_sth->rows ? $count_sth->fetchrow_hashref->{count} : 0;
@@ -648,6 +649,7 @@ package ThemePHC::Audio;
 			
 			my @audio = PHC::Recording->retrieve_from_sql(qq{
 				published = 1 
+				and deleted = 0
 				
 				order by datetime desc
 				

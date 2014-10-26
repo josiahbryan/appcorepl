@@ -1,3 +1,4 @@
+<!--inc-postrow-talkpage.tmpl-->
 	<tr class='post<tmpl_if post_class> post-%%post_class%%</tmpl_if> talktype-%%ticker_class%%' id='post%%postid%%'>
 		<td valign='top' align='center' class='photo'>
 			<img class='user_photo ar_adjustable' 
@@ -14,10 +15,18 @@
 				<a name="p%%postid%%">&middot;</a>
 				<span class='timestamp'><span class='approx_time_ago' title='%%timestamp%%' timestamp='%%timestamp%%'>%%approx_time_ago%%</span> ago on <span class='pretty_timestamp'>%%pretty_timestamp%%</span> 
 				<tmpl_if external_source:str>via <tmpl_if external_url:str><a href='%%external_url%%'><tmpl_else><b></tmpl_if>%%external_source%%<tmpl_if external_url:str></a><tmpl_else></b></tmpl_if></tmpl_if> 
-				<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a><a name='num%%post_number%%'>&nbsp;</a> <tmpl_if single_post_page>Post # %%postid%%</tmpl_if></span>
+				<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%'>#</a><a name='num%%post_number%%'>&nbsp;</a> <tmpl_if single_post_page>Post # %%postid%%</tmpl_if></span> 
+				<tmpl_if can_admin>
+					<span <tmpl_if data_ealert>style="color:rgba(255,0,0,.45)"</tmpl_if>>
+						(<a href='%%bin%%/%%board_folder_name%%/%%folder_name%%/epaup' class='epaup'
+							<tmpl_if data_ealert>x:ealert="true"</tmpl_if>
+							<tmpl_if data_ealert>style="color:rgba(255,0,0,.45)"</tmpl_if>
+							><tmpl_if data_ealert><b>Resend</b><tmpl_else>Send</tmpl_if> out as eAlert</a>)
+					</span>
+				</tmpl_if>
 			</div>
 			
-			<div class='post_text'>
+			<div class='post_text' style='font-size:13px'>
 				<tmpl_if system_content>
 					<tmpl_if post_class_link>
 						<span class='system_content'>
@@ -39,7 +48,7 @@
 								<tmpl_if data_caption:str>Uploaded <a href='%%data_link%%'>%%data_caption%%</a> to<tmpl_else>Added photo </tmpl_if> <b><a href='%%data_link%%'>%%data_name%%</a></b>.
 							</span>
 							<tmpl_if clean_text:str>
-								<span class='post_text'>
+								<span class='post_text' style='font-size:13px'>
 									%%text_html%%
 								</span>
 							</tmpl_if>
@@ -54,7 +63,7 @@
 							
 						<tmpl_else>
 							<!-- Don't know how to render 'system content' for this post class, so just render content as normal -->
-							<span class='post_text'>
+							<span class='post_text' style='font-size:13px'>
 								%%text_html%%
 							</span>
 							
@@ -67,11 +76,11 @@
 				<tmpl_if single_post_page>
 					%%post_text%%
 				<tmpl_else>
-					<div id='short_text_%%postid%%' class='short_text'>
+					<div id='short_text_%%postid%%' class='short_text' style='font-size:13px'>
 						%%clean_html%%
 					</div>
 					<tmpl_if short_text_has_more>
-						<div id='long_text_%%postid%%' class='long_text'></div>
+						<div id='long_text_%%postid%%' class='long_text' style='font-size:13px'></div>
 					</tmpl_if>
 				</tmpl_if>
 			</div>
@@ -107,5 +116,43 @@
 				</div>
 			
 			</div>
+
+			<tmpl_if single_post_page>
+
+			<script>
+				$("a.epaup").live('click', function()
+				{
+					var $this = $(this);
+					if($this.attr('x:alert-this-session') == 'true')
+						return false;
+					
+					$this.attr('x:alert-this-session', 'true');
+					
+					if($this.attr('x:ealert') == 'true' &&
+						! confirm("Are you SURE you want to resend this out as an e-alert?"))
+					{
+						return false;
+					}
+					
+					$this.attr('x:ealert', 'true')
+					
+					//return;
+					
+					var $loading = $("<img src='%%appcore%%/mods/ThemePHC/images/fb-ajax-loader.gif' align='absmiddle'>");
+					$this.hide();
+					$loading.insertAfter($this);
+					$.ajax({
+						type: "POST",
+						url: $this.attr('href'),
+						success: function(data)
+						{
+							$loading.remove();
+							alert("Done! eAlert sent!");
+						}
+					});
+					return false;
+				});
+			</script>
+			</tmpl_if>
 		</td>
 	</tr>

@@ -7,98 +7,340 @@ use AppCore::Web::Module;
 use AppCore::Web::Common;
 use ThemePHC::BoardsTalk;
 
-my @list = qw/akthorn@freedomnet.net
-akthorn@freedomnet.net
-angjones79@aim.com
-bdurbin@comcast.net
-beanbarn@bright.net
-behr319@hotmail.com
-behr319@hotmail.com
-behr81@hotmail.com
-billensteinfarms@bright.net
-billensteinfarms@bright.net
-bobwiley57@gmail.com
-bruce_davison@darke.k12.oh.us
-bsmith@josiahbryan.com
-bwilleford@bright.net
-bwilleford@bright.net
-c1doesit@yahoo.com
-c1doesit@yahoo.com
-caliss@anderson.edu
-caliss@anderson.edu
-casralass@yahoo.com
-danielandashleybryan@gmail.com
-daretters@hotmail.com
-daretters@hotmail.com
-dauberstock@yahoo.com
-djessup@redgold.com
-donandpat@aol.com
-dpouder@hotmail.com
-dreamergirl@woh.rr.com
-drismiller@aol.com
-dwilliam51@hotmail.com
-dwilliam57@hotmail.com
-dwilliam57@hotmail.com
-faith08@gmail.com
-gmak@example.com
-grandpa7@peoplepc.com
-grandpa7@peoplepc.com
-humnongkalak@yahoo.co.id
-humnongkalak@yahoo.co.id
-janrasz@freedomnet.met
-jasonpollitt@rocketmail.com
-jbryan@productiveconcepts.com
-jbryan@productiveconcepts.com
-jenikayandbrian@yahoo.com
-johnsporek@yahoo.com
-josiahbryan@gmail.com
-josiahbryan@gmail.com
-jretrum@wcoil.com
-jscholl065@gmail.com
-jscholl065@gmail.com
-kdavison@frankmiller.com
-klaytonhd@yahoo.com
-kristaspence@ymail.com
-lcstump@bright.net
-lcstump@bright.net
-lgullett@bright.net
-lstewart26@woh.rr.com
-lstewart26@woh.rr.com
-lzimmers@yahoo.com
-malorie.dunlap@indwes.edu
-malorie.dunlap@indwes.edu
-manor6@omnicityusa.com
-manor6@omnicityusa.com
-matt30arnold@yahoo.com
-mdenney@rcwifi.com
-mdenney@rcwifi.com
-nparsons@councilonruralservices.org
-pricey@wildblue.net
-rdjessup@aol.com
-roberts39shop@yahoo.com
-roberts39shop@yahoo.com
-rpprice@isp.com
-rpprice@isp.com
-rtzimmers@embarqmail.com
-rtzimmers@embarqmail.com
-russ_tnt@yahoo.com
-sarahkolp@yahoo.com
-shawnnasee2010@aol.com
-shawnnasee2010@aol.com
-sheila64@bright.net
-sherri_slaughter2000@yahoo.com
-smwasson1984@yahoo.com
-susan.bryan@gmail.com
-susan.bryan5@gmail.com
-tahampshire@yahoo.com
-tahampshire@yahoo.com
-teresa.zimmers@gmail.com/;
+my @list = split /\n/, q{| josiahbryan@gmail.com               |
+| bsmith@josiahbryan.com              |
+| wcurts@purdue.edu                   |
+| archerallan@yahoo.com               |
+| daretters@hotmail.com               |
+| faith08@gmail.com                   |
+| Behr81@hotmail.com                  |
+| zibby9@hotmail.com                  |
+| kdavison@frankmiller.com            |
+| caliss@anderson.edu                 |
+| drismiller@aol.com                  |
+| danielalanbryan@gmail.com           |
+| djessup@redgold.com                 |
+| rdjessup@aol.com                    |
+| Dwilliam51@hotmail.com              |
+| donandpat@aol.com                   |
+| lpouder76@hotmail.com               |
+| janrasz@freedomnet.net              |
+| gzimmers@rcwifi.com                 |
+| hepeden@msn.com                     |
+| hera@omnicityusa.com                |
+| dunlap_12@hotmail.com               |
+| jretrum@wcoil.com                   |
+| jscholl065@gmail.com                |
+| lrmdflesher@rcwifi.com              |
+| ldkenney2004@aol.com                |
+| lgullett@bright.net                 |
+| lisakat60@yahoo.com                 |
+| mr.turniphead@hotmail.com           |
+| malorie.dunlap@indwes.edu           |
+| gardenpath1896@yahoo.com            |
+| maestep25@yahoo.com                 |
+| filmmidwest@yahoo.com               |
+| nparsons@councilonruralservices.org |
+| prprescott@earthlink.net            |
+| rexfields302@hotmail.com            |
+| rpprice@isp.com                     |
+| rtzimmers@embarqmail.com            |
+| rustyrz@gmail.com                   |
+| shprice@bright.net                  |
+| sheila64@bright.net                 |
+| sheila@romarproservices.com         |
+| punky_bunni@hotmail.com             |
+| akthorn@freedomnet.net              |
+| tklipstine@earthlink.net            |
+| bobwiley57@gmail.com                |
+| tonyansonialumber@yahoo.com         |
+| tschwartzkopf@ivytech.edu           |
+| pastor@mypleasanthillchurch.org     |
+| susan.bryan@gmail.com               |
+| susan.bryan5@gmail.com              |
+| Bruce_Davison@darke.k12.oh.us       |
+| johnsporek@yahoo.com                |
+| tcgoodi@yahoo.com                   |
+| swedisholga@yahoo.com               |
+| brownbagsoap@yahoo.com              |
+| shawnnasee2010@aol.com              |
+| bonnet3679@verizon.net              |
+| shprice@bright.net                  |
+| tdprice@bright.net                  |
+| bdurbin@comcast.net                 |
+| my867@yahoo.com                     |
+| sherri_slaughter2000@yahoo.com      |
+| russ_tnt@yahoo.com                  |
+| dunlap_                             |
+| kbesecker@ivytech.edu               |
+| pamelajeffers78@yahoo.com           |
+| teresa.zimmers@gmail.com            |
+| billensteinfamily@centurylink.net   |
+| lcstump@bright.net                  |
+| limama2545@yahoo.com                |
+| nparsons@councilonruralservices.org |
+| ljohns@indiana.edu                  |
+| bwilleford@bright.net               |
+| angjones79@aim.com                  |
+| shawnnasee2010@facebook.com         |
+| sallycox23@yahoo.com                |
+| sbryan                              |
+| pricey6969@gmail.com                |
+| lauren.jeffers10@yahoo.com          |
+| tahampshire@yahoo.com               |
+| daretters@hotmail.com               |
+| manor6@omnicityusa.com              |
+| roberts39shop@yahoo.com             |
+| dreamergirl@woh.rr.com              |
+| teresapenflem@gmail.com             |
+| djmann1951@centurylink.net          |
+| the_vanderkoois@yahoo.com           |
+| humnongkalak@yahoo.co.id            |
+| matt30arnold@yahoo.com              |
+| c1doesit@yahoo.com                  |
+| gmak@example.com                    |
+| c_liss_2007@hotmail.com             |
+| hsteedplus3@yahoo.com               |
+| foxfoo@foobar.com                   |
+| jenikayandbrian@yahoo.com           |
+| sheila64@bright.net                 |
+| klaytonhd@yahoo.com                 |
+| matronx_2002@yahoo.com              |
+| behr319@hotmail.com                 |
+| m_cox22@hotmail.com                 |
+| mdenney@rcwifi.com                  |
+| beanbarn@bright.net                 |
+| jermaine-mills@ymail.com            |
+| cutebedbugs@yahoo.com               |
+| casralass@yahoo.com                 |
+| buddha5875@hotmail.com              |
+| rusty3@embarqmail.com               |
+| lzimmers@yahoo.com                  |
+| wcpoling@gmail.com                  |
+| jasonpollitt@rocketmail.com         |
+| dpouder@hotmail.com                 |
+| rjeffers50@yahoo.com                |
+| sarahkolp@yahoo.com                 |
+| pricey@wildblue.net                 |
+| janrasz@freedomnet.met              |
+| bonnett3679@verizon.net             |
+| dwilliam57@hotmail.com              |
+| kristaspence@ymail.com              |
+| grandpa7@peoplepc.com               |
+| lstewart26@woh.rr.com               |
+| smwasson1984@yahoo.com              |
+| hera@omnicityusa.com                |
+| shelly_byrum@yahoo.com              |
+| matt30arnold@yahoo.com              |
+| rando03@hotmail.com                 |
+| rando03@hotmail.com                 |
+| kljessup@stvincent.org              |
+| brownbagsoap@yahoo.com              |
+| bonnet3679@frontier.com             |
+| krista.facebook@ymail.com           |
+| alexd100                            |
+| alexd266                            |
+| alexg344                            |
+| alexe815                            |
+| lesliecamba91@yahoo..com            |
+| dug_bryan@yahoo.com                 |
+| c_liss_2007@hotmail.com             |
+| emmykayle@yahoo.com                 |
+| sdetrick@stateoftheheartcare.org    |
+| grandpa7@peoplepc.com               |
+| angie.oconnor@yahoo.com             |
+| gmzimmers@centurylink.net           |
+| emmykay1@yahoo.com                  |
+| pkocbc@hotmail.com                  |
+| bonnet367955@yahoo.com              |
+| smtimmerman2@gmail.com              |
+| timmerman.chelsea@gmail.com         |
+| briana.bryan@gmail.com              |
+| suzafrica@gmail.com                 |
+| lisahatton55@yahoo.com              |
+| behr319@gmail.com                   |
+| Zzrat429@hotmail.com                |
+| 020@woh.rr.com                      |
+| mbg6174@yahoo.com                   |
+| carylg@yahoo.com                    |
+| mbg6174@yahoo.com                   |
+| cwyatt@students.resc.k12.in.us      |
+| cgarrett222@gamil.com               |
+| michaelstapleton1977@msn.com        |
+| ashleynj82@aol.com                  |
++-------------------------------------+
+161 rows in set (0.01 sec)
+
+mysql> select email from users where email <> '' and email like '%@%';
++-------------------------------------+
+| email                               |
++-------------------------------------+
+| josiahbryan@gmail.com               |
+| bsmith@josiahbryan.com              |
+| wcurts@purdue.edu                   |
+| archerallan@yahoo.com               |
+| daretters@hotmail.com               |
+| faith08@gmail.com                   |
+| Behr81@hotmail.com                  |
+| zibby9@hotmail.com                  |
+| kdavison@frankmiller.com            |
+| caliss@anderson.edu                 |
+| drismiller@aol.com                  |
+| danielalanbryan@gmail.com           |
+| djessup@redgold.com                 |
+| rdjessup@aol.com                    |
+| Dwilliam51@hotmail.com              |
+| donandpat@aol.com                   |
+| lpouder76@hotmail.com               |
+| janrasz@freedomnet.net              |
+| gzimmers@rcwifi.com                 |
+| hepeden@msn.com                     |
+| hera@omnicityusa.com                |
+| dunlap_12@hotmail.com               |
+| jretrum@wcoil.com                   |
+| jscholl065@gmail.com                |
+| lrmdflesher@rcwifi.com              |
+| ldkenney2004@aol.com                |
+| lgullett@bright.net                 |
+| lisakat60@yahoo.com                 |
+| mr.turniphead@hotmail.com           |
+| malorie.dunlap@indwes.edu           |
+| gardenpath1896@yahoo.com            |
+| maestep25@yahoo.com                 |
+| filmmidwest@yahoo.com               |
+| nparsons@councilonruralservices.org |
+| prprescott@earthlink.net            |
+| rexfields302@hotmail.com            |
+| rpprice@isp.com                     |
+| rtzimmers@embarqmail.com            |
+| rustyrz@gmail.com                   |
+| shprice@bright.net                  |
+| sheila64@bright.net                 |
+| sheila@romarproservices.com         |
+| punky_bunni@hotmail.com             |
+| akthorn@freedomnet.net              |
+| tklipstine@earthlink.net            |
+| bobwiley57@gmail.com                |
+| tonyansonialumber@yahoo.com         |
+| tschwartzkopf@ivytech.edu           |
+| pastor@mypleasanthillchurch.org     |
+| susan.bryan@gmail.com               |
+| susan.bryan5@gmail.com              |
+| Bruce_Davison@darke.k12.oh.us       |
+| johnsporek@yahoo.com                |
+| tcgoodi@yahoo.com                   |
+| swedisholga@yahoo.com               |
+| brownbagsoap@yahoo.com              |
+| shawnnasee2010@aol.com              |
+| bonnet3679@verizon.net              |
+| shprice@bright.net                  |
+| tdprice@bright.net                  |
+| bdurbin@comcast.net                 |
+| my867@yahoo.com                     |
+| sherri_slaughter2000@yahoo.com      |
+| russ_tnt@yahoo.com                  |
+| kbesecker@ivytech.edu               |
+| pamelajeffers78@yahoo.com           |
+| teresa.zimmers@gmail.com            |
+| billensteinfamily@centurylink.net   |
+| lcstump@bright.net                  |
+| limama2545@yahoo.com                |
+| nparsons@councilonruralservices.org |
+| ljohns@indiana.edu                  |
+| bwilleford@bright.net               |
+| angjones79@aim.com                  |
+| shawnnasee2010@facebook.com         |
+| sallycox23@yahoo.com                |
+| pricey6969@gmail.com                |
+| lauren.jeffers10@yahoo.com          |
+| tahampshire@yahoo.com               |
+| daretters@hotmail.com               |
+| manor6@omnicityusa.com              |
+| roberts39shop@yahoo.com             |
+| dreamergirl@woh.rr.com              |
+| teresapenflem@gmail.com             |
+| djmann1951@centurylink.net          |
+| the_vanderkoois@yahoo.com           |
+| humnongkalak@yahoo.co.id            |
+| matt30arnold@yahoo.com              |
+| c1doesit@yahoo.com                  |
+| gmak@example.com                    |
+| c_liss_2007@hotmail.com             |
+| hsteedplus3@yahoo.com               |
+| foxfoo@foobar.com                   |
+| jenikayandbrian@yahoo.com           |
+| sheila64@bright.net                 |
+| klaytonhd@yahoo.com                 |
+| matronx_2002@yahoo.com              |
+| behr319@hotmail.com                 |
+| m_cox22@hotmail.com                 |
+| mdenney@rcwifi.com                  |
+| beanbarn@bright.net                 |
+| jermaine-mills@ymail.com            |
+| cutebedbugs@yahoo.com               |
+| casralass@yahoo.com                 |
+| buddha5875@hotmail.com              |
+| rusty3@embarqmail.com               |
+| lzimmers@yahoo.com                  |
+| wcpoling@gmail.com                  |
+| jasonpollitt@rocketmail.com         |
+| dpouder@hotmail.com                 |
+| rjeffers50@yahoo.com                |
+| sarahkolp@yahoo.com                 |
+| pricey@wildblue.net                 |
+| janrasz@freedomnet.met              |
+| bonnett3679@verizon.net             |
+| dwilliam57@hotmail.com              |
+| kristaspence@ymail.com              |
+| grandpa7@peoplepc.com               |
+| lstewart26@woh.rr.com               |
+| smwasson1984@yahoo.com              |
+| hera@omnicityusa.com                |
+| shelly_byrum@yahoo.com              |
+| matt30arnold@yahoo.com              |
+| rando03@hotmail.com                 |
+| rando03@hotmail.com                 |
+| kljessup@stvincent.org              |
+| brownbagsoap@yahoo.com              |
+| bonnet3679@frontier.com             |
+| krista.facebook@ymail.com           |
+| lesliecamba91@yahoo..com            |
+| dug_bryan@yahoo.com                 |
+| c_liss_2007@hotmail.com             |
+| emmykayle@yahoo.com                 |
+| sdetrick@stateoftheheartcare.org    |
+| grandpa7@peoplepc.com               |
+| angie.oconnor@yahoo.com             |
+| gmzimmers@centurylink.net           |
+| emmykay1@yahoo.com                  |
+| pkocbc@hotmail.com                  |
+| bonnet367955@yahoo.com              |
+| smtimmerman2@gmail.com              |
+| timmerman.chelsea@gmail.com         |
+| briana.bryan@gmail.com              |
+| suzafrica@gmail.com                 |
+| lisahatton55@yahoo.com              |
+| behr319@gmail.com                   |
+| Zzrat429@hotmail.com                |
+| 020@woh.rr.com                      |
+| mbg6174@yahoo.com                   |
+| carylg@yahoo.com                    |
+| mbg6174@yahoo.com                   |
+| cwyatt@students.resc.k12.in.us      |
+| cgarrett222@gamil.com               |
+| michaelstapleton1977@msn.com        |
+| ashleynj82@aol.com                  |
+};
+
+s/(^\|\s+|\s+\|$)//g foreach @list;
 
 my %emails = map {$_=>1} @list;
 my @final_list = sort {$a cmp $b} keys %emails;
+@final_list = grep { /\@/ } @final_list;
 
 #print Dumper \@final_list;
-my $post = Boards::Post->retrieve(14445);
+#die Dumper \@final_list;
+my $post = Boards::Post->retrieve(16123);
 
 my $ctrl = ThemePHC::BoardsTalk->new;
 $ctrl->send_email_alert($post, \@final_list);

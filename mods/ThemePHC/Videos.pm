@@ -49,6 +49,22 @@ package Boards::VideoProvider::VimeoPHC;
 	); 
 };
 
+=begin
+package Boards::VideoProvider::UStreamPHC;
+{
+        use Boards;
+        use base 'Boards::VideoProvider::UStream';
+        __PACKAGE__->register(
+                {
+                        name            => 'PHC Video Page - UStream',
+                        url_regex       => qr/\#phc-ustream-vid(\d+)/,
+                },
+                # Copy missing config keys from the config for this video provider package
+                'Boards::VideoProvider::UStream'
+        );
+};
+=cut
+
 package ThemePHC::Videos;
 {
 	# Inherit both the Boards and Page Controller.
@@ -543,6 +559,130 @@ package ThemePHC::Videos;
 		
 		my $view = Content::Page::Controller->get_view('sub',$r)->output($tmpl);
 		return $r;
+	}
+
+	sub sync_from_ustream
+	{
+		my $self = shift;
+		use HTTP::Request::Common qw(GET);
+		use LWP::UserAgent;
+
+		my $ua = LWP::UserAgent->new;
+
+		my $req = GET 'https://www.ustream.tv/channel/phc-live-stream/0/video/download.rss';
+		$req->authorization_basic('pleasanthill', 'phc3664');
+
+		my $content = $ua->request($req)->as_string;
+
+		my $user = AppCore::User->retrieve(1); # Josiah
+		AppCore::Common->context->user($user); # For spam overrides
+
+                $self->binpath(AppCore::Config->get('WEBSITE_SERVER') . "/learn/videos");
+
+		my @blocks = split /<item>/, $content;
+		foreach my $block (@blocks)
+		{
+		        next if !$block || $block =~ /401 Unauth/;
+
+		        my ($url, $title, $flv) = $block =~ /<guid>([^\<]+)(?:.|\n)+<title>([^\<]+)(?:.|\n)+<media:content(?:.|\n)+url="([^"]+)"/g;
+
+			next if !$title || !$url;
+
+		        my ($video_path) = $flv =~ /ustream.tv\/(.*?)\.flv/;
+		        my $icon = "http://static-cdn1.ustream.tv/i/video/picture/${video_path},112x63,b,1:2.jpg";
+
+		        #print "$url - $title ($flv)\n"; # $icon\n";
+
+			my $post_text = "<span class=title>$title</span><span class=filler>: </span><span class=url>$url</span><span class=filler> - </span><span class=description>'$title' recorded live via UStream.tv</span>";
+
+			#print "post: $post_text\n";
+			#next;
+
+			my $date = date();
+
+                        my $post = Boards::Post->by_field(external_source => 'UStream', external_id => $url, deleted => 0);
+                        if(!$post)
+                        {
+
+
+				# Create a set of arguments for create_new_thread()
+                                my $data = {
+                                        poster_name     => 'PHC AV Team',
+                                        poster_photo    => 'https://graph.facebook.com/180929095286122/picture', # Picture for PHC FB Page
+                                        poster_email    => 'josiahbryan@gmail.com',
+                                        comment         => $post_text,
+                                        subject         => $title,
+                                };
+
+                                # Use Boards to create a new thread
+                                $post = $self->create_new_thread($VIDEOS_BOARD, $data, $user);
+
+                                $post->timestamp($date); #$vdat->{upload_date});
+                                #$post->updated_time($vdat->{upload_date});
+
+                                # Flag it as from Vimeo and store the Vimeo Video ID for future reference
+                                $post->external_source('UStream');
+                                $post->external_id($url);
+                                $post->external_url($url);
+
+                                $post->post_class('video');
+
+                                $post->data->set('title', $title); #_, $vdat->{$_}) foreach qw/title description url duration/;
+				$post->data->set('description', "'$title' recorded live via UStream.tv");
+				$post->data->set('url', $url);
+
+				$post->data->set('thumbnail', $icon);
+
+				my ($code) = $url =~ /recorded\/(\d+)/;
+
+                                my $video_url = $self->binpath . "/" . $post->folder_name . '#phc-ustream-vid'.$code;
+                                $post->data->set('phc_video_url', $video_url);
+
+                                $post->data->update;
+
+                                $post->update;
+
+				my $talk_post;
+
+				my $talk_board_controller = AppCore::Web::Module->bootstrap('ThemePHC::BoardsTalk');
+                                my $talk_board = Boards::Board->retrieve(1); # id 1 is the prayer/praise/talk board
+                                my $talk_args = $data;
+                                $data->{comment} = "'$title' recorded live via UStream.tv. Watch it now at $video_url"; #$vdat->{url};
+
+                                $talk_post = $talk_board_controller->create_new_thread($talk_board,$talk_args);
+
+                                # Note: We call send_notifcations() on $self so it will call our facebook_notify_hook()
+                                #       to reformat the FB story args the way we want them before uploading instead
+                                #       of using the default story format.
+                                #     - We also send notifications for our video $post, NOT the $talk_post, since
+                                #       the video $post has the extra data attributes we can use.
+                                #     - Give the $talk_board in the args because the FB notification routine needs the
+                                #       FB wall ID and sync info from the board - and its not set on the Video board
+                                my @errors = $self->send_notifications('new_post',$post,{really_upload=>1, board=>$talk_board}); # Force the FB method to upload now rather than wait for the poller crontab script
+                                if(@errors)
+                                {
+                                        print STDERR "Error sending notifications of new video post $post: \n\t".join("\n\t",@errors)."\n";
+                                }
+
+
+                                # Copy the uploaded FB external id to the talk post for when the FB poller tries to sync down posts from FB
+                                $talk_post->external_id($post->external_id);
+                                $talk_post->update;
+
+                                # Reset external_id on this post because the FB upload script overwrites our ID
+                                $post->external_id($url);
+                                $post->update;
+
+                                print "Created post from UStream - # $post - '".$post->subject."' - $video_url (talk post $talk_post)\n";
+
+				#die "Test done";
+
+			}
+
+
+		}
+
+
 	}
 	
 	sub sync_from_vimeo

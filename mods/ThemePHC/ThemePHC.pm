@@ -89,6 +89,7 @@ package ThemePHC;
 				foreach my $m (@{$country->{list} || []})
 				{
 					push @kids, {
+						#title	=> $m->family_name ? $m->family_name : $m->missions_name, #{list_title},
 						title	=> $m->{list_title},
 						url	=> join('/', $nav_ref->{url}, $m->{board_folder_name}),
 						kid_map	=> {},

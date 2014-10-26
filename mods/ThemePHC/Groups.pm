@@ -573,10 +573,12 @@ package ThemePHC::Groups;
 				phone
 				email
 			/;
+
+			die "You must give a title" if !$req->{title};
 			
 			if(!$req->{folder})
 			{
-				my $folder = Boards->to_folder_name($req->{subject});
+				my $folder = Boards->to_folder_name($req->{title});
 				$folder =~ s/(^\s+|\s+$)//g;
 				$folder .= '_'.$group->id if PHC::Group->by_field(folder_name => $folder);
 				$req->{folder} = $folder;
@@ -1049,6 +1051,8 @@ package ThemePHC::Groups;
 	{
 		my $self = shift;
 		my $post = shift;
+
+		#return;
 		
 		my $group = $self->group_for_post($post);
 		
@@ -1097,6 +1101,7 @@ package ThemePHC::Groups;
 				
 			if(!$seen_email{$user->email})
 			{
+				#$user = AppCore::User->retrieve(1);
 				#PHC::Web::Common->send_email([$user->email], $subj, $text, 0, 'Pastor Bruce Bryan <pastor@mypleasanthillchurch.org>');
 				my $msgid = AppCore::EmailQueue->send_email([$user->email], $subject, $text);
 				
@@ -1115,6 +1120,9 @@ package ThemePHC::Groups;
 		my $post = shift;
 		
 		my $group = $self->group_for_post($post);
+
+		# Mom doesnt want notifications going out for misfits on the talk page
+		return if $group->folder_name eq 'misfits';
 		
 		
 		my $folder = $post->folder_name;

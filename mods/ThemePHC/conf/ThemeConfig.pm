@@ -200,7 +200,7 @@ BEGIN
 	
 		pkg	=> 'Net::SMTP',
 		server	=> 'relay.dnsexit.com',
-		port	=> 25,
+		port	=> 26,
 		user	=> 'phcrelay',
 	};
 	
@@ -227,7 +227,7 @@ BEGIN
 	
 	$BOARDS_SHORT_TEXT_LENGTH	= 512;  # characters
 	$BOARDS_POST_PAGE_LENGTH	= 10;   # posts
-	$BOARDS_POST_PAGE_MAX_LENGTH	= 100;  # posts
+	$BOARDS_POST_PAGE_MAX_LENGTH	= 999999;  # posts
 	
 	$BOARDS_ENABLE_TINYURL_SHORTNER	= 1; # When sending posts to facebook, Boards will use the TinyURL API to shorten URLs to the original post in the post text
 	

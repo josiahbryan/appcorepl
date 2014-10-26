@@ -142,7 +142,7 @@ foreach my $bucket (values %$grid)
 # 	print "\t--------------------------\n";
 # 	print "\t$dist miles from PHC\n";
 # 	print "\t--------------------------\n";
-	die "bad dist $dist" if $dist > 100.;
+	#die "bad dist $dist" if $dist > 100.;
 	
 	$bucket->{dist} = $dist;
 }
@@ -359,7 +359,7 @@ foreach my $bucket (@list)
 #$img->filledArc($center_x, $center_y, 15,15, 0,359, $green);
 #my $icon_file = '/opt/httpd-2.2.17/htdocs/appcore/mods/ThemePHC/images/phclogo-whitesq-50.jpg';
 #my $icon_file = '/opt/httpd-2.2.17/htdocs/appcore/mods/ThemePHC/images/logo-white-textunder-250px.png';
-my $icon_file = '/opt/httpd-2.2.17/htdocs/appcore/mods/ThemePHC/images/logo-black-square.png';
+my $icon_file = '/opt/appcore/mods/ThemePHC/images/logo-black-square.png';
 my $icon = GD::Image->new($icon_file);
 my @l_bounds = $icon->getBounds();
 $img->copy($icon, $center_x - $l_bounds[0]/2 + 4,$center_y-$l_bounds[1]/2,0,0,$l_bounds[0],$l_bounds[1]);

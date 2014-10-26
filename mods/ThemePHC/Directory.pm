@@ -406,47 +406,16 @@ package PHC::Directory;
 		
 				if($fam->{photo_num} != '?')
 				{
-					
-					my $photo_file      = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$fam->{photo_num}.'.jpg';
-					$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_0'.$fam->{photo_num}.'.jpg';
-					#print STDERR "Primary photo: $photo_file\n";
-					if(! -f $www_path.$photo_file)
-					{
-						$photo_file         = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$fam->{photo_num}.'.jpg';
-						$fam->{large_photo} = AppCore::Config->get("WWW_ROOT").'/mods/ThemePHC/dir_photos/dsc_'.$fam->{photo_num}.'.jpg';
-						#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
-					}
-					if(!-f $photo_file)
-					{
-						#print STDERR "No photo at: $photo_file\n";
-						if($fam->{photo_num})
-						{
-							#my @test = `ls dir_photos/dsc_*$fam->{photo_num}.jpg`;
-							#@test = `ls dir_photos/dsc_$fam->{photo_num}.jpg` if !@test;
-							#print "$name:\tWarning: '$fam->{photo_num}' not found, possibilities:\n",
-							#	join @test;
-						}
-						else
-						{
-							#print "No photo num at all: $name";
-						}
-					}
-					
-					if(-f $www_path.$fam->{large_photo} && 
-					  !-f $www_path.$photo_file)
-					{
-						print STDERR "Resizing $www_path.$fam->{large_photo} (160x120) to $www_path.$photo_file\n";
-						system("convert ${www_path}$fam->{large_photo} -resize 160x120 ${www_path}$photo_file");
-					}
-					
+					my ($photo_file, $large_photo) = ThemePHC::Directory::deduce_photo_file($fam->{photo_num});
+					$fam->{large_photo} = $large_photo;
 					$fam->{photo} = $photo_file ? $photo_file: '';
-					
-					$fam->{comments} =~ s/([^\s]+\@[^\s]+\.\w+)/<a href='mailto:$1'>$1<\/a>/g;
 				}
 				else
 				{
 					#print "Missing Photo: $name\n";
 				}
+
+				$fam->{comments} =~ s/([^\s]+\@[^\s]+\.\w+)/<a href='mailto:$1'>$1<\/a>/g;
 				
 				#push @entries, \%entry;
 				
@@ -593,6 +562,9 @@ package PHC::Directory;
 		
 		# Move to final resting place
 		system("mv /tmp/sheet.pdf $output_file");
+
+		# Remove the temp HTML
+		unlink("/tmp/sheet.html");
 		
 		store $image_data, $image_size_cache;
 
@@ -809,7 +781,11 @@ package ThemePHC::Directory;
 		my ($req,$r) = @_;
 		
  		my $user = AppCore::Common->context->user;
-		if(!$user || !$user->check_acl(['Can-See-Family-Directory','Pastor']))
+		if(!$user)
+		{
+			http_require_login();
+		}
+		elsif(!$user->check_acl(['Can-See-Family-Directory','Pastor']))
 		{
 			my $tmpl = $self->get_template('directory/denied.tmpl');
 			return $r->output($tmpl);
@@ -946,6 +922,11 @@ package ThemePHC::Directory;
 			}
 			
 			$tmpl->param($_ => $entry->get($_)) foreach $entry->columns;
+
+			my ($photo_file, $large_photo) = ThemePHC::Directory::deduce_photo_file($entry->photo_num);
+                        $tmpl->param(large_photo => $large_photo);
+                        $tmpl->param(photo       => $photo_file ? $photo_file: '');
+
 			
 			my @kids = PHC::Directory::Child->search(familyid => $entry->id);
 			foreach my $kid (@kids)
@@ -955,7 +936,9 @@ package ThemePHC::Directory;
 			$tmpl->param(kids => \@kids);
 			
 			my $admin = $user && $user->check_acl($ADMIN_ACL) ? 1:0;
+			my $is_pastor = $user && ($user->user eq 'pastor' || $user->id == 1);
 			$tmpl->param(is_admin => $admin);
+			$tmpl->param(is_pastor => $is_pastor);
 			
 			$tmpl->param(users => AppCore::User->tmpl_select_list($entry->userid,1));
 			$tmpl->param(spouse_users => AppCore::User->tmpl_select_list($entry->spouse_userid,1));
@@ -1062,6 +1045,49 @@ package ThemePHC::Directory;
 # 			use Data::Dumper;
 # 			print STDERR "Data dump:\n";
 # 			print STDERR Dumper $entry;
+			my $filename = $req->{upload};
+			if($filename)
+			{
+	#
+	# 			#$skin->error("No Filename","No filename given") if !$filename;
+	# 			if(!$filename)
+	# 			{
+	# 				print STDERR "INFO: $sub_page: No file given to upload.\n";
+	# 				return $r->output_data('text/html',"<html><head><script>alert('Please select a file to upload.');window.history.go(-1)</script></head></html>\n");
+	#
+	# 			}
+
+				$filename =~ s/^.*[\/\\](.*)$/$1/g;
+				my ($ext) = ($filename=~/\.(\w{3})$/);
+
+				if(lc $ext ne 'jpg')
+				{
+					print STDERR "INFO: $sub_page: '$ext' is not an mp3 extension.\n";
+					return $r->output_data('text/html',"<html><head><script>alert('Only JPG files are allowed - the file you selected was a \"".uc($ext)."\" file.');window.history.go(-1)</script></head></html>\n");
+				}
+
+				my $time = time();
+				$entry->photo_num($time);
+
+				my $written_filename = "dscn$time.jpg";
+
+				my $file_path = "/var/www/html/appcore/mods/ThemePHC/dir_photos/$written_filename";
+				my $file_url  = "/appcore/mods/ThemePHC/dir_photos/$written_filename";
+
+				print STDERR "Uploading [$filename] to [$file_path], ext=$ext\n";
+
+				my $fh = main::upload('upload');
+
+				open UPLOADFILE, ">$file_path" || warn "Cannot write to $file_path: $!";
+				binmode UPLOADFILE;
+
+				while ( <$fh> )
+				{
+					print UPLOADFILE $_;
+				}
+
+				close(UPLOADFILE);
+			}
 			
 			$entry->update;
 			
@@ -1393,7 +1419,66 @@ package ThemePHC::Directory;
 		return $num;
 	}
 	
-	
+	sub deduce_photo_file
+	{
+		my $photo_num = shift;
+		my $photo_file;
+		my $large_photo;
+
+		my $www_path = AppCore::Config->get("WWW_DOC_ROOT");
+		my $www_root = AppCore::Config->get('WWW_ROOT');
+
+
+		$photo_file  = $www_root.'/mods/ThemePHC/dir_photos/thumbs/'.$photo_num.'.jpg';
+		$large_photo = $www_root.'/mods/ThemePHC/dir_photos/'.$photo_num.'.jpg';
+
+		#print STDERR "Initial: $photo_file\n";
+
+
+		if(!-f $www_path.$photo_file)
+		{
+			$photo_file  = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dsc_0'.$photo_num.'.jpg';
+			$large_photo = $www_root.'/mods/ThemePHC/dir_photos/dsc_0'.$photo_num.'.jpg';
+		}
+		#print STDERR "Primary photo: $photo_file\n";
+		if(! -f $www_path.$photo_file)
+		{
+			$photo_file  = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dsc_'.$photo_num.'.jpg';
+			$large_photo = $www_root.'/mods/ThemePHC/dir_photos/dsc_'.$photo_num.'.jpg';
+			#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
+		}
+		if(! -f $www_path.$photo_file)
+		{
+			$photo_file  = $www_root.'/mods/ThemePHC/dir_photos/thumbs/dscn'.$photo_num.'.jpg';
+			$large_photo = $www_root.'/mods/ThemePHC/dir_photos/dscn'.$photo_num.'.jpg';
+			#print STDERR "Setting secondary photo path: $photo_file (due to bad $www_path$photo_file)\n";
+		}
+
+		if(!-f $photo_file)
+		{
+			#print STDERR "No photo at: $photo_file\n";
+			if($photo_num)
+			{
+				#my @test = `ls dir_photos/dsc_*$photo_num.jpg`;
+				#@test = `ls dir_photos/dsc_$photo_num.jpg` if !@test;
+				#print "$name:\tWarning: '$photo_num' not found, possibilities:\n",
+				#       join @test;
+			}
+			else
+			{
+				#print "No photo num at all: $name";
+			}
+		}
+
+		if(-f $www_path.$large_photo &&
+		  !-f $www_path.$photo_file)
+		{
+			print STDERR "Resizing $www_path.$large_photo (160x120) to $www_path.$photo_file\n";
+			system("convert ${www_path}$large_photo -resize 160x120 ${www_path}$photo_file");
+		}
+
+		return ($photo_file, $large_photo);
+	}		
 }
 
 
