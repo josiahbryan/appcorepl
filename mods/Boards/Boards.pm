@@ -1438,7 +1438,7 @@ package Boards;
 				{
 					## HACK!!!
 					eval {
-						use ThemePHC::Directory;
+						eval 'use ThemePHC::Directory';
 						$hash->{user_photo} = PHC::Directory->photo_for_user($user);
 						if($post->{user_photo})
 						{
@@ -1463,7 +1463,7 @@ package Boards;
 			{
 				## HACK!!!
 				eval {
-					use ThemePHC::Directory;
+					eval 'use ThemePHC::Directory';
 					$post->{user_photo} = PHC::Directory->photo_for_user(AppCore::User->retrieve($post->{posted_by}));
 					if($post->{user_photo})
 					{
