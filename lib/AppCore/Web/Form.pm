@@ -102,6 +102,8 @@ package AppCore::Web::Form;
 		
 		#exit;
 		
+		print STDERR "Error in form: $title: $error. Called from: ".called_from()."\n";
+		
 		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p></body></html>\n";
 		exit -1;
 	}
