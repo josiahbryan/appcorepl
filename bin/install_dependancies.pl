@@ -28,6 +28,13 @@ my @deps = qw/
 	Crypt::SSLeay
 	LWP::Protocol::https
 	XML::DOM
+	Net::LDAP
+	Net::DNS
+	MIME::Lite::HTML
+	File::Slurp
+	HTML::TreeBuilder
+	Text::WikiText
+	Spreadsheet::WriteExcel
 /;
 
 foreach my $dep (@deps)
