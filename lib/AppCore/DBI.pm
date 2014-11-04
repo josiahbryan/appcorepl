@@ -3031,6 +3031,57 @@ package $opts->{pkg};
 		return \@list;
 	}
 
+	sub list_to_lookup
+	{
+		my ($class, $list, $val, $empty_option, $name_map) = @_;
+		
+		my @enum = ref $list eq 'ARRAY' ? @$list : split /,/, $list;
+		s/(^'|'$)//g foreach @enum;
+		
+		my @list;
+		my $found_option;
+		foreach my $opt (@enum)
+		{
+			my $flag = $opt eq $val;
+			$found_option = 1 if $flag;
+			push @list, {
+				value		=> $opt,
+				text		=> $name_map && $name_map->{$opt} ? $name_map->{$opt} : guess_title($opt),
+				selected	=> $flag,
+			};
+		}
+		if($empty_option)
+		{
+			unshift @list, {
+				value		=> '',
+				text		=> $empty_option =~ /[a-z]/i ? $empty_option : "(Any)",
+				selected	=> $found_option ? 0:1,
+			};
+		}
+		
+		
+		return \@list;
+	}
+	
+	# Simple helper to convert a list returned by any of the *_to_lookup functions above to a list of <option></option> tags
+	sub lookup_to_html
+	{
+		my ($class, $lookup_list) = @_;
+		return '' if !$lookup_list || ref $lookup_list ne 'ARRAY';
+		
+		use HTML::Entities qw/encode_entities/;
+		
+		return join "\n", map { 
+			my $opt = $_;
+			return "<option value='". 
+				encode_entities($opt->{value}).
+				"'".
+				($opt->{selected} ? ' selected' : '').
+				">".
+				encode_entities($opt->{text}).
+				"</option>";
+		} @$lookup_list;
+	}
 };
 1;
 	

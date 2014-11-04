@@ -460,6 +460,12 @@ package Content::Page::ThemeEngine::BreadcrumbList;
 		return \@final; 
 	}
 	
+	sub clear
+	{
+		my $self = shift;
+		$self->{list} = [];
+	}
+	
 	sub push
 	{
 		my $self = shift;

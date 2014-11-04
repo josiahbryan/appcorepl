@@ -362,8 +362,10 @@ Server: $host
 		my @recips = ($self->msg_to);
  		my @cc = split(/,/, $self->msg_cc);
  		s/(^\s+|\s+$)//g foreach @cc;
-		push @recips, @cc;
-
+ 		push @recips, @cc;
+ 		
+		s/^([^<]+)>$/$1/g foreach @recips; # fix this: "foo@bar.com>"
+ 		
 		foreach my $recip (@recips)
 		{
 			my $required_from = $prof->{user} ? 
