@@ -96,6 +96,7 @@ package AppCore::Common;
 		random_color_for_key
 		
 		debug_sql
+		dump_sth_to_html
 		
 		/;
 		
@@ -939,6 +940,34 @@ package AppCore::Common;
 		return $sql;
 	}
 	
+	sub dump_sth_to_html
+	{
+		my $sth = shift;
+		
+		my @result;
+		push @result, $_ while $_ = $sth->fetchrow_hashref;
+		my @keys = sort { $a cmp $b } keys %{$result[0] || {}};
+		
+		my @html;
+		push @html, "<table border=1 class='table table-responsive table-striped table-hover'>";
+		push @html, "<thead>";
+		push @html, map { "<th title='$_'>". guess_title($_) . "</th>" } @keys;
+		push @html, "</thead>";
+		push @html, "<tbody>";
+		foreach my $row (@result)
+		{
+			push @html, "<tr>";
+			foreach my $col (@keys)
+			{
+				push @html, "\t<td title='$col'>".$row->{$col}."</td>"
+			}
+			push @html, "</tr>";
+		}
+		push @html, "</tbody>";
+		push @html, "</table>";
+		
+		return join "\n", @html;
+	}
 };
 
 package DateTime;

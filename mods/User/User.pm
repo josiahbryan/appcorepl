@@ -209,6 +209,8 @@ package User;
 	{
 		my ($self, $req, $r) = @_;
 		
+		print STDERR Dumepr $req;
+		
 		if($req->{code})
 		{
 			# We're at step 1 - They've accepted us, now we have to get the access_token
@@ -221,11 +223,12 @@ package User;
 				.'&client_secret=' . AppCore::Config->get("FB_APP_SECRET")
 				.'&code=' . $code;
 			
-			print STDERR "Authenticated FB code $code, now requesting access_token from $token_url\n";
 			
-			my $response = LWP::Simple::get($token_url);
+			my $token_response = LWP::Simple::get($token_url);
+			print STDERR "Authenticated FB code $code, requested access_token from $token_url, response: [$token_response]\n";
 			
-			my ($token) = $response =~ /access_token=(.*)$/;
+			
+			my ($token) = $token_response =~ /access_token=(.*)$/;
 			
 			my $expires = '0000-00-00 00:00:00';
 			if($token =~ /&expires=(\d+)$/)
@@ -268,7 +271,7 @@ package User;
 					my $phone   = $user_data->{phone};
 					my $local   = $user_data->{location}->{name};
 					my $tz_off  = $user_data->{timezone};
-					my $fb_user = $user_data->{username};
+					my $fb_user = $user_data->{username} || $email;
 					my $fb_userid = $user_data->{id};
 					
 					my $user_obj = AppCore::User->by_field(email   => $email);
@@ -284,11 +287,12 @@ package User;
 					}
 					else
 					{
-						print STDERR "Matched facebook user to existing user: $display - $email, userid $user_obj\n";
+						print STDERR "Matched facebook user to existing user: $display - $email, userid $user_obj, user='".$user_obj->user."', \$fb_user='$fb_user'\n";
+						use Data::Dumper;
+						print STDERR Dumper $user_data;
 					}
 					
-					
-					$user_obj->user($fb_user)    if ($user_obj->user =~ /\@/ && $user_obj->user ne $email) || !$user_obj->user;
+					$user_obj->user($fb_user)    if !$user_obj->user || ($user_obj->user =~ /\@/ && $user_obj->user ne $email);
 					$user_obj->email($email)     if $user_obj->email    ne $email   && $email;
 					$user_obj->first($first)     if $user_obj->first    ne $first   && $first;
 					$user_obj->last($last)       if $user_obj->last     ne $last    && $last;
@@ -356,7 +360,7 @@ package User;
 			else
 			{
 				# Error getting token, show error msg
-				return $r->error("Facebook API Error","Problem getting access token - make sure \$FB_APP_ID and \$FB_APP_SECRET are correct in appcore/conf/appcore.conf.<br><code>$response</code>");
+				return $r->error("Facebook API Error","Problem getting access token - make sure \$FB_APP_ID and \$FB_APP_SECRET are correct in appcore/conf/appcore.conf.<br><code>$token_response</code>");
 			}
 		}
 		else

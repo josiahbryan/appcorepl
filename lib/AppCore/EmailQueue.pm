@@ -334,7 +334,6 @@ Server: $host
 			my $err = $@;
 			$self->sentflag(1);
 			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect to $prof->{server} for some reason"));
-			
 			use Data::Dumper;
 			print STDERR "MsgID $self: ".$self->result."\n".Dumper(\%args);
 			$self->update;
@@ -368,6 +367,7 @@ Server: $host
  		
 		foreach my $recip (@recips)
 		{
+			#my $required_from = $prof->{user} ? $prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain : '';
 			my $required_from = $prof->{user} ? 
 				$prof->{user} =~ /@/ ? $prof->{user} : $prof->{user}.'@'.$domain 
 				: $self->msg_from;
