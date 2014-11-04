@@ -2411,8 +2411,13 @@ package AppCore::DBI;
 		#die $@ if $@ && $@ !~ /Table.*?doesn't exist/;
 		#undef $@;
 		#$table); 
-		
 		#die $q_explain->rows;
+		
+		# NOTE: %fields will be used for comparing table to existing table AND 
+		# for checking for 'TEXT' columns when creating indexes - hence why this hash
+		# was moved out of the first block, below.
+		my %fields = map {$_->{field}=>$_} @$fields;
+		
 		# Assume table exists - compare
 		if(!$@ && $q_explain->rows)
 		{
@@ -2423,7 +2428,6 @@ package AppCore::DBI;
 			$explain{$field} = {field=>$field,type=>$type,null=>$null,key=>$key,default=>$default,extra=>$extra} 
 				while $q_explain->fetch;
 	
-			my %fields = map {$_->{field}=>$_} @$fields;			
 			my @alter;
 			my @changed_columns;
 			foreach my $key (keys %fields)
@@ -2677,7 +2681,7 @@ package AppCore::DBI;
 					{
 						my @cols = @{ $idx{$key_name} || [] };
 						my $sql = 'create index `'.$key_name.'` on `'.$table.'`(';
-						$sql .= join(',', map { '`'.$_.'`'} @cols);
+						$sql .= join(',', map { '`'.$_.'`' . ($fields{$_}->{type} =~ /text/ ? '(255)' : '') } @cols);
 						$sql .= ')';
 
 						print "Debug: (re)Creating index '$key_name': $sql\n";
