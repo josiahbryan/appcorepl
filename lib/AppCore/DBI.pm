@@ -1075,38 +1075,34 @@ package AppCore::DBI;
 	# Return val is kinda wierd - a HASH ref, with either {id} set to the fk id, or {error} set to a message
 	sub stringified_list
 	{
-		my $class = shift;
+		my $class		= shift;		# Self explanitory
+		my $val			= shift;		# The value to use as a filter for the list
+		my $fkclause		= shift || '1=1';	# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
+		my $include_objects	= shift || 0;		# If 1, includes object in results
+		my $start		= shift;		# Index to start at
+		my $limit		= shift || -1;		# Length of list
+		my $include_empty	= shift || 0;		# Include an empty option at the start?
+		my $debug		= shift || 0;		# Print debug info to stderr?
 		
-		my $dbh = $class->db_Main;
-		
-		my $table = $class->table;
-		my $pri = $class->primary_column;
-		
-		my $val = shift;
-		
-		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
-		my $fkclause = shift || '1=1';
 		$fkclause = '1=1' if $fkclause =~ /={{/;
-		
-		my $include_objects = shift || 0;
-		
-		my $start = shift;
 		$start = -1 if !defined $start;
-		my $limit = shift || -1;
+		$debug = 1;
 		
-		my $include_empty = shift || 0;
+		my $dbh   = $class->db_Main;
+		my $table = $class->table;
+		my $pri   = $class->primary_column;
 		
-		my $debug = shift || 0;
-		$debug = 0;
-		
-		
-		my $q_table = $dbh->quote_identifier($table);
+		my $q_table   = $dbh->quote_identifier($table);
 		my $q_primary = $dbh->quote_identifier($pri);
 		
-		my ($fklookup_sql,@args);
+		my ($fklookup_sql, @args);
 		
 		if(0)
 		{
+			#
+			# Old method of filtering the list disabled for now because it was somewhat inefective at matching across multiple fields
+			#
+			
 			($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
 			
 			#print STDERR "\$include_empty='$include_empty'\n";
@@ -1120,20 +1116,25 @@ package AppCore::DBI;
 		}
 		else
 		{
+			# 
+			# New method of filtering the list - return any non-empty stringified rows that match the value requested
+			#
+			
 			my $text = $class->get_stringify_sql;
 			
-			$fklookup_sql = qq{$q_table where ($text like ?) and ($text <> "")};
+			# Had to add the cast() to char() because otherwise the 'like' is case-sensitive. This way, the like is case INsensitive.
+			$fklookup_sql = qq{$q_table where (cast($text as char(512)) like ?) and ($text <> "") and $fkclause};
 			@args = ('%'.$val.'%');
 		}
 		
-						
+		# Prepare the SQL to generate the list
 		my $ob = $class->get_orderby_sql();
 		my $list_sql = "select $q_primary as `id`, ".$class->get_stringify_sql." as `text` from ".$fklookup_sql;
 		
 		#print STDERR "Debug mark0: start=$start, limit=$limit\n";
 		
-		
-				
+		# If we have a start/limit requested, then we need to also return the total
+		# $count that matches the query, and setup $list_sql with a limit clause
 		my $count = -1;
 		if($start>-1 && $limit>-1)
 		{
@@ -1155,9 +1156,11 @@ package AppCore::DBI;
 		
 		print STDERR "$class->stringified_list($val): list_sql = $list_sql, args = (".join('|',@args).")\n" if $debug;
 		
+		# Execute the query
 		my $sth = $dbh->prepare($list_sql);
 		$sth->execute(@args);
 		
+		# Build the result list
 		my @list;
 		local $_;
 		while(my $ref = $sth->fetchrow_hashref)
@@ -1172,39 +1175,35 @@ package AppCore::DBI;
 			push @list, $ref;
 		}
 		
-		return $count > -1 ? {count=>$count,list=>\@list} : \@list;
+		# If $count set, then user set $start/$limit, so return a hashref of the total $count for pagination
+		return $count > -1 ?
+			{ count => $count, list => \@list } :
+			\@list;
 	}
 	
 	# Returns the primary key of the validated record OR undefined and sets $@ to an error msg
 	sub validate_string
 	{
-		my $class = shift;
+		my $class	= shift;
+		my $val		= shift;
+		my $fkclause	= shift || '';
+		my $multi_match	= shift || 0;
+		my $check_pri	= shift;
+		my $adder	= shift || 0; # Partial matching.. ?
+		my $debug	= shift || 0; 
 		
-		my $dbh = $class->db_Main;
+		$check_pri = 1 if !defined $check_pri;
 		
+		my $dbh   = $class->db_Main;
 		my $table = $class->table;
-		my $pri = $class->primary_column;
+		my $pri   = $class->primary_column;
 		
-		my $q_table = $dbh->quote_identifier($table);
+		my $q_table   = $dbh->quote_identifier($table);
 		my $q_primary = $dbh->quote_identifier($pri);
 					
 		undef $@;
 		undef $!;
 		
-		#print "mark1: $gentab\n";
-		
-		my $val = shift;
-		
-		my $fkclause = shift || '';
-		
-		my $multi_match = shift || 0;
-		
-		my $check_pri = shift;
-		$check_pri = 1 if !defined $check_pri;
-		
-		my $adder = shift || 0; # Partial matching.. ?
-		
-		my $debug = shift || 0; 
 		#$debug = 1;
 		
 		print STDERR "$class->validate_string($val): Start (fkclause=$fkclause, check_pri=$check_pri,multi_match=$multi_match,adder=$adder,q_table=$q_table,q_pri=$q_primary)\n" if $debug;
