@@ -259,7 +259,6 @@ package AppCore::Web::Controller;
 		my $ctype = 'text/plain';
 		if($validate_action eq 'autocomplete')
 		{
-			#my @list = $validator->autocomplete_string($value, 10);
 			my $result = $validator->stringified_list($value, 
 					$class->autocomplete_fkclause($validator), #$fkclause
 					undef, #$include_objects
@@ -267,24 +266,20 @@ package AppCore::Web::Controller;
 					10, #$limit (both start and limit have to be defined, not undef - even if zero)
 			);
 			
-			#return $r->output_data($ctype, encode_json({ result => \@list }));
-			return $r->output_data($ctype, encode_json([ 
+			return $class->output_json([ 
 				map {
-					# Hack for "City, ST"
-					#$_->{text} =~ s/, (\w{2})$/', '.uc($1)/segi;
 					$_->{text} =~ s/,\s*$//g;
 					{
 						value => $_->{text},
 						id    => $_->{id}
 					}
 				} @{ $result->{list} || [] }
-			]));
+			]);
 		}
 		elsif($validate_action eq 'search')
 		{
 			my $req = $class->stash->{req} || {};
 		
-			#my @list = $validator->autocomplete_string($value, 10);
 			my $result = $validator->stringified_list($value, 
 					$class->autocomplete_fkclause($validator), #$fkclause
 					undef, #$include_objects
@@ -292,8 +287,7 @@ package AppCore::Web::Controller;
 					$req->{limit} || 10, #$limit (both start and limit have to be defined, not undef - even if zero)
 			);
 			
-			#return $r->output_data($ctype, encode_json({ result => \@list }));
-			return $r->output_data($ctype, encode_json({
+			return $class->output_json({
 				total => $result->{count},
 				start => $req->{start} || 0,
 				limit => $req->{limit} || 10,
@@ -308,7 +302,7 @@ package AppCore::Web::Controller;
 						}
 					} @{ $result->{list} || [] }
 				]
-			}));
+			});
 		}
 		elsif($validate_action eq 'validate')
 		{
@@ -317,7 +311,7 @@ package AppCore::Web::Controller;
 				value => $value,
 				text  => $validator->stringify($value)
 			};
-			return $r->output_data($ctype, encode_json({ result => $ref, err => $@ }));
+			return $class->output_json({ result => $ref, err => $@ });
 		}
 		elsif($validate_action eq 'stringify')
 		{
@@ -335,7 +329,7 @@ package AppCore::Web::Controller;
 				$@ = "Object does not exist";
 			}
 			
-			return $r->output_data($ctype, encode_json({ result => $ref, err => $@ }));
+			return $class->output_json({ result => $ref, err => $@ });
 		}
 		else
 		{
