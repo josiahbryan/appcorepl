@@ -287,12 +287,23 @@ package AppCore::Web::Controller;
 					$req->{limit} || 10, #$limit (both start and limit have to be defined, not undef - even if zero)
 			);
 			
+			if(ref $result ne 'HASH')
+			{
+				return $class->output_json({
+					total => 0,
+					start => $req->{start} || 0,
+					limit => $req->{limit} || 10,
+					list  => []
+				});
+			}
+			
 			return $class->output_json({
 				total => $result->{count},
 				start => $req->{start} || 0,
 				limit => $req->{limit} || 10,
 				list  => [ 
 					map {
+						next if ref ne 'HASH';
 						# Hack for "City, ST"
 						#$_->{text} =~ s/, (\w{2})$/', '.uc($1)/segi;
 						$_->{text} =~ s/,\s*$//g;

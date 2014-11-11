@@ -1086,7 +1086,7 @@ package AppCore::DBI;
 		
 		$fkclause = '1=1' if $fkclause =~ /={{/;
 		$start = -1 if !defined $start;
-		$debug = 1;
+		$debug = 0;
 		
 		my $dbh   = $class->db_Main;
 		my $table = $class->table;
@@ -1125,10 +1125,15 @@ package AppCore::DBI;
 			# Had to add the cast() to char() because otherwise the 'like' is case-sensitive. This way, the like is case INsensitive.
 			$fklookup_sql = qq{$q_table where (cast($text as char(512)) like ?) and ($text <> "") and $fkclause};
 			@args = ('%'.$val.'%');
+			
+			if($class->meta->{sort} || $class->meta->{first_string})
+			{
+				$fklookup_sql .= "order by ".$class->get_orderby_sql;
+			}
 		}
 		
 		# Prepare the SQL to generate the list
-		my $ob = $class->get_orderby_sql();
+		#my $ob = $class->get_orderby_sql();
 		my $list_sql = "select $q_primary as `id`, ".$class->get_stringify_sql." as `text` from ".$fklookup_sql;
 		
 		#print STDERR "Debug mark0: start=$start, limit=$limit\n";
