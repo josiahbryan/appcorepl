@@ -464,7 +464,8 @@ package ThemePHC::Missions;
 		
 		if(!$args->{lat} || !$args->{lng})
 		{
-			use Geo::Coder::Yahoo;
+			eval 'use Geo::Coder::Yahoo;';
+			die $@ if $@;
 			my $geocoder = Geo::Coder::Yahoo->new(appid => 'zMyYxHvV34FDIRnu_drm6uKwW4_FMdBikSS14qncsxJMd..cReaCAW1f_rAUH0tbMmc-' );
 			my $location = $geocoder->geocode( location => "$args->{city}, $args->{country}" );
 			my ($lat,$lng);
