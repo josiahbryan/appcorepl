@@ -1286,7 +1286,7 @@ package Boards;
 				
 				# Now do the actual query that loads both posts and comments in one gos
 				my $sql = 'select p.*,b.folder_name as original_board_folder_name,b.title as board_title, u.photo as user_photo, u.user as username from board_posts p left join users u on (p.posted_by=u.userid), boards b '.
-					"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and deleted=0 and p.boardid=b.boardid ".
+					"where (((p.boardid=? or $user_wall_clause)" . (@posts ? " and postid in (".$list.")" : "").")". (@posts ? " or top_commentid in (".$list.")" : ""). ") and p.deleted=0 and p.boardid=b.boardid ".
 					'order by timestamp asc, postid asc'; # order will be inverted with a 'reverse' call, below
 				$sth = $dbh->prepare_cached($sql);
 				
