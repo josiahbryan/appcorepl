@@ -33,10 +33,10 @@ package ThemePHC;
 	use ThemePHC::VerseLookup;
 	
 	# Load our modules so they gets registered with the page type database
+	use ThemePHC::Videos;
 	use ThemePHC::Missions;
 	use ThemePHC::Directory;
 	use ThemePHC::Events;
-	use ThemePHC::Videos;
 	use ThemePHC::Groups;
 	use ThemePHC::Search;
 	use ThemePHC::LivePage;
