@@ -95,18 +95,34 @@ package AppCore::Web::Controller;
 	{
 		my $class = shift;
 		
-		return if ! $class->stash->{r};
+		my $r = $class->stash->{r};
 		
-		$class->stash->{r}->output(@_);
+		if(!$r)
+		{
+			print_stack_trace();
+			warn __PACKAGE__.": output: Unable to output anything because no 'r' in stash";
+			
+			return undef;
+		}
+		
+		$r->output(@_);
 	}
 	
 	sub output_data
 	{
 		my $class = shift;
 		
-		return if ! $class->stash->{r};
+		my $r = $class->stash->{r};
 		
-		$class->stash->{r}->output_data(@_);
+		if(!$r)
+		{
+			print_stack_trace();
+			warn __PACKAGE__.": output_data: Unable to output anything because no 'r' in stash";
+			
+			return undef;
+		}
+		
+		$r->output_data(@_);
 	}
 	
 	# I found myself repeatedly calling output_data 
@@ -116,6 +132,12 @@ package AppCore::Web::Controller;
 		my $class = shift;
 		my $val   = shift;
 		my $json  = ref $val ? encode_json($val) : $val;
+		
+# 		my $debug = 1;
+# 		
+# 		print STDERR "Controller: output_json: json: $json\n"
+# 			if $debug;
+		
 		$class->output_data('application/json', $json);
 	}
 	
@@ -254,7 +276,23 @@ package AppCore::Web::Controller;
 	{
 		my ($class, $validator, $validate_action, $value, $r) = @_;
 		
+		my $debug = 0;
+		
 		$r = $class->stash->{r} if !$r;
+		
+		$class->stash->{r} = $r 
+			if !$class->stash->{r};
+		
+		if(!$r)
+		{
+			print_stack_trace();
+			warn __PACKAGE__.": autocomplete_util: Unable to output anything because no 'r' in stash";
+			
+			return undef;
+		}
+		
+		print STDERR "Controller: autocomplete_util: validator: $validator, validate_action: $validate_action, value: $value\n"
+			if $debug;
 		
 		my $ctype = 'text/plain';
 		if($validate_action eq 'autocomplete')
@@ -322,6 +360,10 @@ package AppCore::Web::Controller;
 				value => $value,
 				text  => $validator->stringify($value)
 			};
+			
+			print STDERR "Controller: autocomplete_util: value: $value, ref: ".Dumper($ref)."\n"
+				if $debug;
+		
 			return $class->output_json({ result => $ref, err => $@ });
 		}
 		elsif($validate_action eq 'stringify')

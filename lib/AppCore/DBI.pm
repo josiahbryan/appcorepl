@@ -372,6 +372,13 @@ package AppCore::DBI;
 	}
 	
 	
+	sub has_field
+	{
+		my $self = shift;
+		my $col = shift;
+		return defined $self->meta->{field_map}->{lc $col};
+	}
+	
 	sub field_meta
 	{
 		my $self = shift;

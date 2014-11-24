@@ -115,19 +115,29 @@ package AppCore::Web::Form;
 		my $r = shift;
 		my $form_opts = shift || {};
 		
+		my $debug = 0;
+		
 		my $uuid = $req->next_path;
 		
 		$req->shift_path   if $uuid;
 		$uuid = $req->uuid if !$uuid;
 		
+		
+		print STDERR "Form: validate_page: uuid: $uuid\n"
+			if $debug;
+		
 		error("No UUID Given","To validate input, the URL must contain a UUID as the next path, or in a 'uuid' query argument")
 			if !$uuid;
 			
 		my $validate_action = $req->next_path || 'validate';
+		print STDERR "Form: validate_page: validate_action: $validate_action\n"
+			if $debug;
 		
 		my ($form_uuid, $class_obj_name, $class_key) = split /\./, $uuid;
 		
 		my $field_meta = AppCore::Web::Form::ModelMeta->by_field(uuid => $form_uuid);
+		print STDERR "Form: validate_page: form_uuid: $form_uuid, class_obj_name: $class_obj_name, class_key: $class_key, field_meta: $field_meta\n" 
+			if $debug;
 		
 		error("Invalid Form UUID","The form UUID '$form_uuid' in data does not exist in the database")
 			if !$field_meta;
@@ -143,15 +153,23 @@ package AppCore::Web::Form;
 		
 		my $class_obj = $form_opts->{$class_obj_name} ||
 				$hash->{$bind_name}->{class_name};
+				
+		print STDERR "Form: validate_page: bind_name: $bind_name, class_obj: $class_obj\n"
+			if $debug;
 		
 		$class_obj = ref $class_obj ? ref $class_obj : $class_obj;
 		error("Invalid field '$bind_name'","Cannot find '$bind_name' in form options or in stored form meta data") if !$class_obj;
 		
 		my $meta = $class_obj->field_meta($class_key);
+		print STDERR "Form: validate_page: class_key: $class_key, meta: $meta\n"
+			if $debug;
+			
 		error("No Meta for '$class_key'",
 			"Unable to load metadata for column '$class_key' on object '$class_obj_name' ($class_obj)") if !$meta;
 			
 		my $type = $meta->{type};
+		print STDERR "Form: validate_page: meta type: $type\n"
+			if $debug;
 		
 		if($meta->{linked})
 		{
@@ -183,6 +201,8 @@ package AppCore::Web::Form;
 		if($type eq 'database')
 		{
 			my $value = $req->value || $req->term;
+			print STDERR "Form: validate_page: type=database: value: $value\n"
+				if $debug;
 			
 			return AppCore::Web::Controller->autocomplete_util(
 				$meta->{linked},
