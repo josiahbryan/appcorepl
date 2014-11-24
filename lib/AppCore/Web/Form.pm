@@ -1085,7 +1085,7 @@ package AppCore::Web::Form;
 							if($meta->{linked})
 							{
 								$type = 'database';
-								$node->{class} = $meta->{linked}; #ref $class_obj ? ref $class_obj : $class_obj;
+								$node->{class}  = $meta->{linked}; #ref $class_obj ? ref $class_obj : $class_obj;
 								$node->{source} = $meta->{linked}.'.'.$meta->{linked}->primary_column;
 							}
 							elsif($type =~ /^enum/i)
@@ -1120,7 +1120,7 @@ package AppCore::Web::Form;
 						if(!$node->placeholder)
 						{
 							$node->{placeholder} =  
-								$node->{attrs}->{placeholder} = $meta->{label} || $meta->{title};
+								$node->{attrs}->{placeholder} = $node->{label} || $meta->{label} || $meta->{title};
 						}
 					}
 					

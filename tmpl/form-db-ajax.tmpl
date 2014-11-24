@@ -1,214 +1,600 @@
+	<div class="modal db-search-modal" id="db-search-dialog" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+					<h4 class="modal-title ref-add-title">Choose Item</h4>
+				</div>
+				<div class="modal-body">
+					<div class="input-group">
+						<span class="input-group-addon">Search:</span>
+						<input type="text" class="form-control filter-control" placeholder="Seach for an item by typing the first few letters">
+					</div>
+					<div class="list-group-wrapper">
+						<div class="list-group">
+							<!-- TODO: Load the search dialog with an initial list of items (e.g. the "empty search") -->
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				</div>
+			</div>
+		</div>
+	</div><!--/.ref-add-modal-->
 	
 	<script>
-	function databaseLookupHook($elm, url, formUuid)
-	{
-		function idHelper($elm, suffix)
-		{
-			return ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_' + suffix;
-		}
-		
-		function getClearButton($elm)
-		{
-			var clearButtonId = idHelper($elm, 'clear');
+	/* Add in our search dialog */
+	var pageSize = 25;
+	var dbLookupOptions = {
+		minimumInputLength: 0,
+		//width: 600,
+		ajax: {
+			quietMillis: 250,
+			data: function (term, page) { // page is the one-based page number tracked by Select2
+				return {
+					term:  term, //search term
+					start: page * pageSize, // page number
+					limit: pageSize,
+				};
+			},
+			results: function (data, page) {
+				var more = (page * pageSize) < data.total; // whether or not there are more results available
+				//console.debug("results parser: more:",more,", total:",data.total,", page:",page,", pageSize:",pageSize,", math:", (page*pageSize));
 			
-			var $clearButton = $('#'+clearButtonId);
-			if($clearButton.size() <= 0)
+				// notice we return the value of more so Select2 knows if more results can be loaded
+				return { results: data.list, more: more };
+			}
+		},
+		formatResult: function(result) {
+			var text = result.value;
+			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
+			return text;
+		},
+		formatSelection: function(result) {
+			var text = result.value;
+			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
+			return text;
+		},
+		initSelection: function(element, callback) {
+			// the input tag has a value attribute preloaded that points to a preselected supplement's id
+			// this function resolves that id attribute to an object that select2 can render
+			// using its formatResult renderer - that way the supplement name is shown preselected
+			var $elm = $(element),
+				id = $elm.val(),
+				initString = $elm.attr('x:initial-string');
+			
+			if(initString && initString != undefined)
 			{
-				var inputElm = $elm;
-				$clearButton = $('<a href="#" class="button btn btn-warning"><span>X</span></div>')
-					.addClass('ui-db-validation-reset')
-					.attr('title', 'Clear value')
-					.attr('id', clearButtonId)
-					.insertAfter($elm)
-					.bind('click', function() {
-						var $elm = inputElm; //$(this);
-						$elm.val('');
-						$elm.trigger('change');
-						$elm.removeClass('ui-database-validated');
-						$elm.focus();
-						$(this).hide();
+				callback({value: initString});
+				return;
+			}
+			
+			
+			var id = $elm.val(),
+				url = showItemChooser.hookUrlRoot+'/stringify?value=' + id;
+				
+			if (id !== "")
+				$.ajax(url)
+					.done(function(data) {
+						
+						//console.debug("Got data from server:", data.result);
+						callback({value: data.result.text});
+					});
+		},
+		
+		//dropdownCssClass: "bigdrop", // apply css that makes the dropdown taller
+		
+		escapeMarkup: function (m) { return m; } // we do not want to escape markup since we are displaying html in results
+	};
+
+	function dbSearchDialogSetup()
+	{
+		var $dialog   = $('.db-search-modal');
+		
+		// Move dialog out of current document flow position and to end of body to avoid any local-specific styles
+		$dialog.remove();
+		$('body').append($dialog);
+		
+		var $filter   = $dialog.find('.filter-control');
+		var $list     = $dialog.find('.list-group');
+		var $listWrap = $dialog.find('.list-group-wrapper');
+		
+		var specialRows = {
+			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No items found</a>'),
+			loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')
+		};
+		
+		var currentPage = 0;
+		var currentFilter = '';
+		var hasMoreResults = true;
+		
+		var resultSetBuffer = [];
+		
+		var updateList = function(processedResults) {
+			var list = processedResults.results;
+			hasMoreResults = processedResults.more;
+			
+			if(currentPage == 0 &&
+				(!list || list.length <= 0))
+			{
+				$list.empty();
+				$list.append(specialRows.noResult);
+				return;
+			}
+			
+			var startIdx = resultSetBuffer.length;
+			
+			for(var i=0; i<list.length; i++)
+			{
+				var row = list[i];
+				var html = dbLookupOptions.formatResult(row);
+				
+				var $wrap = $('<a href="#" class="list-group-item"></a>')
+					.html(html)
+					.attr('x:id', row.id)
+					.attr('x:idx', i + startIdx)
+					.on('click', function() {
+						
+						var $elm       = $(this),
+							id     = $elm.attr('x:id'),
+							idx    = $elm.attr('x:idx'),
+							result = resultSetBuffer[idx];
+						
+						var string = dbLookupOptions.formatSelection(result);
+						
+						//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
+						
+						if(showItemChooser.currentWidget)
+						{
+							var w = showItemChooser.currentWidget;
+							w.find('.txt').html(string);
+							w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
+							showItemChooser.currentElm.val(id).trigger('change');
+						}
+						
+						$('.db-search-modal').modal('hide');
 						return false;
 					});
+					
+				$list.append($wrap);
+				
+				resultSetBuffer.push(row);
 			}
-			
-			return $clearButton;
-		}
+		};
 		
-		function getIdHolder($elm)
-		{
-			var idHolder = idHelper($elm, 'validated');
+		var loadResultsPage = function(filter, page) {
+			var data = dbLookupOptions.ajax.data(filter, page);
 			
-			var $idHolder = $('#'+idHolder);
-			if($idHolder.size() <= 0)
-			{
-				$idHolder = $('<input type=hidden>')
-					.attr('name', idHolder)
-					.attr('id',   idHolder)
-					.insertAfter($elm);
-			}
+			//console.debug("loadResultsPage: data:",data, "page:",page);
 			
-			return $idHolder;
-		}
-		
-		var validate;
-		$elm.autocomplete({
-			source: url+'/'+formUuid+'/autocomplete',
-			minLength: 2,
-			search: function( event, ui ) {
-				//validate.call($(event.target), true); // true = surpress error
-				$(this).removeClass('ui-database-validated');
-				getClearButton($(this)).hide();
-			},
-			select: function( event, ui ) {
-				//console.debug(ui);
-				//console.debug(event);
-				//console.debug("select:",ui);
-				if(event && event.target)
-				{
-					var $elm = $(event.target);
+			specialRows.noResult.remove();
+			
+			//if(page == 0)
+				//$list.prepend(specialRows.loading);
+			//else
+				$list.append(specialRows.loading);
+			
+			$.ajax({
+				url: showItemChooser.hookUrlRoot+'/search',
+				data: data,
+				success: function(result) {
+					//console.debug("ajax results:",result);
+					//console.debug("ur
 					
-					$elm.addClass('ui-database-validated');
+					bufferNextPageLoad.locked = false;
 					
-					getIdHolder($elm)
-						.val(ui.item.id);
+					if(page == 0)
+					{
+						$list.empty();
+						$listWrap.scrollTop(0);
+					}
 					
-					getClearButton($elm)
-						.show();
+					var processed = dbLookupOptions.ajax.results(result, page);
+					updateList(processed);
+					
+					specialRows.loading.remove();
+				},
+	
+				error: function(result) {
+					specialRows.loading.remove();
+					
+					bufferNextPageLoad.locked = false;
+					
+					//alert("Error:");
+					//console.debug(result.responseText);
+					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 				}
+				
+			});
+		};
+		
+		var checkScrollPosition = function() {
+			var top = $listWrap.scrollTop();
+			var height = $listWrap.height();
+			var scrollBottom = top + height;
+			var contentHeight = $list.height();
+			var triggerPercent = 90;
+			var triggerPixel = contentHeight * (triggerPercent / 100);
+			var hitTrigger = scrollBottom > triggerPixel;
+			//console.debug(scrollBottom, contentHeight, hitTrigger);
+			
+			if(hitTrigger)
+				bufferNextPageLoad();
+		};
+		
+		var bufferNextPageLoad = function() {
+			if(bufferNextPageLoad.locked)
+				return;
+			
+			if(!hasMoreResults)
+				return;
+			
+			currentPage ++;
+			loadResultsPage(currentFilter, currentPage);
+		};
+		
+		var queryResults = function() {
+			
+			var filter = $filter.val();
+			filter = filter.replace(/(^\s+|\s+$)/g, '');
+			
+			//filter = "zym";
+			
+			specialRows.noResult.remove();
+			
+			currentFilter = filter;
+			currentPage = 0;
+			hasMoreResults = true;
+			resultSetBuffer = [];
+			
+			loadResultsPage(currentFilter, currentPage);
+			
+		};
+		
+		var bufferQueryResults = function() {
+			clearTimeout(bufferQueryResults.tid);
+			setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
+		};
+		
+		$listWrap.on('scroll', checkScrollPosition);
+		$filter.on('change', bufferQueryResults);
+		$filter.on('keyup',  bufferQueryResults);
+		
+		$filter.on('keyup',  function(event) {
+			
+			var enterPressed = event.which == 13;
+			
+			if(enterPressed) 
+			{
+				$list.find('.list-group-item')
+					.first()
+					.addClass('active')
+					.click();
 			}
+		
 		});
-		$elm.attr('autocomplete','off');
 		
-		var validateUrl = url+'/'+formUuid+'/validate';
+		//queryResults();
 		
-		validate = function(supressError) {
+		//setTimeout(showProductChooser, 500);
+		
+	}
+	
+	
+	function setupLookupUi($jq, hookUrlRoot)
+	{
+		showItemChooser.hookUrlRoot   = hookUrlRoot;
+		
+		var pageSize = 25;
+		$jq.on('change', function() {
+			
+			var $input = $(this);
+			
+			//checkForBackorder($input);
+			//updatePricing($input);
+			
+			//console.debug("got new id:",id);
+		});
+		
+		var buttonHtml = [
+			'<div class="btn-group db-search-btn">',
+				'<button type="button" class="btn btn-default dropdown-toggle btn-sm">',
+					'<span class="txt">Action</span>',
+					'&nbsp;<span class="caret"></span>',
+				'</button>',
+			'</div>'
+		].join('');
+		
+		$jq.each(function() {
 			var $elm = $(this);
 			
-			if(!$elm)
-				return;
+			var $widget = $(buttonHtml);
 			
-			//var $img = $('<img src="http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif" class=ui-validate-loading-img align=absmiddle>')
-			//	.insertAfter($elm);
+			$widget.insertAfter($elm);
+			$elm.hide();
 			
-			var trimmed = "";
-			try {
-				trimmed = $elm.val();
-			} catch(e) {}
+			//var initString = $elm.attr('x:initial-string');
+			//$widget.find('.txt').html(initString);
 			
-			var isBlank = trimmed == "";
+			var currentVal = $elm.val();
+			if(currentVal.match(/^\d+$/))
+			{
+				dbLookupOptions.initSelection(this, function(result) {
+					$widget.find('.txt').html(
+						dbLookupOptions.formatSelection(result)
+					);
+				});
+			}
+			else
+			{
+				$widget.find('.txt').html(currentVal || '<i>' + ($elm.attr('placeholder') || 'Select an Item') + '</i>');
+			}
 			
-			var def = $elm.attr('x:default-text');
-			try {
-				// IE throws errors here (method not supported)
-				trimmed = trimmed.trim();
-			} catch(e) {}
-			if(def && def != "" &&
-				trimmed != "" && trimmed == def)
-				isBlank = true;
-				
-			if(isBlank)
-				return;
-				
-			var idHolder = $elm.attr('name') + '_validated';
-			var $idHolder = $('#'+idHolder);
-			if($idHolder.val() && $idHolder.val() != '')
-				return;
-			
-			$elm.addClass('ui-autocomplete-loading');
-			
-			var validateData = { value: trimmed };
-			//console.debug(validateUrl, validateData);
-			$.ajax({
-				type: "GET",
-				url: validateUrl,
-				data: validateData,
-				success: function(data) {
-					$elm.removeClass('ui-autocomplete-loading');
-					//$img.remove();
-					if(typeof(data) == 'string')
-					{
-						try{
-							eval('data='+data);
-						}
-						catch(e) {}
-					}
-					
-					//console.debug('success, data: ',data);
-					var res = data.result, err = data.err;
-					if(err && err != null)
-					{
-						if(!supressError)
-						{
-							$elm.addClass('ui-badfield-inpage');
-							$elm.addClass('ui-badfield');
-							$elm.siblings('.ui-validate-error').remove();
-							$elm.removeClass('ui-database-validated');
-							
-							var $errMsg = $('<div class=ui-validate-error></div>');
-							$errMsg.html(err);
-							$errMsg.hide().insertAfter($elm).width($elm.width()+2).slideDown(200);
-						}
-					}
-					else
-					{
-						$elm.removeClass('ui-badfield-inpage');
-						$elm.removeClass('ui-badfield');
-						
-						$elm.siblings('.ui-validate-error').remove();
-						
-						$elm.val(res.text);
-						$elm.addClass('ui-database-validated');
-						
-						getIdHolder($elm)
-							.val(res.value);
-						
-						getClearButton($elm)
-							.show();
-					}
-				},
-				
-				error: function(err) {
-					$elm.removeClass('ui-autocomplete-loading');
-					//console.debug('ajax error:', err);
-					//$img.remove();
-					$elm.addClass('ui-badfield-inpage');
-					$elm.addClass('ui-badfield');
-				}
+			$widget.bind('click', function() {
+				showItemChooser($widget, $elm, hookUrlRoot);
 			});
-		};
+			
+		});
+	};
+	
+	function showItemChooser($widget, $elm, hookUrlRoot)
+	{
+		// $widget is the UI widget (button, etc)
+		// $elm is the hidden input element that gets passed back to the server
 		
-		var waitVal = function() {
-			var t = this;
-			setTimeout(function() {
-				validate.call(t);
-			}, 500);
-		};
+		showItemChooser.currentWidget = $widget;
+		showItemChooser.currentElm    = $elm;
+		showItemChooser.hookUrlRoot   = hookUrlRoot;
 		
-		$elm.focus(function() {
-				var $elm = $(this);
-				$elm.siblings('.ui-validate-error')
-				    .slideUp(200, function() { $(this).remove() });
-					
-				getIdHolder($elm).val('');
-			})
-			.blur(waitVal)
-			.change(function() {
-				$(this).removeClass('ui-database-validated');
-				getClearButton($(this)).hide();
-				waitVal.call(this);
-			})
-			.keypress(function() {
-				$(this).removeClass('ui-database-validated');
-				getClearButton($(this)).hide();
+		var $dialog   = $('.db-search-modal');
+		var $list     = $dialog.find('.list-group');
+		var $listWrap = $dialog.find('.list-group-wrapper');
+		var $filter   = $dialog.find('.filter-control');
+		
+		// Reset dialog
+		$list.empty();
+		$listWrap.scrollTop(0);
+		
+		// Reset filter 
+		$filter.val('').trigger('change');
+		
+		//$dialog.find('.list-group-wrapper').scrollTop(0);
+
+		$dialog.modal({ show: true });
 				
-// 				var t = this;
-// 				clearTimeout(t.tid);
-// 				t.tid = setTimeout(function() {
-// 					validate.call(t, true);
-// 				}, 1500);
-			});
+		var isMobile = window.matchMedia("only screen and (max-width: 770px)").matches;
+		//console.debug(isMobile);
+	
+		// We dont want to force focus into the filter control on "mobile" devices
+		// because that will (could) pop up an onscreen keyboard would would
+		// obscure a lot of the list
+		if(!isMobile)
+			$filter.focus(); //.select();
 		
-		validate.call($elm);
+	}
+	
+	
+	$(function() {
+	
+		dbSearchDialogSetup();
+	});
+	
+	function databaseLookupHook($elm, urlRoot, formUuid)
+	{
+		var hookUrlRoot = urlRoot+'/'+formUuid;
+//
+//		var validateUrl = hookUrlRoot + '/validate';
+//
+// 		function idHelper($elm, suffix)
+// 		{
+// 			return ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_' + suffix;
+// 		}
+// 		
+// 		function getClearButton($elm)
+// 		{
+// 			var clearButtonId = idHelper($elm, 'clear');
+// 			
+// 			var $clearButton = $('#'+clearButtonId);
+// 			if($clearButton.size() <= 0)
+// 			{
+// 				var inputElm = $elm;
+// 				$clearButton = $('<a href="#" class="button btn btn-warning"><span>X</span></div>')
+// 					.addClass('ui-db-validation-reset')
+// 					.attr('title', 'Clear value')
+// 					.attr('id', clearButtonId)
+// 					.insertAfter($elm)
+// 					.bind('click', function() {
+// 						var $elm = inputElm; //$(this);
+// 						$elm.val('');
+// 						$elm.trigger('change');
+// 						$elm.removeClass('ui-database-validated');
+// 						$elm.focus();
+// 						$(this).hide();
+// 						return false;
+// 					});
+// 			}
+// 			
+// 			return $clearButton;
+// 		}
+// 		
+// 		function getIdHolder($elm)
+// 		{
+// 			var idHolder = idHelper($elm, 'validated');
+// 			
+// 			var $idHolder = $('#'+idHolder);
+// 			if($idHolder.size() <= 0)
+// 			{
+// 				$idHolder = $('<input type=hidden>')
+// 					.attr('name', idHolder)
+// 					.attr('id',   idHolder)
+// 					.insertAfter($elm);
+// 			}
+// 			
+// 			return $idHolder;
+// 		}
+		
+// 		var validate;
+// 		$elm.autocomplete({
+// 			source: hookUrlRoot+'/autocomplete',
+// 			minLength: 2,
+// 			search: function( event, ui ) {
+// 				//validate.call($(event.target), true); // true = surpress error
+// 				$(this).removeClass('ui-database-validated');
+// 				getClearButton($(this)).hide();
+// 			},
+// 			select: function( event, ui ) {
+// 				//console.debug(ui);
+// 				//console.debug(event);
+// 				//console.debug("select:",ui);
+// 				if(event && event.target)
+// 				{
+// 					var $elm = $(event.target);
+// 					
+// 					$elm.addClass('ui-database-validated');
+// 					
+// 					getIdHolder($elm)
+// 						.val(ui.item.id);
+// 					
+// 					getClearButton($elm)
+// 						.show();
+// 				}
+// 			}
+// 		});
+// 		$elm.attr('autocomplete','off');
+//		
+// 		validate = function(supressError) {
+// 			var $elm = $(this);
+// 			
+// 			if(!$elm)
+// 				return;
+// 			
+// 			//var $img = $('<img src="http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif" class=ui-validate-loading-img align=absmiddle>')
+// 			//	.insertAfter($elm);
+// 			
+// 			var trimmed = "";
+// 			try {
+// 				trimmed = $elm.val();
+// 			} catch(e) {}
+// 			
+// 			var isBlank = trimmed == "";
+// 			
+// 			var def = $elm.attr('x:default-text');
+// 			try {
+// 				// IE throws errors here (method not supported)
+// 				trimmed = trimmed.trim();
+// 			} catch(e) {}
+// 			if(def && def != "" &&
+// 				trimmed != "" && trimmed == def)
+// 				isBlank = true;
+// 				
+// 			if(isBlank)
+// 				return;
+// 				
+// 			var idHolder = $elm.attr('name') + '_validated';
+// 			var $idHolder = $('#'+idHolder);
+// 			if($idHolder.val() && $idHolder.val() != '')
+// 				return;
+// 			
+// 			$elm.addClass('ui-autocomplete-loading');
+// 			
+// 			var validateData = { value: trimmed };
+// 			//console.debug(validateUrl, validateData);
+// 			$.ajax({
+// 				type: "GET",
+// 				url: validateUrl,
+// 				data: validateData,
+// 				success: function(data) {
+// 					$elm.removeClass('ui-autocomplete-loading');
+// 					//$img.remove();
+// 					if(typeof(data) == 'string')
+// 					{
+// 						try{
+// 							eval('data='+data);
+// 						}
+// 						catch(e) {}
+// 					}
+// 					
+// 					//console.debug('success, data: ',data);
+// 					var res = data.result, err = data.err;
+// 					if(err && err != null)
+// 					{
+// 						if(!supressError)
+// 						{
+// 							$elm.addClass('ui-badfield-inpage');
+// 							$elm.addClass('ui-badfield');
+// 							$elm.siblings('.ui-validate-error').remove();
+// 							$elm.removeClass('ui-database-validated');
+// 							
+// 							var $errMsg = $('<div class=ui-validate-error></div>');
+// 							$errMsg.html(err);
+// 							$errMsg.hide().insertAfter($elm).width($elm.width()+2).slideDown(200);
+// 						}
+// 					}
+// 					else
+// 					{
+// 						$elm.removeClass('ui-badfield-inpage');
+// 						$elm.removeClass('ui-badfield');
+// 						
+// 						$elm.siblings('.ui-validate-error').remove();
+// 						
+// 						$elm.val(res.text);
+// 						$elm.addClass('ui-database-validated');
+// 						
+// 						getIdHolder($elm)
+// 							.val(res.value);
+// 						
+// 						getClearButton($elm)
+// 							.show();
+// 					}
+// 				},
+// 				
+// 				error: function(err) {
+// 					$elm.removeClass('ui-autocomplete-loading');
+// 					//console.debug('ajax error:', err);
+// 					//$img.remove();
+// 					$elm.addClass('ui-badfield-inpage');
+// 					$elm.addClass('ui-badfield');
+// 				}
+// 			});
+// 		};
+// 		
+// 		var waitVal = function() {
+// 			var t = this;
+// 			setTimeout(function() {
+// 				validate.call(t);
+// 			}, 500);
+// 		};
+// 		
+// 		$elm.focus(function() {
+// 				var $elm = $(this);
+// 				$elm.siblings('.ui-validate-error')
+// 				    .slideUp(200, function() { $(this).remove() });
+// 					
+// 				getIdHolder($elm).val('');
+// 			})
+// 			.blur(waitVal)
+// 			.change(function() {
+// 				$(this).removeClass('ui-database-validated');
+// 				getClearButton($(this)).hide();
+// 				waitVal.call(this);
+// 			})
+// 			.keypress(function() {
+// 				$(this).removeClass('ui-database-validated');
+// 				getClearButton($(this)).hide();
+// 				
+// // 				var t = this;
+// // 				clearTimeout(t.tid);
+// // 				t.tid = setTimeout(function() {
+// // 					validate.call(t, true);
+// // 				}, 1500);
+// 			});
+// 		
+// 		validate.call($elm);
+		
+		setupLookupUi($elm, hookUrlRoot);
+
+		
 	}
 	</script>
 	<style>
@@ -216,15 +602,17 @@
 		display: inline-block;
 	}
 	
+	.form-input-group .db-search-btn {
+		margin-left: .25em;
+	}
+	
+	/*
+	
 	.ui-validate-error {
 		display: block;
 		
 		color: #922D2D !important;
 		background: #FFDDDD !important;
-		
-		/*border: 1px solid #CE4040 !important;*/
-		/*-moz-box-shadow: 0px 0px 5px #963434;*/
-		/*box-shadow: 0 0 5px #963434;*/
 		
 		padding: 4px 6px;
 		margin: -3px 2px 2px;
@@ -245,7 +633,7 @@
 		background-image: url('//jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') !important;
 		background-position: right center !important;
 		background-repeat: no-repeat !important;
-	}
+	}*/
 	
 	/*.input.ui-badfield-inpage.ui-autocomplete-loading {
 		background: #FFDDDD url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat !important;

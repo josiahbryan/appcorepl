@@ -1135,7 +1135,7 @@ package AppCore::DBI;
 			
 			if($class->meta->{sort} || $class->meta->{first_string})
 			{
-				$fklookup_sql .= "order by ".$class->get_orderby_sql;
+				$fklookup_sql .= ' order by '.$class->get_orderby_sql;
 			}
 		}
 		

@@ -741,7 +741,7 @@ package AppCore::Common;
 		unless($DISABLE_EXTRA_TITLE_GUESS)
 		{
 			$name .= '?' if $name =~ /^is/i;
-			#$name =~ s/id$//gi;
+			$name =~ s/id$//gi;
 			my $chr = '#';
 			$name =~ s/num$/$chr/gi; 
 			$name =~ s/datetime$/Date\/Time/gi;

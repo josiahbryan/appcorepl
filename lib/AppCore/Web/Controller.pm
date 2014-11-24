@@ -297,7 +297,8 @@ package AppCore::Web::Controller;
 		my $ctype = 'text/plain';
 		if($validate_action eq 'autocomplete')
 		{
-			my $result = $validator->stringified_list($value, 
+			my $result = $validator->stringified_list(
+					$value, 
 					$class->autocomplete_fkclause($validator), #$fkclause
 					undef, #$include_objects
 					0,  #$start
@@ -318,9 +319,14 @@ package AppCore::Web::Controller;
 		{
 			my $req = $class->stash->{req} || {};
 		
-			my $result = $validator->stringified_list($value, 
-					$class->autocomplete_fkclause($validator), #$fkclause
-					undef, #$include_objects
+			my $clause = $class->autocomplete_fkclause($validator) || '1=1';
+			
+			my $result = $validator->stringified_list(
+					$value, 
+					$clause, #$fkclause
+					
+					0, #$include_objects
+					
 					$req->{start} || 0,  #$start
 					$req->{limit} || 10, #$limit (both start and limit have to be defined, not undef - even if zero)
 			);
