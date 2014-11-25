@@ -145,7 +145,12 @@ package AppCore::Web::Controller;
 	{
 		my $class = shift;
 		
-		return $class->stash->{req};
+		my $req = $class->stash->{req} || AppCore::Common->context->current_request;
+		
+		die "No request in class stash (stash->{req} undef and no current_request)"
+			if !$req;
+		
+		return $req;
 	}
 	
 	sub redirect
@@ -163,9 +168,9 @@ package AppCore::Web::Controller;
 		my $count = shift;
 		
 		die "No request in class stash (stash->{req} undef)"
-			if ! $class->stash->{req};
+			if ! $class->request;
 			
-		my $url = $class->stash->{req}->prev_page_path($count);
+		my $url = $class->request->prev_page_path($count);
 		
 		return $url;
 	}
@@ -176,9 +181,9 @@ package AppCore::Web::Controller;
 		my $count = shift;
 		
 		die "No request in class stash (stash->{req} undef)"
-			if ! $class->stash->{req};
+			if ! $class->request;
 			
-		my $url = $class->stash->{req}->page_path;
+		my $url = $class->request->page_path;
 		
 		return $url;
 	}
@@ -192,14 +197,14 @@ package AppCore::Web::Controller;
 		my %args = @_;
 		
 		die "No request in class stash (stash->{req} undef)"
-			if ! $class->stash->{req};
+			if ! $class->request;
 		die "No 'r' object in class->stash'"
 			if !$class->stash->{r};
 		
 		# Get the URL as of $count paths ago
 		# E.g. if URL was /foo/bar/boo/baz, and $count=2, then 
 		# $url would be /foo/bar
-		my $url = $class->stash->{req}->prev_page_path($count);
+		my $url = $class->request->prev_page_path($count);
 		
 		# Add the %args as ?key=value&key2=value2 pairs
 		$url .= '?' if scalar(keys %args) > 0;
@@ -270,11 +275,18 @@ package AppCore::Web::Controller;
 		}
 	}
 	
-	sub autocomplete_fkclause {}
+	sub autocomplete_fkclause
+	{
+		my ($self, $validator, $static_fk_clause) = @_;
+		#print STDERR __PACKAGE__.": autocomplete_fkclause: Need to override in subclass '$self', just returning static_fk_clause\n";
+		return $static_fk_clause;
+	}
 	
 	sub autocomplete_util
 	{
-		my ($class, $validator, $validate_action, $value, $r) = @_;
+		my ($class, $validator, $validate_action, $value, $r, $fk_clause) = @_;
+		
+		$fk_clause ||= '1=1';
 		
 		my $debug = 0;
 		
@@ -299,7 +311,7 @@ package AppCore::Web::Controller;
 		{
 			my $result = $validator->stringified_list(
 					$value, 
-					$class->autocomplete_fkclause($validator), #$fkclause
+					$class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause, #$fkclause
 					undef, #$include_objects
 					0,  #$start
 					10, #$limit (both start and limit have to be defined, not undef - even if zero)
@@ -317,9 +329,11 @@ package AppCore::Web::Controller;
 		}
 		elsif($validate_action eq 'search')
 		{
-			my $req = $class->stash->{req} || {};
+			my $req = $class->request || {};
 		
-			my $clause = $class->autocomplete_fkclause($validator) || '1=1';
+			my $clause = $class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause;
+			
+			print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n";
 			
 			my $result = $validator->stringified_list(
 					$value, 

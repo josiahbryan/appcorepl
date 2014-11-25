@@ -1,19 +1,19 @@
 
 package AppCore::RunContext;
 # Package: AppCore::RunContext
-# Runtime context for an EAS module/application - singleton class initalized by the module 
+# Runtime context for an AppCore module/application - singleton class initalized by the module 
 # loader and accessed from AppCore::Common->context.
 
 use strict;
 use Data::Dumper;
 #use AppCore::Auth::Entity;
+use AppCore::DBI; # for dbh->quote
 
 sub new 
 {
 	my $class = shift;
 	my %args = @_;
 	
-	$args{eas_login_mod} ||= 'Login';
 	#die Dumper \%args;
 	
 	return bless { %args }, $class;
@@ -67,7 +67,6 @@ sub _reset
 {
 	my $self = shift;
 	delete $self->{$_} foreach keys %$self;
-	$self->{eas_login_mod} ||= 'Login';
 }
 
 
@@ -87,5 +86,11 @@ sub http_args		{shift->x('http_args',@_)}
 
 sub mobile_flag		{shift->x('mobile_flag',@_)}
 
+sub db_quoted
+{
+	my $self = shift;
+	my $key  = shift;
+	return AppCore::DBI->dbh->quote($self->x($key, @_));
+}
 
 1;

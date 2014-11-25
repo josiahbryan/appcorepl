@@ -1,3 +1,4 @@
+<!--form-db-ajax.tmpl-->
 	<div class="modal db-search-modal" id="db-search-dialog" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
@@ -22,6 +23,39 @@
 			</div>
 		</div>
 	</div><!--/.ref-add-modal-->
+	<style>
+	
+		.db-search-modal   .list-group {
+			border-radius: 0;
+			border: 0;
+			
+		}
+			.db-search-modal  .list-group-item:first-child,
+			.db-search-modal  .list-group-item:last-child
+			{
+				border-radius: 0;
+			}
+			
+			.db-search-modal  .list-group-item {
+				border-left: 0;
+				border-right: 0;
+			}
+			
+			.db-search-modal  .list-group-item:first-child {
+				border-top: 0;
+			}
+			
+			.db-search-modal  .list-group-item:last-child {
+				border-bottom: 0;
+			}
+		
+			.db-search-modal .list-group-wrapper {
+				border: 1px solid #ccc;
+				height: 31rem;
+				overflow: auto;
+				border-top: 0;
+			}
+	</style>
 	
 	<script>
 	/* Add in our search dialog */
@@ -639,3 +673,5 @@
 		background: #FFDDDD url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat !important;
 	}*/
 	</style>
+
+<!--/.form-db-ajax.tmpl-->

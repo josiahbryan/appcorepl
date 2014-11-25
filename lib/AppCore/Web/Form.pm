@@ -108,20 +108,13 @@ package AppCore::Web::Form;
 		exit -1;
 	}
 	
-	sub validate_page
+	
+	sub uuid_to_field_meta
 	{
 		my $self = shift;
-		my $req = shift;
-		my $r = shift;
-		my $form_opts = shift || {};
+		my $uuid = shift;
 		
 		my $debug = 0;
-		
-		my $uuid = $req->next_path;
-		
-		$req->shift_path   if $uuid;
-		$uuid = $req->uuid if !$uuid;
-		
 		
 		print STDERR "Form: validate_page: uuid: $uuid\n"
 			if $debug;
@@ -129,10 +122,6 @@ package AppCore::Web::Form;
 		error("No UUID Given","To validate input, the URL must contain a UUID as the next path, or in a 'uuid' query argument")
 			if !$uuid;
 			
-		my $validate_action = $req->next_path || 'validate';
-		print STDERR "Form: validate_page: validate_action: $validate_action\n"
-			if $debug;
-		
 		my ($form_uuid, $class_obj_name, $class_key) = split /\./, $uuid;
 		
 		my $field_meta = AppCore::Web::Form::ModelMeta->by_field(uuid => $form_uuid);
@@ -151,8 +140,9 @@ package AppCore::Web::Form;
 		
 		my $bind_name = "#${class_obj_name}.${class_key}";
 		
-		my $class_obj = $form_opts->{$class_obj_name} ||
-				$hash->{$bind_name}->{class_name};
+		#my $class_obj = $form_opts->{$class_obj_name} ||
+		#		$hash->{$bind_name}->{class_name};
+		my $class_obj = $hash->{$bind_name}->{class_name};
 				
 		print STDERR "Form: validate_page: bind_name: $bind_name, class_obj: $class_obj\n"
 			if $debug;
@@ -160,12 +150,47 @@ package AppCore::Web::Form;
 		$class_obj = ref $class_obj ? ref $class_obj : $class_obj;
 		error("Invalid field '$bind_name'","Cannot find '$bind_name' in form options or in stored form meta data") if !$class_obj;
 		
-		my $meta = $class_obj->field_meta($class_key);
+		my $meta = eval '$class_obj->field_meta($class_key);';
+		if($@)
+		{
+			print_stack_trace();
+			die $@;
+		}
+		
 		print STDERR "Form: validate_page: class_key: $class_key, meta: $meta\n"
 			if $debug;
 			
 		error("No Meta for '$class_key'",
 			"Unable to load metadata for column '$class_key' on object '$class_obj_name' ($class_obj)") if !$meta;
+			
+		return $meta;
+	}
+	
+	# Note: You can provide a 'static_fk_constraint' in form_opts which will be appeneded to the fk_constraint loaded from the database meta
+	sub validate_page
+	{
+		my $self = shift;
+		my $req  = shift;
+		my $r    = shift;
+		
+		# These next two opts must be set by overriding
+		my $form_opts = shift || {};
+		my $meta      = shift || undef;
+		
+		# Get UUID from request
+		my $uuid = $req->next_path;
+		$req->shift_path   if $uuid;
+		$uuid = $req->uuid if !$uuid;
+		
+		# Resolve UUID to a database field
+		$meta = $self->uuid_to_field_meta($uuid)
+			if !$meta;
+		
+		my $debug = 0;
+		
+		my $validate_action = $req->next_path || 'validate';
+		print STDERR "Form: validate_page: validate_action: $validate_action\n"
+			if $debug;
 			
 		my $type = $meta->{type};
 		print STDERR "Form: validate_page: meta type: $type\n"
@@ -201,18 +226,20 @@ package AppCore::Web::Form;
 		if($type eq 'database')
 		{
 			my $value = $req->value || $req->term;
-			print STDERR "Form: validate_page: type=database: value: $value\n"
+			print STDERR "Form: validate_page: type=database: value: $value, fk_constraint: '$meta->{fk_constraint}'\n" #.Dumper($meta)
 				if $debug;
 			
 			return AppCore::Web::Controller->autocomplete_util(
 				$meta->{linked},
 				$validate_action,
 				$value,
-				$r);
+				$r,
+				($meta->{fk_constraint} || '1=1').' and '.($form_opts->{static_fk_constraint} || '1=1'));
 		}
 		else
 		{
-			error("No Server-Side Validation","No server-side validation available for data type '$type' on field $bind_name");
+			#error("No Server-Side Validation","No server-side validation available for data type '$type' on field $bind_name");
+			error("No Server-Side Validation","No server-side validation available for data type '$type' on UUID $uuid");
 		}
 		
 	}

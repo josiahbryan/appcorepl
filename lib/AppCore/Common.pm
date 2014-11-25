@@ -737,6 +737,7 @@ package AppCore::Common;
 		$name =~ s/^([a-z])/uc($1)/seg;
 		$name =~ s/\/([a-z])/'\/'.uc($1)/seg;
 		$name =~ s/\s([a-z])/' '.uc($1)/seg;
+		$name =~ s/\.([a-z])/' '.uc($1)/seg;
 		$name =~ s/\s(of|the|and|a)\s/' '.lc($1).' '/segi;
 		unless($DISABLE_EXTRA_TITLE_GUESS)
 		{
