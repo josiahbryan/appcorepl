@@ -2660,7 +2660,7 @@ package AppCore::DBI;
 					my $drop = 0;
 					my $db_data = $hash{$key_name};
 
-					# If index does exinst in DB, compare and flag if difference
+					# If index does exists in DB, compare and flag if different
 					if($db_data)
 					{
 						my @cols = @{ $idx{$key_name} || [] };
