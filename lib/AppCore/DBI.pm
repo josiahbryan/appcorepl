@@ -3029,7 +3029,7 @@ package $opts->{pkg};
 			$found_option = 1 if $flag;
 			push @list, {
 				value		=> $opt,
-				text		=> $name_map && $name_map->{$opt} ? $name_map->{$opt} : guess_title($opt),
+				text		=> $name_map && $name_map->{$opt} ? $name_map->{$opt} : AppCore::Common::guess_title($opt),
 				selected	=> $flag,
 			};
 		}
