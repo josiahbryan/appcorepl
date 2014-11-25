@@ -144,18 +144,28 @@
 		var hasMoreResults = true;
 		
 		var resultSetBuffer = [];
+		var latestResultSetFilter = '';
+		
+		var resultSetCounter = 0;
+		var clickFirstResultWhenLoaded = false;
 		
 		var updateList = function(processedResults) {
 			var list = processedResults.results;
 			hasMoreResults = processedResults.more;
 			
-			if(currentPage == 0 &&
-				(!list || list.length <= 0))
+			if(currentPage == 0)
 			{
 				$list.empty();
-				$list.append(specialRows.noResult);
-				return;
+			
+				if(!list || list.length <= 0)
+				{
+					$list.append(specialRows.noResult);
+					return;
+				}
 			}
+			
+			//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
+			latestResultSetFilter = currentFilter;
 			
 			var startIdx = resultSetBuffer.length;
 			
@@ -195,6 +205,12 @@
 				
 				resultSetBuffer.push(row);
 			}
+			
+			if(clickFirstResultWhenLoaded)
+				$list.find('.list-group-item')
+					.first()
+					.addClass('active')
+					.click();
 		};
 		
 		var loadResultsPage = function(filter, page) {
@@ -209,6 +225,10 @@
 			//else
 				$list.append(specialRows.loading);
 			
+			resultSetCounter ++;
+			
+			var counterMark = resultSetCounter;
+			
 			$.ajax({
 				url: showItemChooser.hookUrlRoot+'/search',
 				data: data,
@@ -217,6 +237,20 @@
 					//console.debug("ur
 					
 					bufferNextPageLoad.locked = false;
+					
+					// By storing the value of the resultSetCounter at the start of the ajax call,
+					// then comparing it to the current value when the call completes,
+					// we avoid a "flash" with two different results in sequence.
+					// This is caused when the user hits "escape" in the search box to close a dialog
+					// for one field on the page then clicks another search field on the page -
+					// what happens is that keypress (ESC) triggers an ajax call, and then the 
+					// click on the other field triggers another call - and they overlap,
+					// so the results from the first call appear in the list for the next field.
+					if(resultSetCounter != counterMark)
+					{
+						console.debug("resultSetCounter("+resultSetCounter+")!=counterMark("+counterMark+"), not writing list");
+						return;
+					}
 					
 					if(page == 0)
 					{
@@ -251,7 +285,6 @@
 			var triggerPercent = 90;
 			var triggerPixel = contentHeight * (triggerPercent / 100);
 			var hitTrigger = scrollBottom > triggerPixel;
-			//console.debug(scrollBottom, contentHeight, hitTrigger);
 			
 			if(hitTrigger)
 				bufferNextPageLoad();
@@ -274,7 +307,6 @@
 			filter = filter.replace(/(^\s+|\s+$)/g, '');
 			
 			//filter = "zym";
-			
 			specialRows.noResult.remove();
 			
 			currentFilter = filter;
@@ -286,28 +318,54 @@
 			
 		};
 		
-		var bufferQueryResults = function() {
+		var bufferQueryResults = function(event) {
+			
+			clickFirstResultWhenLoaded = false;
+			
+			var escPressed = event.which == 27;
+			if(escPressed)
+				return;
+			
+			var enterPressed = event.which == 13;
+			if(enterPressed) 
+			{
+				var filter = $filter.val();
+				filter = filter.replace(/(^\s+|\s+$)/g, '');
+			
+				// Only click the first entry if its loaded AND
+				// if the filter in the box matches the filter
+				// used to load current result set
+				if(resultSetBuffer.length > 0 && 
+					latestResultSetFilter == filter)
+				{
+					$list.find('.list-group-item')
+						.first()
+						.addClass('active')
+						.click();
+					return;
+				}
+				else
+				{
+					// If either test failed, fall thru to loaded
+					// a new result set, and flag the first one
+					// to be 'clicked' as soon as its loaded
+					clickFirstResultWhenLoaded = true;
+				}
+				
+				//console.debug("enterPressed, resultSetBuffer.length:",resultSetBuffer.length,", clickFirstResultWhenLoaded:",clickFirstResultWhenLoaded);
+				
+				
+			}
+			
+			// Delay X ms then load the result from the server
 			clearTimeout(bufferQueryResults.tid);
-			setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
+			bufferQueryResults.tid = setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
 		};
 		
 		$listWrap.on('scroll', checkScrollPosition);
 		$filter.on('change', bufferQueryResults);
 		$filter.on('keyup',  bufferQueryResults);
 		
-		$filter.on('keyup',  function(event) {
-			
-			var enterPressed = event.which == 13;
-			
-			if(enterPressed) 
-			{
-				$list.find('.list-group-item')
-					.first()
-					.addClass('active')
-					.click();
-			}
-		
-		});
 		
 		//queryResults();
 		
@@ -388,6 +446,7 @@
 		
 		// Reset dialog
 		$list.empty();
+		//$list.find('.list-group-item').remove();
 		$listWrap.scrollTop(0);
 		
 		// Reset filter 
