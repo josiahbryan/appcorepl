@@ -4,7 +4,7 @@
 			<div class="modal-content">
 				<div class="modal-header">
 					<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-					<h4 class="modal-title ref-add-title">Choose Item</h4>
+					<h4 class="modal-title db-search-title">Choose Item</h4>
 				</div>
 				<div class="modal-body">
 					<div class="input-group">
@@ -256,7 +256,7 @@
 					// so the results from the first call appear in the list for the next field.
 					if(resultSetCounter != counterMark)
 					{
-						console.debug("resultSetCounter("+resultSetCounter+")!=counterMark("+counterMark+"), not writing list");
+						//console.debug("resultSetCounter("+resultSetCounter+")!=counterMark("+counterMark+"), not writing list");
 						return;
 					}
 					
@@ -428,7 +428,7 @@
 			}
 			else
 			{
-				$widget.find('.txt').html(currentVal || '<i>' + ($elm.attr('placeholder') || 'Select an Item') + '</i>');
+				$widget.find('.txt').html(currentVal || '<i class="placeholder">' + ($elm.attr('placeholder') || 'Select an Item') + '</i>');
 			}
 			
 			$widget.bind('click', function() {
@@ -451,6 +451,10 @@
 		var $list     = $dialog.find('.list-group');
 		var $listWrap = $dialog.find('.list-group-wrapper');
 		var $filter   = $dialog.find('.filter-control');
+		var $title    = $dialog.find('.db-search-title');
+		
+		// Set Title
+		$title.html('Choose '+$elm.attr('placeholder'));
 		
 		// Reset dialog
 		$list.empty();
@@ -704,7 +708,13 @@
 	}
 	
 	.form-input-group .db-search-btn {
-		margin-left: .25em;
+		/*margin-left: .25em;*/
+	}
+	
+	.form-input-group .db-search-btn .placeholder {
+		color: rgba(0,0,0,0.8);
+		font-weight: normal;
+		
 	}
 	
 	/*
