@@ -414,15 +414,13 @@ package AppCore::DBI;
 			#$record = $class->retrieve($class->validate_string($id));
 		#}
 		
-		return '' if !defined $id && !ref $record && !defined $record;
+		return '' if !defined $id && !ref $record;
 		
 		#print STDERR "Got record: $record (".ref($record).")\n" if $DEBUG; #, recordid=[".($record?$record->id:"")."]\n"
 		
-		if(!$record)
-		{
-			#warn "No record defined: class=$class, id=[$id] (".ref($id).")\n";
-			return '';
-		}
+		return '' if !$record || !$record->id;
+		
+		#warn "No record defined: class=$class, id=[$id] (".ref($id).")\n";
 		
 		my @fmt  = $record->can('stringify_fmt') ? $record->stringify_fmt : ();
 		@fmt = ('#'.($record->meta->{first_string} || $record->primary_column)) if !@fmt;
