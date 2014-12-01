@@ -334,11 +334,12 @@ package AppCore::DBI::SimpleListModel;
 		}
 		
 		## Prepare ORDER BY clause
-		my $orderby_sql = $class->get_orderby_sql(@adv_sort ? \@adv_sort : {
+		my $orderby_sql = $class->get_orderby_sql(@adv_sort ? \@adv_sort : ($self->sort_column ? {
 			'sort' => $self->sort_column    || '',
 			'dir'  => $self->sort_direction || '',
-		});
+		} : undef));
 		
+		#die "'$orderby_sql'";
 		my $sort_clause = $orderby_sql ? " \nORDER BY ".$orderby_sql : '';
 		
 		

@@ -521,27 +521,38 @@ package AppCore::DBI;
 		{
 			$s = $args;
 		}
-		else
+		elsif(!$s)
 		{
-			$s = [$s] if ref $s ne 'ARRAY';
-			$s = [$class->meta->{first_string}] if !@$s;
-			
-	# 		my $user_sort = AppCore::PersistantUserPref->get_pref(join('/',$class,'sort'));
-	# 		if($user_sort)
-	# 		{
-	# 			my @list = split /\s*,\s*/, $user_sort;
-	# 			my @tmp;
-	# 			foreach my $x (@list)
-	# 			{
-	# 				my @y = split /\s+/, $x;
-	# 				push @tmp, @y > 1 ? \@y : shift @y;
-	# 			}
-	# 			
-	# 			$s = \@tmp;
-	# 		}
-			#$table_list = [split(',',$user_cols)] if $user_cols;
+			$s = [];
 		}
 		
+		if(ref $s ne 'ARRAY')
+		{
+			$s = [$s];
+		}
+		
+		if(!@$s)
+		{
+			$s = [$class->meta->{first_string}]
+				if $class->meta->{first_string};
+				
+		}
+			
+# 		my $user_sort = AppCore::PersistantUserPref->get_pref(join('/',$class,'sort'));
+# 		if($user_sort)
+# 		{
+# 			my @list = split /\s*,\s*/, $user_sort;
+# 			my @tmp;
+# 			foreach my $x (@list)
+# 			{
+# 				my @y = split /\s+/, $x;
+# 				push @tmp, @y > 1 ? \@y : shift @y;
+# 			}
+# 			
+# 			$s = \@tmp;
+# 		}
+		#$table_list = [split(',',$user_cols)] if $user_cols;
+	
 		return $s;
 	}
 	
@@ -552,7 +563,10 @@ package AppCore::DBI;
 		
 		my $dbh = $class->db_Main;
 		
-		my $s = $class->_get_orderby_fields();
+		my $s = $class->_get_orderby_fields($args);
+		
+		#use Data::Dumper;
+		#die Dumper $s;
 		
 		my @order;
 		foreach my $field (@$s)
@@ -1206,7 +1220,11 @@ package AppCore::DBI;
 			
 			# Had to add the cast() to char() because otherwise the 'like' is case-sensitive. This way, the like is case INsensitive.
 			$fklookup_sql = qq{$q_table \nWHERE (cast($text as char(512)) like ?) \nAND ($text <> "") \nAND $fkclause};
-			@args = ('%'.$val.'%');
+			
+			my $val_wild = $val;
+			$val_wild =~ s/\s+/%/g;
+			
+			@args = ('%'.$val_wild.'%');
 			
 			if($class->meta->{sort} || $class->meta->{first_string})
 			{

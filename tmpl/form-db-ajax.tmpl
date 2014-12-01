@@ -147,6 +147,7 @@
 		var $filter   = $dialog.find('.filter-control');
 		var $list     = $dialog.find('.list-group');
 		var $listWrap = $dialog.find('.list-group-wrapper');
+		var $title    = $dialog.find('.db-search-title');
 		
 		var specialRows = {
 			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No items found</a>'),
@@ -181,6 +182,14 @@
 					$list.append(specialRows.noResult);
 					return;
 				}
+				
+				// Add a special item at the very start of the list
+				// to "clear" the current item (an option that, when clicked,
+				// just clears the value in the box)
+				list.unshift({
+					clearResultItem: true
+				});
+				
 			}
 			
 			//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
@@ -191,11 +200,17 @@
 			for(var i=0; i<list.length; i++)
 			{
 				var row = list[i];
-				var html = dbLookupOptions.formatResult(row);
+				var html = row.clearResultItem ?
+					"<i>(Reset/Clear currently selected " + 
+						($title.attr('placeholder') ?
+							$title.attr('placeholder') : 
+							"Item")
+						+ ")</i>" :
+					dbLookupOptions.formatResult(row);
 				
 				var $wrap = $('<a href="#" class="list-group-item"></a>')
 					.html(html)
-					.attr('x:id', row.id)
+					.attr('x:id',  row.clearResultItem ? '0' : row.id)
 					.attr('x:idx', i + startIdx)
 					.on('click', function() {
 						
@@ -204,7 +219,9 @@
 							idx    = $elm.attr('x:idx'),
 							result = resultSetBuffer[idx];
 						
-						var string = dbLookupOptions.formatSelection(result);
+						var string = 
+							result.clearResultItem ? '<i class="placeholder">(' + ($title.attr('placeholder') || 'Select an Item') + ')</i>' :
+							dbLookupOptions.formatSelection(result);
 						
 						//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
 						
@@ -465,7 +482,7 @@
 			}
 			else
 			{
-				$widget.find('.txt').html(currentVal || '<i class="placeholder">' + ($elm.attr('placeholder') || 'Select an Item') + '</i>');
+				$widget.find('.txt').html(currentVal || '<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 			}
 			
 			$widget.bind('click', function() {
@@ -492,6 +509,9 @@
 		
 		// Set Title
 		$title.html('Choose '+$elm.attr('placeholder'));
+		
+		// Store placeholder on the dialog for use later in the 'clear item' code
+		$title.attr('placeholder', $elm.attr('placeholder'));
 		
 		// Reset dialog
 		$list.empty();
