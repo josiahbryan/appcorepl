@@ -333,7 +333,7 @@ package AppCore::Web::Controller;
 		
 			my $clause = $class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause;
 			
-			print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n";
+			#print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n";
 			
 			my $result = $validator->stringified_list(
 					$value, 
