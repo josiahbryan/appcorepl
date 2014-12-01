@@ -89,11 +89,17 @@
 			}
 		},
 		formatResult: function(result) {
+			if(result == undefined || result == null || !result)
+				return "";
+				
 			var text = result.value;
 			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
 			return text;
 		},
 		formatSelection: function(result) {
+			if(result == undefined || result == null || !result)
+				return "";
+				
 			var text = result.value;
 			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
 			return text;
@@ -150,6 +156,11 @@
 		var currentPage = 0;
 		var currentFilter = '';
 		var hasMoreResults = true;
+		
+		// We're using a request queue so that servers that respond
+		// with requests out-of-order can be properly sequenced
+		var requestQueue = [];
+		var requestCounter = 0;
 		
 		var resultSetBuffer = [];
 		var latestResultSetFilter = '';
@@ -221,6 +232,50 @@
 					.click();
 		};
 		
+		var processResultQueue = function() {
+			
+			// Sort requests by sequence they were inserted
+			requestQueue.sort(function(a,b) {
+				return (a.id - b.id);
+			});
+			
+			// Verify all results are complete - if anything is
+			// incomplete (such as result 2 out of 5),
+			// we want to wait until all data is completed
+			var allCompleted = true;
+			for(var x=0; x<requestQueue.length; x++)
+				if(!requestQueue[x].rxd)
+					allCompleted = false;
+					
+			//console.debug("processResultQueue: allCompleted:",allCompleted, ", queue:",requestQueue);
+			
+			if(!allCompleted)
+				return;
+			
+			// Process the result queue since all are completed
+			for(var x=0; x<requestQueue.length; x++)
+			{
+				//console.debug("processResultQueue: processing #",x);
+				var requestData = requestQueue[x];
+			
+				if(requestData.page == 0)
+				{
+					$list.empty();
+					$listWrap.scrollTop(0);
+				}
+				
+				var processed = dbLookupOptions.ajax.results(requestData.results, requestData.page);
+				updateList(processed);
+			}
+			
+			// Suggested as fastest method to empty an array 
+			// from http://stackoverflow.com/questions/1232040/empty-an-array-in-javascript
+			while(requestQueue.length > 0)
+				requestQueue.pop();
+			
+			specialRows.loading.remove();
+		};
+		
 		var loadResultsPage = function(filter, page) {
 			var data = dbLookupOptions.ajax.data(filter, page);
 			
@@ -235,41 +290,29 @@
 			
 			resultSetCounter ++;
 			
-			var counterMark = resultSetCounter;
+			var requestData = {
+				page:		page,
+				filter:		filter,
+				results:	null,
+				rxd:		false,
+				id:		requestCounter ++,
+			};
+			
+			requestQueue.push(requestData);
+			
 			
 			$.ajax({
 				url: showItemChooser.hookUrlRoot+'/search',
 				data: data,
 				success: function(result) {
 					//console.debug("ajax results:",result);
-					//console.debug("ur
 					
 					bufferNextPageLoad.locked = false;
 					
-					// By storing the value of the resultSetCounter at the start of the ajax call,
-					// then comparing it to the current value when the call completes,
-					// we avoid a "flash" with two different results in sequence.
-					// This is caused when the user hits "escape" in the search box to close a dialog
-					// for one field on the page then clicks another search field on the page -
-					// what happens is that keypress (ESC) triggers an ajax call, and then the 
-					// click on the other field triggers another call - and they overlap,
-					// so the results from the first call appear in the list for the next field.
-					if(resultSetCounter != counterMark)
-					{
-						//console.debug("resultSetCounter("+resultSetCounter+")!=counterMark("+counterMark+"), not writing list");
-						return;
-					}
+					requestData.results = result;
+					requestData.rxd     = true;
 					
-					if(page == 0)
-					{
-						$list.empty();
-						$listWrap.scrollTop(0);
-					}
-					
-					var processed = dbLookupOptions.ajax.results(result, page);
-					updateList(processed);
-					
-					specialRows.loading.remove();
+					processResultQueue();
 				},
 	
 				error: function(result) {
@@ -373,12 +416,6 @@
 		$listWrap.on('scroll', checkScrollPosition);
 		$filter.on('change', bufferQueryResults);
 		$filter.on('keyup',  bufferQueryResults);
-		
-		
-		//queryResults();
-		
-		//setTimeout(showProductChooser, 500);
-		
 	}
 	
 	

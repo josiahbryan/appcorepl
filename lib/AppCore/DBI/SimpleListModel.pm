@@ -288,10 +288,10 @@ package AppCore::DBI::SimpleListModel;
 					$other_ref = $monkier;
 				}
 					
-				push @columns, "(SELECT $concat FROM $other_db.$table $monkier WHERE $other_ref.$primary=$self_ref.$self_field) AS ".$dbh->quote_identifier($col);
+				push @columns, "(SELECT $concat FROM $other_db.$table $monkier WHERE $other_ref.$primary=$self_ref.$self_field) \n\tAS ".$dbh->quote_identifier($col)."\n";
 				
 				# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
-				push @columns, "$self_ref.$self_field AS ".$dbh->quote_identifier($col.'_raw');
+				push @columns, "$self_ref.$self_field \n\tAS ".$dbh->quote_identifier($col.'_raw')."\n";
 			}
 			else
 			{
@@ -339,7 +339,7 @@ package AppCore::DBI::SimpleListModel;
 			'dir'  => $self->sort_direction || '',
 		});
 		
-		my $sort_clause = $orderby_sql ? ' ORDER BY '.$orderby_sql : '';
+		my $sort_clause = $orderby_sql ? " \nORDER BY ".$orderby_sql : '';
 		
 		
 		## Prepare complete SELECT statement
@@ -360,7 +360,7 @@ package AppCore::DBI::SimpleListModel;
 		);
 		
 		#use AppCore::Common;
-		#die debug_sql($sql_table, @$query_args);
+		#die AppCore::Common::debug_sql($sql_table, @$query_args);
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
 		#print STDERR AppCore::Common::get_stack_trace();

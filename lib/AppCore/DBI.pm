@@ -503,15 +503,14 @@ package AppCore::DBI;
 		return join '', @buf;
 	}
 	
-	
-	sub get_orderby_sql
+	sub _get_orderby_fields
 	{
 		my $class = shift;
 		my $args = shift;
+		
 		my $dbh = $class->db_Main;
 		
 		my $s = $class->meta->{sort};
-		
 		
 		if(ref $args eq 'HASH' && $args->{sort})
 		{
@@ -543,46 +542,125 @@ package AppCore::DBI;
 			#$table_list = [split(',',$user_cols)] if $user_cols;
 		}
 		
+		return $s;
+	}
+	
+	sub get_orderby_sql
+	{
+		my $class = shift;
+		my $args = shift;
+		
+		my $dbh = $class->db_Main;
+		
+		my $s = $class->_get_orderby_fields();
+		
 		my @order;
-		foreach my $col (@$s)
+		foreach my $field (@$s)
 		{
-			if(ref $col eq 'ARRAY')
+			my $dir   = '';
+			
+			if(ref $field eq 'ARRAY')
 			{
-				my ($field,$dir) = @$col;
+				($field, $dir) = @$field;
 				$dir = lc $dir eq 'desc' ? 'DESC' : 'ASC';
-				push @order, $dbh->quote_identifier($field).' '.$dir;
+			}
+			
+			my $field_sql  = $dbh->quote_identifier($field);
+			my $field_meta = $class->meta->{field_map}->{lc $field};
+			if($field_meta->{linked} && 
+				eval($field_meta->{linked}.'->can("get_stringify_sql")'))
+			{
+				#print STDERR "Debug: get_orderby_sql: field: '$field' ->linked:".$field_meta->{linked}.", get_stringify_sql on linked: ".$field_meta->{linked}->get_stringify_sql."\n";
+				
+				# Last true arg indicates that the stringify SQL function
+				# should use that class's 'order by' fields instead of the stringify fmt
+				my $concat = $field_meta->{linked}->get_stringify_sql(0,0,1);
+					
+				my $linked_meta = eval '$field_meta->{linked}->meta';
+
+				if(!$linked_meta || !$linked_meta->{db} || !$linked_meta->{database})
+				{
+					my $dsn = $field_meta->{linked}->db_Main->{Name};
+					$dsn =~ /database=([^;]+)/;
+					$linked_meta->{db} = $1;
+				}
+				
+				my $other_db   = $dbh->quote_identifier($linked_meta->{db} || $linked_meta->{database});
+				
+				my $table      = $dbh->quote_identifier($field_meta->{linked}->table);
+				my $primary    = $dbh->quote_identifier($field_meta->{linked}->primary_column);
+				my $self_field = $dbh->quote_identifier($field_meta->{field});
+				
+				
+				my $dbh = $class->db_Main;
+				
+				my $db = $class->meta->{db} || $class->meta->{database};
+				if(!$db)
+				{
+					my $dsn = $dbh->{Name};
+					$dsn =~ /database=([^;]+)/;
+					$db = $1;
+					#die Dumper $db,$dsn;
+				}
+				$db = $dbh->quote_identifier($db);
+				
+				my $self_table = $dbh->quote_identifier($class->table);
+				
+				$field_sql = "IFNULL((SELECT $concat FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field LIMIT 1),'')";
 			}
 			else
 			{
-				push @order, $dbh->quote_identifier($col);
+				#print STDERR "Debug: field: '$field', linked: $field_meta->{linked}, \$@: '$@'\n";
 			}
+			
+			push @order, $field_sql.' '.$dir;
 		}
 		
 		#die Dumper \@order;
 		
-		return @order ? join ', ', @order : undef;
+		return @order ? join ",\n\t", @order : undef;
 	}
 	
 	
 	sub get_stringify_sql
 	{
-		my $self = shift;
+		my $self       = shift;
 		my $lower_case = shift || 0;
-		my $depth = shift || 0;
-		my @fmt  = $self->can('stringify_fmt') ? $self->stringify_fmt : ();
+		my $depth      = shift || 0;
+		my $use_order  = shift || 0;
+		
+		my @fmt        = $self->can('stringify_fmt') ? $self->stringify_fmt : ();
+		
 		@fmt = ('#'.($self->meta->{first_string} || $self->primary_column)) if !@fmt;
 		
-		return $self->_create_string_sql(\@fmt,$lower_case,$depth);
+		if($use_order)
+		{
+			my $s = $self->_get_orderby_fields();
+		
+			my @order;
+			foreach my $field (@$s)
+			{
+				($field, undef) = @$field 
+					if ref $field eq 'ARRAY';
+				
+				push @order, '#'.$field;
+			}
+			
+			@fmt = @order;
+		}
+		
+		return $self->_create_string_sql(\@fmt,$lower_case,$depth,$use_order);
 	}
 	
 	use constant MAX_SQL_STRINGIFY_DEPTH => 1;
 	
 	sub _create_string_sql
 	{
-		my $self  = shift;
-		my $fmt   = shift || [];
-		my $lower_case = shift || 0;
-		my $depth = shift || 0;  # guards against recursive stringification
+		my $self        = shift;
+		my $fmt         = shift || [];
+		my $lower_case  = shift || 0;
+		my $depth       = shift || 0;  # guards against recursive stringification
+		my $use_orderby = shift || 0;
 		
 		# Buffer for final SQL
 		my @buf;
@@ -612,32 +690,32 @@ package AppCore::DBI;
 				my ($col,$is_good,$is_bad) = @$val;
 				$col =~ s/^#//g;
 				
-				
 				my $self_table = $dbh->quote_identifier($self->table);
 					
 				my $condition = "$db.$self_table.".$dbh->quote_identifier($col);
 				
 				# The truth of a foreign key is not only if its a non-zero integer, but also
 				# if that foreign object exists - hence this subquery as the condition.
-				my $x = $self->field_meta($col);
-				if ($x->{linked} && eval '$x->{linked}->can("table")')
+				my $other_meta = $self->field_meta($col);
+				if ($other_meta->{linked} && eval '$other_meta->{linked}->can("table")')
 				{
-					my $meta = eval '$x->{linked}->meta';
+					my $meta = eval '$other_meta->{linked}->meta';
 					if(!$meta || !$meta->{db} || !$meta->{database})
 					{
-						my $dsn = $x->{linked}->db_Main->{Name};
+						my $dsn = $other_meta->{linked}->db_Main->{Name};
 						$dsn =~ /database=([^;]+)/;
 						$meta->{db} = $1;
 						#die Dumper $meta,$dsn;
 					}
 					
 					my $other_db   = $dbh->quote_identifier($meta->{db} || $meta->{database});
-					my $table      = $dbh->quote_identifier($x->{linked}->table);
-					my $primary    = $dbh->quote_identifier($x->{linked}->primary_column);
-					my $self_field = $dbh->quote_identifier($x->{field});
-					$condition = "(SELECT COUNT($other_db.$table.$primary) FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field) = 1";
+					my $table      = $dbh->quote_identifier($other_meta->{linked}->table);
+					my $primary    = $dbh->quote_identifier($other_meta->{linked}->primary_column);
+					my $self_field = $dbh->quote_identifier($other_meta->{field});
+					
+					$condition = "(SELECT COUNT($other_db.$table.$primary) \nFROM $other_db.$table \nWHERE $other_db.$table.$primary=$db.$self_table.$self_field) = 1";
 				}
-				elsif($x->{type} =~ /varchar/)
+				elsif($other_meta->{type} =~ /varchar/)
 				{
 					$condition = "$condition <> '' AND $condition IS NOT NULL";
 				}
@@ -646,23 +724,23 @@ package AppCore::DBI;
 				$is_good = [] if !$is_good || ref $is_good ne 'ARRAY';
 				$is_bad  = [] if !$is_bad  || ref $is_bad  ne 'ARRAY';
 				
-				push @buf, join '', 'IF(', $condition, ',', $self->_create_string_sql($is_good,$lower_case), ',', $self->_create_string_sql($is_bad,$lower_case), ')';
+				push @buf, join '', 'IF(', "\n", $condition, ',', "\n", $self->_create_string_sql($is_good,$lower_case), ',', "\n", $self->_create_string_sql($is_bad,$lower_case), ')';
 				
 			}
 			# Column references start with a hash, so to reference column 'title', use '#title'
 			elsif($val =~ /^#(.+)$/)
 			{
 				my $col = $1;
-				my $x = $self->field_meta($col);
-				if ($x->{linked} && eval '$x->{linked}->can("get_stringify_sql")' && $depth < MAX_SQL_STRINGIFY_DEPTH)
+				my $other_meta = $self->field_meta($col);
+				if ($other_meta->{linked} && eval '$other_meta->{linked}->can("get_stringify_sql")' && $depth < MAX_SQL_STRINGIFY_DEPTH)
 				{
-					my $concat     = $x->{linked}->get_stringify_sql($lower_case,$depth+1);
+					my $concat     = $other_meta->{linked}->get_stringify_sql($lower_case,$depth+1,$use_orderby);
 					
-					my $meta = eval '$x->{linked}->meta';
-					#die Dumper $meta if $x->{linked} =~ /Auth/;
+					my $meta = eval '$other_meta->{linked}->meta';
+					#die Dumper $meta if $other_meta->{linked} =~ /Auth/;
 					if(!$meta || !$meta->{db} || !$meta->{database})
 					{
-						my $dsn = $x->{linked}->db_Main->{Name};
+						my $dsn = $other_meta->{linked}->db_Main->{Name};
 						$dsn =~ /database=([^;]+)/;
 						$meta->{db} = $1;
 						#die Dumper $meta,$dsn;
@@ -670,9 +748,9 @@ package AppCore::DBI;
 					
 					my $other_db   = $dbh->quote_identifier($meta->{db} || $meta->{database});
 					
-					my $table      = $dbh->quote_identifier($x->{linked}->table);
-					my $primary    = $dbh->quote_identifier($x->{linked}->primary_column);
-					my $self_field = $dbh->quote_identifier($x->{field});
+					my $table      = $dbh->quote_identifier($other_meta->{linked}->table);
+					my $primary    = $dbh->quote_identifier($other_meta->{linked}->primary_column);
+					my $self_field = $dbh->quote_identifier($other_meta->{field});
 					
 					# In testing the sub-select on MySQL on my WinXP laptop, I've found that CONCAT('x',NULL) = NULL,
 					# whereas I would expect a similar behaviour to perl, in that 'x'.undef eq 'x'. So, to accomidate
@@ -680,12 +758,9 @@ package AppCore::DBI;
 					# for this query, hence the count() as the truth test for the if() function. If more or less than 
 					# one result exists, the IF() will return an empty string instead of a null. The reason I don't let
 					# more than one result thru (e.g. check count()=1) is because MySQL throws an error if more than one
-					# row comes back from a subquery, saying something like "subquery returns more than one row" or something like that.
+					# row comes back from a subquery, saying something like "subquery returns more than one row".
 					
-					push @buf, join '', "IF(",
-								"(SELECT COUNT($other_db.$table.$primary) FROM $other_db.$table WHERE $other_db.$table.$primary=$self_table.$self_field) = 1,",
-								"(SELECT $concat FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field),",
-							"'')";
+					push @buf, "IFNULL((SELECT $concat \nFROM $other_db.$table \nWHERE $other_db.$table.$primary=$db.$self_table.$self_field \nLIMIT 1),'')";
 				}
 				else
 				{
@@ -1067,11 +1142,11 @@ package AppCore::DBI;
 		
 		if($class->meta->{sort} || $class->meta->{first_string})
 		{
-			$sql_suffix = "order by ".$class->get_orderby_sql;
+			$sql_suffix = "\nORDER BY ".$class->get_orderby_sql;
 		}
 		
 		
-		my $fklookup_sql = $q_table.(@tables?', '.join(',',map {$dbh->quote_identifier($_)} @tables):'')." where $fkclause and $clause $sql_suffix";
+		my $fklookup_sql = $q_table.(@tables?', '.join(',',map {$dbh->quote_identifier($_)} @tables):'')." WHERE $fkclause AND $clause $sql_suffix";
 		print STDERR "$class->get_fkquery_sql($val): fklookup_sql2: $fklookup_sql, args: [".join('|',@args)."]\n" if $debug;
 		
 		return ($fklookup_sql,@args);
@@ -1130,18 +1205,18 @@ package AppCore::DBI;
 			my $text = $class->get_stringify_sql;
 			
 			# Had to add the cast() to char() because otherwise the 'like' is case-sensitive. This way, the like is case INsensitive.
-			$fklookup_sql = qq{$q_table where (cast($text as char(512)) like ?) and ($text <> "") and $fkclause};
+			$fklookup_sql = qq{$q_table \nWHERE (cast($text as char(512)) like ?) \nAND ($text <> "") \nAND $fkclause};
 			@args = ('%'.$val.'%');
 			
 			if($class->meta->{sort} || $class->meta->{first_string})
 			{
-				$fklookup_sql .= ' order by '.$class->get_orderby_sql;
+				$fklookup_sql .= "\nORDER BY ".$class->get_orderby_sql;
 			}
 		}
 		
 		# Prepare the SQL to generate the list
 		#my $ob = $class->get_orderby_sql();
-		my $list_sql = "select $q_primary as `id`, ".$class->get_stringify_sql." as `text` from ".$fklookup_sql;
+		my $list_sql = "SELECT $q_primary as `id`, \n".$class->get_stringify_sql." as `text` \nFROM ".$fklookup_sql;
 		
 		#print STDERR "Debug mark0: start=$start, limit=$limit\n";
 		
@@ -1167,6 +1242,7 @@ package AppCore::DBI;
 		}
 		
 		print STDERR "$class->stringified_list($val): list_sql = $list_sql, args = (".join('|',@args).")\n" if $debug;
+		#die AppCore::Common::debug_sql($list_sql, @args);
 		
 		# Execute the query
 		my $sth = $dbh->prepare($list_sql);
@@ -1245,7 +1321,7 @@ package AppCore::DBI;
 		$fkclause = '1=1' if !$fkclause || $fkclause eq '' || $fkclause =~ /={/;
 		$fkclause = '('.$fkclause.')';
 		
-		my $sql = "select $q_primary from $q_table where $q_table.$q_primary = ? and $fkclause";
+		my $sql = "SELECT $q_primary FROM $q_table WHERE $q_table.$q_primary = ? AND $fkclause";
 		print "$class->validate_string($val): sql=$sql, val=[$val]\n" if $debug;
 		my $sth = $dbh->prepare($sql);
 		
@@ -1274,7 +1350,7 @@ package AppCore::DBI;
 		{
 			goto __JUMP_TO_MULTI if $multi_match;
 			
-			my $sql = "select $q_primary from $q_table where $concat = ? and $fkclause";
+			my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE $concat = ? \nAND $fkclause";
 			#print STDERR "\nMark1: sql:\n\t$sql\nval=[".lc($val)."]\n\n" if $debug;
 			my $sth = $dbh->prepare($sql);
 			$sth->execute(lc($val));
@@ -1291,7 +1367,7 @@ package AppCore::DBI;
 			{
 			
 				#print STDERR "dbcols: ".Dumper(\@dbcols,\@fmt); 
-				my $sql = "select $q_primary from $q_table where lower(".$dbh->quote_identifier($dbcols[0]).")=? and $fkclause";
+				my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE LOWER(".$dbh->quote_identifier($dbcols[0]).")=? \nAND $fkclause";
 				my $sth = $dbh->prepare($sql);
 				$sth->execute(lc($val));
 				
