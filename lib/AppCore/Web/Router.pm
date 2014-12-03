@@ -213,6 +213,19 @@ package AppCore::Web::Router;
 	{
 		my ($self, $route, $args) = @_;
 		
+		# If $route is a hashref, then
+		# assume its key => value pairs of routes and actions 
+		# and just run them each thru another call to route()
+		if(ref $route eq 'HASH' && !$args)
+		{
+			foreach my $route_key (keys %$route)
+			{
+				$self->route($route_key => $route->{$route_key});
+			}
+			
+			return;
+		}
+		
 		$args = { action => $args } if !ref $args || ref $args eq 'CODE';
 		
 		if(!ref $args->{action} &&
