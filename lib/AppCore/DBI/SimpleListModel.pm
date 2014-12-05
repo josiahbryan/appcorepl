@@ -166,6 +166,7 @@ package AppCore::DBI::SimpleListModel;
 	
 	# Method: parent_class()
 	sub parent_class    { }
+	
 	sub is_filtered { shift->{is_filtered} }
 	
 	sub get_db_name
@@ -498,7 +499,7 @@ package AppCore::DBI::SimpleListModel;
 		my $filtercols = eval '$class->meta->{filter_list}' || $self->{filter_list} || $self->{table_list} || [$class->columns];
 		
 		my $advanced_filters = $dont_process_advanced ? undef : $self->{advanced_filters}->{filters};
-		#print STDERR "Advanced Filters: ($dont_process_advanced): ".Dumper($advanced_filters);
+		print STDERR "Advanced Filters: ($dont_process_advanced): ".Dumper($advanced_filters);
 		
 		if(ref $filtercols eq 'ARRAY')
 		{
@@ -512,7 +513,7 @@ package AppCore::DBI::SimpleListModel;
 			foreach my $col (@$filtercols)
 			{
 				my $adv = $advanced_filters ? $advanced_filters->{$col} : undef;
-				#$adv = {search=>$val} if !$adv && $val;
+				#$adv = {search=>$val} if $advanced_filters && !$adv && $val;
 				
 				#print STDERR "$self: create_sql_filter: mark1: col:'$col', val='$val', advanced_filters:$advanced_filters, adv:".Dumper($adv);
 				next if !$adv && $advanced_filters;
@@ -578,13 +579,14 @@ package AppCore::DBI::SimpleListModel;
 				}
 				else
 				{
+					my $search_string = $val;
 					if( $adv && $adv->{search} )
 					{
 						$searching_flag = 1;
-						$val = $adv->{search} ;
+						$search_string = $adv->{search} ;
 					}
 					
-					#print STDERR "$self: create_sql_filter: mark3: col:'$col', val='$val'\n";
+					#print STDERR "$self: create_sql_filter: mark3: col:'$col', val='$search_string'\n";
 					
 					eval
 					{
@@ -594,9 +596,13 @@ package AppCore::DBI::SimpleListModel;
 						{
 							#die Dumper $link if $col =~ /partid/;
 							eval 'use '.$link;
-							warn $@ if $@;
-							my @list = $link->validate_string($val,undef,1);
-							#die Dumper \@list, $val if $col =~ /partid/;
+							
+							my @list = $link->validate_string($search_string,undef,1);
+							
+							print STDERR "SimpleListModel: val:'$search_string', col: $col: validating string for link $link, res:[@list]\n";
+							
+							
+							#die Dumper \@list, $search_string if $col =~ /partid/;
 							#if($res->{id})
 							
 							#print STDERR "mark1\n";
@@ -607,23 +613,27 @@ package AppCore::DBI::SimpleListModel;
 						}
 						else
 						{
-							if($col_meta->{type} =~ /^(int|float)/ && $val !~ /^[+-]?(\d+|\d+\.\d+|\d+\.|\.\d+)$/)
+							if($col_meta->{type} =~ /^(int|float)/ && $search_string !~ /^[+-]?(\d+|\d+\.\d+|\d+\.|\.\d+)$/)
 							{
-								#print STDERR "Debug Warning: Skipping clause on column '$col' because $col is a number and '$val' doesn't look like a number\n";
+								#print STDERR "Debug Warning: Skipping clause on column '$col' because $col is a number and '$search_string' doesn't look like a number\n";
+							}
+							elsif($col_meta->{type} =~ /^(date)/ && $search_string !~ /^\d+-\d+-\d+$/)
+							{
+								#print STDERR "Debug Warning: Skipping clause on column '$col' because $col is a number and '$search_string' doesn't look like a number\n";
 							}
 							else
 							{
 								#print STDERR "mark3\n";
-								my $inq = {$col=>$val};
+								my $inq = {$col=>$search_string};
 								my ($tables,$cl,@args2) = $class->can('get_where_clause')     ? $class->get_where_clause($inq,2) : 
 											  $class->can('compose_where_clause') ? $class->compose_where_clause($inq,$class->_legacy_typehash,undef,2) :
-											  (undef,"$db_quoted.$table_quoted.".$dbh->quote_identifier($col).'=?',$val);	
+											  (undef,"$db_quoted.$table_quoted.".$dbh->quote_identifier($col).'=?',$search_string);	
 								next if $cl eq '1';
 								
 								push @clause, "($cl)";
 								push @args, @args2;
 								push @tables, $tables if $tables && $tables ne '';
-								#print STDERR "create_sql_filter('$val') [DEBUG] col='$col': \$cl='$cl'\n";
+								#print STDERR "create_sql_filter('$search_string') [DEBUG] col='$col': \$cl='$cl'\n";
 							}
 							
 							#print STDERR Dumper $inq, $cl, \@args2;
@@ -644,11 +654,20 @@ package AppCore::DBI::SimpleListModel;
 		
 		my $clause = @clause ? '(' . join (($advanced_filters ? ' and ' : ' or '), @clause) . ')' : '1';
 		
+		#print STDERR "\$clause: $clause\n";
+		
+		#die AppCore::Common::debug_sql($clause,@args);
+		
 		# Added 4/4/14 - Josiah
 		# Enable searching by stringified value.
 		# E.g. if we have an object that string format is ('#first', ' ', '#last'),
 		# and user searches for "John Smith" - the above search code wont find it, because John Smith isn't in any one column -
 		# it's in two columns.
+		#
+		# Note - 12/4/14 - Josiah
+		# This may now be redudant since I revised the legazy clause in AppCore::DBI::validate_string
+		# to multi-match with the stringify sql - in essance, doing what this does below, only for individual linked columns
+		# However, I'll leave this in unless singificant server impact is shown/reported.
 		{
 			my $text = $class->get_stringify_sql;
 			

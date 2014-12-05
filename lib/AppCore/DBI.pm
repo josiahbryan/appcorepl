@@ -1017,6 +1017,7 @@ package AppCore::DBI;
 		my $class = shift;
 		my $meta = $class->meta;
 		return $meta->{_legacy_typehash} if $meta->{_legacy_typehash};
+		
 		my @s = @{$meta->{schema} || []};
 		my %hash;
 		#Number','String','Text','PrimaryForeignKey','ForeignKey','ForeignKeyList','ACLList','EnumList','YesNo','DateTime','Date','SequenceNumber','AutoNumber','PrimaryKeyAutoNumber','TimeStamp','ImageDocumentID'
@@ -1308,7 +1309,7 @@ package AppCore::DBI;
 		undef $@;
 		undef $!;
 		
-		#$debug = 1;
+		$debug = 0;
 		
 		print STDERR "$class->validate_string($val): Start (fkclause=$fkclause, check_pri=$check_pri,multi_match=$multi_match,adder=$adder,q_table=$q_table,q_pri=$q_primary)\n" if $debug;
 		
@@ -1364,139 +1365,155 @@ package AppCore::DBI;
 		}
 		else
 		{
-			goto __JUMP_TO_MULTI if $multi_match;
-			
-			my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE $concat = ? \nAND $fkclause";
-			#print STDERR "\nMark1: sql:\n\t$sql\nval=[".lc($val)."]\n\n" if $debug;
-			my $sth = $dbh->prepare($sql);
-			$sth->execute(lc($val));
-			
-			if($sth->rows)
+			#goto __JUMP_TO_MULTI if $multi_match;
+			my $fallthru_to_multi = 1;
+			if(!$multi_match)
 			{
-				my $f = $sth->fetchrow_hashref;
-				print STDERR "$class->validate_string($val): RETURN at $concat is =$val\n" if $debug;
-				my $v = $f->{$pri}; $v||=$f->{lc $pri};
-				#return {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
-				return $v;
-			}
-			else
-			{
-			
-				#print STDERR "dbcols: ".Dumper(\@dbcols,\@fmt); 
-				my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE LOWER(".$dbh->quote_identifier($dbcols[0]).")=? \nAND $fkclause";
+				$fallthru_to_multi = 0;
+				
+				my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE $concat = ? \nAND $fkclause";
+				#print STDERR "\nMark1: sql:\n\t$sql\nval=[".lc($val)."]\n\n" if $debug;
 				my $sth = $dbh->prepare($sql);
 				$sth->execute(lc($val));
 				
 				if($sth->rows)
 				{
-					print STDERR "$class->validate_string($val): RETURN at \$dbcols[0] ($dbcols[0]) is =$val\n" if $debug;
 					my $f = $sth->fetchrow_hashref;
+					print STDERR "$class->validate_string($val): RETURN at $concat is =$val\n" if $debug;
 					my $v = $f->{$pri}; $v||=$f->{lc $pri};
-					#my $res = {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
+					#return {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
 					return $v;
-					#my $res = {id=>$f->{$pri},value=>$class->stringify($f->{$pri})}; #$f->{fkd})};	
-					#open(LOG,">/tmp/fklog.log");
-					#print STDERR "Matched val [$val] with sql [$sql], pri=[$pri], f->{pri}=[$f->{$pri}]\n" if $debug;
-					#print STDERR "Res: ".Dumper($res,$col) if $debug;
-					#print LOG "Matched val [$val] with sql [$sql], pri=[$pri], f->{pri}=[$f->{$pri}]\n";
-					#print LOG "Res: ".Dumper($res,$col);
-					#close(LOG);
-					#return $res;
 				}
 				else
 				{
-	__JUMP_TO_MULTI:
-					#my $sql = "select $q_primary from $q_table where $concat like ? and $fkclause";
+				
+					#print STDERR "dbcols: ".Dumper(\@dbcols,\@fmt); 
+					my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE LOWER(".$dbh->quote_identifier($dbcols[0]).")=? \nAND $fkclause";
+					my $sth = $dbh->prepare($sql);
+					$sth->execute(lc($val));
 					
-					#print STDERR "$0: sql: $sql\n" if $debug;
-					
-					#my $sth = $dbh->prepare($sql);
-					
-					
-					$val =~ s/(^\s+|\s+$)//g;
-					
-					#my $x = $sep;
-					#$x=~s/\./\\./g;
-					
-					my $orig_val = $val;
-					
-					if(!defined $val || $val eq '')
+					if($sth->rows)
 					{
-						#print STDERR "$class->validate_string($val): RETURN at [NULL] for val [mark2]\n" if $debug;
-						#return {id=>0,value=>''};
-						$@ = undef;
-						return ();
+						print STDERR "$class->validate_string($val): RETURN at \$dbcols[0] ($dbcols[0]) is =$val\n" if $debug;
+						my $f = $sth->fetchrow_hashref;
+						my $v = $f->{$pri}; $v||=$f->{lc $pri};
+						#my $res = {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
+						return $v;
+						#my $res = {id=>$f->{$pri},value=>$class->stringify($f->{$pri})}; #$f->{fkd})};	
+						#open(LOG,">/tmp/fklog.log");
+						#print STDERR "Matched val [$val] with sql [$sql], pri=[$pri], f->{pri}=[$f->{$pri}]\n" if $debug;
+						#print STDERR "Res: ".Dumper($res,$col) if $debug;
+						#print LOG "Matched val [$val] with sql [$sql], pri=[$pri], f->{pri}=[$f->{$pri}]\n";
+						#print LOG "Res: ".Dumper($res,$col);
+						#close(LOG);
+						#return $res;
 					}
-					else #if($val =~ /$sep/)
+					else
 					{
-						#print STDERR "$class->validate_string($val): RETURN at VAL NOT NULL for val [mark3] - TBD write partial matching\n" if $debug;
-						#return {id=>0,value=>''};
-	#=head1
-						#print STDERR "$class: Couldn't match with first LIKE, trying something else...\n";
-						#print Dumper $gentab, $group;
+						$fallthru_to_multi = 1;
+					}
+				}
+			}
+	
+			if($fallthru_to_multi)
+			{
+				#my $sql = "select $q_primary from $q_table where $concat like ? and $fkclause";
+				
+				#print STDERR "$0: sql: $sql\n" if $debug;
+				
+				#my $sth = $dbh->prepare($sql);
+				
+				
+				$val =~ s/(^\s+|\s+$)//g;
+				
+				#my $x = $sep;
+				#$x=~s/\./\\./g;
+				
+				my $orig_val = $val;
+				
+				if(!defined $val || $val eq '')
+				{
+					#print STDERR "$class->validate_string($val): RETURN at [NULL] for val [mark2]\n" if $debug;
+					#return {id=>0,value=>''};
+					$@ = undef;
+					return ();
+				}
+				else #if($val =~ /$sep/)
+				{
+					#print STDERR "$class->validate_string($val): RETURN at VAL NOT NULL for val [mark3] - TBD write partial matching\n" if $debug;
+					#return {id=>0,value=>''};
+#=head1
+					#print Dumper $gentab, $group;
+					
+					
+					#my ($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
+					
+					#$fklookup_sql = "select $q_primary from ".$fklookup_sql;
+					my $fklookup_sql = "select $q_primary from $q_table where $concat like ?";
+					$val =~ s/\s+/%/g;
+					my @args = ('%'.$val.'%');
+					
+					#print STDERR "$class: Couldn't match with first LIKE, trying something else: $fklookup_sql\n" if $debug;
+					
+					$sth = $dbh->prepare($fklookup_sql);
+					$sth->execute(@args);
 						
+					
 						
-						my ($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
-						
-						$fklookup_sql = "select $q_primary from ".$fklookup_sql;
-						
-						$sth = $dbh->prepare($fklookup_sql);
-						$sth->execute(@args);
-							
-						
-							
-						if($sth->rows > 1) # && $val ne $sep)
+					if($sth->rows > 1) # && $val ne $sep)
+					{
+						#$multi_match = 1;
+						if($multi_match)
 						{
-							#$multi_match = 1;
-							if($multi_match)
+							my @list;
+							while(my $res = $sth->fetchrow_hashref)
 							{
-								my @list;
-								while(my $res = $sth->fetchrow_hashref)
-								{
-									#3print STDERR "$class: Multi-match for $val: `$pri`='$res->{$pri}'\n";
-									push @list, $res->{$pri} || $res->{lc $pri};
-								}
-								#return {id=>join(',',@list)}; #,list=>\@list};
-								return wantarray ? @list : \@list;
+								#3print STDERR "$class: Multi-match for $val: `$pri`='$res->{$pri}'\n";
+								push @list, $res->{$pri} || $res->{lc $pri};
 							}
-							else
-							{
-								
-								print STDERR "$class->validate_string($val): RETURN at ambiguous [ERROR] for $concat like $val\n" if $debug;
-								#return {error=>"\"$orig_val\" matches more than one ".$class->meta->{class_noun}};
-								$@ = "\"$orig_val\" matches more than one ".$class->meta->{class_noun};
-								return ();
-							}
+							#return {id=>join(',',@list)}; #,list=>\@list};
+							return wantarray ? @list : \@list;
 						}
 						else
 						{
-							my $f = $sth->fetchrow_hashref;
-							if($f)
-							{
-								print STDERR "$class->validate_string($val): RETURN at 2[$fklookup_sql] match [".join('|',@args)."]\n" if $debug;
-								#return {id=>$f->{$pri},value=>$class->stringify($f->{$pri})}; #$f->{fkd})};
-								my $v = $f->{$pri}; $v||=$f->{lc $pri};
-								#return {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
-								return $v;
-							}
-							else
-							{
-								#if(!$adder)
-								#{
-								#	return $col->validate_string($sep.$val,$check_pri,$multi_match,1,$debug)
-								#}
-								#else
-								#{
-									print STDERR "$class->validate_string($val): RETURN at no match [ERROR] for [$fklookup_sql] match [".join('|',@args)."]\n" if $debug;
-									#return {error=>"No ".$class->meta->{class_noun}."(s) match \"$orig_val\""};
-									$@ = "No ".$class->meta->{class_noun}."(s) match \"$orig_val\"";
-									$! = "NO_MATCH";
-									return ();
-								#}
-							}
+							
+							print STDERR "$class->validate_string($val): RETURN at ambiguous [ERROR] for $concat like $val\n" if $debug;
+							#return {error=>"\"$orig_val\" matches more than one ".$class->meta->{class_noun}};
+							$@ = "\"$orig_val\" matches more than one ".$class->meta->{class_noun};
+							return ();
 						}
-	#=cut					
 					}
+					else
+					{
+						my $f = $sth->fetchrow_hashref;
+						if($f)
+						{
+							print STDERR "$class->validate_string($val): RETURN at 2[$fklookup_sql] match [".join('|',@args)."]\n" if $debug;
+							#return {id=>$f->{$pri},value=>$class->stringify($f->{$pri})}; #$f->{fkd})};
+							my $v = $f->{$pri}; $v||=$f->{lc $pri};
+							#return {id=>$v,value=>$class->stringify($v)}; #$f->{fkd})};	
+							return $v;
+						}
+						else
+						{
+							#my $string_clause = qq{(($concat like ?) and ($text <> ""))};
+							#push @args, ('%'.$filter.'%');
+				
+							#if(!$adder)
+							#{
+							#	return $col->validate_string($sep.$val,$check_pri,$multi_match,1,$debug)
+							#}
+							#else
+							#{
+								print STDERR "$class->validate_string($val): RETURN at no match [ERROR] for [$fklookup_sql] match [".join('|',@args)."]\n" if $debug;
+								#return {error=>"No ".$class->meta->{class_noun}."(s) match \"$orig_val\""};
+								$@ = "No ".$class->meta->{class_noun}."(s) match \"$orig_val\"";
+								$! = "NO_MATCH";
+								return ();
+							#}
+						}
+					}
+#=cut					
 				}
 			}
 		}
