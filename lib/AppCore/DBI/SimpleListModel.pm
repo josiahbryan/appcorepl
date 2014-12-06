@@ -659,23 +659,39 @@ package AppCore::DBI::SimpleListModel;
 					#	$master_type eq 'pr' ?  "p.LastName+', '+p.FirstName+' '+p.MiddleInitial" :
 					#				"s.LastName+', '+s.FirstName+' '+s.MiddleName";
 					
-					my @likes = map { $self->get_string_sql_for_field($col_name_subtitutions{$_} ? $col_name_subtitutions{$_} : $_).' '.
-							  ($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
-							  ($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
-							  # NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
-							  grep { $_ ne 'id' || $termoid+0 < 2147483647 } @useful_cols;
+					my @multi_values = split /[,\|]/, $termoid;
+					my @multi_stmt;
+					my @multi_args;
 					
-					# Build the stmt and arg list for the where clause
-					my $stmt = '(' . join(($negate_flag ? ' and ' : ' or '), @likes) . ')';
-					my @args = map { 
-						my $col = $_;
+					# NOTE: More testing is needed to see how this multi-value termoid code
+					# performs in diverse scenarios
+					foreach my $subtermoid (@multi_values)
+					{
 						
-						$col eq 'id'                 ? int($termoid+0) :
-						$col_specific_termoid{$col}  ? $col_specific_termoid{$col} : 
-						$col_match_type{$col} eq '=' ? $termoid :
-							($termoid =~ /%/ ? $termoid : '%'.$termoid.'%') 
+						my @likes = map { $self->get_string_sql_for_field($col_name_subtitutions{$_} ? $col_name_subtitutions{$_} : $_).' '.
+								($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
+								($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
+								# NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
+								grep { $_ ne 'id' || $subtermoid+0 < 2147483647 } @useful_cols;
+						
+						# Build the stmt and arg list for the where clause
+						my $stmt = '(' . join(($negate_flag ? ' and ' : ' or '), @likes) . ')';
+						my @args = map { 
+							my $col = $_;
 							
-					} grep { $_ ne 'id' || $termoid+0 < 2147483647 }  @useful_cols;
+							$col eq 'id'                 ? int($subtermoid+0) :
+							$col_specific_termoid{$col}  ? $col_specific_termoid{$col} : 
+							$col_match_type{$col} eq '=' ? $subtermoid :
+								($subtermoid =~ /%/ ? $subtermoid : '%'.$subtermoid.'%') 
+								
+						} grep { $_ ne 'id' || $subtermoid+0 < 2147483647 }  @useful_cols;
+						
+						push @multi_stmt, $stmt;
+						push @multi_args, @args;
+					}
+					
+					my $stmt = '(' . join(' or ', @multi_stmt). ')';
+					my @args = @multi_args;
 					
 					#die Dumper \@useful_cols, \@args;
 					#die $stmt."\n\n".Dumper(\@args);
@@ -693,6 +709,7 @@ package AppCore::DBI::SimpleListModel;
 		};
 		
 		print STDERR "parse_string_query: query: '$search_query', result: ".Dumper($res)  if $DEBUG;
+		die debug_sql($res->{sql}, @{$res->{args}});
 		
 		return $res;
 	}
