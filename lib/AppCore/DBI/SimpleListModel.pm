@@ -157,9 +157,8 @@ package AppCore::DBI::SimpleListModel;
 		my $self = shift;
 		my %args = @_;
 		
-		die "Hardcoded filter no longer supported - use set_complex_filter instead";
+		$self->{hardcoded_filter} = \%args;
 	}
-	
 	
 	# Method: column_search_alises()
 	# Return a hasref if set giving the aliases for search string parsing
@@ -709,7 +708,7 @@ package AppCore::DBI::SimpleListModel;
 		};
 		
 		print STDERR "parse_string_query: query: '$search_query', result: ".Dumper($res)  if $DEBUG;
-		die debug_sql($res->{sql}, @{$res->{args}});
+		#die debug_sql($res->{sql}, @{$res->{args}});
 		
 		return $res;
 	}
@@ -828,14 +827,51 @@ package AppCore::DBI::SimpleListModel;
 		
 		# Tack on the complex filter to the end
 		my $filter = $self->complex_filter();
-		if($filter && $filter->{query})
+		if($filter && ($filter->{query} || $filter->{sql}))
 		{
-			$clause .= ' and ('.$filter->{query}.')';
+			$clause .= ' and ('.($filter->{query} || $filter->{sql}).')';
+			push @args, @{ $filter->{args} || [] };
 		}
+		
+		# Add on the hardcoded filter
+		my $hard_filter = $self->get_hardcoded_filter_sql();
+		if($hard_filter)
+		{
+			$clause .= ' and ('.$hard_filter->{sql}.')';
+			push @args, @{ $hard_filter->{args} || [] };
+		}
+		
 		
 		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
 		
 		return (\@tables, $clause, \@args);
+	}
+	
+	sub get_hardcoded_filter_sql
+	{
+		my $self = shift;
+		my $hard = $self->{hardcoded_filter};
+		
+		my $class = $self->cdbi_class;
+		my $dbh = $class->db_Main;
+		
+		my @sql;
+		my @args;
+		foreach my $col (keys %$hard)
+		{
+			# Just a small attempt to avoid SQL injection
+			next if !$class->has_field($col);
+			
+			push @sql, $dbh->quote_identifier($col).' = ? ';
+			push @args, $hard->{$col};
+		}
+		
+		my $ret = {
+			sql  => join(' and ', @sql),
+			args => \@args,
+		};
+		
+		return $ret;
 	}
 	
 	sub compile_available_filter_values
