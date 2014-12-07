@@ -866,6 +866,9 @@ package AppCore::DBI::SimpleListModel;
 			push @args, $hard->{$col};
 		}
 		
+		return undef
+			if !@sql;
+		
 		my $ret = {
 			sql  => join(' and ', @sql),
 			args => \@args,
