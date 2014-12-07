@@ -3216,30 +3216,58 @@ package $opts->{pkg};
 	# bulk_execute() returns a list of all result rows returned from the SQL
 	sub bulk_execute
 	{
-		my ($sql, @args) = @_;
+		my ($class, $sql, @args) = @_;
 
 		my @stmts = split /;/, $sql;
 		
 		my @results;
-		my $dbh = AppCore::DBI->dbh;
+		my $dbh = $class->dbh;
 		foreach my $sub (@stmts) 
 		{
 			$sub =~ s/(^\s+|\s+$)//g;
 			next if !$sub;
 			
+			my $row_result;
+			
 			my $sth = $dbh->prepare($sub);
-			if($sub =~ /\?/)
+			if(my @count = $sub =~ /(\?)/)
 			{
-				$sth->execute(@args);
+				# 'consume' the args based on the number of args in this current statement.
+				# This applies to the following scenario:
+				# 	SQL: set @a=?; set @b=?;
+				# 	@args: (1,2)
+				# Since we split the SQL on ';', if we execute
+				# each statement with the full list of @args, it would give an error
+				# saying called with X bind variables when Y are needed. This code
+				# gets around that by counting the number of placeholders (if any)
+				# in the current snippet, then shifting off that number of args
+				# off the @arg list given - that way, once the arg is used,
+				# its not seen again by the SQL, and we dont give the execute()
+				# function any args if there are no placeholders in the SQL
+				my @cur_args = map { shift @args } @count;
+				$row_result = $sth->execute(@cur_args);
 			}
 			else
 			{
-				$sth->execute();
+				$row_result = $sth->execute();
 			}
 			
-			if($sth->rows && $sub !~ /insert into/i)
+			#if($sth->rows && $sub !~ /insert into/i)
+			
+			# I thought that using $row_result (from execute) would work,
+			# but if I just depend on row_result>0, I still get a fetch without execute
+			# error when the statement does an 'insert into' or 'update' ...
+			# I don't know of a good way to detect if there are actually results
+			# without calling fetch*. (Yes, $sth->rows doesnt help either.)
+			if($row_result > 0 &&
+				$sub !~ /(insert into|\bupdate\b)/i)
 			{
+				#print "Debug: '$row_result'\n";
 				push @results, $_ while $_ = $sth->fetchrow_hashref;
+			}
+			elsif($row_result != 0)
+			{
+				print STDERR "bulk_execute: Failed execute: ". $sth->errstr;
 			}
 		}
 		
