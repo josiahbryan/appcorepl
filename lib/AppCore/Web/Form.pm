@@ -143,9 +143,25 @@ package AppCore::Web::Form;
 		#my $class_obj = $form_opts->{$class_obj_name} ||
 		#		$hash->{$bind_name}->{class_name};
 		my $class_obj = $hash->{$bind_name}->{class_name};
-				
+		
 		print STDERR "Form: validate_page: bind_name: $bind_name, class_obj: $class_obj\n"
 			if $debug;
+			
+		# Orignal object given was a hashref of args, so rely on stored data to create fake column meta
+		if($class_obj eq 'HASH') 
+		{
+			my $field_data = $hash->{$bind_name};
+			
+			print STDERR "Form: validate_page: generating fake field meta, type: $field_data->{type}, linked: $field_data->{linked_class}\n"
+				if $debug;
+			
+			return {
+				type   => $field_data->{type},
+				linked => $field_data->{linked_class},
+			};
+		}
+		
+		#die Dumper $hash;
 		
 		$class_obj = ref $class_obj ? ref $class_obj : $class_obj;
 		error("Invalid field '$bind_name'","Cannot find '$bind_name' in form options or in stored form meta data") if !$class_obj;
@@ -154,7 +170,8 @@ package AppCore::Web::Form;
 		if($@)
 		{
 			print_stack_trace();
-			die $@;
+			die "Error in uuid_to_field_meta when resolving field meta for '$class_key': ".
+				$@;
 		}
 		
 		print STDERR "Form: validate_page: class_key: $class_key, meta: $meta\n"
@@ -1032,6 +1049,10 @@ package AppCore::Web::Form;
 						}
 						elsif(ref $class_obj eq 'HASH')
 						{
+# 							error({
+# 								class_obj => $class_obj,
+# 								class_key => $class_key
+# 							});
 							$val = $class_obj->{$class_key};
 						}
 						else
@@ -1159,8 +1180,11 @@ package AppCore::Web::Form;
 						#class_obj_name => $class_obj_name,
 						#class_key      => $class_key,
 						class_name     => ref $class_obj ? ref $class_obj : $class_obj,
+						linked_class   => $node->{class},
 						type           => $type,
 					};
+					
+					#error([$self->{field_meta}, $class_obj]);
 					
 					my $format = $node->format;
 					my $length = $node->length || $node->size;
