@@ -3224,7 +3224,7 @@ package $opts->{pkg};
 		
 		my @results;
 		my $dbh = $class->dbh;
-		my $sth;
+		my $fetch_sth;
 		foreach my $sub (@stmts) 
 		{
 			$sub =~ s/(^\s+|\s+$)//g;
@@ -3232,7 +3232,7 @@ package $opts->{pkg};
 			
 			my $row_result;
 			
-			$sth = $dbh->prepare($sub);
+			my $sth = $dbh->prepare($sub);
 			if(my @count = $sub =~ /(\?)/)
 			{
 				# 'consume' the args based on the number of args in this current statement.
@@ -3265,10 +3265,12 @@ package $opts->{pkg};
 				# I don't know of a good way to detect if there are actually results
 				# without calling fetch*. (Yes, $sth->rows doesnt help either.)
 				if($row_result > 0 &&
-					$sub !~ /(insert into|\bupdate\b)/i)
+					$sub !~ /(\binsert into\b|\bupdate\b)/i)
 				{
 					#print "Debug: '$row_result'\n";
 					push @results, $_ while $_ = $sth->fetchrow_hashref;
+					
+					$fetch_sth = $sth;
 				}
 				elsif($row_result != 0)
 				{
@@ -3278,11 +3280,12 @@ package $opts->{pkg};
 		}
 		
 		return unless $want_results; # Dont do anything unless they want something
-		
+
+		# $fetch_sth will contain the last $sth to return any results (if there were results)
 		if(wantarray)
 		{
-			# $sth for discovery of name columns
-			return (\@results, $sth); 
+			# $fetch_sth for discovery of name columns
+			return (\@results, $fetch_sth); 
 		}
 		else
 		{
