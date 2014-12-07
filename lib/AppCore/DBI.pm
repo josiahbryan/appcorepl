@@ -3220,8 +3220,11 @@ package $opts->{pkg};
 
 		my @stmts = split /;/, $sql;
 		
+		my $want_results = defined wantarray;
+		
 		my @results;
 		my $dbh = $class->dbh;
+		my $sth;
 		foreach my $sub (@stmts) 
 		{
 			$sub =~ s/(^\s+|\s+$)//g;
@@ -3229,7 +3232,7 @@ package $opts->{pkg};
 			
 			my $row_result;
 			
-			my $sth = $dbh->prepare($sub);
+			$sth = $dbh->prepare($sub);
 			if(my @count = $sub =~ /(\?)/)
 			{
 				# 'consume' the args based on the number of args in this current statement.
@@ -3252,26 +3255,40 @@ package $opts->{pkg};
 				$row_result = $sth->execute();
 			}
 			
-			#if($sth->rows && $sub !~ /insert into/i)
-			
-			# I thought that using $row_result (from execute) would work,
-			# but if I just depend on row_result>0, I still get a fetch without execute
-			# error when the statement does an 'insert into' or 'update' ...
-			# I don't know of a good way to detect if there are actually results
-			# without calling fetch*. (Yes, $sth->rows doesnt help either.)
-			if($row_result > 0 &&
-				$sub !~ /(insert into|\bupdate\b)/i)
+			if($want_results)
 			{
-				#print "Debug: '$row_result'\n";
-				push @results, $_ while $_ = $sth->fetchrow_hashref;
-			}
-			elsif($row_result != 0)
-			{
-				print STDERR "bulk_execute: Failed execute: ". $sth->errstr;
+				#if($sth->rows && $sub !~ /insert into/i)
+				
+				# I thought that using $row_result (from execute) would work,
+				# but if I just depend on row_result>0, I still get a fetch without execute
+				# error when the statement does an 'insert into' or 'update' ...
+				# I don't know of a good way to detect if there are actually results
+				# without calling fetch*. (Yes, $sth->rows doesnt help either.)
+				if($row_result > 0 &&
+					$sub !~ /(insert into|\bupdate\b)/i)
+				{
+					#print "Debug: '$row_result'\n";
+					push @results, $_ while $_ = $sth->fetchrow_hashref;
+				}
+				elsif($row_result != 0)
+				{
+					print STDERR "bulk_execute: Failed execute: ". $sth->errstr;
+				}
 			}
 		}
 		
-		return \@results;
+		return unless $want_results; # Dont do anything unless they want something
+		
+		if(wantarray)
+		{
+			# $sth for discovery of name columns
+			return (\@results, $sth); 
+		}
+		else
+		{
+			# Return an array ref as the scalar value
+			return \@results;
+		}
 	};
 
 };
