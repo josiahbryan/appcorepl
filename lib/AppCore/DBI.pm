@@ -1614,7 +1614,7 @@ package AppCore::DBI;
 		$DB_CACHE{$key} = 
 	#$host eq '10.0.1.5' ? 
 	#		DBI::ReplicationProxy->connect($db) : 
-			DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=0;mysql_multi_statements=1",$user, $pass,{'RaiseError' => 1, %attrs});
+			DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=1,mysql_multi_statements=1",$user, $pass,{'RaiseError' => 1, %attrs});
 		#print STDERR "Connected.\n";
 		
 		};
@@ -3206,6 +3206,46 @@ package $opts->{pkg};
 				"</option>";
 		} @$lookup_list;
 	}
+	
+	
+	# Hackish workaround for mysql/Perls's failure to support executing
+	# multiple statements in a single prepare() call.
+	# This call would fail with an error about fetch without execute:
+	#	set @ptid=209; select * from patients where patientid=@ptid;
+	# However, it correctly executes with bulk_execute().
+	# bulk_execute() returns a list of all result rows returned from the SQL
+	sub bulk_execute
+	{
+		my ($sql, @args) = @_;
+
+		my @stmts = split /;/, $sql;
+		
+		my @results;
+		my $dbh = AppCore::DBI->dbh;
+		foreach my $sub (@stmts) 
+		{
+			$sub =~ s/(^\s+|\s+$)//g;
+			next if !$sub;
+			
+			my $sth = $dbh->prepare($sub);
+			if($sub =~ /\?/)
+			{
+				$sth->execute(@args);
+			}
+			else
+			{
+				$sth->execute();
+			}
+			
+			if($sth->rows && $sub !~ /insert into/i)
+			{
+				push @results, $_ while $_ = $sth->fetchrow_hashref;
+			}
+		}
+		
+		return \@results;
+	};
+
 };
 1;
 	
