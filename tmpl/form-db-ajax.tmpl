@@ -24,7 +24,7 @@
 		</div>
 	</div><!--/.ref-add-modal-->
 	<style>
-	
+
 		.db-search-modal   .list-group {
 			border-radius: 0;
 			border: 0;
@@ -64,748 +64,508 @@
 			-ms-text-size-adjust: none;
 		}*/
 	</style>
-	
-	<script>
-	/* Add in our search dialog */
-	var pageSize = 25;
-	var dbLookupOptions = {
-		minimumInputLength: 0,
-		//width: 600,
-		ajax: {
-			quietMillis: 250,
-			data: function (term, page) { // page is the one-based page number tracked by Select2
-				return {
-					term:  term, //search term
-					start: page * pageSize, // page number
-					limit: pageSize,
-				};
-			},
-			results: function (data, page) {
-				var more = (page * pageSize) < data.total; // whether or not there are more results available
-				//console.debug("results parser: more:",more,", total:",data.total,", page:",page,", pageSize:",pageSize,", math:", (page*pageSize));
-			
-				// notice we return the value of more so Select2 knows if more results can be loaded
-				return { results: data.list, more: more };
-			}
-		},
-		formatResult: function(result) {
-			if(result == undefined || result == null || !result)
-				return "";
-				
-			var text = result.value;
-			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
-			return text;
-		},
-		formatSelection: function(result) {
-			if(result == undefined || result == null || !result)
-				return "";
-				
-			var text = result.value;
-			//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
-			return text;
-		},
-		initSelection: function(element, callback) {
-			// the input tag has a value attribute preloaded that points to a preselected supplement's id
-			// this function resolves that id attribute to an object that select2 can render
-			// using its formatResult renderer - that way the supplement name is shown preselected
-			var $elm = $(element),
-				id = $elm.val(),
-				initString = $elm.attr('x:initial-string');
-			
-			if(initString && initString != undefined)
-			{
-				callback({value: initString});
-				return;
-			}
-			
-			
-			var id = $elm.val(),
-				url = showItemChooser.hookUrlRoot+'/stringify?value=' + id;
-				
-			if (id !== "")
-				$.ajax(url)
-					.done(function(data) {
-						
-						//console.debug("Got data from server:", data.result);
-						callback({value: data.result.text});
-					});
-		},
-		
-		//dropdownCssClass: "bigdrop", // apply css that makes the dropdown taller
-		
-		escapeMarkup: function (m) { return m; } // we do not want to escape markup since we are displaying html in results
-	};
 
-	function dbSearchDialogSetup()
-	{
-		var $dialog   = $('.db-search-modal');
-		
-		// Move dialog out of current document flow position and to end of body to avoid any local-specific styles
-		$dialog.remove();
-		$('body').append($dialog);
-		
-		var $filter   = $dialog.find('.filter-control');
-		var $list     = $dialog.find('.list-group');
-		var $listWrap = $dialog.find('.list-group-wrapper');
-		var $title    = $dialog.find('.db-search-title');
-		
-		var specialRows = {
-			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No items found</a>'),
-			loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')
-		};
-		
-		var currentPage = 0;
-		var currentFilter = '';
-		var hasMoreResults = true;
-		
-		// We're using a request queue so that servers that respond
-		// with requests out-of-order can be properly sequenced
-		var requestQueue = [];
-		var requestCounter = 0;
-		
-		var resultSetBuffer = [];
-		var latestResultSetFilter = '';
-		
-		var resultSetCounter = 0;
-		var clickFirstResultWhenLoaded = false;
-		
-		var updateList = function(processedResults) {
-			var list = processedResults.results;
-			hasMoreResults = processedResults.more;
-			
-			if(currentPage == 0)
-			{
-				$list.empty();
-			
-				if(!list || list.length <= 0)
+	<script>
+		/* Add in our search dialog */
+		var pageSize = 25;
+		var dbLookupOptions = {
+			minimumInputLength: 0,
+			//width: 600,
+			ajax: {
+				quietMillis: 250,
+				data: function (term, page) { // page is the one-based page number tracked by Select2
+					return {
+						term:  term, //search term
+						start: page * pageSize, // page number
+						limit: pageSize,
+					};
+				},
+				results: function (data, page) {
+					var more = (page * pageSize) < data.total; // whether or not there are more results available
+					//console.debug("results parser: more:",more,", total:",data.total,", page:",page,", pageSize:",pageSize,", math:", (page*pageSize));
+				
+					// notice we return the value of more so Select2 knows if more results can be loaded
+					return { results: data.list, more: more };
+				}
+			},
+			formatResult: function(result) {
+				if(result == undefined || result == null || !result)
+					return "";
+					
+				var text = result.value;
+				//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
+				return text;
+			},
+			formatSelection: function(result) {
+				if(result == undefined || result == null || !result)
+					return "";
+					
+				var text = result.value;
+				//text = text.replace(/\s\((\d+[^\)]*)\)/, ' <span class=size>($1)</span>');
+				return text;
+			},
+			initSelection: function(element, callback) {
+				// the input tag has a value attribute preloaded that points to a preselected supplement's id
+				// this function resolves that id attribute to an object that select2 can render
+				// using its formatResult renderer - that way the supplement name is shown preselected
+				var $elm = $(element),
+					id = $elm.val(),
+					initString = $elm.attr('x:initial-string');
+				
+				if(initString && initString != undefined)
 				{
-					$list.append(specialRows.noResult);
+					callback({value: initString});
 					return;
 				}
 				
-				// Add a special item at the very start of the list
-				// to "clear" the current item (an option that, when clicked,
-				// just clears the value in the box)
-				list.unshift({
-					clearResultItem: true
-				});
 				
-			}
-			
-			//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
-			latestResultSetFilter = currentFilter;
-			
-			var startIdx = resultSetBuffer.length;
-			
-			for(var i=0; i<list.length; i++)
-			{
-				var row = list[i];
-				var html = row.clearResultItem ?
-					"<i>(Reset/Clear currently selected " + 
-						($title.attr('placeholder') ?
-							$title.attr('placeholder') : 
-							"Item")
-						+ ")</i>" :
-					dbLookupOptions.formatResult(row);
-				
-				var $wrap = $('<a href="#" class="list-group-item"></a>')
-					.html(html)
-					.attr('x:id',  row.clearResultItem ? '0' : row.id)
-					.attr('x:idx', i + startIdx)
-					.on('click', function() {
-						
-						var $elm       = $(this),
-							id     = $elm.attr('x:id'),
-							idx    = $elm.attr('x:idx'),
-							result = resultSetBuffer[idx];
-						
-						var string = 
-							result.clearResultItem ? '<i class="placeholder">(' + ($title.attr('placeholder') || 'Select an Item') + ')</i>' :
-							dbLookupOptions.formatSelection(result);
-						
-						//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
-						
-						if(showItemChooser.currentWidget)
-						{
-							var w = showItemChooser.currentWidget;
-							w.find('.txt').html(string);
-							w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
-							showItemChooser.currentElm.val(id).trigger('change');
-						}
-						
-						$('.db-search-modal').modal('hide');
-						return false;
-					});
+				var id = $elm.val(),
+					url = showItemChooser.hookUrlRoot+'/stringify?value=' + id;
 					
-				$list.append($wrap);
-				
-				resultSetBuffer.push(row);
-			}
+				if (id !== "")
+					$.ajax(url)
+						.done(function(data) {
+							
+							//console.debug("Got data from server:", data.result);
+							callback({value: data.result.text});
+						});
+			},
 			
-			if(clickFirstResultWhenLoaded)
-				$list.find('.list-group-item')
-					.first()
-					.addClass('active')
-					.click();
+			//dropdownCssClass: "bigdrop", // apply css that makes the dropdown taller
+			
+			escapeMarkup: function (m) { return m; } // we do not want to escape markup since we are displaying html in results
 		};
-		
-		var processResultQueue = function() {
+
+		function dbSearchDialogSetup()
+		{
+			var $dialog   = $('.db-search-modal');
 			
-			// Sort requests by sequence they were inserted
-			requestQueue.sort(function(a,b) {
-				return (a.id - b.id);
-			});
+			// Move dialog out of current document flow position and to end of body to avoid any local-specific styles
+			$dialog.remove();
+			$('body').append($dialog);
 			
-			// Verify all results are complete - if anything is
-			// incomplete (such as result 2 out of 5),
-			// we want to wait until all data is completed
-			var allCompleted = true;
-			for(var x=0; x<requestQueue.length; x++)
-				if(!requestQueue[x].rxd)
-					allCompleted = false;
-					
-			//console.debug("processResultQueue: allCompleted:",allCompleted, ", queue:",requestQueue);
+			var $filter   = $dialog.find('.filter-control');
+			var $list     = $dialog.find('.list-group');
+			var $listWrap = $dialog.find('.list-group-wrapper');
+			var $title    = $dialog.find('.db-search-title');
 			
-			if(!allCompleted)
-				return;
-			
-			// Process the result queue since all are completed
-			for(var x=0; x<requestQueue.length; x++)
-			{
-				//console.debug("processResultQueue: processing #",x);
-				var requestData = requestQueue[x];
-			
-				if(requestData.page == 0)
-				{
-					$list.empty();
-					$listWrap.scrollTop(0);
-				}
-				
-				var processed = dbLookupOptions.ajax.results(requestData.results, requestData.page);
-				updateList(processed);
-			}
-			
-			// Suggested as fastest method to empty an array 
-			// from http://stackoverflow.com/questions/1232040/empty-an-array-in-javascript
-			while(requestQueue.length > 0)
-				requestQueue.pop();
-			
-			specialRows.loading.remove();
-		};
-		
-		var loadResultsPage = function(filter, page) {
-			var data = dbLookupOptions.ajax.data(filter, page);
-			
-			//console.debug("loadResultsPage: data:",data, "page:",page);
-			
-			specialRows.noResult.remove();
-			
-			//if(page == 0)
-				//$list.prepend(specialRows.loading);
-			//else
-				$list.append(specialRows.loading);
-			
-			resultSetCounter ++;
-			
-			var requestData = {
-				page:		page,
-				filter:		filter,
-				results:	null,
-				rxd:		false,
-				id:		requestCounter ++,
+			var specialRows = {
+				noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No items found</a>'),
+				loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')
 			};
 			
-			requestQueue.push(requestData);
+			var currentPage = 0;
+			var currentFilter = '';
+			var hasMoreResults = true;
 			
+			// We're using a request queue so that servers that respond
+			// with requests out-of-order can be properly sequenced
+			var requestQueue = [];
+			var requestCounter = 0;
 			
-			$.ajax({
-				url: showItemChooser.hookUrlRoot+'/search',
-				data: data,
-				success: function(result) {
-					//console.debug("ajax results:",result);
+			var resultSetBuffer = [];
+			var latestResultSetFilter = '';
+			
+			var resultSetCounter = 0;
+			var clickFirstResultWhenLoaded = false;
+			
+			var updateList = function(processedResults) {
+				var list = processedResults.results;
+				hasMoreResults = processedResults.more;
+				
+				if(currentPage == 0)
+				{
+					$list.empty();
+				
+					if(!list || list.length <= 0)
+					{
+						$list.append(specialRows.noResult);
+						return;
+					}
 					
-					bufferNextPageLoad.locked = false;
+					// Add a special item at the very start of the list
+					// to "clear" the current item (an option that, when clicked,
+					// just clears the value in the box)
+					list.unshift({
+						clearResultItem: true
+					});
 					
-					requestData.results = result;
-					requestData.rxd     = true;
-					
-					processResultQueue();
-				},
-	
-				error: function(result) {
-					specialRows.loading.remove();
-					
-					bufferNextPageLoad.locked = false;
-					
-					//alert("Error:");
-					//console.debug(result.responseText);
-					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 				}
 				
-			});
-		};
-		
-		var checkScrollPosition = function() {
-			var top = $listWrap.scrollTop();
-			var height = $listWrap.height();
-			var scrollBottom = top + height;
-			var contentHeight = $list.height();
-			var triggerPercent = 90;
-			var triggerPixel = contentHeight * (triggerPercent / 100);
-			var hitTrigger = scrollBottom > triggerPixel;
-			
-			if(hitTrigger)
-				bufferNextPageLoad();
-		};
-		
-		var bufferNextPageLoad = function() {
-			if(bufferNextPageLoad.locked)
-				return;
-			
-			if(!hasMoreResults)
-				return;
-			
-			currentPage ++;
-			loadResultsPage(currentFilter, currentPage);
-		};
-		
-		var queryResults = function() {
-			
-			var filter = $filter.val();
-			filter = filter.replace(/(^\s+|\s+$)/g, '');
-			
-			//filter = "zym";
-			specialRows.noResult.remove();
-			
-			currentFilter = filter;
-			currentPage = 0;
-			hasMoreResults = true;
-			resultSetBuffer = [];
-			
-			loadResultsPage(currentFilter, currentPage);
-			
-		};
-		
-		var bufferQueryResults = function(event) {
-			
-			clickFirstResultWhenLoaded = false;
-			
-			var escPressed = event.which == 27;
-			if(escPressed)
-				return;
-			
-			var enterPressed = event.which == 13;
-			if(enterPressed) 
-			{
-				var filter = $filter.val();
-				filter = filter.replace(/(^\s+|\s+$)/g, '');
-			
-				// Only click the first entry if its loaded AND
-				// if the filter in the box matches the filter
-				// used to load current result set
-				if(resultSetBuffer.length > 0 && 
-					latestResultSetFilter == filter)
+				//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
+				latestResultSetFilter = currentFilter;
+				
+				var startIdx = resultSetBuffer.length;
+				
+				for(var i=0; i<list.length; i++)
 				{
+					var row = list[i];
+					var html = row.clearResultItem ?
+						"<i>(Reset/Clear currently selected " + 
+							($title.attr('placeholder') ?
+								$title.attr('placeholder') : 
+								"Item")
+							+ ")</i>" :
+						dbLookupOptions.formatResult(row);
+					
+					var $wrap = $('<a href="#" class="list-group-item"></a>')
+						.html(html)
+						.attr('x:id',  row.clearResultItem ? '0' : row.id)
+						.attr('x:idx', i + startIdx)
+						.on('click', function() {
+							
+							var $elm       = $(this),
+								id     = $elm.attr('x:id'),
+								idx    = $elm.attr('x:idx'),
+								result = resultSetBuffer[idx];
+							
+							var string = 
+								result.clearResultItem ? '<i class="placeholder">(' + ($title.attr('placeholder') || 'Select an Item') + ')</i>' :
+								dbLookupOptions.formatSelection(result);
+							
+							//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
+							
+							if(showItemChooser.currentWidget)
+							{
+								var w = showItemChooser.currentWidget;
+								w.find('.txt').html(string);
+								w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
+								showItemChooser.currentElm.val(id).trigger('change');
+							}
+							
+							$('.db-search-modal').modal('hide');
+							return false;
+						});
+						
+					$list.append($wrap);
+					
+					resultSetBuffer.push(row);
+				}
+				
+				if(clickFirstResultWhenLoaded)
 					$list.find('.list-group-item')
 						.first()
 						.addClass('active')
 						.click();
+			};
+			
+			var processResultQueue = function() {
+				
+				// Sort requests by sequence they were inserted
+				requestQueue.sort(function(a,b) {
+					return (a.id - b.id);
+				});
+				
+				// Verify all results are complete - if anything is
+				// incomplete (such as result 2 out of 5),
+				// we want to wait until all data is completed
+				var allCompleted = true;
+				for(var x=0; x<requestQueue.length; x++)
+					if(!requestQueue[x].rxd)
+						allCompleted = false;
+						
+				//console.debug("processResultQueue: allCompleted:",allCompleted, ", queue:",requestQueue);
+				
+				if(!allCompleted)
 					return;
+				
+				// Process the result queue since all are completed
+				for(var x=0; x<requestQueue.length; x++)
+				{
+					//console.debug("processResultQueue: processing #",x);
+					var requestData = requestQueue[x];
+				
+					if(requestData.page == 0)
+					{
+						$list.empty();
+						$listWrap.scrollTop(0);
+					}
+					
+					var processed = dbLookupOptions.ajax.results(requestData.results, requestData.page);
+					updateList(processed);
+				}
+				
+				// Suggested as fastest method to empty an array 
+				// from http://stackoverflow.com/questions/1232040/empty-an-array-in-javascript
+				while(requestQueue.length > 0)
+					requestQueue.pop();
+				
+				specialRows.loading.remove();
+			};
+			
+			var loadResultsPage = function(filter, page) {
+				var data = dbLookupOptions.ajax.data(filter, page);
+				
+				//console.debug("loadResultsPage: data:",data, "page:",page);
+				
+				specialRows.noResult.remove();
+				
+				//if(page == 0)
+					//$list.prepend(specialRows.loading);
+				//else
+					$list.append(specialRows.loading);
+				
+				resultSetCounter ++;
+				
+				var requestData = {
+					page:		page,
+					filter:		filter,
+					results:	null,
+					rxd:		false,
+					id:		requestCounter ++,
+				};
+				
+				requestQueue.push(requestData);
+				
+				
+				$.ajax({
+					url: showItemChooser.hookUrlRoot+'/search',
+					data: data,
+					success: function(result) {
+						//console.debug("ajax results:",result);
+						
+						bufferNextPageLoad.locked = false;
+						
+						requestData.results = result;
+						requestData.rxd     = true;
+						
+						processResultQueue();
+					},
+		
+					error: function(result) {
+						specialRows.loading.remove();
+						
+						bufferNextPageLoad.locked = false;
+						
+						//alert("Error:");
+						//console.debug(result.responseText);
+						$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+					}
+					
+				});
+			};
+			
+			var checkScrollPosition = function() {
+				var top = $listWrap.scrollTop();
+				var height = $listWrap.height();
+				var scrollBottom = top + height;
+				var contentHeight = $list.height();
+				var triggerPercent = 90;
+				var triggerPixel = contentHeight * (triggerPercent / 100);
+				var hitTrigger = scrollBottom > triggerPixel;
+				
+				if(hitTrigger)
+					bufferNextPageLoad();
+			};
+			
+			var bufferNextPageLoad = function() {
+				if(bufferNextPageLoad.locked)
+					return;
+				
+				if(!hasMoreResults)
+					return;
+				
+				currentPage ++;
+				loadResultsPage(currentFilter, currentPage);
+			};
+			
+			var queryResults = function() {
+				
+				var filter = $filter.val();
+				filter = filter.replace(/(^\s+|\s+$)/g, '');
+				
+				//filter = "zym";
+				specialRows.noResult.remove();
+				
+				currentFilter = filter;
+				currentPage = 0;
+				hasMoreResults = true;
+				resultSetBuffer = [];
+				
+				loadResultsPage(currentFilter, currentPage);
+				
+			};
+			
+			var bufferQueryResults = function(event) {
+				
+				clickFirstResultWhenLoaded = false;
+				
+				var escPressed = event.which == 27;
+				if(escPressed)
+					return;
+				
+				var enterPressed = event.which == 13;
+				if(enterPressed) 
+				{
+					var filter = $filter.val();
+					filter = filter.replace(/(^\s+|\s+$)/g, '');
+				
+					// Only click the first entry if its loaded AND
+					// if the filter in the box matches the filter
+					// used to load current result set
+					if(resultSetBuffer.length > 0 && 
+						latestResultSetFilter == filter)
+					{
+						$list.find('.list-group-item')
+							.first()
+							.addClass('active')
+							.click();
+						return;
+					}
+					else
+					{
+						// If either test failed, fall thru to loaded
+						// a new result set, and flag the first one
+						// to be 'clicked' as soon as its loaded
+						clickFirstResultWhenLoaded = true;
+					}
+					
+					//console.debug("enterPressed, resultSetBuffer.length:",resultSetBuffer.length,", clickFirstResultWhenLoaded:",clickFirstResultWhenLoaded);
+					
+					
+				}
+				
+				// Delay X ms then load the result from the server
+				clearTimeout(bufferQueryResults.tid);
+				bufferQueryResults.tid = setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
+			};
+			
+			$listWrap.on('scroll', checkScrollPosition);
+			$filter.on('change', bufferQueryResults);
+			$filter.on('keyup',  bufferQueryResults);
+		}
+		
+		
+		function setupLookupUi($jq, hookUrlRoot)
+		{
+			showItemChooser.hookUrlRoot   = hookUrlRoot;
+			
+			var pageSize = 25;
+			$jq.on('change', function() {
+				
+				var $input = $(this);
+				
+				//checkForBackorder($input);
+				//updatePricing($input);
+				
+				//console.debug("got new id:",id);
+			});
+			
+			var buttonHtml = [
+				'<div class="btn-group db-search-btn">',
+					'<button type="button" class="btn btn-default dropdown-toggle btn-sm">',
+						'<span class="txt"></span>',
+						'&nbsp;<span class="caret"></span>',
+					'</button>',
+				'</div>'
+			].join('');
+			
+			$jq.each(function() {
+				var $elm = $(this);
+				
+				var $widget = $(buttonHtml);
+				
+				$widget.find('.txt').html('<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
+				
+				$widget.insertAfter($elm);
+				$elm.hide();
+				
+				//var initString = $elm.attr('x:initial-string');
+				//$widget.find('.txt').html(initString);
+				
+				var currentVal = $elm.val();
+				if(currentVal.match(/^\d+$/))
+				{
+					dbLookupOptions.initSelection(this, function(result) {
+						$widget.find('.txt').html(
+							dbLookupOptions.formatSelection(result)
+						);
+					});
 				}
 				else
 				{
-					// If either test failed, fall thru to loaded
-					// a new result set, and flag the first one
-					// to be 'clicked' as soon as its loaded
-					clickFirstResultWhenLoaded = true;
+					$widget.find('.txt').html(currentVal || '<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 				}
 				
-				//console.debug("enterPressed, resultSetBuffer.length:",resultSetBuffer.length,", clickFirstResultWhenLoaded:",clickFirstResultWhenLoaded);
+				$widget.bind('click', function() {
+					showItemChooser($widget, $elm, hookUrlRoot);
+				});
 				
-				
-			}
-			
-			// Delay X ms then load the result from the server
-			clearTimeout(bufferQueryResults.tid);
-			bufferQueryResults.tid = setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
+			});
 		};
 		
-		$listWrap.on('scroll', checkScrollPosition);
-		$filter.on('change', bufferQueryResults);
-		$filter.on('keyup',  bufferQueryResults);
-	}
-	
-	
-	function setupLookupUi($jq, hookUrlRoot)
-	{
-		showItemChooser.hookUrlRoot   = hookUrlRoot;
+		function showItemChooser($widget, $elm, hookUrlRoot)
+		{
+			// $widget is the UI widget (button, etc)
+			// $elm is the hidden input element that gets passed back to the server
+			
+			showItemChooser.currentWidget = $widget;
+			showItemChooser.currentElm    = $elm;
+			showItemChooser.hookUrlRoot   = hookUrlRoot;
+			
+			var $dialog   = $('.db-search-modal');
+			var $list     = $dialog.find('.list-group');
+			var $listWrap = $dialog.find('.list-group-wrapper');
+			var $filter   = $dialog.find('.filter-control');
+			var $title    = $dialog.find('.db-search-title');
+			
+			// Set Title
+			$title.html('Choose '+$elm.attr('placeholder'));
+			
+			// Store placeholder on the dialog for use later in the 'clear item' code
+			$title.attr('placeholder', $elm.attr('placeholder'));
+			
+			// Reset dialog
+			$list.empty();
+			//$list.find('.list-group-item').remove();
+			$listWrap.scrollTop(0);
+			
+			// Reset filter 
+			$filter.val('').trigger('change');
+			
+			//$dialog.find('.list-group-wrapper').scrollTop(0);
+
+			$dialog.modal({ show: true });
+					
+			var isMobile = window.matchMedia("only screen and (max-width: 770px)").matches;
+			//console.debug(isMobile);
 		
-		var pageSize = 25;
-		$jq.on('change', function() {
+			// We dont want to force focus into the filter control on "mobile" devices
+			// because that will (could) pop up an onscreen keyboard would would
+			// obscure a lot of the list
+			if(!isMobile)
+				$filter.focus(); //.select();
 			
-			var $input = $(this);
-			
-			//checkForBackorder($input);
-			//updatePricing($input);
-			
-			//console.debug("got new id:",id);
+		}
+		
+		
+		$(function() {
+		
+			dbSearchDialogSetup();
 		});
 		
-		var buttonHtml = [
-			'<div class="btn-group db-search-btn">',
-				'<button type="button" class="btn btn-default dropdown-toggle btn-sm">',
-					'<span class="txt">Action</span>',
-					'&nbsp;<span class="caret"></span>',
-				'</button>',
-			'</div>'
-		].join('');
-		
-		$jq.each(function() {
-			var $elm = $(this);
+		function databaseLookupHook($elm, urlRoot, formUuid)
+		{
+			var hookUrlRoot = urlRoot+'/'+formUuid;
 			
-			var $widget = $(buttonHtml);
-			
-			$widget.insertAfter($elm);
-			$elm.hide();
-			
-			//var initString = $elm.attr('x:initial-string');
-			//$widget.find('.txt').html(initString);
-			
-			var currentVal = $elm.val();
-			if(currentVal.match(/^\d+$/))
-			{
-				dbLookupOptions.initSelection(this, function(result) {
-					$widget.find('.txt').html(
-						dbLookupOptions.formatSelection(result)
-					);
-				});
-			}
-			else
-			{
-				$widget.find('.txt').html(currentVal || '<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
-			}
-			
-			$widget.bind('click', function() {
-				showItemChooser($widget, $elm, hookUrlRoot);
-			});
-			
-		});
-	};
-	
-	function showItemChooser($widget, $elm, hookUrlRoot)
-	{
-		// $widget is the UI widget (button, etc)
-		// $elm is the hidden input element that gets passed back to the server
-		
-		showItemChooser.currentWidget = $widget;
-		showItemChooser.currentElm    = $elm;
-		showItemChooser.hookUrlRoot   = hookUrlRoot;
-		
-		var $dialog   = $('.db-search-modal');
-		var $list     = $dialog.find('.list-group');
-		var $listWrap = $dialog.find('.list-group-wrapper');
-		var $filter   = $dialog.find('.filter-control');
-		var $title    = $dialog.find('.db-search-title');
-		
-		// Set Title
-		$title.html('Choose '+$elm.attr('placeholder'));
-		
-		// Store placeholder on the dialog for use later in the 'clear item' code
-		$title.attr('placeholder', $elm.attr('placeholder'));
-		
-		// Reset dialog
-		$list.empty();
-		//$list.find('.list-group-item').remove();
-		$listWrap.scrollTop(0);
-		
-		// Reset filter 
-		$filter.val('').trigger('change');
-		
-		//$dialog.find('.list-group-wrapper').scrollTop(0);
-
-		$dialog.modal({ show: true });
-				
-		var isMobile = window.matchMedia("only screen and (max-width: 770px)").matches;
-		//console.debug(isMobile);
-	
-		// We dont want to force focus into the filter control on "mobile" devices
-		// because that will (could) pop up an onscreen keyboard would would
-		// obscure a lot of the list
-		if(!isMobile)
-			$filter.focus(); //.select();
-		
-	}
-	
-	
-	$(function() {
-	
-		dbSearchDialogSetup();
-	});
-	
-	function databaseLookupHook($elm, urlRoot, formUuid)
-	{
-		var hookUrlRoot = urlRoot+'/'+formUuid;
-//
-//		var validateUrl = hookUrlRoot + '/validate';
-//
-// 		function idHelper($elm, suffix)
-// 		{
-// 			return ($elm.attr('id') ? $elm.attr('id') : $elm.attr('name')) + '_' + suffix;
-// 		}
-// 		
-// 		function getClearButton($elm)
-// 		{
-// 			var clearButtonId = idHelper($elm, 'clear');
-// 			
-// 			var $clearButton = $('#'+clearButtonId);
-// 			if($clearButton.size() <= 0)
-// 			{
-// 				var inputElm = $elm;
-// 				$clearButton = $('<a href="#" class="button btn btn-warning"><span>X</span></div>')
-// 					.addClass('ui-db-validation-reset')
-// 					.attr('title', 'Clear value')
-// 					.attr('id', clearButtonId)
-// 					.insertAfter($elm)
-// 					.bind('click', function() {
-// 						var $elm = inputElm; //$(this);
-// 						$elm.val('');
-// 						$elm.trigger('change');
-// 						$elm.removeClass('ui-database-validated');
-// 						$elm.focus();
-// 						$(this).hide();
-// 						return false;
-// 					});
-// 			}
-// 			
-// 			return $clearButton;
-// 		}
-// 		
-// 		function getIdHolder($elm)
-// 		{
-// 			var idHolder = idHelper($elm, 'validated');
-// 			
-// 			var $idHolder = $('#'+idHolder);
-// 			if($idHolder.size() <= 0)
-// 			{
-// 				$idHolder = $('<input type=hidden>')
-// 					.attr('name', idHolder)
-// 					.attr('id',   idHolder)
-// 					.insertAfter($elm);
-// 			}
-// 			
-// 			return $idHolder;
-// 		}
-		
-// 		var validate;
-// 		$elm.autocomplete({
-// 			source: hookUrlRoot+'/autocomplete',
-// 			minLength: 2,
-// 			search: function( event, ui ) {
-// 				//validate.call($(event.target), true); // true = surpress error
-// 				$(this).removeClass('ui-database-validated');
-// 				getClearButton($(this)).hide();
-// 			},
-// 			select: function( event, ui ) {
-// 				//console.debug(ui);
-// 				//console.debug(event);
-// 				//console.debug("select:",ui);
-// 				if(event && event.target)
-// 				{
-// 					var $elm = $(event.target);
-// 					
-// 					$elm.addClass('ui-database-validated');
-// 					
-// 					getIdHolder($elm)
-// 						.val(ui.item.id);
-// 					
-// 					getClearButton($elm)
-// 						.show();
-// 				}
-// 			}
-// 		});
-// 		$elm.attr('autocomplete','off');
-//		
-// 		validate = function(supressError) {
-// 			var $elm = $(this);
-// 			
-// 			if(!$elm)
-// 				return;
-// 			
-// 			//var $img = $('<img src="http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif" class=ui-validate-loading-img align=absmiddle>')
-// 			//	.insertAfter($elm);
-// 			
-// 			var trimmed = "";
-// 			try {
-// 				trimmed = $elm.val();
-// 			} catch(e) {}
-// 			
-// 			var isBlank = trimmed == "";
-// 			
-// 			var def = $elm.attr('x:default-text');
-// 			try {
-// 				// IE throws errors here (method not supported)
-// 				trimmed = trimmed.trim();
-// 			} catch(e) {}
-// 			if(def && def != "" &&
-// 				trimmed != "" && trimmed == def)
-// 				isBlank = true;
-// 				
-// 			if(isBlank)
-// 				return;
-// 				
-// 			var idHolder = $elm.attr('name') + '_validated';
-// 			var $idHolder = $('#'+idHolder);
-// 			if($idHolder.val() && $idHolder.val() != '')
-// 				return;
-// 			
-// 			$elm.addClass('ui-autocomplete-loading');
-// 			
-// 			var validateData = { value: trimmed };
-// 			//console.debug(validateUrl, validateData);
-// 			$.ajax({
-// 				type: "GET",
-// 				url: validateUrl,
-// 				data: validateData,
-// 				success: function(data) {
-// 					$elm.removeClass('ui-autocomplete-loading');
-// 					//$img.remove();
-// 					if(typeof(data) == 'string')
-// 					{
-// 						try{
-// 							eval('data='+data);
-// 						}
-// 						catch(e) {}
-// 					}
-// 					
-// 					//console.debug('success, data: ',data);
-// 					var res = data.result, err = data.err;
-// 					if(err && err != null)
-// 					{
-// 						if(!supressError)
-// 						{
-// 							$elm.addClass('ui-badfield-inpage');
-// 							$elm.addClass('ui-badfield');
-// 							$elm.siblings('.ui-validate-error').remove();
-// 							$elm.removeClass('ui-database-validated');
-// 							
-// 							var $errMsg = $('<div class=ui-validate-error></div>');
-// 							$errMsg.html(err);
-// 							$errMsg.hide().insertAfter($elm).width($elm.width()+2).slideDown(200);
-// 						}
-// 					}
-// 					else
-// 					{
-// 						$elm.removeClass('ui-badfield-inpage');
-// 						$elm.removeClass('ui-badfield');
-// 						
-// 						$elm.siblings('.ui-validate-error').remove();
-// 						
-// 						$elm.val(res.text);
-// 						$elm.addClass('ui-database-validated');
-// 						
-// 						getIdHolder($elm)
-// 							.val(res.value);
-// 						
-// 						getClearButton($elm)
-// 							.show();
-// 					}
-// 				},
-// 				
-// 				error: function(err) {
-// 					$elm.removeClass('ui-autocomplete-loading');
-// 					//console.debug('ajax error:', err);
-// 					//$img.remove();
-// 					$elm.addClass('ui-badfield-inpage');
-// 					$elm.addClass('ui-badfield');
-// 				}
-// 			});
-// 		};
-// 		
-// 		var waitVal = function() {
-// 			var t = this;
-// 			setTimeout(function() {
-// 				validate.call(t);
-// 			}, 500);
-// 		};
-// 		
-// 		$elm.focus(function() {
-// 				var $elm = $(this);
-// 				$elm.siblings('.ui-validate-error')
-// 				    .slideUp(200, function() { $(this).remove() });
-// 					
-// 				getIdHolder($elm).val('');
-// 			})
-// 			.blur(waitVal)
-// 			.change(function() {
-// 				$(this).removeClass('ui-database-validated');
-// 				getClearButton($(this)).hide();
-// 				waitVal.call(this);
-// 			})
-// 			.keypress(function() {
-// 				$(this).removeClass('ui-database-validated');
-// 				getClearButton($(this)).hide();
-// 				
-// // 				var t = this;
-// // 				clearTimeout(t.tid);
-// // 				t.tid = setTimeout(function() {
-// // 					validate.call(t, true);
-// // 				}, 1500);
-// 			});
-// 		
-// 		validate.call($elm);
-		
-		setupLookupUi($elm, hookUrlRoot);
-
-		
-	}
+			setupLookupUi($elm, hookUrlRoot);		
+		}
 	</script>
+
 	<style>
-	.form-input-group {
-		display: inline-block;
-	}
-	
-	.form-input-group .db-search-btn {
-		/*margin-left: .25em;*/
-	}
-	
-	.form-input-group .db-search-btn .placeholder {
-		color: rgba(0,0,0,0.8);
-		font-weight: normal;
+		.form-input-group {
+			display: inline-block;
+		}
 		
-	}
-	
-	/*
-	
-	.ui-validate-error {
-		display: block;
+		.form-input-group .db-search-btn {
+			/*margin-left: .25em;*/
+		}
 		
-		color: #922D2D !important;
-		background: #FFDDDD !important;
-		
-		padding: 4px 6px;
-		margin: -3px 2px 2px;
-		z-index: 0;
-		opacity: 0.75;
-		
-	}
-	
-	.ui-database-validated,
-	.panel input[type=text].ui-database-validated {
-		background: #D2DCE9;
-		border-color: #8BA0BC;
-		color: #325689;
-	}
-	
-	.input.ui-autocomplete-loading,
-	.ui-autocomplete-loading {
-		background-image: url('//jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') !important;
-		background-position: right center !important;
-		background-repeat: no-repeat !important;
-	}*/
-	
-	/*.input.ui-badfield-inpage.ui-autocomplete-loading {
-		background: #FFDDDD url('http://jqueryui.com/resources/demos/autocomplete/images/ui-anim_basic_16x16.gif') right center no-repeat !important;
-	}*/
+		.form-input-group .db-search-btn .placeholder {
+			color: rgba(0,0,0,0.8);
+			font-weight: normal;
+			
+		}
 	</style>
 
 <!--/.form-db-ajax.tmpl-->
