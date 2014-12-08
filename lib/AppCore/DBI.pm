@@ -3233,7 +3233,7 @@ package $opts->{pkg};
 			my $row_result;
 			
 			my $sth = $dbh->prepare($sub);
-			if(my @count = $sub =~ /(\?)/)
+			if(my @count = $sub =~ /(\?)/g)
 			{
 				# 'consume' the args based on the number of args in this current statement.
 				# This applies to the following scenario:
