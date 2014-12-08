@@ -219,7 +219,10 @@ package AppCore::Web::ReportViewer;
 		{
 			if($report->{sql})
 			{
-				my @sql_args = map { $_->{value} } @arg_data;
+				my @sql_args = map {
+					ref $_->{value} eq 'CODE'
+						? $_->{value}->($report, $self->stash)
+						: $_->{value} } @arg_data;
 				
 				my ($listref, $last_sth) =
 					AppCore::DBI->bulk_execute(
