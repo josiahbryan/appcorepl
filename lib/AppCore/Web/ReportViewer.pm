@@ -98,19 +98,7 @@ package AppCore::Web::ReportViewer;
 		my ($self, $report) = @_;
 		$self->{report_model} = $report;
 		
-		my $field_counter = 0;
-		foreach my $arg (
-			grep { !$_->{hidden} } 
-				@{ $report->{args} || [] })
-		{
-			# Perform an in-place audit of existing values
-			$arg->{field} = 'field'.(++$field_counter)
-				if !$arg->{field};
-			
-			$arg->{type} = 'database'
-				if $arg->{linked} && 
-				  !$arg->{type};
-		}	
+		$self->audit_report_model();
 	}
 	
 	sub report_model { shift->{report_model} };
@@ -152,9 +140,31 @@ package AppCore::Web::ReportViewer;
 	sub page_start  {shift->{page_start}}
 	sub page_length {shift->{page_length}}
 	
+	sub audit_report_model
+	{
+		my $self = shift;
+		my $report = $self->report_model;
+		
+		#die Dumper $report->{args};
+		
+		my $field_counter = 0;
+		foreach my $arg (
+			grep { !$_->{hidden} } 
+				@{ $report->{args} || [] })
+		{
+			# Perform an in-place audit of existing values
+			$arg->{field} = 'field'.(++$field_counter)
+				if !$arg->{field};
+			
+			$arg->{type} = 'database'
+				if $arg->{linked} && 
+				  !$arg->{type};
+		}
+	}
+	
 	sub generate_report
 	{
-		my ($self, $arg_hash) = @_;
+		my ($self, $arg_hash, $ignore_incomplete) = @_;
 		
 		my $report = $self->report_model;
 		
@@ -169,9 +179,12 @@ package AppCore::Web::ReportViewer;
 			foreach my $arg_ref (@{$arg_meta || []})
 			{
 				# Get arg value from UI
-				$arg_ref->{value}
-					= $arg_hash->{$arg_ref->{field}}
-					if !$arg_ref->{hidden};
+				if(defined $arg_hash)
+				{
+					$arg_ref->{value}
+						= $arg_hash->{$arg_ref->{field}}
+						if !$arg_ref->{hidden};
+				}
 					
 				if(!defined $arg_ref->{value})
 				{
@@ -182,7 +195,14 @@ package AppCore::Web::ReportViewer;
 			}
 		}
 		
+		$arg_data_complete = 1
+			if $ignore_incomplete;
+		
 		$output_data->{arg_data_complete} = $arg_data_complete;
+		
+		# Flag for use in the template
+		my @visible_args = grep { !$_->{hidden} } @{ $report->{args} || [] };
+		$output_data->{has_visible_args} = scalar(@visible_args) > 0;
 		
 		#die Dumper \@arg_data, $arg_hash, $arg_data_complete;
 		

@@ -3265,14 +3265,14 @@ package $opts->{pkg};
 				# I don't know of a good way to detect if there are actually results
 				# without calling fetch*. (Yes, $sth->rows doesnt help either.)
 				if($row_result > 0 &&
-					$sub !~ /(\binsert into\b|\bupdate\b)/i)
+					$sub !~ /(\binsert into\b|\bupdate\b|\bcreate index\b)/i)
 				{
 					#print "Debug: '$row_result'\n";
 					push @results, $_ while $_ = $sth->fetchrow_hashref;
 					
 					$fetch_sth = $sth;
 				}
-				elsif($row_result != 0)
+				elsif($row_result != 0 && $sth->errstr)
 				{
 					print STDERR "bulk_execute: Failed execute: ". $sth->errstr;
 				}
