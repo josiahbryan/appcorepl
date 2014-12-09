@@ -565,10 +565,16 @@ package AppCore::DBI;
 		
 		#use Data::Dumper;
 		#die Dumper $s;
+		#print STDERR "get_orderby_sql: s:".Dumper($s);
 		
 		my @order;
-		foreach my $field (@$s)
+		foreach my $field_data (@$s)
 		{
+			# Make a copy of $field_data because
+			# if we deref it, below, it updates $s, which is a ref to the class meta,
+			# which means we would loose the sort direction for subsequent calls - 
+			# which is especially relevant in persistant envs such as FastDBI or ModPerl
+			my $field = $field_data;
 			my $dir   = '';
 			
 			if(ref $field eq 'ARRAY')

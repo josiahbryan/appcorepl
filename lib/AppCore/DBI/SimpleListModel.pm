@@ -360,6 +360,8 @@ package AppCore::DBI::SimpleListModel;
 		#die "'$orderby_sql'";
 		my $sort_clause = $orderby_sql ? " \nORDER BY ".$orderby_sql : '';
 		
+		#print STDERR "\$orderby_sql: '$orderby_sql'\n";
+		
 		
 		## Prepare complete SELECT statement
 # 		my $sql_table = join("\n    ",
