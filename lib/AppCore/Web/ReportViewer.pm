@@ -377,7 +377,9 @@ package AppCore::Web::ReportViewer;
 				my @columns = map {{
 					field => $_->{field},
 					title => $_->{title},
-					value => $row->{$_->{field}},
+					value => exists $row->{$_->{field}} ? 
+						$row->{$_->{field}}    : 
+						$row->{lc($_->{field})},
 				}} @report_columns;
 				
 				$row->{report_columns} = \@columns;
