@@ -211,6 +211,23 @@ package AppCore::Web::ReportViewer;
 		if(ref $report->{columns} eq 'ARRAY')
 		{
 			@report_columns = @{$report->{columns} || []};
+			
+			# Audit columns to make sure they are hashrefs
+			my @tmp_list;
+			foreach my $col (@report_columns)
+			{
+				if(ref $col ne 'HASH')
+				{
+					push @tmp_list, { field => $col };
+				}
+				else
+				{
+					push @tmp_list, $col;
+				}
+			}
+			
+			@report_columns = @tmp_list;
+			
 		}	
 		
 		# Get the data
