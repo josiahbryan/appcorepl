@@ -211,7 +211,8 @@
 
 		encode: function( text ) {
 			// Do HTML encoding replacing < > & and ' and " by corresponding entities.
-			return ("" + text).split("<").join("&lt;").split(">").join("&gt;").split('"').join("&#34;").split("'").join("&#39;");
+			// Disabled encoding completely - JosiahBryan@gmail.com 20141211
+			return ("" + text); //.split("<").join("&lt;").split(">").join("&gt;").split('"').join("&#34;").split("'").join("&#39;");
 		}
 	});
 

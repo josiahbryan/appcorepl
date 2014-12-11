@@ -393,6 +393,30 @@ package AppCore::Web::Common;
 			$$textref =~ s/\${tmpl2jq:([^\}]+)}/_tmpl2jq($1)/segi;
 		}
 		
+		if(AppCore::Config->get("ENABLE_TMPL2JQ_BLOCK_CLONE"))
+		{
+			my @output_list;
+		
+			$$textref =~ s/<!--tmpl2jq:(.+?)-->((?:.*|\n)+)<!--\/tmpl2jq-->/push \@output_list, _tmpl2jq_block_clone($1, $2); $2/segi;
+		
+			if(@output_list)
+			{
+				my $output = join "\n", map {
+					"<script id='$_->{id}' style='display:none' class='jquery-template' type='text/x-jquery-tmpl'>$_->{data}</script>"
+				} @output_list;
+				
+				#print STDERR "ENABLE_TMPL2JQ_BLOCK_CLONE: Created output: $output\n";
+				
+				if(index(lc($$textref),'</body>') > 0)
+				{
+					$$textref =~ s/<\/body>/\n$output\n<\/body>/gi;
+				}
+				else
+				{
+					$$textref .= "\n$output\n";
+				}
+			}
+		}
 		
 		$$textref =~ s/<tmpl_if ([^>]+)>/_rewrite_if_macro($1)/segi;
 		
@@ -419,6 +443,17 @@ package AppCore::Web::Common;
 		my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
 		my $block = AppCore::Web::Common->get_included_file($file,0,$tmpl);
 		#$block =~ s/<tmpl_if ([^>]+?)>/{{if $1}}/segi;
+		$block = _tmpl2jq_block($block, $tmpl);
+
+		#print STDERR "Final block: $block\n";
+		
+		return $block;
+	}
+	
+	sub _tmpl2jq_block
+	{
+		my $block = shift;
+		my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
 		$block =~ s/<tmpl_if ([^>]*?)>/_rewrite_if_macro2($1,$block)/segi;
 		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
 		$block =~ s/<tmpl_unless ([^>]+?)>/_rewrite_if_macro2($1,$block,1)/segi;
@@ -429,10 +464,25 @@ package AppCore::Web::Common;
 		$block =~ s/<tmpl_var ([^>]+)>/$tmpl->param($1)/segi if $tmpl;
 		$block =~ s/%%(.+?html)%%/{{html $1}}/g;
 		$block =~ s/%%([^\%]+)%%/\${$1}/g;
-
-		#print STDERR "Final block: $block\n";
-		
 		return $block;
+	}
+	
+	sub _tmpl2jq_block_clone
+	{
+		my $block_id          = shift;
+		my $raw_template_data = shift;
+		my $output_listref    = shift;
+		my $tmpl              = shift || $HTML::Template::DelayedLoading::CurrentObject;
+		
+		#die $raw_template_data;
+		
+		my $tmpl2jq_data = _tmpl2jq_block($raw_template_data, $tmpl);
+		
+		#push @$output_listref, { id => $block_id, data => $tmpl2jq_data };
+		
+		#return $raw_template_data;
+		
+		return { id => $block_id, data => $tmpl2jq_data };
 	}
 	
 	sub _rewrite_if_macro2
