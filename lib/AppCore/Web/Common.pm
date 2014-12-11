@@ -397,7 +397,7 @@ package AppCore::Web::Common;
 		{
 			my @output_list;
 		
-			$$textref =~ s/<!--tmpl2jq:(.+?)-->((?:.*|\n)+)<!--\/tmpl2jq-->/push \@output_list, _tmpl2jq_block_clone($1, $2); $2/segi;
+			$$textref =~ s/<!--tmpl2jq:(.+?)-->((?:.*|\n)+)<!--\/tmpl2jq-->/push @output_list, _tmpl2jq_block_clone($1, $2); $2/segi;
 		
 			if(@output_list)
 			{

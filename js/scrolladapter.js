@@ -78,7 +78,7 @@ function AWSV_AjaxScrollAdapter(args) {
 	var $loadingSpinners = $('.paging-spinner');
 	$loadingSpinners.hide();
 	
-	var currentPage = args.pageStart + args.pageLength;
+	var nextPageStartRow = args.pageStart;
 	var hasMoreResults = true;
 	
 	// We're using a request queue so that servers that respond
@@ -262,8 +262,9 @@ function AWSV_AjaxScrollAdapter(args) {
 		if(!hasMoreResults)
 			return;
 		
-		currentPage += args.pageLength;
-		loadResultsPage(currentPage);
+		loadResultsPage(nextPageStartRow);
+		
+		nextPageStartRow += args.pageLength;
 	};
 	
 	var bufferNextPageLoad = function() {
