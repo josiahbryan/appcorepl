@@ -4,7 +4,7 @@
 	AWSV_AjaxScrollAdapter({
 			pageUrl:	'%%page_path%%',	// URL of the controller that uses AppCore::Web::SimpleListView
 			pageFilter:	'%%query%%',		// The current filter / search query
-			pageStart:	%%page_start%%,		// The row number of the current page
+			pageStart:	%%page_start%% + %%page_length%%, // The row number of the current page ENDS on
 			pageLength:	25, //%%page_length%%,	// Your choice - either set the number of rows to load via AJAX or use the current length of the page
 			rowTemplate:	$('#listrow-tmpl'),	// The template to use for the rows (same ID as given to tmpl2jq, shown below)
 			list: 		$('#list_table tbody'),	// The TBODY of the list to which to append newly loaded rows
@@ -78,7 +78,7 @@ function AWSV_AjaxScrollAdapter(args) {
 	var $loadingSpinners = $('.paging-spinner');
 	$loadingSpinners.hide();
 	
-	var currentPage = args.pageStart;
+	var currentPage = args.pageStart + args.pageLength;
 	var hasMoreResults = true;
 	
 	// We're using a request queue so that servers that respond
@@ -109,7 +109,8 @@ function AWSV_AjaxScrollAdapter(args) {
 		}
 		else
 		{
-			$pg.html('Showing <b>'+(args.pageStart == 0 ? 1 : args.pageStart)+'</b> - <b>'+result.actual_page_end+'</b> of <b>'+result.total_rows+'</b> items');
+			//$pg.html('Showing <b>'+(args.pageStart == 0 ? 1 : args.pageStart)+'</b> - <b>'+result.actual_page_end+'</b> of <b>'+result.total_rows+'</b> items');
+			$pg.html('Showing <b>'+result.actual_page_end+'</b> of <b>'+result.total_rows+'</b> items');
 		}
 			
 	}
