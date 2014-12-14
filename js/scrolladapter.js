@@ -278,6 +278,8 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 	$(window).on('scroll', checkScrollPosition);
 	
+	checkScrollPosition();
+	
 	//console.debug("AWSV_AjaxScrollAdapter: Online with args:" ,args);
 	
 	//bufferNextPageLoad();
