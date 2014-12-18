@@ -302,11 +302,14 @@ package AppCore::Web::Form;
 				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
 				
 				$meta_obj  = $meta_objs->{$class_obj_name};
-				if($meta_obj || $class_obj)
+				
+				my $tmp_obj = $meta_obj || $class_obj;
+				if($tmp_obj && UNIVERSAL::isa($tmp_obj, 'AppCore::DBI'))
 				{
 					my $meta;
 					eval {
-						$meta = ($meta_obj || $class_obj)->field_meta($class_key);
+						#print STDERR "Debug: \$meta_obj='$meta_obj', \$class_obj='$class_obj', \$class_key='$class_key'\n";
+						$meta = $tmp_obj->field_meta($class_key);
 					};
 					$meta = {} if !$meta;
 					

@@ -1457,14 +1457,14 @@ package AppCore::DBI;
 					#$fklookup_sql = "select $q_primary from ".$fklookup_sql;
 					my $fklookup_sql = "select $q_primary from $q_table where $concat like ?";
 					$val =~ s/\s+/%/g;
-					my @args = ('%'.$val.'%');
+					my @args = ('%'.lc($val).'%');
 					
-					#print STDERR "$class: Couldn't match with first LIKE, trying something else: $fklookup_sql\n" if $debug;
+					print STDERR "$class: Couldn't match with first LIKE, trying something else: $fklookup_sql [@args]\n" if $debug;
 					
 					$sth = $dbh->prepare($fklookup_sql);
 					$sth->execute(@args);
 						
-					
+					print STDERR "$class: rows:".$sth->rows."\n" if $debug;
 						
 					if($sth->rows > 1) # && $val ne $sep)
 					{

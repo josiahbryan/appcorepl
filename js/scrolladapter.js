@@ -174,6 +174,7 @@ function AWSV_AjaxScrollAdapter(args) {
 	var loadResultsPage = function(page) {
 		
 		//console.debug("loadResultsPage: data:",data, "page:",page);
+		//alert("loadResultsPage: "+page);
 		
 		//specialRows.noResult.remove();
 		

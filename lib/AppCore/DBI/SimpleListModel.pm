@@ -498,7 +498,7 @@ package AppCore::DBI::SimpleListModel;
 			my $field = $dat->{field};
 			$col_name_map{$field} = $field;
 			
-			my $title = lc guess_title($_->{field});
+			my $title = lc guess_title($field);
 			$title =~ s/#$//g;
 			$title =~ s/\s//g;
 			$col_name_map{$title} = $field;
