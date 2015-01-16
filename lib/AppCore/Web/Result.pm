@@ -548,6 +548,8 @@ $jq_footer
 		return "url(\"$url_part\")" if !$NumCdnHosts && $url_wrap;
 		return $url_part if !$NumCdnHosts;
 		
+		# Don't add CDN to the URLs that start with the "//" trick
+		return $url_part if index($url_part, '//') == 0;
 		
 		
 		my $cdn_mode = AppCore::Config->get('CDN_MODE') || 'hash';
