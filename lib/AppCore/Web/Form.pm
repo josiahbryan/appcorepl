@@ -2328,7 +2328,8 @@ package AppCore::Web::Form;
 				}
 				else
 				{
-					push @html, $name eq 'textarea' ? '></textarea>' : "/>\n";
+					#push @html, $name eq 'textarea' ? '></textarea>' : "/>\n";
+					push @html, "></".$name.">\n";
 				}
 			}
 			
