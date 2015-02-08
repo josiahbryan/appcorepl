@@ -186,7 +186,8 @@ package AppCore::Web::ReportViewer;
 						if !$arg_ref->{hidden};
 				}
 					
-				if(!defined $arg_ref->{value})
+				if(!defined $arg_ref->{value} &&
+				   !$arg_ref->{allow_null})
 				{
 					$arg_data_complete = 0;
 				}
@@ -199,6 +200,8 @@ package AppCore::Web::ReportViewer;
 			if $ignore_incomplete;
 		
 		$output_data->{arg_data_complete} = $arg_data_complete;
+		
+		#die Dumper $output_data, $report, \@arg_data;
 		
 		# Flag for use in the template
 		my @visible_args = grep { !$_->{hidden} } @{ $report->{args} || [] };
