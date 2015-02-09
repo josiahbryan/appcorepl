@@ -374,15 +374,6 @@ package AppCore::Web::ReportViewer;
 				die "No data and no SQL in report";
 			}
 			
-			# Apply row mudge hook if present
-			if(ref $report->{row_mudge_hook} eq 'CODE')
-			{
-				foreach my $row (@report_data)
-				{
-					$report->{row_mudge_hook}->($row);
-				}
-			}
-			
 			# Apply list mudge hook if present
 			# Since the list hook gets the entire data set, it can combine/remove rows as desired
 			if(ref $report->{list_mudge_hook} eq 'CODE')
@@ -390,7 +381,16 @@ package AppCore::Web::ReportViewer;
 				@report_data = @{ $report->{list_mudge_hook}->(\@report_data) };
 			}
 			
-		
+			# Apply row mudge hook if present
+			# Run row mudge after list mudge because list_mudge_hook could potentially change the number of rows
+			if(ref $report->{row_mudge_hook} eq 'CODE')
+			{
+				foreach my $row (@report_data)
+				{
+					$report->{row_mudge_hook}->($row);
+				}
+			}
+					
 			# Audit data in report columns
 			foreach my $data (@report_columns)
 			{
