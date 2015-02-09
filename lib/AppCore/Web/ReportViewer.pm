@@ -244,6 +244,9 @@ package AppCore::Web::ReportViewer;
 						? $_->{value}->($report, $self->stash)
 						: $_->{value} } @arg_data;
 				
+				#die Dumper \@sql_args;
+				
+				
 				my ($listref, $last_sth) =
 					AppCore::DBI->bulk_execute(
 						$report->{sql},
@@ -378,6 +381,13 @@ package AppCore::Web::ReportViewer;
 				{
 					$report->{row_mudge_hook}->($row);
 				}
+			}
+			
+			# Apply list mudge hook if present
+			# Since the list hook gets the entire data set, it can combine/remove rows as desired
+			if(ref $report->{list_mudge_hook} eq 'CODE')
+			{
+				@report_data = @{ $report->{list_mudge_hook}->(\@report_data) };
 			}
 			
 		
