@@ -2425,10 +2425,15 @@ package AppCore::DBI;
 	#                    Sub will be given the $dbh as its first arg (dbh logged in)
 	
 	our @mysql_schema_sql_debug_output;
+	our $mysql_schema_sql_dry_run = 0;
 	
 	sub mysql_schema_update#($db,$table,$fields,$opts)
 	{
 		#eval 'use AppCore::Auth::Util' ;
+		
+		# Pull in our global variable for the dry_run flag
+		my $dry_run = $mysql_schema_sql_dry_run;
+		
 		if(!@_)
 		{
 			die 'Usage: mysql_schema_update($db,$table,$fields,$opts) or mysql_schema_update($pkg,$class,...)'; 
@@ -2527,6 +2532,8 @@ package AppCore::DBI;
 		
 		my @sql;
 		
+		#print STDERR "Info: using db: '$db' for table '$table'\n";
+		
 		my $dbh = __PACKAGE__->auto_new_dbh($db, $opts);
 		
 		my $q_explain = $dbh->prepare('explain `'.$table.'`');
@@ -2618,6 +2625,66 @@ package AppCore::DBI;
 							next if $k eq 'key' && 
 								$a->{$k} eq 'MUL' && !$b->{$k};
 								
+							# Given the type 'bit(\d)' to create/alter gives back bit in the 'explain ...' stmt
+							next if $k eq 'type' && 
+								$a->{$k} =~ /bit\(\d+\)/ && $b->{$k} eq 'bit';
+								
+							# Given the type 'smallint(\d)' to create/alter gives back smallint in the 'explain ...' stmt
+							next if $k eq 'type' && 
+								$a->{$k} =~ /smallint\(\d+\)/ && $b->{$k} eq 'smallint';
+							
+							# Given the type 'nvarchar(...)' in the schema gives back varchar(256) in the 'explain ...' stmt
+							next if $k eq 'type' && 
+								$a->{$k} =~ /varchar\(\d+\)/ && $b->{$k} =~ /varchar\(\d+\)/;
+								
+							# Given the type 'money' in the schema gives back double/real in the 'explain ...' stmt
+							next if $k eq 'type' && 
+								$a->{$k} eq 'double' && $b->{$k} =~ /^(real|money)$/;
+							
+							# Given the type 'decimal' in the schema gives back numeric in the 'explain ...' stmt
+							next if $k eq 'type' && 
+								$a->{$k} =~ /^decimal\(/ && $b->{$k} =~ /^(decimal|numeric)$/;
+								
+							# varchar(256) from database == uniqueidentifier (schema)
+							next if $k eq 'type' && 
+								$a->{$k} eq 'varchar(256)' && $b->{$k} eq 'uniqueidentifier';
+							
+							# bigint(...) from database == bigint (schema)
+							next if $k eq 'type' && 
+								$a->{$k} =~ /^bigint\(/ && $b->{$k} eq 'bigint';
+								
+							# tinyint(...) from database == tinyint (schema)
+							next if $k eq 'type' && 
+								$a->{$k} =~ /^tinyint\(/ && $b->{$k} eq 'tinyint';
+
+							# varchar(256) from database == varchar(-1) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'varchar(256)' && $b->{$k} eq 'varchar(-1)';
+								
+							# varchar(255) from database == varchar(-1) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'varchar(255)' && $b->{$k} eq 'varchar(-1)';
+								
+							# varchar(255) from database == nvarchar(-1) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'varchar(255)' && $b->{$k} eq 'nvarchar(-1)';
+								
+							# datetime from database == smalldatetime (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'datetime' && $b->{$k} eq 'smalldatetime';
+								
+							# longtext from database == xml(-1) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'longtext' && $b->{$k} eq 'xml(-1)';
+								
+							# blob from database == image(...) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} eq 'blob' && $b->{$k} =~ /^image\(\d+/;
+								
+							# char(...) from database == nchar(...) (schema) 
+							next if $k eq 'type' && 
+								$a->{$k} =~ /^char\(/ && $b->{$k} =~ /^nchar\(/;
+
 							print STDERR "Debug: k=$k, a=$a->{$k}, b=$b->{$k}, type=$a->{type}\n";
 							$cnt ++;
 						}
@@ -2658,7 +2725,7 @@ package AppCore::DBI;
 				{
 					eval
 					{
-						$dbh->do($stmt);
+						$dbh->do($stmt) unless $dry_run;
 					};
 					if($@)
 					{
@@ -2686,7 +2753,7 @@ package AppCore::DBI;
 			
 			push @sql, $sql;
 			
-			$sth->execute;
+			$sth->execute unless $dry_run;
 			
 			# Run the post-create code or insertion array
 			my $after_create = $opts->{after_create};
@@ -2704,9 +2771,12 @@ package AppCore::DBI;
 				my $sql = 'INSERT INTO `'.$table.'` VALUES ('.join(',',@buff).')';
 				print STDERR "Debug: insert sql: $sql\n";
 				
-				my $sth = $dbh->prepare($sql);
-				$sth->execute(@$_) foreach @$after_create;
-				$sth->finish;
+				if(!$dry_run)
+				{
+					my $sth = $dbh->prepare($sql);
+					$sth->execute(@$_) foreach @$after_create;
+					$sth->finish;
+				}
 			}		
 		}
 
@@ -2799,7 +2869,8 @@ package AppCore::DBI;
 						my $sql = 'drop index `'.$key_name.'` on `'.$table.'`';
 						print "Debug: Index '$key_name' changed, deleting and recreating. Delete SQL: $sql\n";
 						push @sql, $sql;
-						$dbh->do($sql);
+						
+						$dbh->do($sql) unless $dry_run;
 					}
 
 					# Create index if different or if does not exist
@@ -2812,7 +2883,7 @@ package AppCore::DBI;
 
 						print "Debug: (re)Creating index '$key_name': $sql\n";
 						push @sql, $sql;
-						$dbh->do($sql);
+						$dbh->do($sql) unless $dry_run;
 					}
 				}
 
@@ -2825,7 +2896,7 @@ package AppCore::DBI;
 						my $sql = 'drop index `'.$key_name.'` on `'.$table.'`';
 						print "Debug: Index '$key_name' removed: $sql\n";
 						push @sql, $sql;
-						$dbh->do($sql);
+						$dbh->do($sql) unless $dry_run;
 					}
 				}
 			}
@@ -2845,7 +2916,13 @@ package AppCore::DBI;
 	{
 		local $_ = shift;
 		$_->{null} = uc $_->{null} if defined $_->{null};
-		$_->{type} = 'varchar(255)' if lc $_->{type} eq 'varchar';
+		$_->{type} = 'varchar(255)' if lc $_->{type} eq 'varchar' || $_->{type} eq 'varchar(-1)' || $_->{type} eq 'nvarchar(-1)';
+		$_->{type} = 'real' if $_->{type} eq 'money';
+		$_->{type} = 'datetime' if $_->{type} eq 'smalldatetime';
+		$_->{type} = 'varchar(256)' if $_->{type} eq 'uniqueidentifier';
+		$_->{type} = 'longtext' if $_->{type} eq 'xml(-1)';
+		$_->{type} = 'blob' if $_->{type} =~ /image\(\d+\)/;
+		
 		"`$_->{field}` $_->{type}".
 			($_->{null} eq 'NO' || $_->{null} eq '0' ? ' NOT NULL' : '').
 			($_->{key}  eq 'PRI' ? ' PRIMARY KEY' .
