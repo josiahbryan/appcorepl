@@ -241,6 +241,7 @@ package AppCore::Web::DispatchCore;
 		$ctx_ref->http_root(''); #$root);
 		$ctx_ref->http_bin('');#$env);
 		$ctx_ref->x('IsMobile',ismobile( $ENV{HTTP_USER_AGENT} ));
+		$ctx_ref->x('cgi', $q);
 		
 		REPROCESS_AUTHENTICATION:
 		eval
