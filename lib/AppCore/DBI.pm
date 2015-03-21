@@ -2684,6 +2684,17 @@ package AppCore::DBI;
 							# char(...) from database == nchar(...) (schema) 
 							next if $k eq 'type' && 
 								$a->{$k} =~ /^char\(/ && $b->{$k} =~ /^nchar\(/;
+								
+							# Handle enums that have newlines and spaces in their schema definitions in perl
+							# because MySQL stores them as a single line
+							if($k eq 'type' && $b->{$k} =~ /enum/ && $b->{$k} =~ /\n/)
+							{
+								my $tmp = $b->{$k};
+								$tmp =~ s/\s*\n\s*//g;
+								#print "tmp:$tmp\n";
+								#print "  a:$a->{$k}\n";
+								next if $a->{$k} eq $tmp;
+							}
 
 							print STDERR "Debug: k=$k, a=$a->{$k}, b=$b->{$k}, type=$a->{type}\n";
 							$cnt ++;
