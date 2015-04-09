@@ -1122,10 +1122,10 @@ package AppCore::User::Group;
 		foreach my $line (@lines)
 		{
 			my $e = $line->userid;
-			if($e->compref)
-			{
-				push @list, $e->email;
-			}
+# 			if($e->compref)
+# 			{
+ 				push @list, $e->email;
+#			}
 		}
 		return @list;	
 	}

@@ -98,7 +98,15 @@ package AppCore::DBI::SimpleListModel;
 	
 	# Method: list_columns()
 	# Return the list of columns that you want to see in the reults - defaults to all columns.
-	sub list_columns { undef }
+	sub list_columns { @{ shift->{list_columns} || [] } }
+	
+	# Method: set_list_columns()
+	# Set the list of columns that you want to see in the reults. Note: The list is not checked for valid column names.
+	sub set_list_columns { 
+		my $self = shift;
+		@_ = @{shift()} if ref $_[0] eq 'ARRAY';
+		$self->{list_columns} = \@_;
+	}
 	
 	# Method: cdbi_class()
 	# Return the class name used as a data source for this model.
@@ -423,7 +431,31 @@ package AppCore::DBI::SimpleListModel;
 		return @new;      # list of values that were comma-separated
 	}
 
+	sub set_string_parse_exclude
+	{
+		my $self = shift;
+		my @exclude_list = @_;
+		my %map = map { lc $_ => 1 } @exclude_list;
+		
+		my $cdbi_class = $self->cdbi_class;
+		my @schema = @{ $cdbi_class->meta->{schema} || []};
+		my @acceptable = map { $_->{field} } grep { $_->{field} && !$map{lc $_->{field}} } @schema; 
+		
+		$self->{string_query_fields} = \@acceptable;
+	}
 	
+	sub set_string_parse_fields
+	{
+		my $self = shift;
+		my @good_list = @_;
+		my %map = map { lc $_ => 1 } @good_list;
+		
+		my $cdbi_class = $self->cdbi_class;
+		my @schema = @{ $cdbi_class->meta->{schema} || []};
+		my @acceptable = map { $_->{field} } grep { $_->{field} && $map{lc $_->{field}} } @schema; 
+		
+		$self->{string_query_fields} = \@acceptable;
+	}
 	
 	sub parse_string_query
 	{
@@ -509,7 +541,14 @@ package AppCore::DBI::SimpleListModel;
 			$col_name_map{$title2} = $field;
 		}
 		
+		my @string_query_cols = map { $_->{field} } @schema;
 		
+		# Filter @string_query_cols by $self->{string_query_fields} if defined
+		if($self->{string_query_fields})
+		{
+			my %string_query_fields = map { lc $_ => 1 } @{ $self->{string_query_fields} || [] };
+			@string_query_cols = grep { $string_query_fields{ lc $_ } } @string_query_cols;
+		}
 		
 		RAW_TERM: foreach my $raw_term (@term_words)
 		{
@@ -523,7 +562,7 @@ package AppCore::DBI::SimpleListModel;
 			print STDERR "[Debug] parse_string_query(): \$search_col: '$search_col', \$termoid: '$termoid'\n" if $DEBUG;
 
 			# We dont want to use the user's search term directly in SQL, so we will search first then build a list of IDs and use that in the search clause
-			my @value_cols = map { $_->{field} } @schema; 
+			my @value_cols = @string_query_cols;
 			
 			#my @user_cols = qw/created_by assigned_to/;
 			
@@ -683,7 +722,7 @@ package AppCore::DBI::SimpleListModel;
 							$col eq 'id'                 ? int($subtermoid+0) :
 							$col_specific_termoid{$col}  ? $col_specific_termoid{$col} : 
 							$col_match_type{$col} eq '=' ? $subtermoid :
-								($subtermoid =~ /%/ ? $subtermoid : '%'.$subtermoid.'%') 
+								 ($subtermoid =~ /%/ ? $subtermoid : '%'.$subtermoid.'%') 
 								
 						} grep { $_ ne 'id' || $subtermoid+0 < 2147483647 }  @useful_cols;
 						
