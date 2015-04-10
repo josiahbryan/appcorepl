@@ -3311,6 +3311,8 @@ package $opts->{pkg};
 	sub bulk_execute
 	{
 		my ($class, $sql, @args) = @_;
+		
+		#print STDERR "Debug: Bulk_Execute: args: @args\n";
 
 		my @stmts = split /;/, $sql;
 		
@@ -3343,6 +3345,8 @@ package $opts->{pkg};
 				# function any args if there are no placeholders in the SQL
 				my @cur_args = map { shift @args } @count;
 				$row_result = $sth->execute(@cur_args);
+				
+				#print STDERR "Debug: Bulk_Execute: cur_args: @cur_args, stmt: $sub\n";
 			}
 			else
 			{

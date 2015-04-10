@@ -68,15 +68,17 @@
 	<script>
 		/* Add in our search dialog */
 		var pageSize = 25;
+		var PAGE_ONE_BASED = false;
 		var dbLookupOptions = {
 			minimumInputLength: 0,
 			//width: 600,
 			ajax: {
 				quietMillis: 250,
+				dataType: 'json',
 				data: function (term, page) { // page is the one-based page number tracked by Select2
 					return {
 						term:  term, //search term
-						start: page * pageSize, // page number
+						start: (PAGE_ONE_BASED ? (page - 1) : page) * pageSize, // page number
 						limit: pageSize,
 					};
 				},
@@ -435,8 +437,18 @@
 			$filter.on('keyup',  bufferQueryResults);
 		}
 		
+		// From http://stackoverflow.com/questions/20989458/select2-open-dropdown-on-focus
+		function select2Focus() {
+			var select2 = $(this).data('select2');
+			setTimeout(function() {
+				if (!select2.opened()) {
+					//select2.open();
+				}
+			}, 0);  
+		}
 		
-		function setupLookupUi($jq, hookUrlRoot)
+		
+		function setupLookupUi($jq, hookUrlRoot, openFlag)
 		{
 			showItemChooser.hookUrlRoot   = hookUrlRoot;
 			
@@ -450,6 +462,49 @@
 				
 				//console.debug("got new id:",id);
 			});
+			
+			
+			//$('select').select2();
+
+			var ENABLE_SELECT2 = false;
+			
+			var isMobile = window.matchMedia("only screen and (max-width: 1024px)").matches;
+			if(ENABLE_SELECT2 && 
+				!isMobile && 
+				typeof($jq.select2) == 'function')
+			{
+				// Used by the ajax code in dbLookupOptions
+				PAGE_ONE_BASED = true;
+
+				var opts = {}; 
+				for(var key in dbLookupOptions)
+					opts[key] = dbLookupOptions[key];
+				
+				opts.ajax = {};
+				for(var key in dbLookupOptions.ajax)
+					opts.ajax[key] = dbLookupOptions.ajax[key];
+				
+				opts.ajax.url = hookUrlRoot+'/search';
+				console.debug("New opts:",opts);
+				
+				$jq.select2(opts);
+				$jq
+					.one('select2-focus', select2Focus)
+					.on('select2-blur', function () {
+						$(this).one('select2-focus', select2Focus)
+					});
+					
+				if(openFlag)
+					$jq.select2('open');
+					
+				//console.log(hookUrlRoot, dbLookupOptions);
+				
+				//console.log($jq, $jq.select2);
+				//$jq.on('select2-blur',  select2Focus);
+				
+				return;
+			}
+			
 			
 			var buttonHtml = [
 				'<div class="btn-group db-search-btn">',

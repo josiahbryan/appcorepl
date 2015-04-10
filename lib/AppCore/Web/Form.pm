@@ -2311,7 +2311,11 @@ package AppCore::Web::Form;
 				push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
 
 
-				if(@{ $node->children })
+				if($name eq 'br' || $name eq 'input')
+				{
+					push @html, ">\n";
+				}
+				elsif(@{ $node->children })
 				{
 					push @html, ">\n";
 					foreach my $child (@{$node->children})
