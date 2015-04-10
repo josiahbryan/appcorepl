@@ -457,13 +457,22 @@ package AppCore::DBI::SimpleListModel;
 		$self->{string_query_fields} = \@acceptable;
 	}
 	
+	sub set_string_filters
+	{
+		my $self = shift;
+		my $filter_hash = shift || {};
+		$self->{string_query_filters} = $filter_hash;
+	}
+	
 	sub parse_string_query
 	{
 		my $self = shift;
 		my $search_query = shift;
 		
 		# Not really used right now, but legacy code available commented out, just needs tested
-		my $filter_hash = shift || {};
+		my $filter_hash = shift || $self->{string_query_filters} || {};
+		
+		#die Dumper $filter_hash;
 		
 		return { sql => '1=1', args => [] } if !$search_query;
 
@@ -603,19 +612,20 @@ package AppCore::DBI::SimpleListModel;
 					@value_cols = ($col_name_map{$search_col});
 					#@user_cols = ();
 				}
-# 				elsif($search_col eq 'filter')
-# 				{
-# 					if($filter_hash->{$termoid})
-# 					{
-# 						push @custom_sql, $filter_hash->{$termoid}->{sql};
-# 						$filter_hash->{$termoid}->{selected} = 1; # since this is a ref, it should update the UI above
-# 						next RAW_TERM;
-# 					}
-# 					else
-# 					{
-# 						die "Invalid filter '$termoid'";
-# 					}
-# 				}
+				elsif($search_col eq 'filter')
+				{
+					if($filter_hash->{$termoid})
+					{
+						push @search_sql, $filter_hash->{$termoid}->{sql};
+						$filter_hash->{$termoid}->{selected} = 1; # since this is a ref, it should update the UI above
+						
+						next RAW_TERM;
+					}
+					else
+					{
+						die "Invalid filter '$termoid'";
+					}
+				}
 				else
 				{
 					die "Search field '$search_col' does not exist, ".Dumper(\%col_name_map)."\n";

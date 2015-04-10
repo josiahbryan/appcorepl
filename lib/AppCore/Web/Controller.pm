@@ -271,7 +271,12 @@ package AppCore::Web::Controller;
 
 		return sub {
 			my ($class, $req, $r) = @_;
-			return $r->redirect($url);
+			my $final_url = $url;
+			
+			$final_url = $url->($class, $req, $r)
+				if ref $url eq 'CODE';
+				
+			return $r->redirect($final_url);
 		}
 	}
 	
