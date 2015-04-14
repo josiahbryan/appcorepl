@@ -1017,6 +1017,7 @@ package AppCore::Web::Form;
 							}
 							else
 							{
+								#error($self->{form_opts});
 								error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to post_process() or render()");
 							}
 						}

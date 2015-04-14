@@ -108,6 +108,21 @@ package AppCore::DBI::SimpleListModel;
 		$self->{list_columns} = \@_;
 	}
 	
+	# Method: set_search_hook($coderef)
+	# Add a hook to the search routine that is executed like so:
+	# my $result = $coderef->($filter)
+	# Where $filter is the string given in set_filter(), and result
+	# is expected to contain { sql_data => '', args => [] }
+	sub set_search_hook
+	{
+		my ($self, $hook) = @_;
+		$self->{search_hook} = $hook;
+	}
+	
+	# Method: search_hook()
+	# Returns the current search hook, if any
+	sub search_hook { shift->{search_hook} }
+	
 	# Method: cdbi_class()
 	# Return the class name used as a data source for this model.
 	# NOTE: This class MUST inherit from AppCore::DBI or implement the AppCore::DBI meta(), field_meta(), get_where_clause(), and get_stringify_sql() methods.
@@ -859,6 +874,14 @@ package AppCore::DBI::SimpleListModel;
 				my $sql_data = $self->parse_string_query($filter);
 				
 				$clause = '(' . $string_clause . ' or '. $sql_data->{sql} . ')';
+				push @args, @{$sql_data->{args} || []};
+			}
+			
+			if($self->{search_hook})
+			{
+				my $sql_data = $self->{search_hook}->($filter);
+				
+				$clause = '(' . $clause . ' or '. $sql_data->{sql} . ')';
 				push @args, @{$sql_data->{args} || []};
 			}
 			
