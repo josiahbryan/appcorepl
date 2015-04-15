@@ -301,15 +301,31 @@ package AppCore::Web::Form;
 				$class_obj_name = $1;
 				$class_key = $2;
 				
+				# Find the referenced data storage object from the option hash given.
+				# For example, if $ref is '#filter.termid', $form_opts should have a key called 'filter'
+				# that points to either a HASH ref ({}) or an AppCore::DBI-derived object
 				$class_obj = $form_opts->{$class_obj_name};
 				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()")
 					if !$class_obj;
 				
+				# In rare cases, the object given in $form_opts for 'filter' (for example), may be a simple hashref,
+				# but you still want to load the metadata from an AppCore::DBI object that has a column with
+				# the same name as $class_key (in our example above of '#filter.termid', the given AppCore::DBI
+				# object is expected to have the column 'termid')
 				$meta_obj  = $meta_objs->{$class_obj_name};
 				
 				my $linked_class = undef;
-				my $meta_title = undef;
+				my $meta_title   = undef;
 				
+				# Before we store the value given from the $req object for this field (Ex termid)
+				# into the $class_obj, first we have to check to see if it's a "linked" value,
+				# i.e. a foreign key to another AppCore::DBI object.
+				# The "linked" indicator can come from the 'linked' field in the schema of the
+				# AppCore::DBI object for $class_obj, or if $class_obj is a plain hashref,
+				# then the 'linked' class name must have been specified in the XML definition
+				# of the form (as the 'class' attribute for the input with a type='database')
+				# Either way, we need to find a $linked_class (if any) and the $meta_title (title
+				# of the $class_key - e.x. termid) for error messages
 				my $tmp_obj = $meta_obj || $class_obj;
 				if($tmp_obj && UNIVERSAL::isa($tmp_obj, 'AppCore::DBI'))
 				{
@@ -329,6 +345,9 @@ package AppCore::Web::Form;
 					$meta_title   = AppCore::Common::guess_title($class_key);
 				}
 				
+				# If the value is, in fact, a "linked" value AND the value looks like an
+				# integer, then we go ahead and validate the value via the linked class
+				# before storing it
 				if($linked_class && $req_val !~ /^\d+$/)
 				{
 					my $err = undef;
@@ -348,7 +367,10 @@ package AppCore::Web::Form;
 					}
 				}
 				
-				
+				# By this point, the value the user provided has been validated (if linked),
+				# so we're ready to store it. If the $class_obj for the $ref is a databse object,
+				# we use the set() function and flag it for a one-time update() call (for speed),
+				# but if $class_obj is a plain hashref, we just set the key directly
 				if(UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
 				{
 					if(defined $req_val)
@@ -397,6 +419,7 @@ package AppCore::Web::Form;
 			
 		}
 		
+		# Update each $class_obj we touched just once for speed
 		$_->update foreach values %$class_obj_refs;
 		
 		#error($result_hash);
