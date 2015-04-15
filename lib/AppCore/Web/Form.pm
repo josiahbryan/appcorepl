@@ -932,7 +932,16 @@ package AppCore::Web::Form;
 					push @html, $is_pairtab ? "<tr class='$wrap_class'>" : "<div class='$wrap_class'>", "\n";
 					
 					#$node->{label} = $node->{attrs}->{label} = $model_item->label if !defined $node->label;
-					$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess
+					if(!$node->{label} && !$node->{ng}) # ng = no guess
+					{
+						my $bind_subname = $node->bind;
+						$bind_subname =~ s/^\#[^\.]+\.//g;
+						$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($bind_subname);
+						$node->{placeholder} = $node->{label}
+							if !$node->{placeholder};
+					}
+					#die Dumper $node->{label}.'[1]';
+					
 					my $empty_label = 0;
 # 					if($node->label)
 # 					{
@@ -1227,7 +1236,19 @@ package AppCore::Web::Form;
 					if(!$already_has_label || $node->{label})
 					{
 						#$node->{label} = $node->{attrs}->{label} = $model_item->label if !defined $node->label;
-						$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess
+						#$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($node->bind) if !$node->{label} && !$node->{ng}; # ng = no guess
+						
+						if(!$node->{label} && !$node->{ng}) # ng = no guess
+						{
+							my $bind_subname = $node->bind;
+							$bind_subname =~ s/^\#[^\.]+\.//g;
+							$node->{label} = $node->{attrs}->{label} = AppCore::Common::guess_title($bind_subname);
+							$node->{placeholder} = $node->{label}
+								if !$node->{placeholder};
+						}
+						#die Dumper $node->{label}.'[2]';
+						
+					
 						if($node->label && $type ne 'bool')
 						{
 							
@@ -1261,17 +1282,17 @@ package AppCore::Web::Form;
 							
 						}
 						
-						$node->{placeholder} = 
-							$node->{attrs}->{placeholder} =
-								$node->{label}
-									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
+# 						$node->{placeholder} = 
+# 							$node->{attrs}->{placeholder} =
+# 								$node->{label}
+# 									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
 					}
 					else
 					{
-						$node->{placeholder} = 
-							$node->{attrs}->{placeholder} =
-								AppCore::Common::guess_title($node->bind)
-									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
+# 						$node->{placeholder} = 
+# 							$node->{attrs}->{placeholder} =
+# 								AppCore::Common::guess_title($node->bind)
+# 									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
 					}	
 					
 # 					error("Error",{
