@@ -280,12 +280,15 @@ package AppCore::Web::Form;
 		my $hash = decode_json($field_meta->json);
 		$hash ||= {};
 		
+		#die Dumper $hash;
+		
 		my $result_hash = {};
 		
 		my $class_obj_refs = {};
 		
 		foreach my $ref (keys %{ $hash })
 		{
+			my $cached_data = $hash->{$ref};
 			my $class_obj = undef;
 			my $class_key = undef;
 			my $class_obj_name = undef;
@@ -299,9 +302,13 @@ package AppCore::Web::Form;
 				$class_key = $2;
 				
 				$class_obj = $form_opts->{$class_obj_name};
-				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()") if !$class_obj;
+				error("Invalid bind '$ref'","Cannot find '$class_obj_name' in options given to store_values()")
+					if !$class_obj;
 				
 				$meta_obj  = $meta_objs->{$class_obj_name};
+				
+				my $linked_class = undef;
+				my $meta_title = undef;
 				
 				my $tmp_obj = $meta_obj || $class_obj;
 				if($tmp_obj && UNIVERSAL::isa($tmp_obj, 'AppCore::DBI'))
@@ -313,23 +320,31 @@ package AppCore::Web::Form;
 					};
 					$meta = {} if !$meta;
 					
-					if($meta->{linked} && $req_val !~ /^\d+$/)
+					$linked_class = $meta->{linked};
+					$meta_title   = $meta->{title};
+				}
+				elsif($cached_data->{linked_class})
+				{
+					$linked_class = $cached_data->{linked_class};
+					$meta_title   = AppCore::Common::guess_title($class_key);
+				}
+				
+				if($linked_class && $req_val !~ /^\d+$/)
+				{
+					my $err = undef;
+					eval
 					{
-						my $err = undef;
-						eval
-						{
-							$req_val = $meta->{linked}->validate_string($req_val);
-							$err = $@;
-						};
-						$@ = $err if !$@;
-						if($@)
-						{
-							error("Error with $meta->{title}",
-								"There was an error in what you typed for $meta->{title}:".
-								"<h1 style='color:red'>$@</h1>".
-								"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
-								"<br><br>");
-						}
+						$req_val = $linked_class->validate_string($req_val);
+						$err = $@;
+					};
+					$@ = $err if !$@;
+					if($@)
+					{
+						error("Error with $meta_title",
+							"There was an error in what you typed for $meta_title:".
+							"<h1 style='color:red'>$@</h1>".
+							"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
+							"<br><br>");
 					}
 				}
 				
