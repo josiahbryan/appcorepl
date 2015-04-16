@@ -1798,7 +1798,7 @@ package AppCore::Web::Form;
 								#my $lv_my_attr_key = $lv_my_attr ? "`$lv_my_attr`" : "";
 								#($lv_my_attr_key?",$lv_my_attr_key as `lv_attr`":'')."
 								
-								my $sql = "select `$table`.`$key` as `valueid`,$text as `text`".($hint_column?",$hint_key as `hint`":'')." from `$table` where ($clause) order by $orderby";
+								my $sql = "select `$table`.`$key` as `valueid`,$text as `text`".($hint_column && $hint_column !~ /\s/ ?",$hint_key as `hint`":'')." from `$table` where ($clause) order by $orderby";
 								#error("",$sql);
 								my $q_get = AppCore::DBI->dbh($db)->prepare($sql);
 								$q_get->execute();
@@ -1917,20 +1917,22 @@ package AppCore::Web::Form;
 								#die "labelid=$label_id, val=$val <pre>".Dumper($val)."</pre>" if ref $val && $val !=10 ;
 								my $disp = $val && (ref $val ? eval '$val->id' : 1) ? 'default' : 'none';
 								#$@ = undef;
-								if($class)
-								{
-									if(_check_acl($class->meta->{edit_acl}))
-									{
-										push @html, $t,qq{<img src="$root/images/silk/page_edit.png" width=16 height=16 style="cursor:hand;cursor:pointer;display:$disp" onclick='ajax_fkedit(event,"$label_id","$class","$source")' align='absmiddle' title="View/Edit $noun" id="ajax_edit_btn_$label_id">\n};
-									}
-		
-									# New btn
-									if(_check_acl($class->meta->{create_acl}))
-									{
-										# New btn
-										push @html, $t,qq{<img src="$root/images/silk/page_add.png"  width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_fknew(event,"$label_id","$class","$source")' align='absmiddle' title="New $noun">\n};
-									}
-								}
+								
+								# Legacy code - not used right now
+# 								if($class)
+# 								{
+# 									if(_check_acl($class->meta->{edit_acl}))
+# 									{
+# 										push @html, $t,qq{<img src="$root/images/silk/page_edit.png" width=16 height=16 style="cursor:hand;cursor:pointer;display:$disp" onclick='ajax_fkedit(event,"$label_id","$class","$source")' align='absmiddle' title="View/Edit $noun" id="ajax_edit_btn_$label_id">\n};
+# 									}
+# 		
+# 									# New btn
+# 									if(_check_acl($class->meta->{create_acl}))
+# 									{
+# 										# New btn
+# 										push @html, $t,qq{<img src="$root/images/silk/page_add.png"  width=16 height=16 style="cursor:hand;cursor:pointer" onclick='ajax_fknew(event,"$label_id","$class","$source")' align='absmiddle' title="New $noun">\n};
+# 									}
+# 								}
 								
 # 								push @html, $t,qq|<script>setTimeout(function(){
 # 										\$('#$label_id').oldAjaxFkSelectOnchange = \$('#$label_id').onchange;
