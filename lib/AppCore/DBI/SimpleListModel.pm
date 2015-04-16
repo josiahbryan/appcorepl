@@ -337,7 +337,7 @@ package AppCore::DBI::SimpleListModel;
 			else
 			{
 				my $cname = $dbh->quote_identifier($col);
-				push @columns, "$db.$table.$cname";
+				push @columns, "$db.$table.$cname\n";
 				$got_pri = 1 if $cname eq $pri;
 				#die Dumper $cname if $got_pri;
 			}
@@ -381,7 +381,7 @@ package AppCore::DBI::SimpleListModel;
 		} : undef));
 		
 		#die "'$orderby_sql'";
-		my $sort_clause = $orderby_sql ? " \nORDER BY ".$orderby_sql : '';
+		my $sort_clause = $orderby_sql ? " ORDER BY ".$orderby_sql : '';
 		
 		#print STDERR "\$orderby_sql: '$orderby_sql'\n";
 		
@@ -395,7 +395,7 @@ package AppCore::DBI::SimpleListModel;
 # 			$limit_clause
 # 		);
 		
-		my $sql_table = join(" ",
+		my $sql_table = join("\n",
 			$select_columns,
 			$from_tables,
 			$where_clause,
