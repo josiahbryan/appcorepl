@@ -88,8 +88,35 @@
 				
 					// notice we return the value of more so Select2 knows if more results can be loaded
 					return { results: data.list, more: more };
-				}
+				},
+				cacheKey: function( term, page ) {
+					var x = [];
+					for(var i=0; i<arguments.length; i++)
+						x.push(arguments[i]);
+					return x.join('.');
+				},
 			},
+			
+			cachedResults: {},
+			
+			resultCache: function(cacheKey, result) {
+				
+				var cache = this.cachedResults;// || this.cachedResults = {});
+				
+				if(result)
+				{
+					console.log("resultCache: key:",cacheKey,": storing result:",result);
+					cache[cacheKey] = result;
+				}
+				else
+				{
+					result = cache[cacheKey];
+					console.log("resultCache: key:",cacheKey,": returning result:",result);
+				}
+				
+				return result;
+			},
+			
 			formatResult: function(result) {
 				if(result == undefined || result == null || !result)
 					return "";
@@ -277,6 +304,9 @@
 					//console.debug("processResultQueue: processing #",x);
 					var requestData = requestQueue[x];
 				
+					if(requestData.cacheOnly)
+						continue;
+						
 					if(requestData.page == 0)
 					{
 						$list.empty();
@@ -295,7 +325,7 @@
 				specialRows.loading.remove();
 			};
 			
-			var loadResultsPage = function(filter, page) {
+			var loadResultsPage = function(filter, page, cacheOnly) {
 				var data = dbLookupOptions.ajax.data(filter, page);
 				
 				//console.debug("loadResultsPage: data:",data, "page:",page);
@@ -309,15 +339,30 @@
 				
 				resultSetCounter ++;
 				
+				var cacheKey = dbLookupOptions.ajax.cacheKey(filter, page, showItemChooser.hookUrlRoot);
+				
 				var requestData = {
 					page:		page,
 					filter:		filter,
 					results:	null,
 					rxd:		false,
 					id:		requestCounter ++,
+					cacheOnly:	cacheOnly,
+					cacheKey:	cacheKey
 				};
 				
 				requestQueue.push(requestData);
+				
+				var cacheData = dbLookupOptions.resultCache(cacheKey);
+				if(cacheData)
+				{
+					bufferNextPageLoad.locked = false;
+						
+					requestData.results = cacheData;
+					requestData.rxd     = true;
+					
+					processResultQueue();
+				}
 				
 				
 				$.ajax({
@@ -330,6 +375,8 @@
 						
 						requestData.results = result;
 						requestData.rxd     = true;
+						
+						dbLookupOptions.resultCache(requestData.cacheKey, result);
 						
 						processResultQueue();
 					},
@@ -346,6 +393,12 @@
 					
 				});
 			};
+			
+			window.primeDbCache = function(urlRoot)
+			{
+				showItemChooser.hookUrlRoot = urlRoot;
+				loadResultsPage('', 0, true);
+			}
 			
 			var checkScrollPosition = function() {
 				var top = $listWrap.scrollTop();
@@ -450,7 +503,9 @@
 		
 		function setupLookupUi($jq, hookUrlRoot, openFlag)
 		{
-			showItemChooser.hookUrlRoot   = hookUrlRoot;
+			showItemChooser.hookUrlRoot = hookUrlRoot;
+			
+			primeDbCache(hookUrlRoot);
 			
 			var pageSize = 25;
 			$jq.on('change', function() {
