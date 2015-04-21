@@ -215,9 +215,10 @@
 					// Add a special item at the very start of the list
 					// to "clear" the current item (an option that, when clicked,
 					// just clears the value in the box)
-					list.unshift({
-						clearResultItem: true
-					});
+					if(!list[0].clearResultItem)
+						list.unshift({
+							clearResultItem: true
+						});
 					
 				}
 				
