@@ -242,14 +242,9 @@
 							+ ")</i>" :
 						dbLookupOptions.formatResult(row);
 						
-					var isActive = false;
-					if(showItemChooser.currentWidget && 
-						!row.clearResultItem)
-					{
-						var string = dbLookupOptions.formatSelection(row);
-						if(currentText == string)
-							isActive = true;
-					}
+					var isActive = !row.clearResultItem
+						&& showItemChooser.currentWidget
+						&& currentText == html;
 					
 					var $wrap = $('<a href="#" class="list-group-item"></a>')
 						.html(html)
