@@ -1375,6 +1375,7 @@ package AppCore::Web::Form;
 						
 						#my $class = ref $class_obj ? ref $class_obj : $class_obj;
 						
+						my $val_url = undef;
 						if($class && ref $val_stringified) #$render eq 'ajax_input' && $class)
 						{
 							#error("Ajax Input Not Implemented","Error in $path: Ajax Input not implemented yet.");
@@ -1383,6 +1384,8 @@ package AppCore::Web::Form;
 							#{
 							#	error("No AppCore::DBI Class Given","No AppCore::DBI Class given at path '$path' for ajax_input database model item, bind: $ref");
 							#}
+							$val_url = $val_stringified->url if eval '$val->can("url")';
+							
 							$val_stringified = $val_stringified->stringify if UNIVERSAL::isa($val_stringified, $class);
 						}
 							
@@ -1390,7 +1393,16 @@ package AppCore::Web::Form;
 						push @html, $t."\t $prefix<b><span class='f-input-readonly text ".($node->class?$node->class.' ':'')."' id='$label_id' "
 							.($format ? "f:format="._quote($format)." ":"")
 							.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-							.">".$val_stringified."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
+							.">"
+							.($val_url ? 
+								"<a href='"
+									.encode_entities($val_url)
+									."'"
+									." title='Go to ".encode_entities($val_stringified)."'"
+									.">" : '')
+							.$val_stringified
+							.($val_url ? "</a>" : '')
+							."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
 							($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
 					}
 					elsif($type eq 'text')
