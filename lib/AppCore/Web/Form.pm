@@ -1398,7 +1398,7 @@ package AppCore::Web::Form;
 								"<a href='"
 									.encode_entities($val_url)
 									."'"
-									." title='Go to ".encode_entities($val_stringified)."'"
+									." title='". ($node->link_title ? encode_entities($node->link_title) : " Go to ".encode_entities($val_stringified)) ."'"
 									.">" : '')
 							.$val_stringified
 							.($val_url ? "</a>" : '')
