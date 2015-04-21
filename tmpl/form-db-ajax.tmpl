@@ -226,6 +226,10 @@
 				
 				var startIdx = resultSetBuffer.length;
 				
+				var currentText = showItemChooser.currentWidget ?
+					showItemChooser.currentWidget.find('.txt').text()
+					: null;
+				
 				for(var i=0; i<list.length; i++)
 				{
 					var row = list[i];
@@ -236,11 +240,21 @@
 								"Item")
 							+ ")</i>" :
 						dbLookupOptions.formatResult(row);
+						
+					var isActive = false;
+					if(showItemChooser.currentWidget && 
+						!row.clearResultItem)
+					{
+						var string = dbLookupOptions.formatSelection(row);
+						if(currentText == string)
+							isActive = true;
+					}
 					
 					var $wrap = $('<a href="#" class="list-group-item"></a>')
 						.html(html)
 						.attr('x:id',  row.clearResultItem ? '0' : row.id)
 						.attr('x:idx', i + startIdx)
+						.addClass(isActive ? 'active' : '')
 						.on('click', function() {
 							
 							var $elm       = $(this),
@@ -488,6 +502,7 @@
 			$listWrap.on('scroll', checkScrollPosition);
 			$filter.on('change', bufferQueryResults);
 			$filter.on('keyup',  bufferQueryResults);
+			$filter.on('initial-load', queryResults);
 		}
 		
 		// From http://stackoverflow.com/questions/20989458/select2-open-dropdown-on-focus
@@ -634,7 +649,12 @@
 			$listWrap.scrollTop(0);
 			
 			// Reset filter 
-			$filter.val('').trigger('change');
+			$filter
+				.val('')
+				// 'initial-load' doesn't buffer the query with a timeout
+				// since hopefully we've already got the first page in cache.
+				// This just improves the user experience a bit, thats all.
+				.trigger('initial-load');
 			
 			//$dialog.find('.list-group-wrapper').scrollTop(0);
 
