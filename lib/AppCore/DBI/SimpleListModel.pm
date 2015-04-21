@@ -734,10 +734,10 @@ package AppCore::DBI::SimpleListModel;
 					{
 						
 						my @likes = map { $self->get_string_sql_for_field($col_name_subtitutions{$_} ? $col_name_subtitutions{$_} : $_).' '.
-								($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
-								($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
-								# NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
-								grep { $_ ne 'id' || $subtermoid+0 < 2147483647 } @useful_cols;
+								  ($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
+								  ($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
+								  # NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
+								  grep { $_ ne 'id' || $subtermoid+0 < 2147483647 } @useful_cols;
 						
 						# Build the stmt and arg list for the where clause
 						my $stmt = '(' . join(($negate_flag ? ' and ' : ' or '), @likes) . ')';

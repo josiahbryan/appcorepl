@@ -984,7 +984,17 @@ package HTML::Template::DelayedLoading;
 			{
 				foreach my $col_name ($val->columns)
 				{
-					$self->{params}->{$key.'_'.$col_name} = $val->get($col_name);
+					my $col_val = $val->get($col_name);
+					$self->{params}->{$key.'_'.$col_name} = $col_val;
+					
+					my $fm = $val->field_meta($col_name);
+					if($fm && $fm->{linked})
+					{
+						eval 'use '.$fm->{linked};
+						my $string_val = eval {$fm->{linked}->stringify($col_val)};
+						
+						$self->{params}->{$key.'_'.$col_name.'_string'} = $string_val if !$@;
+					}
 				}
 			}
 			
