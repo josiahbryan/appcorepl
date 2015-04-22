@@ -55,6 +55,11 @@
 				overflow: auto;
 				border-top: 0;
 			}
+			
+			.db-search-modal .filter-control.loading {
+				background: url(/appcore/mods/Content/images/ajax-loader-balls-xparent.gif) no-repeat 8px center;
+				color: rgba(0,0,0,0.5);
+			}
 		
 		
 		/* This doesnt work - should disable the zoom-on-touch in the input on mobile browsers, but...nope...not on chrome anyway.
@@ -365,6 +370,7 @@
 					requestQueue.pop();
 				
 				specialRows.loading.remove();
+				$filter.removeClass('loading');
 			};
 			
 			var loadResultsPage = function(filter, page, cacheOnly) {
@@ -375,10 +381,12 @@
 				
 				specialRows.noResult.remove();
 				
-				//if(page == 0)
+				if(page == 0)
 					//$list.prepend(specialRows.loading);
 				//else
 					$list.append(specialRows.loading);
+				
+				$filter.addClass('loading');
 				
 				resultSetCounter ++;
 				
@@ -428,6 +436,7 @@
 		
 					error: function(result) {
 						specialRows.loading.remove();
+						$filter.removeClass('loading');
 						
 						bufferNextPageLoad.locked = false;
 						
@@ -506,6 +515,10 @@
 					{
 						$active.removeClass('active')
 						$sib.addClass('active');
+						$sib.get(0).scrollIntoView({
+							behavior: "smooth",
+							block: "start"
+						});
 					}
 					
 					return;
@@ -520,6 +533,10 @@
 					{
 						$active.removeClass('active')
 						$sib.addClass('active');
+						$sib.get(0).scrollIntoView({
+							behavior: "smooth",
+							block: "end"
+						});
 					}
 					else
 					{
