@@ -589,6 +589,7 @@ package AppCore::DBI;
 				eval($field_meta->{linked}.'->can("get_stringify_sql")'))
 			{
 				#print STDERR "Debug: get_orderby_sql: field: '$field' ->linked:".$field_meta->{linked}.", get_stringify_sql on linked: ".$field_meta->{linked}->get_stringify_sql."\n";
+				#print STDERR "[".(ref $class? ref $class : $class)."] Debug: get_orderby_sql: field: '$field' ->linked:".$field_meta->{linked}."\n";
 				
 				# Last true arg indicates that the stringify SQL function
 				# should use that class's 'order by' fields instead of the stringify fmt
@@ -624,7 +625,7 @@ package AppCore::DBI;
 				
 				my $self_table = $dbh->quote_identifier($class->table);
 				
-				$field_sql = "IFNULL((SELECT $concat FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field LIMIT 1),'')";
+				$field_sql = "IFNULL((SELECT $concat FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field LIMIT 1),'')\n";
 			}
 			else
 			{
@@ -661,16 +662,24 @@ package AppCore::DBI;
 				($field, undef) = @$field 
 					if ref $field eq 'ARRAY';
 				
-				push @order, '#'.$field;
+				my $bind = '#'.$field;
+				# Make each field in the orderby fields a conditional 
+				# to handle sorting by fields that could be null.
+				# This is needed because _sreate_string_sql uses concat() which makes the whole string null if one is null.
+				#push @order, [$bind,$bind,''];
+				
+				push @order, $bind;
 			}
 			
 			@fmt = @order;
 		}
 		
+		#print STDERR "[".(ref $self? ref $self : $self)."] Debug: get_stringify_sql: \@fmt=(".join('|',@fmt).")\n";
+		
 		return $self->_create_string_sql(\@fmt,$lower_case,$depth,$use_order);
 	}
 	
-	use constant MAX_SQL_STRINGIFY_DEPTH => 1;
+	use constant MAX_SQL_STRINGIFY_DEPTH => 3;
 	
 	sub _create_string_sql
 	{
@@ -778,12 +787,12 @@ package AppCore::DBI;
 					# more than one result thru (e.g. check count()=1) is because MySQL throws an error if more than one
 					# row comes back from a subquery, saying something like "subquery returns more than one row".
 					
-					push @buf, "IFNULL((SELECT $concat \nFROM $other_db.$table \nWHERE $other_db.$table.$primary=$db.$self_table.$self_field \nLIMIT 1),'')";
+					push @buf, "IFNULL((SELECT $concat \nFROM $other_db.$table \nWHERE $other_db.$table.$primary=$db.$self_table.$self_field \nLIMIT 1),'')\n";
 				}
 				else
 				{
 					my $ident = $dbh->quote_identifier($col);
-					push @buf, $lower_case ? "LOWER($db.$self_table.$ident)" : "$db.$self_table.$ident";
+					push @buf, "IFNULL(" . ($lower_case ? "LOWER($db.$self_table.$ident)" : "$db.$self_table.$ident").",'')\n";
 				}
 			}
 			# All other $val's are interpreted to be literal strings
