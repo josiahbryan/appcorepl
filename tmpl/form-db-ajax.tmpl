@@ -199,12 +199,19 @@
 			var clickFirstResultWhenLoaded = false;
 			
 			var updateList = function(processedResults) {
-				var list = processedResults.results;
-				hasMoreResults = processedResults.more;
+			
+				var list           = processedResults.results;
+				    hasMoreResults = processedResults.more;
+				
+				//console.log("updateList: currentPage:",currentPage);
 				
 				if(currentPage == 0)
 				{
 					$list.empty();
+					
+					//return;
+					
+					$list.find('.list-group-item').removeClass('active');
 				
 					if(!list || list.length <= 0)
 					{
@@ -223,11 +230,13 @@
 				}
 				
 				//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
+				
 				latestResultSetFilter = currentFilter;
 				
 				var startIdx = resultSetBuffer.length;
 				
-				var currentText = showItemChooser.currentWidget ?
+				var currentText = 
+					showItemChooser.currentWidget ?
 					showItemChooser.currentWidget.find('.txt').text()
 					: null;
 				
@@ -237,20 +246,21 @@
 					var html = row.clearResultItem ?
 						"<i>(Reset/Clear currently selected " + 
 							($title.attr('placeholder') ?
-								$title.attr('placeholder') : 
-								"Item")
+							 $title.attr('placeholder') : "Item")
 							+ ")</i>" :
 						dbLookupOptions.formatResult(row);
 						
 					var isActive = !row.clearResultItem
 						&& showItemChooser.currentWidget
 						&& currentText == html;
+						
+					//console.debug("idx ",i,", this html:",html,", button html:",currentText,", isActive:",isActive);
 					
 					var $wrap = $('<a href="#" class="list-group-item"></a>')
 						.html(html)
 						.attr('x:id',  row.clearResultItem ? '0' : row.id)
 						.attr('x:idx', i + startIdx)
-						.addClass(isActive ? 'active' : '')
+						.addClass(row.clearResultItem ? 'clear-item' : (isActive ? 'active' : ''))
 						.on('click', function() {
 							
 							var $elm       = $(this),
@@ -262,7 +272,7 @@
 								result.clearResultItem ? '<i class="placeholder">(' + ($title.attr('placeholder') || 'Select an Item') + ')</i>' :
 								dbLookupOptions.formatSelection(result);
 							
-							//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
+							$('.db-search-modal').modal('hide');
 							
 							if(showItemChooser.currentWidget)
 							{
@@ -270,9 +280,13 @@
 								w.find('.txt').html(string);
 								w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
 								showItemChooser.currentElm.val(id).trigger('change');
+								
+								w.find('.btn').focus();
+								
+								//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
 							}
 							
-							$('.db-search-modal').modal('hide');
+							
 							return false;
 						});
 						
@@ -281,11 +295,26 @@
 					resultSetBuffer.push(row);
 				}
 				
+				var curVal = showItemChooser.currentElm.val();
+				//console.debug("cur val:",curVal);
+				
 				if(clickFirstResultWhenLoaded)
-					$list.find('.list-group-item')
+				{
+					clickFirstResultWhenLoaded = false;
+					$list.find('.list-group-item:not(.clear-item)')
+						.removeClass('active')
 						.first()
 						.addClass('active')
 						.click();
+				}
+				else
+				if(!curVal || curVal == 0 || latestResultSetFilter != '')
+				{
+					$list.find('.list-group-item:not(.clear-item)')
+						.removeClass('active')
+						.first()
+						.addClass('active');
+				}
 			};
 			
 			var processResultQueue = function() {
@@ -323,7 +352,10 @@
 						$listWrap.scrollTop(0);
 					}
 					
-					var processed = dbLookupOptions.ajax.results(requestData.results, requestData.page);
+					var processed = dbLookupOptions.ajax.results(
+						requestData.results,
+						requestData.page);
+					
 					updateList(processed);
 				}
 				
@@ -336,6 +368,7 @@
 			};
 			
 			var loadResultsPage = function(filter, page, cacheOnly) {
+			
 				var data = dbLookupOptions.ajax.data(filter, page);
 				
 				//console.debug("loadResultsPage: data:",data, "page:",page);
@@ -442,11 +475,12 @@
 				filter = filter.replace(/(^\s+|\s+$)/g, '');
 				
 				//filter = "zym";
+				
 				specialRows.noResult.remove();
 				
-				currentFilter = filter;
-				currentPage = 0;
-				hasMoreResults = true;
+				currentFilter   = filter;
+				currentPage     = 0;
+				hasMoreResults  = true;
 				resultSetBuffer = [];
 				
 				loadResultsPage(currentFilter, currentPage);
@@ -457,13 +491,54 @@
 				
 				clickFirstResultWhenLoaded = false;
 				
+				//console.log("key press:",event.which);
+				
 				var escPressed = event.which == 27;
 				if(escPressed)
 					return;
+					
+				if(event.which == 38) // up
+				{
+					var $active = $list.find('.list-group-item.active'),
+					    $sib    = $active.prev('.list-group-item');
+					
+					if($sib.size() > 0)
+					{
+						$active.removeClass('active')
+						$sib.addClass('active');
+					}
+					
+					return;
+				}
+				else
+				if(event.which == 40) // down
+				{
+					var $active = $list.find('.list-group-item.active'),
+					    $sib    = $active.next('.list-group-item');
+					
+					if($sib.size() > 0)
+					{
+						$active.removeClass('active')
+						$sib.addClass('active');
+					}
+					else
+					{
+						bufferNextPageLoad();
+					}
+						
+					return;
+				}
+				
+				//console.log("paused:",showItemChooser.pauseKeyHandling);
 				
 				var enterPressed = event.which == 13;
 				if(enterPressed) 
 				{
+					if(showItemChooser.pauseKeyHandling)
+						return;
+						
+					//console.debug("vis:",$('.db-search-modal').is(':visible'));
+					
 					var filter = $filter.val();
 					filter = filter.replace(/(^\s+|\s+$)/g, '');
 				
@@ -473,10 +548,11 @@
 					if(resultSetBuffer.length > 0 && 
 						latestResultSetFilter == filter)
 					{
-						$list.find('.list-group-item')
+						$list.find('.list-group-item.active')
 							.first()
-							.addClass('active')
+							//.addClass('active')
 							.click();
+							
 						return;
 					}
 					else
@@ -586,6 +662,9 @@
 				'</div>'
 			].join('');
 			
+			// Setup the pre-typing buffer
+			//showItemChooser.preBuffer = '';
+			
 			$jq.each(function() {
 				var $elm = $(this);
 				
@@ -617,6 +696,18 @@
 					showItemChooser($widget, $elm, hookUrlRoot);
 				});
 				
+				$widget.find('.btn').on('keypress', function(e) {
+					//if(!e) 
+					//	e = window.event;
+						
+					//var char = String.fromCharCode(e.which)
+					
+					// This gets reset once dialog is visible
+					//showItemChooser.preBuffer += char;
+					
+					showItemChooser($widget, $elm, hookUrlRoot);
+				});
+				
 			});
 		};
 		
@@ -628,6 +719,10 @@
 			showItemChooser.currentWidget = $widget;
 			showItemChooser.currentElm    = $elm;
 			showItemChooser.hookUrlRoot   = hookUrlRoot;
+			showItemChooser.pauseKeyHandling = true;
+			setTimeout(function() {
+				showItemChooser.pauseKeyHandling = false;
+			}, 100);
 			
 			var $dialog   = $('.db-search-modal');
 			var $list     = $dialog.find('.list-group');
@@ -648,7 +743,7 @@
 			
 			// Reset filter 
 			$filter
-				.val('')
+				.val('') //showItemChooser.preBuffer)
 				// 'initial-load' doesn't buffer the query with a timeout
 				// since hopefully we've already got the first page in cache.
 				// This just improves the user experience a bit, thats all.
@@ -666,7 +761,8 @@
 			// obscure a lot of the list
 			if(!isMobile)
 				$filter.focus(); //.select();
-			
+				
+			//showItemChooser.preBuffer = '';
 		}
 		
 		
