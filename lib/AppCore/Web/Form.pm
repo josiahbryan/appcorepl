@@ -377,6 +377,12 @@ package AppCore::Web::Form;
 					{
 						eval
 						{
+							my $meta = $class_obj->field_meta($class_key);
+							
+							undef $req_val
+								if $meta->{type} =~ /(date|time)/ &&
+								   $req_val      =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
+									
 							$class_obj->set($class_key, $req_val);
 							
 							# Used to update() below on $class_obj
@@ -1091,6 +1097,12 @@ package AppCore::Web::Form;
 							{
 								#$value_ref = $class_obj->get($class_key);
 								$val = $class_obj->get($class_key);
+								
+								my $meta = $class_obj->field_meta($class_key);
+								
+								undef $val
+									if $meta->{type} =~ /(date|time)/ &&
+									   $val =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
 							};
 							if($@)
 							{
