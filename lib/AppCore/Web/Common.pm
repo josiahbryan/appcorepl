@@ -984,16 +984,46 @@ package HTML::Template::DelayedLoading;
 			{
 				foreach my $col_name ($val->columns)
 				{
-					my $col_val = $val->get($col_name);
-					$self->{params}->{$key.'_'.$col_name} = $col_val;
+					my $col_val    = $val->get($col_name);
+					my $param_name =  $key.'_'.$col_name;
+					
+					$self->{params}->{$param_name} = $col_val;
 					
 					my $fm = $val->field_meta($col_name);
 					if($fm && $fm->{linked})
 					{
 						eval 'use '.$fm->{linked};
+						
 						my $string_val = eval {$fm->{linked}->stringify($col_val)};
 						
-						$self->{params}->{$key.'_'.$col_name.'_string'} = $string_val if !$@;
+						$self->{params}->{$param_name.'_string'}
+							= $string_val
+							if !$@;
+						
+						eval
+						{
+							# stringify() handles retrieving $col_val internally 
+							# if not an object. However, most common url()
+							# implementations don't do that themselves, so 
+							# we do it here.
+							if($fm->{linked}->can('url'))
+							{
+								my $linked_inst
+									= ref $col_val ? 
+									      $col_val : 
+									      $fm->{linked}->retrieve($col_val);
+								
+								$self->{params}->{$param_name.'_url'}
+									= $linked_inst->url();
+									
+								$self->{params}->{$param_name.'_html_url'}
+									= $linked_inst->html_url()
+										if $linked_inst->can('html_url');
+							}
+								
+						};
+						
+						warn "Error when trying to auto-create URLs: $@" if $@;
 					}
 				}
 			}
