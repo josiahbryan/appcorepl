@@ -188,14 +188,8 @@ package AppCore::Web::Router;
 		
 		my %args = @_;
 		
-		$args{class}   = (caller())[0]
-			if !$args{class};
-			
 		$args{root}    = AppCore::Web::Router::Leaf->new( key => '/' );
-		$args{stash}   = $args{class}->stash
-			if ref $args{class} && 
-			       $args{class}->can('stash');
-			       
+		$args{stash}   = $args{class}->stash if $args{class} && $args{class}->can('stash');
 		$args{stash} ||= AppCore::SimpleObject->new();
 		
 		return bless { %args }, $class;
@@ -430,14 +424,10 @@ package AppCore::Web::Router;
 		}
 		else
 		{
-			if($package ne 'main')
-			{
-				eval('use '.$package);
-				die $@ if $@ && $@ !~ /Can\'t locate/;
-				warn "Warning: Encountered possible error loading '$package': $@"
-					if $@;
-				undef $@;
-			}
+			eval('use '.$package);
+			die $@ if $@ && $@ !~ /Can\'t locate/;
+			warn "Warning: Encountered possible error loading '$package': $@" if $@;
+			undef $@;
 			
 # 			if($package->can('new'))
 # 			{
@@ -457,15 +447,14 @@ package AppCore::Web::Router;
 
 		if(ref $method eq 'CODE')
 		{
-			return $method->($ref,
+			$method->($ref,
 			          $self->stash->{req}, 
 		                  $self->stash->{r});
 		}
 		else
 		{
-			return $ref->$method(
-					$self->stash->{req}, 
-					$self->stash->{r});
+			$ref->$method($self->stash->{req}, 
+				      $self->stash->{r});
 		}
 	}
 	
@@ -495,7 +484,7 @@ package AppCore::Web::Router;
 			return;
 		}
 		
-		return $self->_match_leaf($root, $req);
+		$self->_match_leaf($root, $req);
 	}
 	
 	sub _match_leaf
@@ -563,8 +552,6 @@ package AppCore::Web::Router;
 		}
 		
 		output("  -> Nothing matched, returning\n");
-		
-		return undef;
 	}
 
 };
