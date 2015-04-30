@@ -176,6 +176,11 @@ function AWSV_AjaxScrollAdapter(args) {
 		$loadingSpinners.hide();
 	};
 	
+	var unloadingState = false;
+	$(window).bind("beforeunload", function () {
+		unloadingState = true;
+	});
+	
 	var loadResultsPage = function(page) {
 		
 		//console.debug("loadResultsPage: data:",data, "page:",page);
@@ -201,6 +206,7 @@ function AWSV_AjaxScrollAdapter(args) {
 		
 		//console.debug("AWSV_AjaxScrollAdapter: loadResultsPage: ",page,", url:",(args.pageUrl || '.'));
 		
+		
 		$.ajax({
 			url:  args.pageUrl || '.',
 			data: args.requestHook({
@@ -225,9 +231,13 @@ function AWSV_AjaxScrollAdapter(args) {
 				
 				bufferNextPageLoad.locked = false;
 				
-				//alert("Error:");
-				//console.debug(result.responseText);
-				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+				// 'unloadingState' suggested by http://stackoverflow.com/questions/15326627/jquery-ajax-error-when-leaving-page
+				if(!unloadingState)
+				{
+					//alert("Error:");
+					//console.debug(result.responseText);
+					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+				}
 			}
 			
 		});
