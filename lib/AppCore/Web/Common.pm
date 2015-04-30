@@ -377,6 +377,26 @@ package AppCore::Web::Common;
 		}
 	}
 	
+	sub _tmpl_elsif
+	{
+		my $elsif_block = shift;
+		
+		my @vars;
+		
+		# Replace FIRST <tmpl_elsif> tag with a simple <tmpl_if>
+		$elsif_block =~ s/^<tmpl_elsif (.*?)>/push @vars, $1; "<tmpl_if $1>"/ei;
+		
+		# Replace subsequent tmpl_elsifs with <tmpl_else><tmpl_if>
+		$elsif_block =~ s/<tmpl_elsif (.*?)>/push @vars, $1; "<tmpl_else><tmpl_if $1>"/gei;
+		
+		# Replace closing </tmpl_elsif> with a string of </tmpl_if> tags
+		my @closings = map { "</tmpl_if><!--/$_-->" } @vars;
+		$elsif_block =~ s/<\/tmpl_elsif>/join("\n", @closings)/segi;
+		
+		return $elsif_block;
+	}
+	
+	
 	sub _template_filter
 	{
 		my $textref = shift;
@@ -387,6 +407,31 @@ package AppCore::Web::Common;
 		$$textref =~ s/\${inc:([^\}]+)}/get_included_file($1)/segi;
 		#$$textref =~ s/\${if:([^\}]+)}/_rewrite_if_macro($1)/segi;
 		#$$textref =~ s/\${(end|\/)if}/<\/tmpl_if>/gi;
+		
+		# This line implements a <tmpl_elseif> tag. MUST be used as follows:
+		# 	<tmpl_elsif foo>
+		# 	...foo...
+		# 	<tmpl_elsif bar>
+		# 	...bar...
+		# 	<tmpl_else>
+		# 	...no foo or bar ...
+		# 	</tmpl_elsif>
+		# 	
+		# NOTE:
+		# It STARTS with a <tmpl_elsif> - makes it easier to identify
+		# It CLOSES with a </tmpl_elseif> - makes the end of the block easier to find
+		# 
+		# The <tmpl> tags that HTML::Template sees will look like
+		# the following after the filter is done:
+		# 	<tmpl_if foo>
+		# 	...foo...
+		# 	<tmpl_else><tmpl_if bar>
+		# 	...bar...
+		# 	<tmpl_else>
+		# 	...no foo or bar ...
+		# 	</tmpl_if><!--/foo-->
+		# 	</tmpl_if><!--/bar-->
+		$$textref =~ s/(<tmpl_elsif(?:.*?|\n)+<\/tmpl_elsif>)/_tmpl_elsif($1)/segi;
 		
 		if(AppCore::Config->get("ENABLE_TMPL2JQ_MACRO"))
 		{
