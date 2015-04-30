@@ -60,6 +60,11 @@ function AWSV_AjaxScrollAdapter(args) {
 
 	if(!args.pageLength)
 		args.pageLength = 25;
+		
+	if(!args.requestHook)
+		args.requestHook = function(data){ 
+			return data;
+		};
 	
 	var $rowTemplate = args.rowTemplate,
 		   $list = args.List;
@@ -187,7 +192,6 @@ function AWSV_AjaxScrollAdapter(args) {
 		
 		var requestData = {
 			page:		page,
-			filter:		args.pageFilter,
 			results:	null,
 			rxd:		false,
 			id:		requestCounter ++,
@@ -198,13 +202,13 @@ function AWSV_AjaxScrollAdapter(args) {
 		//console.debug("AWSV_AjaxScrollAdapter: loadResultsPage: ",page,", url:",(args.pageUrl || '.'));
 		
 		$.ajax({
-			url: args.pageUrl || '.',
-			data: {
+			url:  args.pageUrl || '.',
+			data: args.requestHook({
 				start:	page,
 				length: args.pageLength,
+				query:  args.pageFilter,
 				output_fmt: 'json',
-				query: args.pageFilter,
-			},
+			}),
 			success: function(result) {
 				//console.debug("ajax results:",result);
 				
