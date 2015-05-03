@@ -642,7 +642,7 @@
 			$loading.modal('show');
 			
 			/* For now, we'll just redirect to the new URL till we standardize an interface for external dialogs */
-			url += (url.indexOf('&') > 0 ? '?' : '&') + 'url_from=' + encodeURIComponent(window.location.href);
+			url += (url.indexOf('?') >= 0 ? '&' : '?') + 'url_from=' + encodeURIComponent(window.location.href);
 			
 			window.location.href = url;
 			return false;
