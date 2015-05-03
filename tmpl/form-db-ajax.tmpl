@@ -642,7 +642,7 @@
 			$loading.modal('show');
 			
 			/* For now, we'll just redirect to the new URL till we standardize an interface for external dialogs */
-			url += (url.indexOf('?') >= 0 ? '&' : '?') + 'url_from=' + encodeURIComponent(window.location.href);
+			url += (url.indexOf('?') >= 0 ? '&' : '?') + 'url_from=' + encodeURIComponent(window.location.href + '#open:' + $(showItemChooser.currentElm).attr('id'));
 			
 			window.location.href = url;
 			return false;
@@ -899,6 +899,38 @@
 		$(function() {
 		
 			dbSearchDialogSetup();
+			
+			setTimeout(function() {
+				if(window.location.hash)
+				{
+					//open:edit-form-student-advisorid
+					
+					//console.log("found hash:",window.location.hash);
+					if(window.location.hash.match(/^#open:/))
+					{
+						var openId = window.location.hash;
+						openId = openId.replace('#open:', '');
+						//console.log(openId);
+						
+						var $elm = $('#' + openId);
+						if($elm.size() <= 0)
+						{
+							console.log("Internal Error: Cannot automatically open '"+openId+'": no element found matching that ID');
+							return;
+						}
+						
+						var $btn = $elm.siblings(".db-search-btn");
+						
+						if($btn.size() <= 0)
+						{
+							console.log("Internal Error: Cannot automatically open '"+openId+'": no .db-search-btn sibling found adjacent to input');
+							return;
+						}
+						
+						$btn.find('.btn').click();
+					}
+				}
+			}, 100);
 		});
 		
 		function databaseLookupHook($elm, urlRoot, formUuid, urlNew)
@@ -907,6 +939,7 @@
 			
 			setupLookupUi($elm, hookUrlRoot, false, urlNew);
 		}
+		
 	</script>
 
 	<style>
