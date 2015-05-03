@@ -1474,6 +1474,14 @@ package AppCore::Web::Form;
 							#	$val_stringified = $class->stringify($val);
 							#}
 							
+							
+							
+							my $val_url_new = undef;
+							if($class && ref $val_stringified)
+							{
+								$val_url_new = $val_stringified->url_new if eval '$val->can("url_new")';
+							}
+								
 							$val_stringified = $val_stringified->stringify if UNIVERSAL::isa($val_stringified, $class);
 							
 							#die Dumper $val, $val_stringified, $ret if $label_id eq 'SearchForm.related_to';
@@ -1517,7 +1525,7 @@ package AppCore::Web::Form;
 								push @html, "<script>",
 									"\$(function() { var hookFunction = window.databaseLookupHook;",
 									"if(typeof(hookFunction) == 'function')",
-										"hookFunction(\$('#${label_id}'),'$url', '$bind_uuid');",
+										"hookFunction(\$('#${label_id}'),'$url', '$bind_uuid','$val_url_new');",
 									"});</script>";
 								
 								# Search btn

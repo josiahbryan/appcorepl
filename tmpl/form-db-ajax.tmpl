@@ -18,11 +18,31 @@
 					</div>
 				</div>
 				<div class="modal-footer">
+					<button type="button" class="btn btn-success btn-new" data-dismiss="modal">Add New Item</button>
 					<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
 				</div>
 			</div>
 		</div>
 	</div><!--/.ref-add-modal-->
+	
+	<div class="modal fade db-add-modal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title">Add New Item</h4>
+				</div>
+				<div class="modal-body">
+					
+				</div>
+				<!--<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary">Save changes</button>
+				</div>-->
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+		
 	<style>
 
 		.db-search-modal   .list-group {
@@ -606,8 +626,77 @@
 			}, 0);  
 		}
 		
+		function loadExternalDialog()
+		{
+			var $btn = $(this),
+				url = $btn.attr('data-url');
+				
+			var $loading = $('<div class="modal spinner-modal" tabindex="-1" role="dialog" aria-hidden="true" style="margin-top:10%">'
+				+ '<div class="modal-dialog modal-sm"><div class="modal-content">'
+				+ '<div class="modal-body" style="text-align:center;padding:2em">'
+				+ '<b><i class="fa fa-spin fa-spinner fa-lg"></i> Please wait, loading data ...</b>'
+				+' </div></div></div></div>');
+			
+			$('.modal').modal('hide');
+			
+			$loading.modal('show');
+			
+			/* For now, we'll just redirect to the new URL till we standardize an interface for external dialogs */
+			url += (url.indexOf('&') > 0 ? '?' : '&') + 'url_from=' + encodeURIComponent(window.location.href);
+			
+			window.location.href = url;
+			return false;
+			
+			
+			$.ajax({
+				url: url,
+				
+				success: function(result) {
+					//console.debug("ajax results:",result);
+					
+					$loading.hide();
+					
+					var $result = $(result).find('.body_content_panel form');
+					
+					if($result.size() <= 0)
+					{
+						alert("Internal error: Unable to find <form> element from "+url);
+						return;
+					}
+					
+					var $dialog = $('.db-add-modal');
+					
+					$result.find('.btn-cancel')
+						.attr('href','#')
+						.on('click', function() {
+							$dialog.modal('hide');
+							$('.modal-backdrop').hide();
+							return false;
+						});
+						
+					$result.find('.col-sm-6').removeClass('col-sm-6').addClass('col-sm-12');
+					
+					$dialog.find('.modal-body').append($result);
+					
+					$dialog.modal('show');
+				},
+	
+				error: function(result) {
+					
+					$loading.hide();
+					
+					//alert("Error:");
+					//console.debug(result.responseText);
+					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+				}
+				
+			});
+			
+			return false;
+		}
 		
-		function setupLookupUi($jq, hookUrlRoot, openFlag)
+		
+		function setupLookupUi($jq, hookUrlRoot, openFlag, urlNew)
 		{
 			showItemChooser.hookUrlRoot = hookUrlRoot;
 			
@@ -669,13 +758,19 @@
 			
 			var buttonHtml = [
 				'<div class="btn-group db-search-btn">',
-					'<button type="button" class="btn btn-default dropdown-toggle btn-sm">',
+					'<button type="button" class="btn btn-default dropdown-toggle btn-sm btn-search">',
 						'<span class="txt"></span>',
 						'<span class="caret"></span>',
 					'</button>',
 					
 					// Can't get styling to work with this to prevent wrapping around 768px, so not using it for now
 					//'<button class="btn btn-info btn-sm">...</button>',
+					
+					// Add item button - removed below if no urlNew
+// 					'<button class="btn btn-default btn-new btn-sm">',
+// 						'<i class="fa fa-plus-square-o"></i>',
+// 						'<span class="btn-text">New Item</span>',
+// 					'</button>',
 				'</div>'
 			].join('');
 			
@@ -689,6 +784,13 @@
 				
 				$widget.find('.txt').html('<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 				
+// 				if(urlNew)
+// 					$widget.find('.btn-new')
+// 						.attr('data-url', urlNew)
+// 						.on('click', loadExternalDialog);
+// 				else
+// 					$widget.find('.btn-new').remove();
+					
 				$widget.insertAfter($elm);
 				$elm.hide();
 				
@@ -710,7 +812,7 @@
 				}
 				
 				$widget.bind('click', function() {
-					showItemChooser($widget, $elm, hookUrlRoot);
+					showItemChooser($widget, $elm, hookUrlRoot, urlNew);
 				});
 				
 				$widget.find('.btn').on('keypress', function(e) {
@@ -722,13 +824,13 @@
 					// This gets reset once dialog is visible
 					//showItemChooser.preBuffer += char;
 					
-					showItemChooser($widget, $elm, hookUrlRoot);
+					showItemChooser($widget, $elm, hookUrlRoot, urlNew);
 				});
 				
 			});
 		};
 		
-		function showItemChooser($widget, $elm, hookUrlRoot)
+		function showItemChooser($widget, $elm, hookUrlRoot, urlNew)
 		{
 			// $widget is the UI widget (button, etc)
 			// $elm is the hidden input element that gets passed back to the server
@@ -736,6 +838,7 @@
 			showItemChooser.currentWidget = $widget;
 			showItemChooser.currentElm    = $elm;
 			showItemChooser.hookUrlRoot   = hookUrlRoot;
+			showItemChooser.urlNew        = urlNew;
 			showItemChooser.pauseKeyHandling = true;
 			setTimeout(function() {
 				showItemChooser.pauseKeyHandling = false;
@@ -752,6 +855,16 @@
 			
 			// Store placeholder on the dialog for use later in the 'clear item' code
 			$title.attr('placeholder', $elm.attr('placeholder'));
+			
+			// Setup the "Add New Item" button
+			if(urlNew)
+				$dialog.find('.btn-new')
+					.attr('data-url', urlNew)
+					.on('click', loadExternalDialog)
+					.html('<i class="fa fa-plus-square-o"></i> Add new '+$elm.attr('placeholder') + '...')
+					.show();
+			else
+				$dialog.find('.btn-new').hide();
 			
 			// Reset dialog
 			$list.empty();
@@ -788,11 +901,11 @@
 			dbSearchDialogSetup();
 		});
 		
-		function databaseLookupHook($elm, urlRoot, formUuid)
+		function databaseLookupHook($elm, urlRoot, formUuid, urlNew)
 		{
 			var hookUrlRoot = urlRoot+'/'+formUuid;
 			
-			setupLookupUi($elm, hookUrlRoot);		
+			setupLookupUi($elm, hookUrlRoot, false, urlNew);
 		}
 	</script>
 
