@@ -1058,12 +1058,15 @@ package HTML::Template::DelayedLoading;
 									      $col_val : 
 									      $fm->{linked}->retrieve($col_val);
 								
-								$self->{params}->{$param_name.'_url'}
-									= $linked_inst->url();
-									
-								$self->{params}->{$param_name.'_html_url'}
-									= $linked_inst->html_url()
-										if $linked_inst->can('html_url');
+								if($linked_inst)
+								{
+									$self->{params}->{$param_name.'_url'}
+										= $linked_inst->url();
+										
+									$self->{params}->{$param_name.'_html_url'}
+										= $linked_inst->html_url()
+											if $linked_inst->can('html_url');
+								}
 							}
 								
 						};
