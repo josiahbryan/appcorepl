@@ -66,6 +66,12 @@ function AWSV_AjaxScrollAdapter(args) {
 			return data;
 		};
 	
+	if(!args.responseHook)
+		args.responseHook = function(data){ 
+			return data;
+		};
+	
+	
 	var $rowTemplate = args.rowTemplate,
 		   $list = args.List;
 	
@@ -75,10 +81,24 @@ function AWSV_AjaxScrollAdapter(args) {
 	if(!$list)
 		$list = $('#list_table tbody');
 	
-	$('.paging_link.next_link').each(function() {
-		var $spin = $('<i class="fa paging-spinner fa-spin fa-spinner" style="display:inline-block;margin:0 1rem;margin-right:-24px"></i>');
-		$spin.insertAfter($(this));
-	});
+	
+		
+	var $loadingModal = $('<div class="modal" tabindex="-1" role="dialog" aria-hidden="true" style="margin-top:10%">'
+		+ '<div class="modal-dialog modal-sm"><div class="modal-content">'
+		+ '<div class="modal-body" style="text-align:center;padding:2em">'
+		+ '<b><i class="fa fa-spin fa-spinner fa-lg"></i> Please wait, loading data ...</b>'
+		+' </div></div></div></div>');
+	
+	//$div.modal('show');	
+	//
+	
+	if(args.useLoadingModal)
+		$loadingModal.appendTo(document.body);
+	else
+		$('.paging_link.next_link').each(function() {
+			var $spin = $('<i class="fa paging-spinner fa-spin fa-spinner" style="display:inline-block;margin:0 1rem;margin-right:-24px"></i>');
+			$spin.insertAfter($(this));
+		});
 	
 	var $loadingSpinners = $('.paging-spinner');
 	$loadingSpinners.hide();
@@ -173,7 +193,13 @@ function AWSV_AjaxScrollAdapter(args) {
 			requestQueue.pop();
 		
 		//specialRows.loading.remove();
-		$loadingSpinners.hide();
+		if(args.useLoadingModal)
+			$loadingModal.modal('hide');
+		else
+		{
+			$loadingSpinners.hide();
+			$('.paging_link.next_link').show();
+		}
 	};
 	
 	var unloadingState = false;
@@ -193,7 +219,13 @@ function AWSV_AjaxScrollAdapter(args) {
 		//else
 			//$list.append(specialRows.loading);
 		
-		$loadingSpinners.show();
+		if(args.useLoadingModal)
+			$loadingModal.modal('show');
+		else
+		{
+			$loadingSpinners.show();
+			$('.paging_link.next_link').hide();
+		}
 		
 		var requestData = {
 			page:		page,
@@ -220,7 +252,7 @@ function AWSV_AjaxScrollAdapter(args) {
 				
 				bufferNextPageLoad.locked = false;
 				
-				requestData.results = result;
+				requestData.results = args.responseHook(result);
 				requestData.rxd     = true;
 				
 				processResultQueue();

@@ -19,6 +19,8 @@ package AppCore::Web::ReportViewer;
 	use AppCore::Web::Common;
 	use AppCore::Web::Form;
 	
+	use JSON qw/encode_json/;
+	
 	####################################
 
 	our $STASH;
@@ -126,7 +128,7 @@ package AppCore::Web::ReportViewer;
 	{
 		my $self = shift;
 		my ($start,$length) = @_;
-		$self->{page_start} = $start ? $start : 0;
+		$self->{page_start}  = $start ? $start : 0;
 		$self->{page_length} = $length ? $length : 50;
 	}
 	
@@ -164,7 +166,14 @@ package AppCore::Web::ReportViewer;
 	
 	sub generate_report
 	{
-		my ($self, $arg_hash, $ignore_incomplete) = @_;
+		my ($self, $arg_hash, $ignore_incomplete, $pagination_url_base) = @_;
+		
+		# NOTE: If $pagination_url_base is defined,
+		# generate_report() will ATTEMPT to paginate
+		# SQL-provided data. Note that the report
+		# MUST define 'count_sql' in addition to 
+		# the 'sql' key in order for generate_report()
+		# to be able to paginate the data.
 		
 		my $report = $self->report_model;
 		
@@ -244,12 +253,83 @@ package AppCore::Web::ReportViewer;
 						? $_->{value}->($report, $self->stash)
 						: $_->{value} } @arg_data;
 				
-				#die Dumper \@sql_args;
+				# Make a copy of the SQL string because if pagination is enabled,
+				# we'll add a 'LIMIT' to it, and we don't want that LIMIT
+				# inadvertantly persisting, e.g. in ModPerl/FastCGI enviros
+				my $report_sql = $report->{sql};
 				
+				#die Dumper \@sql_args;
+				if($pagination_url_base)
+				{
+					if($report->{count_sql})
+					{
+						# Count rows
+						my ($listref, $last_sth) =
+							AppCore::DBI->bulk_execute(
+								$report->{count_sql},
+								@sql_args
+							);
+							
+						my @count_data = @{ $listref || [] };
+						my $row_hash   = (shift @count_data);
+						my $total_rows = (values %{$row_hash || {}})[0];
+						
+						# Templates should check for this value to be defined before displaying pagination controls
+						$output_data->{total_rows} = $total_rows;
+						
+						# Build paging data 
+						my $end_of_page = $self->page_start + $self->page_length;
+						
+						$pagination_url_base .= $pagination_url_base =~ /\?/ ? '&' : '?';
+				
+						my $paged_flag = 0;
+						if($end_of_page < $total_rows)
+						{
+							$paged_flag = 1;
+							$output_data->{next_url} = $pagination_url_base . 'start='.$end_of_page.'&length='.$self->page_length;
+						}
+						
+						if($self->page_start > 0 )
+						{
+							$paged_flag = 1;
+							
+							my $new_start = $self->page_start - $self->page_length;
+							$output_data->{prev_url} = $pagination_url_base . 'start='.( $new_start < 0 ?  0 : $new_start ).'&length='.$self->page_length;
+						}
+						
+						$output_data->{fake_page_start}  = $self->page_start + 1;
+						$output_data->{page_start}  = $self->page_start;
+						$output_data->{page_length} = $self->page_length;
+						$output_data->{page_end}    = $end_of_page;
+						$output_data->{paged_flag}  = $paged_flag;
+						
+						#print STDERR "pagelen = ".$self->page_length."\n";
+						
+						my $new_end = $self->page_start + $self->page_length ;	
+						my $actual_page_length = ( $new_end > $total_rows ? $total_rows - $self->page_start : $self->page_length );
+						$output_data->{actual_page_end} = $self->page_start + $actual_page_length;
+						
+						
+						# Slightly hackish: Modify the report SQL:
+						my ($start, $len) = ($self->page_start, $self->page_length);
+						{
+							$start = int($start)+0;
+							$len   = int($len)+0;
+							$report_sql =~ s/;?(\s|\n)*$/ limit $start, $len/;
+							
+							#print STDERR "[Debug] New report_sql after pagination: [[$report_sql]]\n";
+						}
+					}
+					else
+					{
+						undef $pagination_url_base;
+						warn "ReportViewer: Unable to paginate data: 'count_sql' was not provided";
+					}
+				}
 				
 				my ($listref, $last_sth) =
 					AppCore::DBI->bulk_execute(
-						$report->{sql},
+						$report_sql,
 						@sql_args
 					);
 					
@@ -440,31 +520,102 @@ package AppCore::Web::ReportViewer;
 		} grep { !$_->{hidden} } 
 			@{ $report->{args} || [] };
 			
+		# Hash for rebuilding the query to recreate this report
+		my %query_args;
+		
 		# Load any values incomming from user into the arg hash
 		if($req->{'AppCore::Web::Form::ModelMeta.uuid'})
 		{
 			AppCore::Web::Form->store_values($req, {
 				args	=> \%arg_hash,
 			});
+			
+			$query_args{'AppCore::Web::Form::ModelMeta.uuid'} = $req->{'AppCore::Web::Form::ModelMeta.uuid'};
+			$query_args{'#args.'.$_} = $req->{'#args.'.$_}
+				foreach keys %arg_hash;
+		}
+		
+		# Build pagination URL for use in building links
+		my $pagination_url_base = undef;
+		if($self->output_format ne 'xls')
+		{
+# 			my $url_args = 
+# 				join '&', 
+# 				map {
+# 					url_encode($_) .'='. url_encode($req->{$_})
+# 				} 
+# 				grep { $_ ne 'start' && $_ ne 'length' }
+# 				keys %{$req || {}};
+
+			my $url_args = 
+				join '&', 
+				map {
+					url_encode($_) .'='. url_encode($query_args{$_})
+				} 
+				keys %query_args;
+			
+			$pagination_url_base = $req->page_path 
+				. ($url_args ? '?' : '')
+				. $url_args;
+				
 		}
 		
 		# Do the report
-		my $output_data = $self->generate_report(\%arg_hash);
+		my $output_data = $self->generate_report(
+			# arguments
+			\%arg_hash, 
+			
+			# ignore incomplete
+			undef, 
+			
+			# enable paging - this will be undef if output_format not HTML
+			$pagination_url_base 
+		);
 		
 		# Output the data
 		if($self->output_format eq 'html')
 		{
 			my $tmpl = $self->tmpl;
 			
+			$output_data->{query_args} = \%query_args;
+			$output_data->{query_args_json} = encode_json(\%query_args);
+			
+			unless($report->{disable_xls_export})
+			{
+				my $url_args = 
+				join '&', 
+				map {
+					url_encode($_) .'='. url_encode($query_args{$_})
+				} 
+				keys %query_args;
+			
+				my $faux_file = $report->{title};
+				$faux_file =~ s/[^A-Za-z0-9]//g;
+				$faux_file .= '.xls';
+				
+				my $xls_url = $req->page_path
+					. '/'
+					. $faux_file
+					. ($url_args ? '?' : '')
+					. $url_args;
+						
+				$xls_url .= $xls_url =~ /\?/ ? '&' : '?';
+				$xls_url .= 'output_fmt=xls';
+				
+				$output_data->{xls_url} = $xls_url;
+			}
+			
+			
+			
 			$tmpl->param('report_'.$_ => $report->{$_}) 
 				foreach keys %$report;
 				
+			$tmpl->param('report_'.$_ => $output_data->{$_})
+				foreach keys %$output_data;
+					
 			if($output_data->{arg_data_complete})
 			{
 				#die Dumper \@report_columns, \@report_data, \@arg_data;
-				
-				$tmpl->param('report_'.$_ => $output_data->{$_})
-					foreach keys %$output_data;
 			}
 			else
 			{
@@ -486,7 +637,107 @@ package AppCore::Web::ReportViewer;
 		elsif($self->output_format eq 'xls')
 		{
 			# TODO
-			die "Excel output not implemented yet.";
+			die "Excel export disabled for this report"
+				if $report->{disable_xls_export};
+			
+			use Spreadsheet::WriteExcel;
+			use File::Slurp;
+			
+			my $tmp_file = "/tmp/report-tmp-$$.xls";
+			my $workbook = Spreadsheet::WriteExcel->new($tmp_file);
+			
+			# Add a worksheet
+			my $worksheet = $workbook->add_worksheet($report->{xls_sheet_name} || 'Sheet 1');
+			
+			#  Add and define a format
+			my $hdr1 = $workbook->add_format(); # Add a format
+			$hdr1->set_bold();
+			$hdr1->set_color('black');
+			#$hdr1->set_border(2);
+			$hdr1->set_bottom();
+			$hdr1->set_align('center');
+			
+			my $hdr2 = $workbook->add_format(); # Add a format
+			$hdr2->set_bold();
+			$hdr2->set_color('black');
+			#$hdr2->set_border(2);
+			$hdr2->set_bottom();
+			
+			my $fmt_bold = $workbook->add_format(); # Add a format
+			$fmt_bold->set_bold();
+			$fmt_bold->set_color('black');
+			
+			my $f_a_r = $workbook->add_format(); # Add a format
+			$f_a_r->set_align('right');
+			
+			my $f_b = $workbook->add_format(); # Add a format
+			$f_b->set_bold();
+			
+			my $y = 0;
+			my $x = 0;
+			
+			$worksheet->write($y, $x++, $report->{title}, $fmt_bold)
+				if $report->{title};
+			
+			$x=0; 
+			$y++;
+			
+			# Optionally add date, turned off for now
+			#$worksheet->write($y,$x++,'Date: ');
+			#$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
+			
+			# TODO: Turn this off?
+			$worksheet->insert_image(0,4, $report->{logo_image_file})
+				if $report->{logo_image_file};
+			
+			$y++;
+			$y++;
+			
+			my @cols = @{ $output_data->{columns} || [] };
+			
+			#print STDERR Dumper \@cols;
+			
+			# Write a formatted and unformatted string, row and column notation.
+			$x=0;
+			foreach my $col (@cols)
+			{
+				$worksheet->write($y, $x++, $col->{title}, $hdr2); 
+				
+				# ($fm->{td_align} eq 'center') ? $hdr1 : $hdr2); 
+			}
+				
+			$y++;
+			$worksheet->freeze_panes($y, 0); # 1 row
+			
+			my $fmter = $report->{xls_column_formatter};
+			
+			my @data = @{$output_data->{data} || []};
+			
+			my $count = 0;
+			foreach my $row (@data)
+			{
+				$x=0;
+				foreach my $col_hash (@cols)
+				{
+					my $value = 
+					 exists $row->{$col_hash->{field}}    ? 
+						$row->{$col_hash->{field}}    : 
+						$row->{lc($col_hash->{field})};
+						
+					$value =~ s/<[^\>]+>//g;
+					
+					$worksheet->write($y, $x++, $fmter ? $fmter->($self, $value, $row, $col_hash->{field}) : "".$value);
+				}
+				$y++; 
+			}
+			
+			$workbook->close;
+			
+			my $tmp =  read_file( $tmp_file, binmode => ':raw' );
+	 		
+	 		unlink($tmp_file);
+			
+	 		return $tmp;
 		}
 		elsif($self->output_format eq 'json')
 		{

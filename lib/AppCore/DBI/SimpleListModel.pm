@@ -24,6 +24,11 @@ package AppCore::DBI::SimpleListModel;
 	{
 		my $self = shift;
 		my $filter = shift;
+		
+		# If the filter was set via a multiple <select> box, then split the value on \0
+		# so it looks like a space-seprated string to the rest of the model
+		$filter =~ s/\0/ /g;
+		
 		$self->{filter} = $filter;
 	}
 	

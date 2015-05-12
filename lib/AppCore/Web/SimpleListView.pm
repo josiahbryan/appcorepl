@@ -211,6 +211,38 @@ package AppCore::Web::SimpleListView;
 		
 	}
 	
+	sub set_query_tokenizer_hook
+	{
+		my ($self, $hook) = @_;
+		
+		$self->{_query_tokenizer_hook} = $hook;
+	}
+	
+	sub prep_tokenized_query
+	{
+		my $self  = shift;
+		my $model = $self->model;
+		my $query = shift || $model->filter;
+		my @term_words = AppCore::DBI::SimpleListModel::parse_ssv($query);
+		
+		my @tokenized_list = map {
+			{
+				text => $_,
+				selected => 1
+			}
+		} @term_words;
+		
+		my $hook = $self->{_query_tokenizer_hook};
+		
+		if(ref $hook eq 'CODE')
+		{
+			return $hook->($self, \@tokenized_list, \@term_words);
+		}
+		
+		return \@tokenized_list;
+	}
+	
+	
 	# This are only defined AFTER calling output()
 	sub output_list { shift->{output_list} }
 	sub output_length { shift->{output_length} }
@@ -535,9 +567,11 @@ package AppCore::Web::SimpleListView;
 			my $rows = $model->compile_list($self->page_start, $self->page_length);
 			
 			## Let the template know if we were searched and how 
-			$output_data->{query}       = $model->filter;
-			$output_data->{query}       =~ s/\%/ /g;
-			$output_data->{is_filtered} = $model->is_filtered;
+
+			$output_data->{query}           = $model->filter;
+			$output_data->{query}           =~ s/\%/ /g;
+			$output_data->{is_filtered}     = $model->is_filtered;
+			$output_data->{query_tokenized} = $self->prep_tokenized_query();
 			
 			# do filter row highlighting here
 			my $filter_value_regex = _regexp_escape($model->filter);
