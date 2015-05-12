@@ -61,6 +61,7 @@ package AppCore::Common;
 		nice_date 
 		date 
 		dt_date
+		utc_date
 		simple_duration_to_hours
 		to_delta_string
 		delta_minutes
@@ -287,6 +288,7 @@ package AppCore::Common;
 	sub dt_date
 	{
 		my $date = shift || date();
+		my $tz   = shift || 'local';
 		my ($y,$m,$d,$h,$mn,$s) = split/[-\s:]/, $date;
 		my %args;
 		$args{year} = $y if $y;
@@ -295,8 +297,14 @@ package AppCore::Common;
 		$args{hour} = $h if $h;
 		$args{minute} = $mn if $mn;
 		$args{second} = $s if $s;
+		$args{time_Zone} = $tz if $tz;
 		
 		return DateTime->new(%args);
+	}
+	
+	sub utc_date
+	{
+		return DateTime->now( time_zone => 'UTC' )->datetime;
 	}
 	
 	sub date #{ my $d = `date`; chomp $d; $d=~s/[\r\n]//g; $d; };
@@ -564,8 +572,8 @@ package AppCore::Common;
 		# = DateTime->now();
 		if(!defined $test2)
 		{
-			$dt = DateTime->now();
-			$dt->subtract(hours=>( localtime(time) )[-1] ? 4 : 5);
+			$dt = DateTime->now( time_zone => 'UTC' );
+			#$dt->subtract(hours=>( localtime(time) )[-1] ? 4 : 5);
 		}
 		else
 		{
