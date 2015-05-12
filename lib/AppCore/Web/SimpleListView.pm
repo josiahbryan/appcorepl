@@ -536,6 +536,7 @@ package AppCore::Web::SimpleListView;
 			
 			## Let the template know if we were searched and how 
 			$output_data->{query}       = $model->filter;
+			$output_data->{query}       =~ s/\%/ /g;
 			$output_data->{is_filtered} = $model->is_filtered;
 			
 			# do filter row highlighting here

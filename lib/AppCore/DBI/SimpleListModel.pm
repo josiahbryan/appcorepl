@@ -863,7 +863,12 @@ package AppCore::DBI::SimpleListModel;
 			my $text = $class->get_stringify_sql;
 			
 			my $string_clause = qq{(($text like ?) and ($text <> ""))};
-			push @args, ('%'.$filter.'%');
+			
+			my $filter_wild = $filter;
+			$filter_wild =~ s/\s+/%/g;
+			push @args, ('%'.$filter_wild.'%');
+			
+			#die Dumper \@args, $string_clause;
 			
 			if($dont_parse_string)
 			{
