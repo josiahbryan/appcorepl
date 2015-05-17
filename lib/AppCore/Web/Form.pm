@@ -999,7 +999,7 @@ package AppCore::Web::Form;
 							
 							my $label_class = $node->{attrs}->{'label-class'} || '';
 						
-							push @html, $t."\t <label class='row-label $label_class' title=\"".encode_entities($node->label)."\">", 
+							push @html, $t."\t <label class='row-label row-label-pre $label_class' title=\"".encode_entities($node->label)."\">", 
 								    _convert_newline($node->label), 
 								    ':</label> ',
 								    "\n";
@@ -1299,7 +1299,9 @@ package AppCore::Web::Form;
 						#die Dumper $node->{label}.'[2]';
 						
 					
-						if($node->label && $type ne 'bool')
+						if($node->label
+							&& $type ne 'bool'
+							&& $node->{attrs}->{'label-location'} ne 'right')
 						{
 							
 							my $text = $node->label;
@@ -1316,7 +1318,7 @@ package AppCore::Web::Form;
 								my $label_class = $node->{attrs}->{'label-class'} || '';
 							
 								push @html, $t, "\t\t", "<label for='$label_id' ",
-									'class="'. ($is_row_label ? 'row-label' : '').' '.$label_class.'"',
+									'class="'. ($is_row_label ? 'row-label row-label-nonbool' : '').' '.$label_class.'"',
 									($render eq 'radio' ? "style='cursor:default !important'" : ''),
 									" title=\"".encode_entities($node->label)."\"",
 									'>', 
@@ -2052,7 +2054,7 @@ package AppCore::Web::Form;
 								my $label_class = $node->{attrs}->{'label-class'} || '';
 							
 								push @html, $t, "\t\t", "<label for='$label_id' ",
-									'class="'. ($is_row_label ? 'row-label' : '').' '.$label_class.'"',
+									'class="'. ($is_row_label ? 'row-label row-label-bool' : '').' '.$label_class.'"',
 									($render eq 'radio' ? "style='cursor:default !important'" : ''),
 									" title=\"".encode_entities($node->label)."\"",
 									'>', 
@@ -2159,6 +2161,41 @@ package AppCore::Web::Form;
 
 						};
 						
+						
+					}
+					
+					if($node->label
+						&& $type ne 'bool'
+						&& $node->{attrs}->{'label-location'} eq 'right')
+					{
+						
+						my $text = $node->label;
+						$text=~s/(^\s+|\s+$)//g;
+						
+						if($text)
+						{
+#							my $first_row_child = lc $parent->node eq 'row' && $node->id eq $parent->children->[0]->id;
+							push @html, $t, "\t", '<td class="td-label" valign="top"'.(!$can_wrap?' nowrap':'').'>', "\n" if $is_pairtab;
+							#push || $first_row_child;
+							
+							my $is_row_label = $node->node eq 'row';
+							
+							my $label_class = $node->{attrs}->{'label-class'} || '';
+						
+							push @html, $t, "\t\t", "<label for='$label_id' ",
+								'class="label-location-right '. ($is_row_label ? 'row-label row-label-nonbool' : '').' '.$label_class.'"',
+								($render eq 'radio' ? "style='cursor:default !important'" : ''),
+								" title=\"".encode_entities($node->label)."\"",
+								'>', 
+								_convert_newline($node->label), 
+								'</label> ', "\n"  if !$hidden;
+							push @html, $t, "\t", '</td>', "\n" if $is_pairtab; # || $first_row_child;
+							#push @html, "\n$t<td>\n$t" if $first_row_child;
+						}
+						else
+						{
+							$empty_label = 1;
+						}
 						
 					}
 					
