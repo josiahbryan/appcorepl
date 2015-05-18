@@ -297,7 +297,7 @@ package AppCore::Common;
 		$args{hour} = $h if $h;
 		$args{minute} = $mn if $mn;
 		$args{second} = $s if $s;
-		$args{time_Zone} = $tz if $tz;
+		$args{time_zone} = $tz if $tz;
 		
 		return DateTime->new(%args);
 	}
