@@ -290,13 +290,14 @@ package AppCore::Common;
 		my $date = shift || date();
 		my $tz   = shift || 'local';
 		my ($y,$m,$d,$h,$mn,$s) = split/[-\s:]/, $date;
+		
 		my %args;
-		$args{year} = $y if $y;
-		$args{month} = $m if $m;
-		$args{day} = $d if $d;
-		$args{hour} = $h if $h;
+		$args{year}   = $y  if $y;
+		$args{month}  = $m  if $m;
+		$args{day}    = $d  if $d;
+		$args{hour}   = $h  if $h;
 		$args{minute} = $mn if $mn;
-		$args{second} = $s if $s;
+		$args{second} = $s  if $s;
 		$args{time_zone} = $tz if $tz;
 		
 		return DateTime->new(%args);
@@ -311,7 +312,7 @@ package AppCore::Common;
 	{
 		if(@_ == 1) { @_ = (epoch=>shift) }
 		my %args = @_;
-		my $x = $args{epoch}||time;
+		my $x  = $args{epoch}||time;
 		my $ty = ((localtime($x))[5] + 1900);
 		my $tm =  (localtime($x))[4] + 1;
 		my $td = ((localtime($x))[3]);
@@ -361,6 +362,7 @@ package AppCore::Common;
 		$_=$chr.$_ while length()<$len;
 		$_;
 	}
+	
 	sub called_from
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -514,14 +516,15 @@ package AppCore::Common;
 	
 	sub date_math 
 	{
-		my ($date,$days) = @_;
+		my ($date, $days) = @_;
 			
-		eval 'use DateTime';
 		my ($y,$m,$d) = ( $date =~ /(\d\d\d\d)-(\d\d)-(\d\d)/);
 		my $old = new DateTime(month=>$m,day=>$d,year=>$y);
 		my $n = undef;
+		
 		$days = -($old->day_of_week) if $days == 0; # find week start
-		if($days>0)
+		
+		if($days > 0)
 		{
 			return $old->add( days => $days )->ymd;
 		}
@@ -541,6 +544,7 @@ package AppCore::Common;
 		
 		# Doesn't actually transmit - the transmit() method is called from bin/emailqueue.pl
 		eval 'use AppCore::EmailQueue'; 
+		
 		AppCore::EmailQueue->send_email(@_);
 
 	}
@@ -550,44 +554,68 @@ package AppCore::Common;
 	{
 		eval 'use DateTime';
 		
-		my $test = shift;
+		my $test  = shift;
 		my $test2 = shift || undef;
+		
 		my ($a,$b,$c,$d,$e,$f) = $test=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
 		
 		return undef if !$a || !$b || !$c;
 		
-		$d = 0 if !$d;
+		$d = 0  if !$d;
 		$d = 23 if $d >= 24;
 		
-		$e = 0 if !$e;
+		$e = 0  if !$e;
 		$e = 59 if $e >= 60;
 		
-		$f = 0 if !$f;
+		$f = 0  if !$f;
 		$f = 59 if $f >= 60;
-		my $then = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
+		
+		my $then = DateTime->new(
+			year      => $a,
+			month     => $b,
+			day       => $c,
+			hour      => $d,
+			minute    => $e,
+			second    => $f,
+			time_zone => 'local'
+		);
 		#$then->add(hours=>6);
 		
 		# how many minutes from $test to NOW ?
 		my $dt;
-		# = DateTime->now();
+		
 		if(!defined $test2)
 		{
-			$dt = DateTime->now( time_zone => 'UTC' );
+			$dt = DateTime->now( time_zone => 'local' );# time_zone => 'UTC' );
 			#$dt->subtract(hours=>( localtime(time) )[-1] ? 4 : 5);
 		}
 		else
 		{
-			my ($a,$b,$c,$d,$e,$f) = $test2=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;	
-			$d = 0 if !$d;
+			my ($a,$b,$c,$d,$e,$f) = $test2=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
+			
+			$d = 0  if !$d;
 			$d = 23 if $d >= 24;
 			
-			$e = 0 if !$e;
+			$e = 0  if !$e;
 			$e = 59 if $e >= 60;
 			
-			$f = 0 if !$f;
+			$f = 0  if !$f;
 			$f = 59 if $f >= 60;
-			$dt = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
+			
+			#$dt = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
+			
+			$dt = DateTime->new(
+				year      => $a,
+				month     => $b,
+				day       => $c,
+				hour      => $d,
+				minute    => $e,
+				second    => $f,
+				time_zone => 'local'
+			);
 		}
+		
+		#print STDERR "delta_minutes: then:".$then->datetime.", now:".$dt->datetime."\n";
 		
 		my $res = $dt->subtract_datetime_absolute($then);
 		return $res->delta_seconds / 60;
