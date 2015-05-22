@@ -866,16 +866,16 @@ package AppCore::DBI::SimpleListModel;
 		# and user searches for "John Smith" - the previous search code wont find it, because John Smith isn't in any one column -
 		# it's in two columns.
 		{
-			my $text = $class->get_stringify_sql;
+			my $text = $class->get_stringify_sql(1); # 1 = lower case the fields
 			
 			my $string_clause = qq{(($text like ?) and ($text <> ""))};
 			
-			my $filter_wild = $filter;
+			my $filter_wild = lc($filter);
 			#$filter_wild =~ s/\s+/%/g;
-			$filter_wild =~ s/\s+/ /g;		# collapse spaces
-			$filter_wild =~ s/[^\da-zA-Z]/ /g;	# remove anything not a digit or a letter
-			$filter_wild =~ s/(.)/$1%/g;		# insert '%' between every character
-			$filter_wild =~ s/%\s*%/%/g;		# collapse '% %' into '%'
+			$filter_wild =~ s/\s+/ /g;	# collapse spaces
+			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
 			$filter_wild = '%'.$filter_wild;
 
 			push @args, ($filter_wild);
