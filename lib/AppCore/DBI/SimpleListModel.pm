@@ -508,6 +508,7 @@ package AppCore::DBI::SimpleListModel;
 		@term_words    = sort { $is_neg{$a} <=> $is_neg{$b} } @term_words;
 		
 		#print STDERR Dumper(\@term_words, \%is_neg);
+		#die Dumper(\@term_words, \%is_neg);
 		
 		my $DEBUG = 0;
 		
@@ -870,10 +871,17 @@ package AppCore::DBI::SimpleListModel;
 			my $string_clause = qq{(($text like ?) and ($text <> ""))};
 			
 			my $filter_wild = $filter;
-			$filter_wild =~ s/\s+/%/g;
-			push @args, ('%'.$filter_wild.'%');
+			#$filter_wild =~ s/\s+/%/g;
+			$filter_wild =~ s/\s+/ /g;		# collapse spaces
+			$filter_wild =~ s/[^\da-zA-Z]/ /g;	# remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;		# insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;		# collapse '% %' into '%'
+			$filter_wild = '%'.$filter_wild;
+
+			push @args, ($filter_wild);
 			
 			#die Dumper \@args, $string_clause;
+			#$dont_parse_string
 			
 			if($dont_parse_string)
 			{
