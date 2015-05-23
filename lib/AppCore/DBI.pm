@@ -403,6 +403,7 @@ package AppCore::DBI;
 	{
 		my $class = shift;
 		my $id = shift;
+		#my $fmt = shift || [];
 		
 		# Shouldn't break anything since we don't want to proceede if we don't have the actual record
 		my $record = ref $class ? $class : undef;
@@ -423,6 +424,10 @@ package AppCore::DBI;
 		#warn "No record defined: class=$class, id=[$id] (".ref($id).")\n";
 		
 		my @fmt  = $record->can('stringify_fmt') ? $record->stringify_fmt : ();
+		
+		# Allow overriding the format if one is provided
+		#@fmt = @$fmt if ref $fmt eq 'ARRAY';
+		
 		@fmt = ('#'.($record->meta->{first_string} || $record->primary_column)) if !@fmt;
 		#die Dumper \@fmt;
 		print STDERR print STDERR ref($class)."->stringify: Using fmt: ".Dumper(\@fmt) if $DEBUG;
@@ -475,12 +480,33 @@ package AppCore::DBI;
 			{
 				my $col = $1;
 				print STDERR ref($self)."->stringify: _exec_string_fmt: [COL REF] col '$col'\n" if $DEBUG;
+				
+				my $fmt_override = undef;
+				if($col =~ /^([^\.]+)\.(.*)$/)
+				{
+					$col = $1;
+					$fmt_override = $2;
+					
+					#die "debug: fmt_override='$fmt_override', col='$col'\n";
+				}
 
 				eval
 				{
 					$val = $self->get($col);
 					print STDERR ref($self)."->stringify: _exec_string_fmt: [COL REF] col '$col': raw val '$val'\n" if $DEBUG;
-					$val = $val->stringify if ref $val && eval '$val->can("stringify")';
+					if(ref $val && eval '$val->can("stringify")')
+					{
+						if($fmt_override)
+						{
+							#$val = $val->stringify(undef, ['#'.$fmt_override]);
+							
+							$val = $val->_exec_string_fmt(['#'.$fmt_override]);
+						}
+						else
+						{
+							$val = $val->stringify;
+						}
+					}
 					
 					push @buf, $val;
 				};
