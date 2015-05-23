@@ -8,7 +8,7 @@ package AppCore::DBI;
 {
 	use base qw(Class::DBI);
 	
-	our $DEBUG = 1;
+	our $DEBUG = 0;
 	
 	our @PriKeyAttrs = (
 		'extra'	=> 'auto_increment',
