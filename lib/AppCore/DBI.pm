@@ -8,7 +8,7 @@ package AppCore::DBI;
 {
 	use base qw(Class::DBI);
 	
-	our $DEBUG = 0;
+	our $DEBUG = 1;
 	
 	our @PriKeyAttrs = (
 		'extra'	=> 'auto_increment',
@@ -784,10 +784,27 @@ package AppCore::DBI;
 			elsif($val =~ /^#(.+)$/)
 			{
 				my $col = $1;
+				
+				my $fmt_override = undef;
+				if($col =~ /^([^\.]+)\.(.*)$/)
+				{
+					$col = $1;
+					$fmt_override = $2;
+				}
+				
 				my $other_meta = $self->field_meta($col);
 				if ($other_meta->{linked} && eval '$other_meta->{linked}->can("get_stringify_sql")' && $depth < MAX_SQL_STRINGIFY_DEPTH)
 				{
-					my $concat     = $other_meta->{linked}->get_stringify_sql($lower_case,$depth+1,$use_orderby);
+					my $concat;
+					if($fmt_override)
+					{
+						$concat = $other_meta->{linked}->_create_string_sql(['#'.$fmt_override],$lower_case,$depth+1,$use_orderby);
+					}
+					else
+					{
+						$concat = $other_meta->{linked}->get_stringify_sql($lower_case,$depth+1,$use_orderby);
+						
+					}
 					
 					my $meta = eval '$other_meta->{linked}->meta';
 					#die Dumper $meta if $other_meta->{linked} =~ /Auth/;
@@ -906,11 +923,32 @@ package AppCore::DBI;
 			elsif($val =~ /^#(.+)$/)
 			{
 				my $col = $1;
+				
+				my $fmt_override = undef;
+				if($col =~ /^([^\.]+)\.(.*)$/)
+				{
+					$col = $1;
+					$fmt_override = $2;
+					
+					#die "debug: fmt_override='$fmt_override', col='$col'\n";
+				}
+
+				
 				my $x = $self->field_meta($col);
 				if ($x->{linked} && eval '$x->{linked}->can("get_stringify_sql")' && $depth < MAX_SQL_STRINGIFY_DEPTH)
 				{
 					my $i_start = $index;
-					my ($re,$tags,$i2) = $x->{linked}->get_stringify_regex($index,$depth+1);
+					
+					my ($re,$tags,$i2);
+					if($fmt_override)
+					{
+						($re,$tags,$i2) = $x->{linked}->_create_string_regex(['#'.$fmt_override],$index,$depth+1);
+					}
+					else
+					{
+						($re,$tags,$i2) = $x->{linked}->get_stringify_regex($index,$depth+1);
+					}
+					
 					my $i_end = $index = $i2;
 					push @buf, $re;
 					# tags=>$tags,
