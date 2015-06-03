@@ -67,3 +67,25 @@ MODULE_NAME: foreach my $data (values %$module_cache)
 		$data->{obj}->apply_mysql_schema();
 	}
 }
+
+
+print STDERR "$0: Loading stored procedures and custom functions files...\n";
+my @sp_files = qw/
+	text_match_function.sql
+/;
+
+foreach my $file (@sp_files)
+{
+	my $abs = $file;
+	#AppCore::DBI->dbh->do('source '.$abs);
+	
+	my $db   = AppCore::DBI::DEFAULT_DB;
+	my $host = AppCore::DBI::DEFAULT_HOST;
+	my $user = AppCore::DBI::DEFAULT_USER;
+	my $pass = AppCore::DBI::DEFAULT_PASS;
+
+	
+	my $cmd = "mysql -u ${user} --password=${pass} -h ${host} -D ${db} < $abs";
+	print STDERR "Processing: $cmd\n";
+	system($cmd);
+}

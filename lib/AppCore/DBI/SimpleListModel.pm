@@ -284,7 +284,16 @@ package AppCore::DBI::SimpleListModel;
 		
 		my $meta = eval '$class->meta' || $self->{meta};
 		my $table_list = $self->list_columns || [ map { $_->{name} } $class->columns ];
-			
+		
+		# If search ranking requested, generate the args needed
+		my ($rank_column,  $rank_query, $rank_query_args, $ranking_enabled);
+		
+		if($ranking_enabled = $self->{search_ranking})
+		{
+			($rank_column,  $rank_query, $rank_query_args) = $self->create_rank_column(undef,1);
+		}
+		
+		
 		## Create the list of columns to select from the database
 		my @columns;
 		my $got_pri = 0;
@@ -349,6 +358,12 @@ package AppCore::DBI::SimpleListModel;
 		}
 		push @columns, $pri if !$got_pri;
 		
+		if($ranking_enabled)
+		{
+			push @columns, $rank_column."\n".
+				"\t AS _search_rank\n";
+		}
+		
 		my $select_columns = 'SELECT '.join(', ',@columns);
 		
 		## Prepare LIMIT clause
@@ -365,6 +380,17 @@ package AppCore::DBI::SimpleListModel;
 		## Prepare WHERE clause
 		my ($extra_tables, $query, $query_args) = $self->create_sql_filter();
 		my $where_clause = ' WHERE '.$query;
+		
+		# Add in ranking data if requested
+		if($ranking_enabled)
+		{
+			# Tack on our injection code to the where clause
+			$where_clause .="\n AND ".$rank_query;
+			
+			# Tack on our ranking query injection args to the actual query args
+			push @$query_args, @$rank_query_args;
+		}
+		
 		
 		## Prepare FROM clause
 		my $from_tables = ' FROM '.$db.'.'.$dbh->quote_identifier($class->table).
@@ -386,7 +412,9 @@ package AppCore::DBI::SimpleListModel;
 		} : undef));
 		
 		#die "'$orderby_sql'";
-		my $sort_clause = $orderby_sql ? " ORDER BY ".$orderby_sql : '';
+		my $sort_clause = $orderby_sql ? 
+			" ORDER BY ".($ranking_enabled ? "_search_rank desc, " : '') . $orderby_sql : 
+			($ranking_enabled ? "ORDER BY _search_rank desc" : '');
 		
 		#print STDERR "\$orderby_sql: '$orderby_sql'\n";
 		
@@ -838,6 +866,250 @@ package AppCore::DBI::SimpleListModel;
 		return $field_sql;
 	}
 	
+# 	sub _get_rank_case
+# 	{
+# 		my ($self, $column_name, $non_wild_string, $wild_string) = @);
+# 		
+# 		my $dbh = $self->cdbi_class->db_Main;
+# 		
+# 		# Added protection for quote()
+# 		$non_wild_string =~ s/[^[:ascii:]]//g;
+# 		$wild_string     =~ s/[^[:ascii:]]//g;
+# 		
+# 		my $quoted_column  = $dbh->quote_identifier($column_name);
+# 		my $quoted_nonwild = $dbh->quote($non_wild_string);
+# 		my $quoted_wild    = $dbh->quote($wild_string);
+# 		
+# 		return qq{
+# 		(
+# 			case
+# 			when lower($quoted_column) like concat('%', lower($quoted_nonwild), '%') then
+# 				round ((1-abs((\@last_len:= length(last)) - (\@string_len := length($quoted_nonwild))) / greatest(\@last_len, \@string_len)) * 100)
+# 			when lower($quoted_column) like concat('%', lower($quoted_wild), '%') then
+# 				round ((1-abs((\@last_len:= length(last)) - (\@string_len := length(replace($quoted_wild,'%','')))) / greatest(\@last_len, \@string_len)) * .5 * 100)
+# 			else
+# 				0
+# 			end
+# 		)
+# 		};
+# 	}
+	
+	sub enable_search_ranking
+	{
+		my $self = shift;
+		
+		my $flag = shift || 0;
+		
+		$self->{search_ranking} = $flag;
+		
+		
+		# NOTE: MySQL will not let us give a 'delimiter' on the wire like this via a client,
+		# so we can't predefine the function.
+		# I rewrote the function below into an SQL CASE statement, accessed via _get_rank_case(), above,
+		# however, I have concerns about SQL injection even with the use of quote().
+		# Instead, I've opted to load it via bin/flush_db.pl from bin/text_match_function.sql.
+		# Therefore, we can just always "assume" that match_ratio() exists as a function
+		
+# 		if($flag)
+# 		{
+# 			my $dbh = $self->cdbi_class->db_Main;
+# 			
+# 			my $sql_match_function = 'match_ratio';
+# 			
+# 			# Add our function to rank results if needed
+# 			my $sth_count = $dbh->prepare_cached(q{
+# 				SELECT COUNT(1) 
+# 				FROM information_schema.ROUTINES as info
+# 				WHERE info.ROUTINE_SCHEMA = DATABASE() AND info.ROUTINE_TYPE = 'FUNCTION' AND info.ROUTINE_NAME = ?
+# 			});
+# 			
+# 			$sth_count->execute($sql_match_function);
+# 			
+# 			if(!$sth_count->fetchrow)
+# 			{
+# 				$dbh->do(q{
+# 				   
+# 					DELIMITER //
+# 
+# 					DROP FUNCTION  IF EXISTS `match_ratio` //
+# 					
+# 					CREATE FUNCTION `match_ratio` ( s1 text, s2 text, s3 text ) RETURNS int(11)
+# 						DETERMINISTIC
+# 					BEGIN 
+# 						DECLARE s1_len, s2_len, s3_len, max_len INT; 
+# 						DECLARE s3_tmp text;
+# 								
+# 						SET s1_len = LENGTH(s1), 
+# 							s2_len = LENGTH(s2);
+# 						IF s1_len > s2_len THEN  
+# 							SET max_len = s1_len;  
+# 						ELSE  
+# 							SET max_len = s2_len;  
+# 						END IF; 
+# 					
+# 						if lower(s1) like concat('%',lower(s2),'%') then
+# 							return round((1 - (abs(s1_len - s2_len) / max_len)) * 100);
+# 						else
+# 							set s3_tmp = replace(s3, '%', '');
+# 							set s3_len = length(s3_tmp);
+# 							
+# 							
+# 							IF s1_len > s3_len THEN  
+# 								SET max_len = s1_len;  
+# 							ELSE  
+# 								SET max_len = s3_len;  
+# 							END IF; 
+# 							
+# 							if lower(s1) like concat('%',lower(s3),'%') then
+# 								/*round(abs(s1_len - s3len) / max_len * .5 * 100);*/
+# 								return round((1 - (abs(s1_len - s3_len) / max_len)) * .5 * 100);
+# 							else
+# 							
+# 								return 0;
+# 							end if;
+# 						end if;
+# 					
+# 					END //
+# 					DELIMITER
+# 				});
+# 			}
+# 
+# 		}
+		
+	}
+	
+	sub create_rank_column
+	{
+		my $self = shift;
+		my $filter = shift || $self->filter;
+		my $dont_parse_string = shift || 0;
+		
+		#print STDERR "$self: \$filter='$filter'\n";
+		
+		my $class = $self->cdbi_class;
+		
+		my $dbh = $class->db_Main;
+		
+		my $db_quoted    = $dbh->quote_identifier($self->get_db_name);
+		my $table_quoted = $dbh->quote_identifier($class->table);
+		
+		my $rank_sql;
+		my $clause;
+		my @args;
+		
+		#my $searching_flag = 0;
+		#die AppCore::Common::debug_sql($clause,@args);
+		
+		{
+			#and ('nash'      like @nonwild_string:= 'nash')
+			#and ('%n%a%s%h%' like @wild_string   := '%n%a%s%h%')
+			
+			my $filter_wild = lc($filter);
+			#$filter_wild =~ s/\s+/%/g;
+			
+			$filter_wild =~ s/\s+/ /g;	# collapse spaces
+			my $filter_nonwild = $filter_wild;
+			
+			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
+			$filter_wild = '%'.$filter_wild;
+			
+			# Use the 'where' clause to set our variables for use in the SELECT statement
+			$clause = qq{
+				    (? like \@nonwild_string := ?)
+				and (? like \@wild_string    := ?)
+			};
+			
+			push @args, ($filter_nonwild);
+			push @args, ($filter_nonwild);
+			push @args, ($filter_wild);
+			push @args, ($filter_wild);
+			
+			# Added protection for quote()
+			$filter_nonwild =~ s/[^[:ascii:]]//g;
+			$filter_wild    =~ s/[^[:ascii:]]//g;
+			
+			#my $quoted_column  = $dbh->quote_identifier($column_name);
+			my $quoted_nonwild = $dbh->quote($filter_nonwild);
+			my $quoted_wild    = $dbh->quote($filter_wild);
+
+			# NOTE:
+			#
+			# After testing this out, I discovered the the HACK above (using ? like @var := ?) to set variables,
+			# while it worked from the command line client, DID NOT WORK over the wire from the Perl DBI
+			# client. 
+			# 
+			# Therefore, I have to resort (FOR NOW) to using quote()...crikey...not happy about this at all.
+			# 
+			# 
+			
+			# Get the list of columns to use in our ratio
+			my @fmt = $class->can('stringify_fmt') ? $class->stringify_fmt : ();
+			@fmt = ('#'.($class->meta->{first_string} || $class->primary_column)) if !@fmt;
+			@fmt = grep { /^#/ } @fmt;
+			s/^#//g foreach @fmt;
+			
+			# Call match_ratio() to match the filter against each column in the stringify_fmt()
+			my @ratio_list;
+			@ratio_list = map { 
+				#'match_ratio(' . $dbh->quote_identifier($_) .', @nonwild_string, @wild_string)'
+				'match_ratio(' . $dbh->quote_identifier($_) .', '.$quoted_nonwild.', '.$quoted_wild.')'
+			} @fmt;
+			
+			# Add another 'column' for the ratio against the entire unified stringify_fmt() value
+			my $text = $class->get_stringify_sql(1); # 1 = lower case the fields
+			
+			#match_ratio($text, \@nonwild_string, \@wild_string)
+				
+			push @ratio_list, qq{
+				match_ratio($text, $quoted_nonwild, $quoted_wild)
+			};
+			
+			# Combine them into an average match ratio as a single SQL statement,
+			# suitable for use like "select $rank_sql as `ranking` from ... where ... and $clause"
+			# (using the $clause and @args created above to inject the filter strings)
+			
+			my $ratio_len = scalar @ratio_list;
+			
+			$rank_sql = "((\n\t"
+				.join(" + \n\t", @ratio_list)
+				.") / $ratio_len)";
+			
+# 			my $string_clause = qq{(($text like ?) and ($text <> ""))};
+# 			
+# 			
+# 			#die Dumper(\@args). $string_clause;
+# 			#$dont_parse_string
+# 			
+# 			if($dont_parse_string)
+# 			{
+# 				$clause = $string_clause;
+# 			}
+# 			else
+# 			{
+# 				my $sql_data = $self->parse_string_query($filter);
+# 				
+# 				$clause = '(' . $string_clause . ' or '. $sql_data->{sql} . ')';
+# 				push @args, @{$sql_data->{args} || []};
+# 			}
+# 			
+# 			if($self->{search_hook})
+# 			{
+# 				my $sql_data = $self->{search_hook}->($filter);
+# 				
+# 				$clause = '(' . $clause . ' or '. $sql_data->{sql} . ')';
+# 				push @args, @{$sql_data->{args} || []};
+# 			}
+			
+			
+		}
+		
+		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
+		
+		return ($rank_sql, $clause, \@args);
+	}
+	
 	sub create_sql_filter
 	{
 		my $self = shift;
@@ -872,15 +1144,16 @@ package AppCore::DBI::SimpleListModel;
 			
 			my $filter_wild = lc($filter);
 			#$filter_wild =~ s/\s+/%/g;
+			
 			$filter_wild =~ s/\s+/ /g;	# collapse spaces
 			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
 			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
 			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
 			$filter_wild = '%'.$filter_wild;
-
+			
 			push @args, ($filter_wild);
 			
-			#die Dumper \@args, $string_clause;
+			#die Dumper(\@args). $string_clause;
 			#$dont_parse_string
 			
 			if($dont_parse_string)

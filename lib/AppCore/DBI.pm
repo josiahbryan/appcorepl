@@ -1411,7 +1411,7 @@ package AppCore::DBI;
 		#die Dumper \@f;
 		
 		
-		my $concat = $class->get_stringify_sql(1);
+		my $concat = $class->get_stringify_sql(1); # 1 = lower case the fields
 		
 		# Changed clause '1' to '1=1' for compat with MSSQL (and still works with MySQL)
 		$fkclause = '1=1' if !$fkclause || $fkclause eq '' || $fkclause =~ /={/;

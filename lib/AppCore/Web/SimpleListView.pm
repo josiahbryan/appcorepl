@@ -565,6 +565,7 @@ package AppCore::Web::SimpleListView;
 				
 			## Compile and add the list values to the template
 			my $rows = $model->compile_list($self->page_start, $self->page_length);
+			#die Dumper $rows;
 			
 			## Let the template know if we were searched and how 
 
@@ -744,7 +745,22 @@ package AppCore::Web::SimpleListView;
 	{
 		my $regex = shift;
 		$regex =~ s/(^\s+|\s+$)//g;
+		
+		# Apply same wildcard formatting to highlight regex
+		$regex =~ s/\s+/ /g;		# collapse spaces
+		$regex =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
+		
+		# Escape any odd characters
 		$regex =~ s/([^\w\s\d])/\\$1/g;
+		
+		$regex =~ s/(.)/$1./g;		# insert '.' between every character
+		$regex =~ s/\.\s*\././g;	# collapse '% %' into '%'
+		$regex =~ s/\.$//g;		# remove '.' from end
+		$regex =~ s/\./.*/g;		# make '.' expansive
+		
+		#die $regex;
+		
+		
 		return $regex;
 	}
 		
