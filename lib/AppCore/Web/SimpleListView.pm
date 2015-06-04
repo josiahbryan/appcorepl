@@ -575,7 +575,8 @@ package AppCore::Web::SimpleListView;
 			$output_data->{query_tokenized} = $self->prep_tokenized_query();
 			
 			# do filter row highlighting here
-			my $filter_value_regex = _regexp_escape($model->filter);
+			my $filter = $model->filter;
+			my $filter_value_regex = _regexp_escape($filter);
 			
 			my $row_highlighting_enabled = defined $self->{enable_row_highlighting} ? $self->{enable_row_highlighting} : 1;
 			
@@ -593,8 +594,9 @@ package AppCore::Web::SimpleListView;
 					}
 				}
 				
-				$row->{odd_flag} = ++ $count % 2 == 0;
-				$row->{page} = $view_page_path_prefix;
+				$row->{odd_flag}  = ++ $count % 2 == 0;
+				$row->{page}      = $view_page_path_prefix;
+				$row->{_filter}   = $filter;
 				
 				$self->row_mudge_hook($row);
 			}

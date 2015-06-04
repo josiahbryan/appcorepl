@@ -360,8 +360,10 @@ package AppCore::DBI::SimpleListModel;
 		
 		if($ranking_enabled)
 		{
-			push @columns, $rank_column."\n".
+			push @columns, "(\@search_rank := $rank_column)\n".
 				"\t AS _search_rank\n";
+			push @columns, "ROUND(\@search_rank)\n".
+				"\t AS _search_rank_int\n";
 		}
 		
 		my $select_columns = 'SELECT '.join(', ',@columns);
@@ -1047,7 +1049,7 @@ package AppCore::DBI::SimpleListModel;
 			# Get the list of columns to use in our ratio
 			my @fmt = $class->can('stringify_fmt') ? $class->stringify_fmt : ();
 			@fmt = ('#'.($class->meta->{first_string} || $class->primary_column)) if !@fmt;
-			@fmt = grep { /^#/ } @fmt;
+			@fmt = grep { /^#/ } grep { !/\./ } @fmt;
 			s/^#//g foreach @fmt;
 			
 			# Call match_ratio() to match the filter against each column in the stringify_fmt()
