@@ -576,7 +576,7 @@ package AppCore::Web::SimpleListView;
 			
 			# do filter row highlighting here
 			my $filter = $model->filter;
-			my $filter_value_regex = _regexp_escape($filter);
+			my $filter_value_regex = _regexp_escape(lc($filter));
 			
 			my $row_highlighting_enabled = defined $self->{enable_row_highlighting} ? $self->{enable_row_highlighting} : 1;
 			
@@ -590,7 +590,7 @@ package AppCore::Web::SimpleListView;
 					if($filter_value_regex && $row_highlighting_enabled) 
 					{
 						$row->{$key.'_orig'} = $row->{$key};
-						$row->{$key} =~ s/($filter_value_regex)/<b class='filter_highlight'>$1<\/b>/gi;
+						$row->{$key} =~ s/($filter_value_regex)/length($1) > 0 ? "<b class='filter_highlight'>$1<\/b>" : ""/segi;
 					}
 				}
 				
@@ -755,7 +755,28 @@ package AppCore::Web::SimpleListView;
 		# Escape any odd characters
 		$regex =~ s/([^\w\s\d])/\\$1/g;
 		
-		$regex =~ s/(.)/$1./g;		# insert '.' between every character
+		#$regex =~ s/(.)(.)/(?:$1.(?=$2))?$2/g;	# insert '.' between every character
+		$regex =~ s/(.)/$1./g;	# insert '.' between every character
+		
+# 		my @letters = split //, $regex;
+# 		my @regex_parts;
+# 		for my $x (0..$#letters)
+# 		{
+# 			my $cur = $letters[$x];
+# 			if($x < $#letters)
+# 			{
+# 				my $next = $letters[$x+1];
+# 				push @regex_parts, "(?:${cur}.(?=$next))?";
+# 			}
+# 			else
+# 			{
+# 				my $prev = $letters[$x-1];
+# 				push @regex_parts, "(?:(?<=$prev).${cur})?";
+# 			}
+# 		}
+# 		
+# 		$regex = join '', @regex_parts;
+		
 		$regex =~ s/\.\s*\././g;	# collapse '% %' into '%'
 		$regex =~ s/\.$//g;		# remove '.' from end
 		$regex =~ s/\./.*/g;		# make '.' expansive

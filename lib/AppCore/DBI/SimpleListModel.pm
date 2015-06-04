@@ -394,7 +394,8 @@ package AppCore::DBI::SimpleListModel;
 			#$where_clause .="\n AND ".$rank_query;
 			
 			# Tack on the string args from the ranking function to calculate rank values
-			push @$query_args, @$rank_column_args;
+			#push @$query_args, @$rank_column_args;
+			$query_args = [ @$rank_column_args, @$query_args ];
 		}
 		
 		
@@ -443,6 +444,7 @@ package AppCore::DBI::SimpleListModel;
 		);
 		
 		#use AppCore::Common;
+		#die Dumper \@$query_args;
 		#die AppCore::Common::debug_sql($sql_table, @$query_args);
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
@@ -1125,6 +1127,7 @@ package AppCore::DBI::SimpleListModel;
 			push @args, ($filter_wild);
 			
 			#die Dumper(\@args). $string_clause;
+			#die AppCore::Common::debug_sql($string_clause, @args);
 			#$dont_parse_string
 			
 			if($dont_parse_string)
@@ -1179,6 +1182,8 @@ package AppCore::DBI::SimpleListModel;
 		
 		
 		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
+		
+		#die AppCore::Common::debug_sql($clause, @args);
 		
 		return (\@tables, $clause, \@args);
 	}
