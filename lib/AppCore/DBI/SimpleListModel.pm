@@ -286,11 +286,11 @@ package AppCore::DBI::SimpleListModel;
 		my $table_list = $self->list_columns || [ map { $_->{name} } $class->columns ];
 		
 		# If search ranking requested, generate the args needed
-		my ($rank_column,  $rank_query, $rank_query_args, $ranking_enabled);
+		my ($rank_column, $rank_column_args, $ranking_enabled);
 		
 		if($ranking_enabled = $self->{search_ranking})
 		{
-			($rank_column,  $rank_query, $rank_query_args) = $self->create_rank_column(undef,1);
+			($rank_column, $rank_column_args) = $self->create_rank_column(undef,1);
 		}
 		
 		
@@ -387,10 +387,10 @@ package AppCore::DBI::SimpleListModel;
 		if($ranking_enabled)
 		{
 			# Tack on our injection code to the where clause
-			$where_clause .="\n AND ".$rank_query;
+			#$where_clause .="\n AND ".$rank_query;
 			
-			# Tack on our ranking query injection args to the actual query args
-			push @$query_args, @$rank_query_args;
+			# Tack on the string args from the ranking function to calculate rank values
+			push @$query_args, @$rank_column_args;
 		}
 		
 		
@@ -996,16 +996,9 @@ package AppCore::DBI::SimpleListModel;
 		my $table_quoted = $dbh->quote_identifier($class->table);
 		
 		my $rank_sql;
-		my $clause;
 		my @args;
 		
-		#my $searching_flag = 0;
-		#die AppCore::Common::debug_sql($clause,@args);
-		
 		{
-			#and ('nash'      like @nonwild_string:= 'nash')
-			#and ('%n%a%s%h%' like @wild_string   := '%n%a%s%h%')
-			
 			my $filter_wild = lc($filter);
 			#$filter_wild =~ s/\s+/%/g;
 			
@@ -1016,36 +1009,7 @@ package AppCore::DBI::SimpleListModel;
 			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
 			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
 			$filter_wild = '%'.$filter_wild;
-			
-			# Use the 'where' clause to set our variables for use in the SELECT statement
-			$clause = qq{
-				    (? like \@nonwild_string := ?)
-				and (? like \@wild_string    := ?)
-			};
-			
-			push @args, ($filter_nonwild);
-			push @args, ($filter_nonwild);
-			push @args, ($filter_wild);
-			push @args, ($filter_wild);
-			
-			# Added protection for quote()
-			$filter_nonwild =~ s/[^[:ascii:]]//g;
-			$filter_wild    =~ s/[^[:ascii:]]//g;
-			
-			#my $quoted_column  = $dbh->quote_identifier($column_name);
-			my $quoted_nonwild = $dbh->quote($filter_nonwild);
-			my $quoted_wild    = $dbh->quote($filter_wild);
 
-			# NOTE:
-			#
-			# After testing this out, I discovered the the HACK above (using ? like @var := ?) to set variables,
-			# while it worked from the command line client, DID NOT WORK over the wire from the Perl DBI
-			# client. 
-			# 
-			# Therefore, I have to resort (FOR NOW) to using quote()...crikey...not happy about this at all.
-			# 
-			# 
-			
 			# Get the list of columns to use in our ratio
 			my @fmt = $class->can('stringify_fmt') ? $class->stringify_fmt : ();
 			@fmt = ('#'.($class->meta->{first_string} || $class->primary_column)) if !@fmt;
@@ -1055,17 +1019,18 @@ package AppCore::DBI::SimpleListModel;
 			# Call match_ratio() to match the filter against each column in the stringify_fmt()
 			my @ratio_list;
 			@ratio_list = map { 
-				#'match_ratio(' . $dbh->quote_identifier($_) .', @nonwild_string, @wild_string)'
-				'match_ratio(' . $dbh->quote_identifier($_) .', '.$quoted_nonwild.', '.$quoted_wild.')'
+				push @args, $filter_nonwild, $filter_wild;
+				
+				'match_ratio(' . $dbh->quote_identifier($_) .', ?, ?)'
 			} @fmt;
 			
 			# Add another 'column' for the ratio against the entire unified stringify_fmt() value
 			my $text = $class->get_stringify_sql(1); # 1 = lower case the fields
 			
-			#match_ratio($text, \@nonwild_string, \@wild_string)
-				
+			push @args, $filter_nonwild, $filter_wild;
+			
 			push @ratio_list, qq{
-				match_ratio($text, $quoted_nonwild, $quoted_wild)
+				match_ratio($text, ?, ?)
 			};
 			
 			# Combine them into an average match ratio as a single SQL statement,
@@ -1109,7 +1074,7 @@ package AppCore::DBI::SimpleListModel;
 		
 		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
 		
-		return ($rank_sql, $clause, \@args);
+		return ($rank_sql, \@args);
 	}
 	
 	sub create_sql_filter
