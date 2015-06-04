@@ -286,9 +286,13 @@ package AppCore::DBI::SimpleListModel;
 		my $table_list = $self->list_columns || [ map { $_->{name} } $class->columns ];
 		
 		# If search ranking requested, generate the args needed
-		my ($rank_column, $rank_column_args, $ranking_enabled);
+		my ($rank_column, $rank_column_args);
 		
-		if($ranking_enabled = $self->{search_ranking})
+		my $ranking_enabled = 
+			$self->{search_ranking} &&
+			length($self->filter) > 0;
+		
+		if($ranking_enabled)
 		{
 			($rank_column, $rank_column_args) = $self->create_rank_column(undef,1);
 		}
