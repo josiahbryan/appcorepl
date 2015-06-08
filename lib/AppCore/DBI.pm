@@ -2374,12 +2374,12 @@ package AppCore::DBI;
 	sub to_stringified_hash
 	{
 		my $self = shift;
-		#my $model = shift || $self->model;
 		my $model = $self;
+		
 		my $expand = shift;
 		$expand = 1 if !defined $expand;
 		
-		my %hash;
+		my $ref = shift || {};
 		
 		foreach my $col ($model->columns)
 		{
@@ -2390,7 +2390,7 @@ package AppCore::DBI;
 			{
 				if($expand)
 				{
-					$hash{$col.'_raw'} = $val;
+					$ref->{$col.'_raw'} = $val;
 					
 					eval 'use '.$fm->{linked};
 					my $x = eval {$fm->{linked}->stringify($val)};
@@ -2402,12 +2402,75 @@ package AppCore::DBI;
 				}
 			}
 			
-			$hash{$col} = $val;
+			$ref->{$col} = $val;
 		}
 		
-		return \%hash;
+		return $ref;
 	
 	}
+	
+	sub stringify_into_hash#($dest_hash,$key_prefix)
+	{
+		my $self       = shift;
+		
+		my $dest_hash  = shift || {};
+		my $prefix     = shift || undef;
+		
+		my $key_prefix = $prefix ? $prefix.'_' :'';
+		
+		foreach my $col_name ($self->columns)
+		{
+			my $col_val    = $self->get($col_name);
+			my $param_name = $key_prefix.$col_name;
+			
+			$dest_hash->{$param_name} = $col_val;
+			
+			my $fm = $self->field_meta($col_name);
+			
+			if($fm && $fm->{linked})
+			{
+				eval 'use '.$fm->{linked};
+				
+				my $string_val = eval {$fm->{linked}->stringify($col_val)};
+				
+				$self->{$param_name.'_string'}
+					= $string_val
+					if !$@;
+				
+				undef $@;
+				
+				eval
+				{
+					# stringify() handles retrieving $col_val internally 
+					# if not an object. However, most common url()
+					# implementations don't do that themselves, so 
+					# we do it here.
+					if($fm->{linked}->can('url'))
+					{
+						my $linked_inst
+							= ref $col_val ? 
+								$col_val : 
+								$fm->{linked}->retrieve($col_val);
+						
+						if($linked_inst)
+						{
+							$dest_hash->{$param_name.'_url'}
+								= $linked_inst->url();
+								
+							$dest_hash->{$param_name.'_html_url'}
+								= $linked_inst->html_url()
+									if $linked_inst->can('html_url');
+						}
+					}
+				};
+				
+				warn "Error when trying to auto-create URLs: $@" if $@;
+			}
+		}
+		
+		return $dest_hash;
+	}
+	
 	
 	sub before_update_diff
 	{

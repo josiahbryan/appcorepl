@@ -1025,56 +1025,17 @@ package HTML::Template::DelayedLoading;
 		if(@_)
 		{
 			my $val = shift;
-			if(UNIVERSAL::isa($val, 'AppCore::DBI'))
-			{
-				foreach my $col_name ($val->columns)
-				{
-					my $col_val    = $val->get($col_name);
-					my $param_name =  $key.'_'.$col_name;
-					
-					$self->{params}->{$param_name} = $col_val;
-					
-					my $fm = $val->field_meta($col_name);
-					if($fm && $fm->{linked})
-					{
-						eval 'use '.$fm->{linked};
-						
-						my $string_val = eval {$fm->{linked}->stringify($col_val)};
-						
-						$self->{params}->{$param_name.'_string'}
-							= $string_val
-							if !$@;
-						
-						eval
-						{
-							# stringify() handles retrieving $col_val internally 
-							# if not an object. However, most common url()
-							# implementations don't do that themselves, so 
-							# we do it here.
-							if($fm->{linked}->can('url'))
-							{
-								my $linked_inst
-									= ref $col_val ? 
-									      $col_val : 
-									      $fm->{linked}->retrieve($col_val);
-								
-								if($linked_inst)
-								{
-									$self->{params}->{$param_name.'_url'}
-										= $linked_inst->url();
-										
-									$self->{params}->{$param_name.'_html_url'}
-										= $linked_inst->html_url()
-											if $linked_inst->can('html_url');
-								}
-							}
-								
-						};
-						
-						warn "Error when trying to auto-create URLs: $@" if $@;
-					}
-				}
-			}
+			
+			# stringify_into_hash() will, for each column in $val:
+			# - Add it to {params} as $key.'_'.$column (ex. patientid_first)
+			# - If linked to another table, stringify it and suffix it 
+			#	with '_string', ex. 'patientid_doctorid_string'
+			# - If linked to another table and the other class can('url') 
+			#	and/or html_url, keys with those suffix will be added, ex:
+			#	- patientid_doctorid_url
+			#	- patientid_doctorid_html_url
+			$val->stringify_into_hash($self->{params}, $key)
+				if UNIVERSAL::isa($val, 'AppCore::DBI');
 			
 			$self->{params}->{$key} = $val;
 		}

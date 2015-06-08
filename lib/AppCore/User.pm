@@ -1,6 +1,8 @@
 # Package: AppCore::Auth
 # Namespace for Authentication and user classes
 
+use AppCore::DBI::JSONWrapper;
+
 # Class: AppCore::User
 # Implentation of a 'person' or Entity in EAS terminology. Often used for User objects, should be what is returned by AppCore::Common->context->user.
 package AppCore::User;
@@ -188,13 +190,13 @@ package AppCore::User;
 		my $dat  = $self->{_user_data_inst} || $self->{_data};
 		if(!$dat)
 		{
-			return $self->{_data} = AppCore::User::GenericDataClass->_init($self);
+			return $self->{_data} = AppCore::DBI::JSONWrapper->_init($self);
 		}
 		return $dat;
 	}
 	
 # Method: set_data($ref)
-# If $ref is a hashref, it creates a new AppCore::User::GenericDataClass wrapper and sets that as the data class for this instance.
+# If $ref is a hashref, it creates a new AppCore::DBI::JSONWrapper wrapper and sets that as the data class for this instance.
 # If $ref is a reference (not a CODE or ARRAY), it checks to see if $ref can get,set,is_changed, and update - if true,
 # it sets $ref as the object to be used as the data class.
 	sub set_data#($ref)
@@ -203,7 +205,7 @@ package AppCore::User;
 		my $ref = shift;
 		if(ref $ref eq 'HASH')
 		{
-			$self->{_data} = AppCore::User::GenericDataClass->new($self,$ref);
+			$self->{_data} = AppCore::DBI::JSONWrapper->new($self,$ref);
 		}
 		elsif(ref $ref && ref $ref !~ /(CODE|ARRAY)/)
 		{
@@ -1010,71 +1012,6 @@ package AppCore::User;
 		return $user_obj;
 	}
 };	
-
-# Package: AppCore::User::GenericDataClass 
-# Designed to emulate a very very simple version of Class::DBI's API.
-# Provides get/set/is_changed/update. Not to be created directly, 
-# rather you should retrieve an instance of this class through the
-# PHC::WebBoard::Post::GenericDataClass->data() method.
-# Note: You can use your own Class::DBI API-compatible class as a data
-# container to be returned by AppCore::User->data() (just implement get, set, is_changed, and update) 
-# Just call $user->set_data($my_class_instance).
-# Copied from PHC::WebBoard::Post::GenericDataClass;
-package AppCore::User::GenericDataClass;
-{
-	use JSON qw/to_json from_json/;
-	use Data::Dumper;
-
-
-# Method: _init($inst,$ref)
-# Private, only to be initiated by the User instance
-	sub _init
-	{
-		my $class = shift;
-		my $inst = shift;
-		#print STDERR "Debug: init '".$inst->data_store."'\n";
-		my $self = bless {data=>from_json($inst->extra_data ? $inst->extra_data  : '{}'),changed=>0,inst=>$inst}, $class;
-		#print STDERR "Debug: ".Dumper($self->{data});
-		return $self;
-		
-	}
-	
-	sub hash {shift->{data}}
-
-# Method: get($k)
-# Return the value for key $k
-	sub get#($k)
-	{
-		my $self = shift;
-		my $k = shift;
-		return $self->{data}->{$k};
-	}
-
-# Method: set($k,$v)
-# Set value for $k to $v
-	sub set#($k,$v)
-	{
-		my $self = shift;#shift->{shift()} = shift;
-		my ($k,$v) = @_;
-		$self->{data}->{$k} = $v;
-		$self->{changed} = 1;
-		return $self->{$k};
-	}
-
-# Method: is_changed()
-# Returns true if set() has been called
-	sub is_changed{shift->{changed}}
-
-# Method: update()
-# Commits the changes to the workflow instance object
-	sub update
-	{
-		my $self = shift;
-		$self->{inst}->extra_data(to_json($self->{data}));
-		#print STDERR "Debug: save '".$self->{inst}->data_store."'\n";
-		return $self->{inst}->update;
-	}
-}
 
 
 
