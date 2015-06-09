@@ -2433,7 +2433,7 @@ package AppCore::DBI;
 				
 				my $string_val = eval {$fm->{linked}->stringify($col_val)};
 				
-				$self->{$param_name.'_string'}
+				$dest_hash->{$param_name.'_string'}
 					= $string_val
 					if !$@;
 				
