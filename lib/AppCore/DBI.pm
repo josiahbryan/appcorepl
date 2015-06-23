@@ -1406,7 +1406,7 @@ package AppCore::DBI;
 		my @dbcols = map { s/^#//;$_ } grep { /^#/ } @fmt;
 		if(!@dbcols && ref $fmt[0] eq 'ARRAY')
 		{
-			@dbcols = map { s/^#//;$_ } grep { /^#/ } @{$fmt[0]};
+			@dbcols = map { s/^#//;$_ } grep { !/\./} grep { /^#/ } @{$fmt[0]};
 		}
 		#die Dumper \@f;
 		
@@ -1451,7 +1451,7 @@ package AppCore::DBI;
 				$fallthru_to_multi = 0;
 				
 				my $sql = "SELECT $q_primary \nFROM $q_table \nWHERE $concat = ? \nAND $fkclause";
-				#print STDERR "\nMark1: sql:\n\t$sql\nval=[".lc($val)."]\n\n" if $debug;
+				#print STDERR "\nMark1: sql:\n\t$sql\nval=[".lc($val)."]\n\n"; #if $debug;
 				my $sth = $dbh->prepare($sql);
 				$sth->execute(lc($val));
 				

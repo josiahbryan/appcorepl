@@ -272,17 +272,42 @@ package Content::Page::Type;
 			$pkg->process_page($self,$req,$r,$page_obj);
 		};
 		
-		if(my $err = $@)
+		if(my $error = $@)
 		{
-			if($err =~ /MySQL server has gone away/)
+			if($error =~ /MySQL server has gone away/)
 			{
 				# Propogate database error
-				die $err;
+				die $error;
+			}
+			elsif(UNIVERSAL::isa($error, 'AppCore::Web::Common::RequestException'))
+			{
+				$r->{status}  = $error->{code}; 
+				push @{$r->{headers}}, @{$error->{headers} || []};
+				$r->{body}    = $error->{body};
+				
+				# Grab Content-Type from the headers array if present
+				# because 'content_type' is a "special" header used in AppCore - poor design, I know.
+				my @ctype =
+					grep { lc $_->[0] eq 'content-type' }
+					@{$error->{headers} || []};
+					
+				$r->{content_type} = $ctype[0]->[1]
+					if @ctype;
 			}
 			else
 			{
-				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$err</pre>");
+# 				#die $error;
+# 				$r->{status}  = 500;
+# 				#$r->{headers} = [["Content-Type","text/html"]];
+# 				#$r->{body}    = "The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$error</pre>";
+# 				$r->{body}    = $error; #"The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$error</pre>";
+# 				$r->{content_type} = "text/plain";
+# 				
+				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$error</pre>");
 			}
+			
+			
+			
 		}
 		
 		return $r;

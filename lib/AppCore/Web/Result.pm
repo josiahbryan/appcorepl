@@ -86,7 +86,8 @@ package AppCore::Web::Result;
 		$self->{header_map}->{lc($name)} = $value;
 		
 		$self->{headers} ||= [];
-		push @{$self->{headers}}, {name=>$name,value=>$value};
+		#push @{$self->{headers}}, {name=>$name,value=>$value};
+		push @{$self->{headers}}, [$name,$value];
 	}
 	
 	sub has_result
@@ -99,12 +100,15 @@ package AppCore::Web::Result;
 	{
 		my $self = shift;
 		my $url = shift || '/';
-		$self->status(302);
-		$self->header('Location',$url);
+		
 		#print "Status: 302\r\nLocation: $url\n\n";
 		#exit;
+		
 		if(AppCore::Common->context->{http_server_brick})
 		{
+			$self->status(302);
+			$self->header('Location',$url);
+		
 			AppCore::Common->context->{_tmp_result} = $self;
 			goto END_HTTP_REQUEST;
 		}
@@ -138,7 +142,15 @@ package AppCore::Web::Result;
 		
 		if(!$user || $user->id !=1)
 		{
-			#AppCore::Web::Common::send_email([AppCore::Config->get('WEBMASTER_EMAIL')],"[AppCore Error] Error: $title","Error '$title' in ".AppCore::Web::Common::get_full_url().".\n\n$text",1,$from);
+			my $msg_ref = AppCore::EmailQueue->send_email(
+				[AppCore::Config->get('WEBMASTER_EMAIL')],
+					"[AppCore Error] Error: $title",
+					"Error '$title' in ".AppCore::Web::Common::get_full_url().".\n\n$text",
+					1,
+					$from);
+					
+			# Send right away so the user doesn't have to wait for the crontab daemon to run at the top of the minute
+			$msg_ref->transmit;
 		}
 		
 		AppCore::Web::Common::error($title,

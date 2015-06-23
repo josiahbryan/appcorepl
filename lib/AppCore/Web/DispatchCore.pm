@@ -3,7 +3,6 @@ use strict;
 package AppCore::Web::DispatchCore;
 {
 	use HTML::Template;
-#	use CGI::Carp qw/fatalsToBrowser/;
 	use Data::Dumper;
 	
 	use lib 'lib';
@@ -73,9 +72,12 @@ package AppCore::Web::DispatchCore;
 		my $email = AppCore::Config->get('WEBMASTER_EMAIL');
 		#print STDERR "Webmaster email: '$email'\n";
 		
-		print "Content-Type: text/html\n\n";
-		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>";
-		exit;
+# 		print "Content-Type: text/html\n\n";
+# 		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>";
+# 		exit;
+
+		die AppCore::Web::Common::RequestException->new(500, ["Content-Type", "text/html"],
+			"<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>");
 		
 		
 		
@@ -91,6 +93,7 @@ package AppCore::Web::DispatchCore;
 		# 	AppCore::Session->_reset;
 		# # 	
 		AppCore::Common->context->{mod_fastcgi} = 1;
+		AppCore::Common->context->{cgi} = $q;
 		
 		$SIG{__WARN__} = sub 
 		{
@@ -101,7 +104,9 @@ package AppCore::Web::DispatchCore;
 		$SIG{__DIE__} = sub 
 		{
 			my $err = join(" ", @_);
-			return if $err =~ /(can't locate|undefined sub|Server returned error: Not permitted for method)/i;
+			return if $err =~ /(can't locate|undefined sub|Server returned error: Not permitted for method)/i
+				|| UNIVERSAL::isa($_[0], 'AppCore::Web::Common::RequestException');
+			
 			print STDERR "Error: $err, Stack trace:\n";
 			AppCore::Common::print_stack_trace();
 			
@@ -230,8 +235,7 @@ package AppCore::Web::DispatchCore;
 		#print $mod_obj->main();
 		
 		# Compose the arguments hashref for the app
-		#my $q = new CGI;
-		my $args = $q->Vars; #$q->Vars;
+		my $args = $q->Vars;
 		$args->{PATH_INFO} = $path;
 		
 		my $ctx_ref;
@@ -241,7 +245,6 @@ package AppCore::Web::DispatchCore;
 		$ctx_ref->http_root(''); #$root);
 		$ctx_ref->http_bin('');#$env);
 		$ctx_ref->x('IsMobile',ismobile( $ENV{HTTP_USER_AGENT} ));
-		$ctx_ref->x('cgi', $q);
 		
 		REPROCESS_AUTHENTICATION:
 		eval
@@ -318,8 +321,59 @@ package AppCore::Web::DispatchCore;
 			# can choose to handle process_request themselves and do whatever they want
 			# with 'res/' paths.
 			
-			my $response = $mod_obj->dispatch($request, AppCore::Web::Result->new);
+			my $response = AppCore::Web::Result->new;
 			
+			undef $@;
+			eval {
+				$response = $mod_obj->dispatch($request, $response);
+			};
+			
+			my $error = $@;
+			if($error)
+			{
+				if(UNIVERSAL::isa($error, 'AppCore::Web::Common::RequestException'))
+				{
+					$response->{status}  = $error->{code}; 
+					#$response->{headers} = $error->{headers};
+					push @{$response->{headers}}, @{$error->{headers} || []};
+					$response->{body}    = $error->{body};
+					
+					# Grab Content-Type from the headers array if present
+					# because 'content_type' is a "special" header used in AppCore - poor design, I know.
+					my @ctype =
+						grep { lc $_->[0] eq 'content-type' }
+						@{$error->{headers} || []};
+						
+					$response->{content_type} = $ctype[0]->[1]
+						if @ctype;
+				}
+				else
+				{
+					#die $error;
+					$response->{status}  = 500;
+					$response->{headers} = ["Content-Type","text/plain"];
+					$response->{body}    = "Uncaught error: $error";
+					$response->{content_type} = "text/plain";
+				}
+			}
+			
+			# We no longer do an explicit "print 'Set-Cookie'" in AppCore::Web::Common,
+			# so we must make sure we set cookies when we output status 200.
+			# Note that this also takes the place of the set-cookie header code
+			# that was in AppCore::Web::Common::redirect()
+			my $cookies = AppCore::Common->context->x('http_raw_outgoing_cookie_cache') || {};
+			if($cookies)
+			{
+				$response->{headers} ||= [];
+				
+				foreach my $name (keys %$cookies)
+				{
+					#print STDERR "Debug: Setting outgoing cookie '$name': '$cookies->{$name}'\n";
+					#print "Set-Cookie:".$cookies->{$name}."\r\n";
+					push @{$response->{headers}}, ["Set-Cookie", "".$cookies->{$name}];
+				}
+			}
+	
 			$output_res = $response;
 			
 			if(!$just_response)
@@ -329,24 +383,31 @@ package AppCore::Web::DispatchCore;
 				binmode STDOUT;
 				
 				# Process output HTTP codes
-				my $code = $response->status;
+				my $code = $response->{status};
 				#print STDERR "$path: $code: $out[0] (".length($out[1])." bytes) (".substr($out[1],0,5).")\n";
 				if($code == 200)
 				{
 					#print "Content-Type: $out[0]\r\n\r\n";
-					my $ctype = $response->content_type;
-					my $data = $response->body;
+					my $ctype = $response->{content_type};
+					my $data = $response->{body};
 					#my %args = @out;
 					
 					print "Content-Type: $ctype\r\n";
-					#print "$_: $args{$_}\r\n" foreach keys %args;
+					print $_->[0].": ".$_->[1]."\r\n" foreach @{$response->{headers} || []};
 					print "\r\n";
 					print $data;
+				
 				#	print "<hr><i>Process Hit # ".AppCore::Common->context->{mod_fastcgi}."</i>";
+				
 				}
 				elsif($code == 302)
 				{
-					print "Status: 302 Moved Temporarily\r\nLocation: ".$response->body."\r\n\r\n";
+					print "Status: 302 Moved Temporarily\r\n";
+					print $_->[0].": ".$_->[1]."\r\n" foreach @{$response->{headers} || []};
+					#print "Location: ".$response->{body}."\r\n\r\n";
+					print "\r\n\r\n";
+					
+					#print STDERR Dumper $response->{headers};
 				}
 				elsif($code == 404)
 				{

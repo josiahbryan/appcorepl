@@ -103,9 +103,18 @@ package AppCore::Web::Form;
 		#exit;
 		
 		print STDERR "Error in form: $title: $error. Called from: ".called_from()."\n";
+# 		
+# 		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body></body></html>\n";
+# 		exit -1;
 		
-		print "Content-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p></body></html>\n";
-		exit -1;
+		AppCore::Web::Common::error($title,
+			"<h1>$title</h1>$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p>"
+			."<p>For help with this error, please email <a href='mailto:".AppCore::Config->get('WEBMASTER_EMAIL')
+				."?subject=[AppCore] ".AppCore::Web::Common::encode_entities($title)
+				."&body=When I went to ".AppCore::Web::Common::encode_entities(AppCore::Web::Common::get_full_url()).", I received this error: "
+				.AppCore::Web::Common::encode_entities($error)."'>".AppCore::Config->get('WEBMASTER_EMAIL')."</a>. "
+				."Sorry for the trouble!</p><p><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a></p>",
+		);
 	}
 	
 	

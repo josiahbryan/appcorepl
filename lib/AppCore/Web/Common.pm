@@ -1,6 +1,15 @@
 # Package: AppCore::Web::Common
 # Common routines for Web modules, primarily of use is the load_template(), error(), and get_full_url() functions.
 
+package AppCore::Web::Common::RequestException;
+{
+	sub new {
+		my ($class, $code, $headers, $body)  = @_;
+		return bless { code => $code, headers => $headers, body => $body }, $class;
+	};
+};
+
+
 package AppCore::Web::Common;
 {
 	
@@ -8,9 +17,6 @@ package AppCore::Web::Common;
 	use AppCore::Common;
 	#use AppCore::Session;
 	use Time::HiRes qw/time/;
-	
-	use CGI qw/:cgi/;
-	use CGI::Cookie;
 	
 	use HTML::Entities;
 	use HTML::Template;
@@ -192,18 +198,9 @@ package AppCore::Web::Common;
  		if(AppCore::Common->context->{mod_fastcgi})
 		{
 			#print STDERR "redirect mark4\n";
-			print "Status: 302 Moved Temporarily\r\n";
+			#print "Status: 302 Moved Temporarily\r\n";
 			
-			my $cookies = AppCore::Common->context->x('http_raw_outgoing_cookie_cache') || {};
-			if($cookies)
-			{
-				#print STDERR "redirect mark5\n";
-				foreach my $name (keys %$cookies)
-				{
-					#print STDERR "Debug: Setting outgoing cookie '$name': '$cookies->{$name}'\n";
-					print "Set-Cookie:".$cookies->{$name}."\r\n";
-				}
-			}
+			my @headers;
 			
 			my $expires = undef;
 			if($expires_config)
@@ -211,14 +208,20 @@ package AppCore::Web::Common;
 				my $dt = DateTime->now();#timezone => 'America/Chicago');
 				$dt->add( days => $expires_config->{days} || 31 );
 				# Expires: Thu, 01 Dec 1994 16:00:00 GMT
-				$expires = "Expires: ".$dt->strftime("%a, %d %b %Y %H:%M:%S +000")."\r\n";
+				#$expires = "Expires: ".$dt->strftime("%a, %d %b %Y %H:%M:%S +000")."\r\n";
+				push @headers, ["Expires", $dt->strftime("%a, %d %b %Y %H:%M:%S +000")];
 							  #%a, %d %b %Y %H:%M:%S +0000
 
 			}
 			
-			print "Location: $url\r\n$expires\r\n";
+			push @headers, ["Location", $url];
 			
-			goto END_HTTP_REQUEST;
+			#print "Location: $url\r\n$expires\r\n";
+			
+			#goto END_HTTP_REQUEST;
+			
+			die AppCore::Web::Common::RequestException->new(302, \@headers, "");
+			
 		}
 		# For any other regular CGI dispatcher
 		else
@@ -283,7 +286,7 @@ package AppCore::Web::Common;
 			my $cache = AppCore::Common->context->{'http_cookie_cache'};
 			$cache = AppCore::Common->context->{'http_cookie_cache'} = {} if !$cache;
 			
-			$cache->{$name} = cookie($name) if !$cache->{$name};
+			$cache->{$name} = AppCore::Common->context()->{cgi}->cookie($name) if !$cache->{$name};
 			return $cache->{$name};
 			#return $cgi_cookie_cache->{$_[0]} if $cgi_cookie_cache->{$_[0]};
 			
@@ -305,8 +308,13 @@ package AppCore::Web::Common;
 		{
 			#my $cookie = "Set-Cookie: ".url_encode($name)."=".url_encode($value)."; expires=$exp; path=/\n";
 			#my $cookie = "Set-Cookie: ".$name."=".url_encode($value)."; expires=$exp; path=/\n";
-			my $cookie = cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
-			print "Set-Cookie:".$cookie."\n";
+			my $cookie = AppCore::Common->context()->{cgi}->cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
+			
+			if(!AppCore::Common->context->{mod_fastcgi})
+			{
+				print "Set-Cookie:".$cookie."\n";
+			}
+			
 			#print $cookie;
 			#print STDERR called_from().": Setting cookie: $cookie\n";
 			#$cgi_cookie_cache->{$name} = $value;
@@ -337,11 +345,20 @@ package AppCore::Web::Common;
                 #$text =~ s/\pM*//g; # remove wideprints
 		#$text= "foobar";
 
-		print "Content-Type: text/html\n\n";
-		#$text =~ s/<\/body>/$urchin<\/body>/g;
-		#$text =~ s/<img(.*?)src=['"]([^\'\"]+)['"](.*?)(?:jblog_auto_link=([^\s]+))?\/?>/_auto_link_image($1,$2,$3,$4,$5)/segi;
-		print $text;
-		exit;
+		if(AppCore::Common->context->{mod_fastcgi})
+		{
+			die AppCore::Web::Common::RequestException->new(200, ["Content-Type", "text/html"], $text);
+		}
+		else
+		{
+			print "Content-Type: text/html\n\n";
+			#$text =~ s/<\/body>/$urchin<\/body>/g;
+			#$text =~ s/<img(.*?)src=['"]([^\'\"]+)['"](.*?)(?:jblog_auto_link=([^\s]+))?\/?>/_auto_link_image($1,$2,$3,$4,$5)/segi;
+			print $text;
+			exit;
+
+		
+		}
 	}
 	
 	
@@ -365,14 +382,14 @@ package AppCore::Web::Common;
 		print STDERR "[".(AppCore::Common->context->user ? AppCore::Common->context->user->user."@" : "").$ENV{REMOTE_ADDR}."] ".get_full_url()." $title: ".html2text($error)."\n";
 		
 		#exit;
-		
-		print "Status: 404\r\nContent-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
 		if(AppCore::Common->context->{mod_fastcgi})
 		{
-			goto END_HTTP_REQUEST;
+			#goto END_HTTP_REQUEST;
+			die AppCore::Web::Common::RequestException->new(500, [], "<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>");
 		}
 		else
 		{
+			print "Status: 404\r\nContent-Type: text/html\r\n\r\n<html><head><title>$title</title></head><body><h1>$title</h1>$error<hr></body></html>\n";
 			exit -1;
 		}
 	}
