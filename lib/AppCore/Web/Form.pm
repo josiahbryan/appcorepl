@@ -108,7 +108,7 @@ package AppCore::Web::Form;
 # 		exit -1;
 		
 		AppCore::Web::Common::error($title,
-			"<h1>$title</h1>$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p>"
+			"$error<hr><p style='font-size:8px;color:#777'>".called_from()."</p>"
 			."<p>For help with this error, please email <a href='mailto:".AppCore::Config->get('WEBMASTER_EMAIL')
 				."?subject=[AppCore] ".AppCore::Web::Common::encode_entities($title)
 				."&body=When I went to ".AppCore::Web::Common::encode_entities(AppCore::Web::Common::get_full_url()).", I received this error: "
