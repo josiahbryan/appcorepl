@@ -348,6 +348,10 @@ package AppCore::Web::Controller;
 					
 					$req->{start} || 0,  #$start
 					$req->{limit} || 10, #$limit (both start and limit have to be defined, not undef - even if zero)
+					
+					0, # my $include_empty	= shift || 0;		# Include an empty option at the start?
+					0, # my $debug		= shift || 0;		# Print debug info to stderr?
+					1  # my $enable_ranking	= shift || 0;		# Enable sorting results based on ranking?
 			);
 			
 			if(ref $result ne 'HASH')

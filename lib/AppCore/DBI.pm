@@ -1245,6 +1245,90 @@ package AppCore::DBI;
 	
 	}
 	
+	sub get_db_name
+	{
+		my $class = shift;
+		
+		my $db_name = $class->meta->{db};
+		if(!$db_name)
+		{
+			my $dsn = $class->db_Main->{Name};
+			$dsn =~ /database=([^;]+)/;
+			$db_name = $1;
+		}
+		
+		return $db_name;
+	}
+
+	
+	sub _create_rank_column
+	{
+		my $class = shift;
+		my $filter = shift;
+		
+		#print STDERR "$self: \$filter='$filter'\n";
+		
+		my $dbh = $class->db_Main;
+		
+		my $db_quoted    = $dbh->quote_identifier($class->get_db_name);
+		my $table_quoted = $dbh->quote_identifier($class->table);
+		
+		my $rank_sql;
+		my @args;
+		
+		{
+			my $filter_wild = lc($filter);
+			#$filter_wild =~ s/\s+/%/g;
+			
+			$filter_wild =~ s/\s+/ /g;	# collapse spaces
+			my $filter_nonwild = $filter_wild;
+			
+			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
+			$filter_wild = '%'.$filter_wild;
+
+			# Get the list of columns to use in our ratio
+			my @fmt = $class->can('stringify_fmt') ? $class->stringify_fmt : ();
+			@fmt = ('#'.($class->meta->{first_string} || $class->primary_column)) if !@fmt;
+			@fmt = grep { /^#/ } grep { !/\./ } @fmt;
+			s/^#//g foreach @fmt;
+			
+			# Call match_ratio() to match the filter against each column in the stringify_fmt()
+			my @ratio_list;
+			@ratio_list = map { 
+				push @args, $filter_nonwild, $filter_wild;
+				
+				'match_ratio(' . $dbh->quote_identifier($_) .', ?, ?)'
+			} @fmt;
+			
+			# Add another 'column' for the ratio against the entire unified stringify_fmt() value
+			my $text = $class->get_stringify_sql(1); # 1 = lower case the fields
+			
+			push @args, $filter_nonwild, $filter_wild;
+			
+			push @ratio_list, qq{
+				match_ratio($text, ?, ?)
+			};
+			
+			# Combine them into an average match ratio as a single SQL statement,
+			# suitable for use like "select $rank_sql as `ranking` from ... where ... and $clause"
+			# (using the $clause and @args created above to inject the filter strings)
+			
+			my $ratio_len = scalar @ratio_list;
+			
+			$rank_sql = "((\n\t"
+				.join(" + \n\t", @ratio_list)
+				.") / $ratio_len)";
+			
+			
+		}
+		
+		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
+		
+		return ($rank_sql, \@args);
+	}
+	
 	
 	# Return val is kinda wierd - a HASH ref, with either {id} set to the fk id, or {error} set to a message
 	sub stringified_list
@@ -1257,6 +1341,7 @@ package AppCore::DBI;
 		my $limit		= shift || -1;		# Length of list
 		my $include_empty	= shift || 0;		# Include an empty option at the start?
 		my $debug		= shift || 0;		# Print debug info to stderr?
+		my $enable_ranking	= shift || 0;		# Enable sorting results based on ranking?
 		
 		$fkclause = '1=1' if $fkclause =~ /={{/;
 		$start = -1 if !defined $start;
@@ -1288,13 +1373,12 @@ package AppCore::DBI;
 				#print STDERR "after sub:
 			}
 		}
-		else
+		# 
+		# New method of filtering the list - return any non-empty stringified rows that match the value requested
+		# 
+		elsif(0)
 		{
-			# 
-			# New method of filtering the list - return any non-empty stringified rows that match the value requested
-			#
-			
-			my $text = $class->get_stringify_sql;
+			my $text = $class->get_stringify_sql(1);
 			
 			# Had to add the cast() to char() because otherwise the 'like' is case-sensitive. This way, the like is case INsensitive.
 			$fklookup_sql = qq{$q_table \nWHERE (cast($text as char(512)) like ?) \nAND ($text <> "") \nAND $fkclause};
@@ -1304,15 +1388,69 @@ package AppCore::DBI;
 			
 			@args = ('%'.$val_wild.'%');
 			
-			if($class->meta->{sort} || $class->meta->{first_string})
-			{
-				$fklookup_sql .= "\nORDER BY ".$class->get_orderby_sql;
-			}
+# 			if($class->meta->{sort} || $class->meta->{first_string})
+# 			{
+# 				$fklookup_sql .= "\nORDER BY ".$class->get_orderby_sql;
+# 			}
+		}
+		else
+		{
+			my $text = $class->get_stringify_sql(1);
+			
+			#my $val_wild = $val;
+			#$val_wild =~ s/\s+/%/g;
+			#@args = ('%'.$val_wild.'%');
+			
+			my $text = $class->get_stringify_sql(1); # 1 = lower case the fields
+			
+			$fklookup_sql = qq{$q_table \nWHERE (($text like ?) \nAND ($text <> "")) \nAND $fkclause};
+			
+			my $filter_wild = lc($val);
+			#$filter_wild =~ s/\s+/%/g;
+			
+			$filter_wild =~ s/\s+/ /g;	# collapse spaces
+			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
+			$filter_wild = '%'.$filter_wild;
+			
+			@args = ($filter_wild);
+			
+			#die Dumper(\@args). $string_clause;
+			#die AppCore::Common::debug_sql($string_clause, @args);
+			#$dont_parse_string
 		}
 		
 		# Prepare the SQL to generate the list
 		#my $ob = $class->get_orderby_sql();
-		my $list_sql = "SELECT $q_primary as `id`, \n".$class->get_stringify_sql." as `text` \nFROM ".$fklookup_sql;
+		my $list_sql = "SELECT $q_primary as `id`, \n".$class->get_stringify_sql." as `text`";
+		
+		my @list_args = @args;
+		
+		if($enable_ranking)
+		{
+			my ($rank_column, $rank_column_args) = $class->_create_rank_column($val);
+			
+			$list_sql .= "\n,(\@search_rank := $rank_column)\n".
+				"\t AS _search_rank\n";
+			$list_sql .= "\n,ROUND(\@search_rank)\n".
+				"\t AS _search_rank_int\n";
+				
+			@list_args = ( @$rank_column_args, @args );
+		}
+		
+		$list_sql .= "\nFROM ".$fklookup_sql;
+		
+		if($class->meta->{sort} || $class->meta->{first_string})
+		{
+			my $orderby_sql = $class->get_orderby_sql();
+			
+			my $sort_clause = $orderby_sql ? 
+				" ORDER BY ".($enable_ranking ? "_search_rank desc, " : '') . $orderby_sql : 
+				($enable_ranking ? "ORDER BY _search_rank desc" : '');
+			
+			$list_sql .= $sort_clause;
+		}
 		
 		#print STDERR "Debug mark0: start=$start, limit=$limit\n";
 		
@@ -1342,7 +1480,7 @@ package AppCore::DBI;
 		
 		# Execute the query
 		my $sth = $dbh->prepare($list_sql);
-		$sth->execute(@args);
+		$sth->execute(@list_args);
 		
 		# Build the result list
 		my @list;
