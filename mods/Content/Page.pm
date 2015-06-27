@@ -303,7 +303,7 @@ package Content::Page::Type;
 # 				$r->{body}    = $error; #"The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$error</pre>";
 # 				$r->{content_type} = "text/plain";
 # 				
-				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre>$error</pre>");
+				$r->error("Error Outputting Page","The controller object '<i>$pkg</i>' had a problem processing your page:<br><pre style='white-space:pre-wrap'>$error</pre>");
 			}
 			
 			
