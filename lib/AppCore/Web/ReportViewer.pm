@@ -203,6 +203,8 @@ package AppCore::Web::ReportViewer;
 				
 				push @arg_data, $arg_ref;
 			}
+			
+			#die Dumper \@arg_data, $arg_meta, $arg_hash;
 		}
 		
 		$arg_data_complete = 1
@@ -534,6 +536,25 @@ package AppCore::Web::ReportViewer;
 			$query_args{'#args.'.$_} = $req->{'#args.'.$_}
 				foreach keys %arg_hash;
 		}
+		else
+		{
+			# This block allows us to programatically generate URLs that pre-populate arguments to the report (and thus, run the report)
+			# without having to know the ModelMeta.uuid - which may not exist before calling this report. 
+			# This block, therefore, allows us to generate URLs in code like:
+			#     /office/reports/patient-bydoc?args.doctorid=52
+			# (Note we make the '#' optional in args because it's cleaner and looks better - yes, that's really the only reason I made it optional.)
+		
+			foreach my $key (keys %$req)
+			{
+				if($key =~ /^#?args\.(.*)$/)
+				{
+					$query_args{$key} = $req->{$key};
+					$arg_hash{$1}     = $req->{$key};
+				}
+			}
+		}
+		
+		#die Dumper \%query_args, $req;
 		
 		# Build pagination URL for use in building links
 		my $pagination_url_base = undef;
@@ -623,7 +644,7 @@ package AppCore::Web::ReportViewer;
 				#die "Not enough data";
 			}
 			
-			#die Dumper $output_data;
+			#die Dumper $output_data, $report;
 			
 			$tmpl->param(view_message => $self->{msg});
 			
