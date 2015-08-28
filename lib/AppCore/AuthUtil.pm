@@ -21,8 +21,8 @@ package AppCore::AuthUtil;
 	@EXPORT = qw/authenticate http_require_login require_auth/;
 		
 	use constant TICKET_COOKIE => 'appcore.auth_ticket';
-	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
-	#sub debug { print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	#sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	sub debug { print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
 	 
 	
 	sub _cdbi_load_all_columns
@@ -207,10 +207,11 @@ package AppCore::AuthUtil;
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
 		#debug("target hash='$hash', target pass='".$user_object->pass."'");
-		if($user_object && $user && 
+		if($user_object && $user && $pass &&
 		   ($pass eq $user_object->pass || 
 		    $pass eq $hash              || 
-		    $pass eq $user_object->fb_token ||
+		    ($user_object->fb_token &&
+			$pass eq $user_object->fb_token) ||
 		    $user_object->try_ad_auth($user, $pass)))
 		{
 			$ctx->user($user_object);
@@ -242,11 +243,18 @@ package AppCore::AuthUtil;
 	sub http_require_login
 	{
 		my $ctx = AppCore::Common->context;
+		if(my $user = $ctx->current_request->{user})
+		{
+			push @_, (user => $user);
+			print STDERR "http_require_login: user: $user\n";
+		}
+		
 		my $extra;
 		if(@_)
 		{
 			my %hash = @_;
-			$extra = '&' . join('&', map { $_ => url_encode($hash{$_}) } sort keys %hash );
+			$extra = '&' . join('=', map { $_ => url_encode($hash{$_}) } sort keys %hash );
+			print STDERR "http_require_login: extra: $extra\n";
 		}
 		my $url = AppCore::Config->get("LOGIN_URL").'?auth_requested=1&url_from='.url_encode(get_full_url()).$extra;
 		AppCore::Web::Common->redirect($url);
