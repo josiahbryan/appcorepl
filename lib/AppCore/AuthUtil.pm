@@ -21,8 +21,8 @@ package AppCore::AuthUtil;
 	@EXPORT = qw/authenticate http_require_login require_auth/;
 		
 	use constant TICKET_COOKIE => 'appcore.auth_ticket';
-	#sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
-	sub debug { print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	sub debug {}# print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
+	#sub debug { print STDERR __PACKAGE__.": ".join("",@_)."\n" unless get_full_url =~ /res\//; }
 	 
 	
 	sub _cdbi_load_all_columns
@@ -245,6 +245,8 @@ package AppCore::AuthUtil;
 		my $ctx = AppCore::Common->context;
 		if(my $user = $ctx->current_request->{user})
 		{
+			#$user =~ s/\+/\%2B/g; # manually encode '+'
+			
 			push @_, (user => $user);
 			print STDERR "http_require_login: user: $user\n";
 		}
