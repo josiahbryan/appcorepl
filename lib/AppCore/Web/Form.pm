@@ -520,9 +520,17 @@ package AppCore::Web::Form;
 			$output = $form->render($form_opts);
 			
 		};
-		if($@)
+		my $error = $@;
+		if($error)
 		{
-			error("Error in Blob","Error in blob: $@<br><textarea rows=10 cols=60>$data</textarea>");
+			if(UNIVERSAL::isa($error, 'AppCore::Web::Common::RequestException'))
+			{
+				die $error;
+			}
+			else
+			{
+				error("Error in Blob","Error in blob: $error<br><textarea rows=10 cols=60>$data</textarea>");
+			}
 		}
 		#return $output unless $viz_style eq 'html';
 		#error($output);
