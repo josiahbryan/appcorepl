@@ -186,8 +186,56 @@ Server: $host
 		}
 	}
 	
+	# exec_timeout() from https://code.google.com/p/hashnet/source/browse/trunk/devel/netnode/lib/HashNet/Util/ExecTimeout.pm
+	use Time::HiRes qw/sleep alarm time/; # needed for exec_timeout
+	sub exec_timeout
+	{
+		my $timeout = shift;
+		my $sub = shift;
+		#debug "\t exec_timeout: \$timeout=$timeout, sub=$sub\n";
+
+		my $timed_out = 0;
+		local $@;
+		eval
+		{
+			#debug "\t exec_timeout: in eval, timeout:$timeout\n";
+			local $SIG{__DIE__};
+			local $SIG{ALRM} = sub
+			{
+				#debug "\t exec_timeout: in SIG{ALRM}, dieing 'alarm'...\n";
+				$timed_out = 1;
+				die "alarm\n"
+			};       # NB \n required
+			my $previous_alarm = alarm $timeout;
+
+			#debug "\t exec_timeout: alarm set, calling sub\n";
+			$sub->(@_); # Pass any additional args given to exec_timout() to the $sub ref
+			#debug "\t exec_timeout: sub done, clearing alarm\n";
+
+			alarm $previous_alarm;
+		};
+		#debug "\t exec_timeout: outside eval, \$\@='$@', \$timed_out='$timed_out'\n";
+		die if $@ && $@ ne "alarm\n";       # propagate errors
+
+		$timed_out = $@ ? 1:0 if !$timed_out;
+		#debug "\t exec_timeout: \$timed_out flag='$timed_out'\n";
+		return $timed_out;
+	}
+
 	my %SMTP_HANDLE_CACHE;
 	sub transmit
+	{
+		my $self = shift;
+		my $timeout = shift || 60 * 2;
+		
+		exec_timeout($timeout,
+			sub {
+				$self->_internal_transmit;
+			}
+		);
+	}
+	
+	sub _internal_transmit
 	{
 		my $self = shift;
 	
@@ -335,7 +383,7 @@ Server: $host
 			$self->sentflag(1);
 			$self->result("Error: Unable to send: ".($err ? $err : "$pkg didn't connect to $prof->{server} for some reason"));
 			use Data::Dumper;
-			print STDERR "MsgID $self: ".$self->result."\n".Dumper(\%args);
+			print STDERR "MsgID $self: ".$self->result."\n".Dumper(\%args, $prof);
 			$self->update;
 			return;
 		}

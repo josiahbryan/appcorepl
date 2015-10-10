@@ -150,7 +150,7 @@ package AppCore::Web::Result;
 					$from);
 					
 			# Send right away so the user doesn't have to wait for the crontab daemon to run at the top of the minute
-			$msg_ref->transmit;
+			$msg_ref->transmit(2); # timeout
 		}
 		
 		AppCore::Web::Common::error($title,

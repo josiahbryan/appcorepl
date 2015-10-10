@@ -2528,7 +2528,7 @@ package AppCore::DBI;
 			{
 				if($expand)
 				{
-					$ref->{$col.'_raw'} = $val;
+					$ref->{$col.'_raw'} = $val+0;
 					
 					eval 'use '.$fm->{linked};
 					my $x = eval {$fm->{linked}->stringify($val)};
