@@ -209,6 +209,8 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 	var loadResultsPage = function(page) {
 		
+		bufferNextPageLoad.locked = true;
+		
 		//console.debug("loadResultsPage: data:",data, "page:",page);
 		//alert("loadResultsPage: "+page);
 		
