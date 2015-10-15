@@ -558,7 +558,8 @@ package AppCore::Web::ReportViewer;
 		
 		# Build pagination URL for use in building links
 		my $pagination_url_base = undef;
-		if($self->output_format ne 'xls')
+		if(!$self->output_format ne 'xls' && 
+		   !$self->{disable_paging})
 		{
 # 			my $url_args = 
 # 				join '&', 
