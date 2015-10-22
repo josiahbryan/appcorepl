@@ -3599,6 +3599,7 @@ package $opts->{pkg};
 		{
 			$sub =~ s/(^\s+|\s+$)//g;
 			next if !$sub;
+			next if $sub =~ /^--/;
 			
 			my $row_result;
 			
