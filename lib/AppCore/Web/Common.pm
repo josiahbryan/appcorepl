@@ -516,6 +516,7 @@ package AppCore::Web::Common;
 	{
 		my $block = shift;
 		my $tmpl = shift || $HTML::Template::DelayedLoading::CurrentObject;
+		$block =~ s/<tmpl_include\s+(?:name=['"])?([^'"\/>]+)['"]?\/?>/get_included_file($1)/segi;
 		$block =~ s/<tmpl_if ([^>]*?)>/_rewrite_if_macro2($1,$block)/segi;
 		$block =~ s/<\/tmpl_if>/{{\/if}}/gi;
 		$block =~ s/<tmpl_unless ([^>]+?)>/_rewrite_if_macro2($1,$block,1)/segi;
