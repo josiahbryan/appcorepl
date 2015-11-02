@@ -220,6 +220,14 @@ package AppCore::Web::ReportViewer;
 		
 		#die Dumper \@arg_data, $arg_hash, $arg_data_complete;
 		
+		# Apply report mudge hook if present
+		# Since the list hook gets the report, it can change columns as desired
+		if(ref $report->{report_mudge_hook} eq 'CODE')
+		{
+			$report->{report_mudge_hook}->($report, $arg_data_complete, $arg_hash);
+		}
+			
+		
 		# Get columns if given in $report
 		my @report_columns;
 		if(ref $report->{columns} eq 'ARRAY')
