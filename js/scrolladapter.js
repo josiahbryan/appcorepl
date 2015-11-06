@@ -52,8 +52,31 @@
 	Note that this file expects 'output_fmt' to set the output to JSON - so make sure you use the 'output_fmt' request field as shown above.
 	
 	Note: The loading spinner depends on font-awesome being used in the page.
+	
+	Note: To fake the JSON result from something other than SimpleListView,
+		you must include in the result the following fields:
+			list_length
+			list
+			next_url
+			prev_url
+			total_rows
+			actual_page_end
+			
+		Here's an actual example:
+			actual_page_end: 125
+			list: [{supplier_url:&nbsp;, show_price:1, unit_size_umid:Capsules, upc:&nbsp;, itemnum:AGZ090,…},…]
+			list_length: 25
+			next_url: "/office/inventory?start=125&length=25"
+			prev_url: "/office/inventory?start=75&length=25"
+			total_rows: "2424"
+			
+		Your controller must use the following query string fields:
+			start
+			length
+			query
+			output_fmt (will be set to 'json')
+	
 */	
-		
 
 // AWSV = AppCore.Web.SimpleListView :-)
 function AWSV_AjaxScrollAdapter(args) {
@@ -73,7 +96,7 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 	
 	var $rowTemplate = args.rowTemplate,
-		   $list = args.List;
+		   $list = args.list;
 	
 	if(!$rowTemplate)
 		$rowTemplate = $('#listrow-tmpl');
@@ -144,10 +167,12 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 		for(var i=0; i<result.list_length; i++)
 		{
-			var rowData = result.list[i];
-			$rowTemplate
-				.tmpl(rowData)
-				.appendTo($list);
+			var rowData = result.list[i],
+			    tmplOut = $rowTemplate.tmpl(rowData);
+			   
+			//console.debug("AWSV_AjaxScrollAdapter: result:", result,", data row:",i,", rowData:",rowData,", tmplOut:",tmplOut,", adding to list:",$list);
+			
+			tmplOut.appendTo($list);
 		}
 		
 		hasMoreResults = result.next_url != null;
@@ -331,5 +356,5 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 	//console.debug("AWSV_AjaxScrollAdapter: Online with args:" ,args);
 	
-	//bufferNextPageLoad();
+	bufferNextPageLoad();
 }
