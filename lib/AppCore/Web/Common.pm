@@ -992,8 +992,8 @@ package AppCore::Web::Common;
 		#$html =~ s/\*([^\*]+?)\*/<b>$1<\/b>/g;
 		$html =~ s/\s\/([^\/]+?)\/\s/ <i>$1<\/i> /g;
 		$html =~ s/\s\_([^\_]+?)\_\s/ <u>$1<\/u> /g;
-		$html =~ s/\[([^\|]+?)\|([^\]]+?)\]/<a href='$1'>$2<\/a>/g;
-		$html =~ s/\[([^\]]+?)\]/<a href='$1'>$1<\/a>/g;
+		$html =~ s/(?<!\[)\[([^\|]+?)\|([^\]]+?)\](?!\])/<a href='$1'>$2<\/a>/g;
+		$html =~ s/(?<!\[)\[([^\]]+?)\](?!\])/<a href='$1'>$1<\/a>/g;
 
 		# Limit multiple newlines to 2 each
 		$html =~ s/\n{2,}/\n\n/sg;
