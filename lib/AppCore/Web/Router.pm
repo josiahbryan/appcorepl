@@ -468,10 +468,28 @@ package AppCore::Web::Router;
 		}
 	}
 	
+	# NOTE: Can't call dispatch() AFTER can_dispatch()
+	# because $req is modified. If can_dispatch() returns a value,
+	# it will be a $leaf. Therefore, to go to dispatch the 
+	# returned leaf, use $router->execute() to dispatch the result
+	# from can_dispatch().
+	sub can_dispatch
+	{
+		my ($self, $req) = @_;
+		return $self->dispatch($req, 1);
+	}
+	
+	sub execute
+	{
+		my ($self, $leaf) = @_;
+		return $self->_call($leaf);
+	}
+	
 	sub dispatch
 	{
 		my $self = shift;
-		my $req = shift;
+		my $req  = shift;
+		my $match_only = shift || 0;
 		
 		$req = AppCore::Web::Request->new(PATH_INFO => $req)
 			if defined $req && !ref $req;
@@ -494,14 +512,15 @@ package AppCore::Web::Router;
 			return;
 		}
 		
-		return $self->_match_leaf($root, $req);
+		return $self->_match_leaf($root, $req, $match_only);
 	}
 	
 	sub _match_leaf
 	{
 		my $self = shift;
 		my $leaf = shift;
-		my $req = shift;
+		my $req  = shift;
+		my $match_only = shift || 0;
 		my $np = $req->next_path;
 		
 		$np = '/' if !$np;
@@ -525,7 +544,7 @@ package AppCore::Web::Router;
 			$req->push_page_path($np) unless $np eq '/';
 		
 			#$self->_call($leaf);
-			return $self->_match_leaf($next_leaf, $req);
+			return $self->_match_leaf($next_leaf, $req, $match_only);
 		}
 		else
 		{
@@ -544,7 +563,7 @@ package AppCore::Web::Router;
 					$req->shift_path;
 					$req->push_page_path($np) unless $np eq '/';
 					
-					return $self->_match_leaf($next_leaf, $req);
+					return $self->_match_leaf($next_leaf, $req, $match_only);
 				}
 			}
 		}
@@ -553,11 +572,13 @@ package AppCore::Web::Router;
 		if($leaf->{action})
 		{
 			output("  -> no leafs match, trying to call leaf action '$leaf->{action}\n");
+			return $leaf if $match_only;
 			return $self->_call($leaf);
 		}
 		else
 		{
 			# If we hit this statement, it means we didn't match by key or condition...
+			return undef if $match_only;
 			die "Invalid page '$np' (".$req->page_path.'/'.join('/',$req->path_info).")"; # (limited_leaf [$leaf->{_limited_leaf}] or no empty leaf]";
 		}
 		

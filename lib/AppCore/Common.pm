@@ -561,6 +561,8 @@ package AppCore::Common;
 		
 		return undef if !$a || !$b || !$c;
 		
+		#die "Ok";
+		
 		$d = 0  if !$d;
 		$d = 23 if $d >= 24;
 		
