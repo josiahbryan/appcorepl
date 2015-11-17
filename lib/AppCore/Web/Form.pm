@@ -2122,7 +2122,7 @@ package AppCore::Web::Form;
 								\$(function() {
 									\$( "#${label_id}" ).datepicker({
 										showOn: "both",
-										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "http://jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "//jqueryui.com/resources/demos/datepicker/images/calendar.gif",
 										buttonImageOnly: true,
 										dateFormat: "yy-mm-dd",
 									});
