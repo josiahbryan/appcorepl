@@ -269,7 +269,8 @@ package AppCore::Web::ReportViewer;
 				my $report_sql = $report->{sql};
 				
 				#die Dumper \@sql_args;
-				if($pagination_url_base)
+				if($pagination_url_base &&
+				   $self->output_format ne 'xls')
 				{
 					if($report->{count_sql})
 					{
