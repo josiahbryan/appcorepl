@@ -1162,7 +1162,7 @@ package AppCore::Web::Form;
 					
 					# TODO: Load value from form opts
 					
-					$val = $node->default if !$val;
+					$val = $node->default if !defined $val;
 					
 					#error("\$val",Dumper([$val,$node]));
 					
