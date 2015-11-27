@@ -161,6 +161,9 @@ package AppCore::Web::ReportViewer;
 			$arg->{type} = 'database'
 				if $arg->{linked} && 
 				  !$arg->{type};
+				  
+# 			$arg->{placeholder} = $arg->{label}
+# 				if !$arg->{placeholder};
 		}
 	}
 	
@@ -176,6 +179,9 @@ package AppCore::Web::ReportViewer;
 		# to be able to paginate the data.
 		
 		my $report = $self->report_model;
+		
+		# Store arg hash for use in hooks so it's indexed by field (just because we're lazy)
+		$report->{arg_hash} = $arg_hash;
 		
 		my $output_data = {};
 		
@@ -221,7 +227,7 @@ package AppCore::Web::ReportViewer;
 		#die Dumper \@arg_data, $arg_hash, $arg_data_complete;
 		
 		# Apply report mudge hook if present
-		# Since the list hook gets the report, it can change columns as desired
+		# Since the list hook gets the report, it can change columns (or anything else) as desired
 		if(ref $report->{report_mudge_hook} eq 'CODE')
 		{
 			$report->{report_mudge_hook}->($report, $arg_data_complete, $arg_hash);
@@ -249,8 +255,7 @@ package AppCore::Web::ReportViewer;
 			}
 			
 			@report_columns = @tmp_list;
-			
-		}	
+		}
 		
 		# Get the data
 		my @report_data;
@@ -261,7 +266,9 @@ package AppCore::Web::ReportViewer;
 				my @sql_args = map {
 					ref $_->{value} eq 'CODE'
 						? $_->{value}->($report, $self->stash)
-						: $_->{value} } @arg_data;
+						: $_->{value} }
+					grep { !$_->{exclude_from_sql} }
+					@arg_data;
 				
 				# Make a copy of the SQL string because if pagination is enabled,
 				# we'll add a 'LIMIT' to it, and we don't want that LIMIT
@@ -469,7 +476,7 @@ package AppCore::Web::ReportViewer;
 			# Since the list hook gets the entire data set, it can combine/remove rows as desired
 			if(ref $report->{list_mudge_hook} eq 'CODE')
 			{
-				@report_data = @{ $report->{list_mudge_hook}->(\@report_data) };
+				@report_data = @{ $report->{list_mudge_hook}->(\@report_data, $report) };
 			}
 			
 			# Apply row mudge hook if present
@@ -478,7 +485,7 @@ package AppCore::Web::ReportViewer;
 			{
 				foreach my $row (@report_data)
 				{
-					$report->{row_mudge_hook}->($row);
+					$report->{row_mudge_hook}->($row, $report);
 				}
 			}
 					
