@@ -662,7 +662,7 @@ package AppCore::User;
 # 			warn "AppCore::User::get_fb_photo: User '".$self->display."': Token good! ($date < $expires)\n";
 # 		}
 # 		my $photo_url = 'https://graph.facebook.com/me/picture?type=square&access_token='.$token;
-		my $photo_url = 'https://graph.facebook.com/'. $self->fb_userid. '/picture';
+		my $photo_url = 'https://graph.facebook.com/'. $self->fb_userid. '/picture?width=1024&height=1024';
 		return $self->store_photo($photo_url);
 	}
 	
