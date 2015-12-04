@@ -407,7 +407,11 @@ package AppCore::Web::Common;
 		$elsif_block =~ s/<tmpl_elsif (.*?)>/push @vars, $1; "<tmpl_else><tmpl_if $1>"/gei;
 		
 		# Replace closing </tmpl_elsif> with a string of </tmpl_if> tags
-		my @closings = map { "</tmpl_if><!--/$_-->" } @vars;
+		#my @closings = map { "</tmpl_if><!--/$_-->" } @vars;
+		
+		# Removed the comments after </tmpl_if> because those were appearing in strings if we embedded <tmpl_elsif> inside a string
+		my @closings = map { "</tmpl_if>" } @vars;
+		
 		$elsif_block =~ s/<\/tmpl_elsif>/join("\n", @closings)/segi;
 		
 		return $elsif_block;
