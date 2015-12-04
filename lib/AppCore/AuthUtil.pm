@@ -181,6 +181,7 @@ package AppCore::AuthUtil;
 			# the request.....
 			#setcookie('user','0'); # empty out the old cookies
 			#setcookie('pass','0'); # empty out the old cookies
+			print STDERR "authenticate: Empty user and empty pass\n";
 			return 0;
 		}
 		
@@ -200,13 +201,14 @@ package AppCore::AuthUtil;
 		
 		if(!$user_object)
 		{
+			print STDERR "authenticate: No AppCore::User found matching '$user'\n";
 			return 0;
 		}
 		
 		#print STDERR "authenticate: user '$user', expected pass '".$user_object->pass."'\n";
 		
 		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
-		#debug("target hash='$hash', target pass='".$user_object->pass."'");
+		debug("\$user_object='$user_object', target hash='$hash', target pass='".$user_object->pass."', user=[$user], pass=[$pass], fb_token:".$user_object->fb_token);
 		if($user_object && $user && $pass &&
 		   ($pass eq $user_object->pass || 
 		    $pass eq $hash              || 
@@ -229,6 +231,7 @@ package AppCore::AuthUtil;
 			$ctx->user(undef);
 			if(!$redirect)
 			{
+				print STDERR "authenticate: userid $user_object could not match given user/pass: [$user] / [$pass]\n";
 				return 0;
 			}
 			else
