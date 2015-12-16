@@ -1296,7 +1296,13 @@ package AppCore::Web::Form;
 					
 					push @html, $is_pairtab ?
 						"<tr id='$rowid' ".($vis_border ? "class='f-border'":"").">\n" :
-						"<div class='form-input-group' id='$rowid' ".($vis_border ? "class='f-border'":"").">\n";
+						"<div class='".($bootstrap_flag ? 'form-group' : 'form-input-group')."' id='$rowid' ".($vis_border ? "class='f-border'":"").">\n";
+						
+					
+					if($bootstrap_flag)
+					{
+						push @html, '<div class="fg-line">';
+					}
 					
 					my $empty_label = 0;
 					
@@ -1333,6 +1339,7 @@ package AppCore::Web::Form;
 								my $is_row_label = $node->node eq 'row';
 								
 								my $label_class = $node->{attrs}->{'label-class'} || '';
+								$label_class .= ' control-label' if $bootstrap_flag;
 							
 								push @html, $t, "\t\t", "<label for='$label_id' ",
 									'class="'. ($is_row_label ? 'row-label row-label-nonbool' : '').' '.$label_class.'"',
@@ -1433,8 +1440,13 @@ package AppCore::Web::Form;
 									.">" : '')
 							.$val_stringified
 							.($val_url ? "</a>" : '')
-							."</span></b>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : ""). 
-							($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
+							."</span></b>";
+						
+						push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
+						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+						push @html, '</span>' if $bootstrap_flag;
+						push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
+						push @html, ($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
 					}
 					elsif($type eq 'text')
 					{
@@ -1448,6 +1460,11 @@ package AppCore::Web::Form;
 							." class='text form-input ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'>"
 							.$val
 							."</textarea>";
+							
+						push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
+						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+						push @html, '</span>' if $bootstrap_flag;
+						push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 						
 						# Disabling for now due to IExplore bug
 						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
@@ -1520,9 +1537,13 @@ package AppCore::Web::Form;
 											." "
 											.($readonly ? 'readonly' : "")
 											." id='$label_id'/>",
-									"</div>",
-									($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" : "");
+									"</div>";
 									
+								push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
+								push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+								push @html, '</span>' if $bootstrap_flag;
+								push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
+								
 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
 								
 								if(!$self->{form_opts}->{validate_url})
@@ -1722,7 +1743,11 @@ package AppCore::Web::Form;
 							#onchange='FormMgr.fieldChanged(this.getAttribute(\"f:bind\"),this.value)' 
 							#push @html, $t, "\t<input type='hidden' value='".encode_entities($val)."' id='$label_id'/>\n";
 							
+							
+							push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
 							push @html, $t, "\t<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" if $suffix;
+							push @html, '</span>' if $bootstrap_flag;
+							push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 							push @html, $t, "\t<br>\n" if $auto_hint && $hint_pos eq 'below';
 							push @html, $t, "\t<span class='hint' id='hint_$label_id' style='display:none'></span>\n";
 							push @html, $t, "\t<script>setTimeout(function(){\$('#$label_id').change()},5);</script>\n";
@@ -1936,10 +1961,11 @@ package AppCore::Web::Form;
 							
 							
 							push @html, "$prefix"
+								.($bootstrap_flag ? "<div class='select'>" :"")
 								."<select"
 								." name='$ref'"
 								." f:model_item_class='$class'"
-								." class='".($node->class?$node->class:'')."'"
+								." class='".($node->class?$node->class:'')." $bootstrap_form_control_class'"
 								." id='$label_id'"
 								." onkeypress='var t=this;setTimeout(function(){t.onchange()},5)' ";
 							
@@ -1957,6 +1983,7 @@ package AppCore::Web::Form;
 										."</option>" 
 									} @list))
 								."\n$t</select>\n";
+							push @html, "</div>" if $bootstrap_flag;
 								
 							
 							if($type eq 'database')
@@ -2004,7 +2031,10 @@ package AppCore::Web::Form;
 # 								push @html, $t,"<script>\$('#$label_id').ext = new Ext.form.ComboBox({typeAhead: true,triggerAction: 'all',transform:'$label_id',forceSelection:true});</script>\n";
 # 							}
 							
+							push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
 							push @html, "$t<label for='$label_id' class='form-input-suffix'>$suffix</label>" if $suffix;
+							push @html, '</span>' if $bootstrap_flag;
+							push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 							push @html, ($auto_hint && $hint_pos eq 'below' ? "<br>" : "")
 									."<span class='hint' id='hint_$label_id' style='display:none'></span>";
 						}
@@ -2026,10 +2056,10 @@ package AppCore::Web::Form;
 						my $max = $node->max || 100;
 						my $step = $node->step || 10;
 						
-						push @html, "$prefix<select data-type='range' "
+						push @html, "$prefix<div class='select'><select data-type='range' "
 							." name='$ref'"
 							." id='$label_id'"
-							." class='form-input ".($node->class?$node->class.' ':'').($readonly?' readonly ':'')."' ";
+							." class='form-input $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?' readonly ':'')."' ";
 						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } keys %{$node->attrs});
 						push @html, ">\n";
 						
@@ -2043,7 +2073,7 @@ package AppCore::Web::Form;
  							$last_step = $cur_step;
  						}
 						
-						push @html, "</select>";
+						push @html, "</div></select>";
 						
 						# Disabling for now due to IExplore bug
 						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
@@ -2097,8 +2127,20 @@ package AppCore::Web::Form;
 							
 						push @html, join (" ", map { $_ . "=\""._perleval($node->attrs->{$_})."\"" } grep { !/^(readonly|type-hint|size|length|placeholder|class|value)/ } keys %{$node->attrs});
 							#.($readonly ? 'readonly' : "")
-						push @html," id='$label_id'/>".($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" :"")."\n";
-
+						push @html," id='$label_id'/>";
+						
+						if($suffix && $bootstrap_flag)
+						{
+							push @html, '<span class="input-group-addon last" style="float:right;margin-top:-2.25em;display:block">' if $bootstrap_flag;
+							push @html, ($suffix ? "$suffix" :"")."\n";
+							push @html, '</span>' if $bootstrap_flag;
+						}
+						else
+						{
+							push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" :"")."\n";
+						}
+						push @html, '</div><!--/.fg-line-->' if $bootstrap_flag;
+						
 						unless($hidden)
 						{
 							my $x_type = "x-type";

@@ -590,7 +590,7 @@ package AppCore::Web::SimpleListView;
 					if($filter_value_regex && $row_highlighting_enabled) 
 					{
 						$row->{$key.'_orig'} = $row->{$key};
-						$row->{$key} =~ s/($filter_value_regex)/length($1) > 0 ? "<b class='filter_highlight'>$1<\/b>" : ""/segi;
+						#$row->{$key} =~ s/($filter_value_regex)/length($1) > 0 ? "<b class='filter_highlight'>$1<\/b>" : ""/segi;
 					}
 				}
 				

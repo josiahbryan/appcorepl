@@ -209,7 +209,7 @@ package User;
 	{
 		my ($self, $req, $r) = @_;
 		
-		print STDERR Dumepr $req;
+		print STDERR Dumper $req;
 		
 		if($req->{code})
 		{
@@ -526,7 +526,7 @@ package User;
 		my $user = AppCore::User->by_field(user=>$req->{user});
 		if($user && !$user->pass)
 		{
-			$tmpl->param(name => $user->display);
+			$tmpl->param(name  => $user->display);
 			$tmpl->param(email => $user->email);
 		}
 		
