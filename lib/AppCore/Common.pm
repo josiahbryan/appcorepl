@@ -196,7 +196,6 @@ package AppCore::Common;
 		
 		my $short_format = shift || 0;
 		
-		
 		if($line->{min} > 60)
 		{
 			my $hr = int($line->{min}/60);
@@ -281,6 +280,8 @@ package AppCore::Common;
 			#die Dumper \@ago, $ago;
 		}
 		
+		$ago =~ s/, 0 min$//g;
+
 		return $ago;
 	}
 	
