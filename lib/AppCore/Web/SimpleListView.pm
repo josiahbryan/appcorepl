@@ -584,7 +584,7 @@ package AppCore::Web::SimpleListView;
 			{
 				foreach my $key (keys %$row)
 				{
-					$row->{$key} = '&nbsp;' if $row->{$key} eq '' || !defined $row->{$key};
+					#$row->{$key} = '&nbsp;' if $row->{$key} eq '' || !defined $row->{$key};
 					
 					if($filter_value_regex && $row_highlighting_enabled) 
 					{
