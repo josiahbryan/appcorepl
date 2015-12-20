@@ -768,7 +768,7 @@ package AppCore::DBI;
 					
 					$condition = "(SELECT COUNT($other_db.$table.$primary) \nFROM $other_db.$table \nWHERE $other_db.$table.$primary=$db.$self_table.$self_field) = 1";
 				}
-				elsif($other_meta->{type} =~ /varchar/)
+				elsif($other_meta->{type} =~ /(varchar|text)/)
 				{
 					$condition = "$condition <> '' AND $condition IS NOT NULL";
 				}

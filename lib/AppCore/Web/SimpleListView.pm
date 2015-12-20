@@ -171,8 +171,7 @@ package AppCore::Web::SimpleListView;
 	sub enable_advanced_filters
 	{
 		my $self = shift;
-		#die Dumper  $self->model->cdbi_class->meta->{table_list};
-		my $table_list = shift || ($self->model ? $self->model->cdbi_class->meta->{table_list} : []);
+		my $table_list = shift || ($self->model ? $self->model->cdbi_class->meta->{table_list} : [ map { $_->{field} } $self->model->columns ]);
 		my $filter_cookie = shift || 'advanced_filters_query_packet';
 		my $bookmark_controller_url = shift || 'advfilter_bookmarks';
 		$self->{advanced_filter_cookie_name} = $filter_cookie;
@@ -653,39 +652,39 @@ package AppCore::Web::SimpleListView;
 					}
 				}
 				
-				#die Dumper \@schema, $self->{advanced_filter_table_list};
+				die Dumper \@schema, $self->{advanced_filter_table_list};
 				$output_data->{advanced_filters_schema} = to_json(\@schema);
 				
 				#print STDERR AppCore::Common::print_stack_trace();
-				my @bookmarks = $model->get_advanced_filters_bookmarks();
-				if(@bookmarks)
-				{
-					my @sys_list;
-					my @user_list;
-					@bookmarks = sort {$a->name cmp $b->name} @bookmarks;
-					foreach my $bm (@bookmarks)
-					{
-						next if !$bm;
-						my $hash;
-						$hash->{$_} = ''.$bm->get($_) foreach $bm->columns;
-						$hash->{user_name} = $bm->userid->display() if $bm->userid && $bm->userid->id;
-						if($bm->is_system)
-						{
-							push @sys_list, $hash;
-						}
-						else
-						{
-							push @user_list, $hash;
-						}
-					}
-					
-					my @bm_list;
-					push @bm_list, @sys_list;
-					push @bm_list, {divider=>1} if @sys_list && @user_list;
-					push @bm_list, @user_list;
-					
-					$output_data->{advanced_filters_bookmarks} = to_json(\@bm_list);
-				}
+# 				my @bookmarks = $model->get_advanced_filters_bookmarks();
+# 				if(@bookmarks)
+# 				{
+# 					my @sys_list;
+# 					my @user_list;
+# 					@bookmarks = sort {$a->name cmp $b->name} @bookmarks;
+# 					foreach my $bm (@bookmarks)
+# 					{
+# 						next if !$bm;
+# 						my $hash;
+# 						$hash->{$_} = ''.$bm->get($_) foreach $bm->columns;
+# 						$hash->{user_name} = $bm->userid->display() if $bm->userid && $bm->userid->id;
+# 						if($bm->is_system)
+# 						{
+# 							push @sys_list, $hash;
+# 						}
+# 						else
+# 						{
+# 							push @user_list, $hash;
+# 						}
+# 					}
+# 					
+# 					my @bm_list;
+# 					push @bm_list, @sys_list;
+# 					push @bm_list, {divider=>1} if @sys_list && @user_list;
+# 					push @bm_list, @user_list;
+# 					
+# 					$output_data->{advanced_filters_bookmarks} = to_json(\@bm_list);
+# 				}
 				
 			}
 			
