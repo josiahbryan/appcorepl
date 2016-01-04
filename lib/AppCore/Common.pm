@@ -696,6 +696,7 @@ package AppCore::Common;
 		my $previous_timestamp = shift;
 		return iso_date_to_seconds(date()) - iso_date_to_seconds($previous_timestamp);
 	}
+	
 	sub iso_date_to_seconds
 	{
 		shift if $_[0] eq __PACKAGE__;

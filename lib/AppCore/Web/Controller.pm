@@ -172,22 +172,52 @@ package AppCore::Web::Controller;
 			
 		my $url = $class->request->prev_page_path($count);
 		
-		return $url;
+		return $class->_url_with_args($url, @_);
 	}
 	
 	sub url
 	{
 		my $class = shift;
-		my $count = shift;
 		
 		die "No request in class stash (stash->{req} undef)"
 			if ! $class->request;
 			
 		my $url = $class->request->page_path;
 		
-		return $url;
+		return $class->_url_with_args($url, @_);
 	}
 
+=pod
+	_url_with_args($url, $path, ...)
+		Returns $url appended with $path. Other args given are assumed to be key=>value pairs, unless the first arg is a HASHREF
+		
+		key=>value pairs (or the hashref) are expaneded and appended as ?key=value&key2=value2... to the $url (values are C<url_encode>d)
+		
+		Returns: String containing the new URL
+=cut	
+	
+	sub _url_with_args
+	{
+		my $class = shift;
+		my $url   = shift;
+		my $path  = shift;
+		
+		# Expand first hasref to a hash if present
+		@_ = %{ shift || {} } if @_ == 1 && ref $_[0] eq 'HASH';
+		my %args = @_;
+		
+		# Add $path as $url.'/'.$path`
+		$url .= '/'  if substr($url,-1) ne '/' && substr($path,0,1) ne '/';
+		$url .= $path;
+		
+		# Add the %args as ?key=value&key2=value2 pairs
+		$url .= '?' if scalar(keys %args) > 0 && index($url,'?') < 0;
+		$url .= join('&', map { $_ .'='. url_encode($args{$_}) } keys %args );
+		
+		# $url should now be "$url/$path?$key1=$value1&..."
+		return $url;
+	}
+	
 	sub redirect_up
 	{
 		my $class = shift;

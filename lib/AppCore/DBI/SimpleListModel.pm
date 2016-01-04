@@ -1180,6 +1180,7 @@ package AppCore::DBI::SimpleListModel;
 			push @args, @{ $hard_filter->{args} || [] };
 		}
 		
+		#die Dumper $hard_filter;
 		
 		#print STDERR "$self: clause='$clause', args=".join(',',@args)."\n";
 		
@@ -1192,6 +1193,8 @@ package AppCore::DBI::SimpleListModel;
 	{
 		my $self = shift;
 		my $hard = $self->{hardcoded_filter};
+		
+		#die Dumper $hard;
 		
 		my $class = $self->cdbi_class;
 		my $dbh = $class->db_Main;
