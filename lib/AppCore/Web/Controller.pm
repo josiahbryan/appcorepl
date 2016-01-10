@@ -323,7 +323,7 @@ package AppCore::Web::Controller;
 		
 		$fk_clause ||= '1=1';
 		
-		my $debug = 0;
+		my $debug = 1;
 		
 		$r = $class->stash->{r} if !$r;
 		
@@ -344,9 +344,14 @@ package AppCore::Web::Controller;
 		my $ctype = 'text/plain';
 		if($validate_action eq 'autocomplete')
 		{
+			my $clause = $class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause;
+			
+			#print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n"
+			#	if $debug;
+			
 			my $result = $validator->stringified_list(
 					$value, 
-					$class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause, #$fkclause
+					$clause, #$fkclause
 					undef, #$include_objects
 					0,  #$start
 					10, #$limit (both start and limit have to be defined, not undef - even if zero)
@@ -368,7 +373,8 @@ package AppCore::Web::Controller;
 		
 			my $clause = $class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause;
 			
-			#print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n";
+			#print STDERR __PACKAGE__.": validate search: clause: $fk_clause ($clause)\n"
+			#	if $debug;
 			
 			my $result = $validator->stringified_list(
 					$value, 

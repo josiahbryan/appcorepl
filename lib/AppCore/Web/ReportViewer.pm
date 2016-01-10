@@ -629,6 +629,41 @@ package AppCore::Web::ReportViewer;
 			
 				my $faux_file = $report->{title};
 				$faux_file =~ s/[^A-Za-z0-9]//g;
+				
+				if($report->{xls_filename_formatter})
+				{
+					$faux_file = $report->{xls_filename_formatter}->($report, $faux_file);
+				}
+				else
+				{
+					my @name_parts;
+					
+					my $arg_meta = $report->{args};
+				
+					foreach my $arg_ref (@{$arg_meta || []})
+					{
+						next if $arg_ref->{hidden};
+						
+						if(defined $arg_ref->{value})
+						{	
+							my $value = $arg_ref->{value};
+							
+							if($arg_ref->{linked})
+							{
+								$value = $arg_ref->{linked}->stringify($value);
+							}
+							
+							$value =~ s/[^A-Za-z0-9]//g;
+							
+							push @name_parts, $value;
+						}
+					}
+					
+					#die Dumper $arg_meta, $report if $report->{abs_file} =~ /prod_sold/;
+					
+					$faux_file .= '_'.join('-', @name_parts);
+				}
+				
 				$faux_file .= '.xls';
 				
 				my $xls_url = $req->page_path
@@ -643,6 +678,7 @@ package AppCore::Web::ReportViewer;
 				$output_data->{xls_url} = $xls_url;
 			}
 			
+			#die Dumper $output_data->{xls_url}, $report->{args};
 			
 			
 			$tmpl->param('report_'.$_ => $report->{$_}) 
@@ -685,7 +721,41 @@ package AppCore::Web::ReportViewer;
 			my $workbook = Spreadsheet::WriteExcel->new($tmp_file);
 			
 			# Add a worksheet
-			my $worksheet = $workbook->add_worksheet($report->{xls_sheet_name} || 'Sheet 1');
+			my $worksheet_name = $report->{xls_sheet_name};
+			if(!$worksheet_name)
+			{
+				if($report->{xls_filename_formatter})
+				{
+					$worksheet_name = $report->{xls_filename_formatter}->($report, undef);
+				}
+				else
+				{
+					my @name_parts;
+					
+					my $arg_meta = $report->{args};
+				
+					foreach my $arg_ref (@{$arg_meta || []})
+					{
+						next if $arg_ref->{hidden};
+						
+						if(defined $arg_ref->{value})
+						{	
+							my $value = $arg_ref->{value};
+							
+							if($arg_ref->{linked})
+							{
+								$value = $arg_ref->{linked}->stringify($value);
+							}
+							
+							push @name_parts, $value;
+						}
+					}
+					
+					$worksheet_name = join(' - ', @name_parts);
+				}
+			}
+			
+			my $worksheet = $workbook->add_worksheet($worksheet_name);
 			
 			#  Add and define a format
 			my $hdr1 = $workbook->add_format(); # Add a format
@@ -714,22 +784,26 @@ package AppCore::Web::ReportViewer;
 			my $y = 0;
 			my $x = 0;
 			
-			$worksheet->write($y, $x++, $report->{title}, $fmt_bold)
-				if $report->{title};
-			
-			$x=0; 
-			$y++;
-			
-			# Optionally add date, turned off for now
-			#$worksheet->write($y,$x++,'Date: ');
-			#$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
-			
-			# TODO: Turn this off?
-			$worksheet->insert_image(0,4, $report->{logo_image_file})
-				if $report->{logo_image_file};
-			
-			$y++;
-			$y++;
+			if($report->{enable_legacy_xls_header_rows})
+			{
+				$worksheet->write($y, $x++, $report->{title}, $fmt_bold)
+					if $report->{title};
+				
+				$x=0; 
+				$y++;
+				
+				# Optionally add date, turned off for now
+				#$worksheet->write($y,$x++,'Date: ');
+				#$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
+				
+				# TODO: Turn this off?
+				$worksheet->insert_image(0,4, $report->{logo_image_file})
+					if $report->{logo_image_file};
+				
+				$y++;
+				$y++;
+				
+			}
 			
 			my @cols = @{ $output_data->{columns} || [] };
 			
