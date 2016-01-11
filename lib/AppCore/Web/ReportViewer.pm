@@ -199,6 +199,11 @@ package AppCore::Web::ReportViewer;
 					$arg_ref->{value}
 						= $arg_hash->{$arg_ref->{field}}
 						if !$arg_ref->{hidden};
+						
+					$arg_hash->{$arg_ref->{field}} = 
+					$arg_ref->{value} = undef
+						if $arg_ref->{type} eq 'date' && 
+						  !$arg_ref->{value};
 				}
 					
 				if(!defined $arg_ref->{value} &&
