@@ -521,6 +521,12 @@ package AppCore::Web::ReportViewer;
 			$output_data->{columns} = \@report_columns;
 			$output_data->{data}    = \@report_data;
 			$output_data->{data_count} = scalar(@report_data);
+			
+			# Apply output hook if present
+			if(ref $report->{output_hook} eq 'CODE')
+			{
+				$report->{output_hook}->($output_data, $report);
+			}
 		}
 		
 		return $output_data;

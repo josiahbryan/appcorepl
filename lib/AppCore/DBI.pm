@@ -3601,6 +3601,8 @@ package $opts->{pkg};
 			next if !$sub;
 			next if $sub =~ /^--/;
 			
+			#print STDERR "bulk_execute: sub: $sub\n";
+			
 			my $row_result;
 			
 			my $sth = $dbh->prepare($sub);
