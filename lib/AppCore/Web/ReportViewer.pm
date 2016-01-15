@@ -766,7 +766,7 @@ package AppCore::Web::ReportViewer;
 				}
 			}
 			
-			my $worksheet = $workbook->add_worksheet($worksheet_name);
+			my $worksheet = $workbook->add_worksheet(substr($worksheet_name,0,30));
 			
 			#  Add and define a format
 			my $hdr1 = $workbook->add_format(); # Add a format
