@@ -393,17 +393,6 @@ function AWSV_AjaxScrollAdapter(args) {
 	// If args.search provided, enable auto-search
 	if(args.search && args.search[0])
 	{
-		args.search.on('keyup', function() {
-			var  $this = $(this),
-			       val = $this.val();
-			       
-			args.pageFilter = val;
-			
-			//console.log("scrolladapter.js: new args.pageFilter:", args.pageFilter);
-			
-			bufferSearchUpdate();
-		});
-		
 		// jQuery plugin: PutCursorAtEnd 1.0
 		// http://plugins.jquery.com/project/PutCursorAtEnd
 		// by teedyay
@@ -443,6 +432,18 @@ function AWSV_AjaxScrollAdapter(args) {
 			};
 		})(jQuery);
 		
-		args.search.putCursorAtEnd();
+		args.search
+			.putCursorAtEnd()
+			.attr('autocomplete', 'off')
+			.on('keyup', function() {
+				var  $this = $(this),
+				val = $this.val();
+				
+				args.pageFilter = val;
+				
+				//console.log("scrolladapter.js: new args.pageFilter:", args.pageFilter);
+				
+				bufferSearchUpdate();
+			});
 	}
 }
