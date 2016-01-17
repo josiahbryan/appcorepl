@@ -386,7 +386,8 @@ function AWSV_AjaxScrollAdapter(args) {
 	
 	//console.debug("AWSV_AjaxScrollAdapter: Online with args:" ,args);
 	
-	bufferNextPageLoad();
+	if(!args.disableAutoLoadNextPage)
+		bufferNextPageLoad();
 	
 	
 	// If args.search provided, enable auto-search
