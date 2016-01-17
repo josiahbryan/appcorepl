@@ -188,7 +188,7 @@ function AWSV_AjaxScrollAdapter(args) {
 		if(result.page_start == 0)
 		{
 			$list.empty();
-			$(window).scrollTop(0);
+			//$(window).scrollTop(0);
 		}
 		
 		for(var i=0; i<result.list_length; i++)
