@@ -134,6 +134,27 @@ function AWSV_AjaxScrollAdapter(args) {
 	var requestQueue = [];
 	var requestCounter = 0;
 	
+	var searchUpdate = function()
+	{
+		//console.log("scrolladapter.js: searchUpdate:", args.pageFilter);
+		
+		nextPageStartRow = 0;
+		loadResultsPage(nextPageStartRow);
+	}
+	
+	var bufferSearchUpdate = function() 
+	{
+		// Yes, using bufferNextPageLoad because ".locked" is already set throughout the code
+		if(bufferNextPageLoad.locked)
+			return;
+		
+		// Delay X ms then load the result from the server
+		clearTimeout(bufferNextPageLoad.tid);
+		bufferNextPageLoad.tid = setTimeout(searchUpdate, args.quietMillis || 100);
+		
+		//console.log("scrolladapter.js: bufferSearchUpdate:", args.pageFilter);
+	}
+	
 	var updatePagingDisplay = function(result) {
 	
 		var $pg = $('.paging_display');
@@ -160,11 +181,16 @@ function AWSV_AjaxScrollAdapter(args) {
 			//$pg.html('Showing <b>'+(args.pageStart == 0 ? 1 : args.pageStart)+'</b> - <b>'+result.actual_page_end+'</b> of <b>'+result.total_rows+'</b> items');
 			$pg.html('Showing <b>'+result.actual_page_end+'</b> of <b>'+result.total_rows+'</b> items');
 		}
-			
 	}
 	
 	var renderRequest = function(result) {
-	
+		
+		if(result.page_start == 0)
+		{
+			$list.empty();
+			$(window).scrollTop(0);
+		}
+		
 		for(var i=0; i<result.list_length; i++)
 		{
 			var rowData = result.list[i],
@@ -254,6 +280,8 @@ function AWSV_AjaxScrollAdapter(args) {
 			$('.paging_link.next_link').hide();
 		}
 		
+		//console.log("scrolladapter.js: loadResultsPage:", args.pageFilter,", page:",page);
+		
 		var requestData = {
 			page:		page,
 			results:	null,
@@ -276,6 +304,8 @@ function AWSV_AjaxScrollAdapter(args) {
 			}),
 			success: function(result) {
 				//console.debug("ajax results:",result);
+				
+				//console.log("scrolladapter.js: loadResultsPage:", args.pageFilter,", page:",page,", results:",result);
 				
 				bufferNextPageLoad.locked = false;
 				
@@ -357,4 +387,61 @@ function AWSV_AjaxScrollAdapter(args) {
 	//console.debug("AWSV_AjaxScrollAdapter: Online with args:" ,args);
 	
 	bufferNextPageLoad();
+	
+	
+	// If args.search provided, enable auto-search
+	if(args.search && args.search[0])
+	{
+		args.search.on('keyup', function() {
+			var  $this = $(this),
+			       val = $this.val();
+			       
+			args.pageFilter = val;
+			
+			//console.log("scrolladapter.js: new args.pageFilter:", args.pageFilter);
+			
+			bufferSearchUpdate();
+		});
+		
+		// jQuery plugin: PutCursorAtEnd 1.0
+		// http://plugins.jquery.com/project/PutCursorAtEnd
+		// by teedyay
+		//
+		// Puts the cursor at the end of a textbox/ textarea
+
+		// codesnippet: 691e18b1-f4f9-41b4-8fe8-bc8ee51b48d4
+		(function($)
+		{
+			jQuery.fn.putCursorAtEnd = function()
+			{
+				return this.each(function()
+				{
+					$(this).focus()
+
+					// If this function exists...
+					if (this.setSelectionRange)
+					{
+						// ... then use it
+						// (Doesn't work in IE)
+
+						// Double the length because Opera is inconsistent about whether a carriage return is one character or two. Sigh.
+						var len = $(this).val().length * 2;
+						this.setSelectionRange(len, len);
+					}
+					else
+					{
+						// ... otherwise replace the contents with itself
+						// (Doesn't work in Google Chrome)
+						$(this).val($(this).val());
+					}
+
+					// Scroll to the bottom, in case we're in a tall textarea
+					// (Necessary for Firefox and Google Chrome)
+					this.scrollTop = 999999;
+				});
+			};
+		})(jQuery);
+		
+		args.search.putCursorAtEnd();
+	}
 }
