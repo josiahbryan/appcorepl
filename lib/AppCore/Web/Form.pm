@@ -2056,7 +2056,7 @@ package AppCore::Web::Form;
 						my $max = $node->max || 100;
 						my $step = $node->step || 10;
 						
-						push @html, "$prefix<div class='select'><select data-type='range' "
+						push @html, "$prefix<select data-type='range' "
 							." name='$ref'"
 							." id='$label_id'"
 							." class='form-input $bootstrap_form_control_class ".($node->class?$node->class.' ':'').($readonly?' readonly ':'')."' ";
@@ -2073,7 +2073,7 @@ package AppCore::Web::Form;
  							$last_step = $cur_step;
  						}
 						
-						push @html, "</div></select>";
+						push @html, "</select>";
 						
 						# Disabling for now due to IExplore bug
 						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
