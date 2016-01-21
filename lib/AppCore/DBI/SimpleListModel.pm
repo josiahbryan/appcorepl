@@ -11,6 +11,8 @@ package AppCore::DBI::SimpleListModel;
 	
 	use AppCore::Common;
 	
+	our $MIN_TERMOID_LENGTH = 3;
+	
 	sub new
 	{
 		my $class = shift;
@@ -696,9 +698,9 @@ package AppCore::DBI::SimpleListModel;
 			
 			my $negate_flag = $is_neg{$raw_term};
 			
-			if(($search_col && !$termoid) || (!$search_col && length($termoid) < 3))
+			if(($search_col && !$termoid) || (!$search_col && length($termoid) < $MIN_TERMOID_LENGTH))
 			{
-				warn "Not using termoid '$termoid' - less than 3 characters (search_col:$search_col)";
+				warn "Not using termoid '$termoid' - less than $MIN_TERMOID_LENGTH characters (search_col:$search_col)";
 				next RAW_TERM;
 			}
 			
