@@ -261,7 +261,7 @@ package AppCore::AuthUtil;
 			$extra = '&' . join('=', map { $_ => url_encode($hash{$_}) } sort keys %hash );
 			print STDERR "http_require_login: extra: $extra\n";
 		}
-		my $url = AppCore::Config->get("LOGIN_URL").'?auth_requested=1&url_from='.url_encode(get_full_url()).$extra;
+		my $url = ($ctx->{login_url} || AppCore::Config->get("LOGIN_URL")).'?auth_requested=1&url_from='.url_encode(get_full_url()).$extra;
 		AppCore::Web::Common->redirect($url);
 	}
 };

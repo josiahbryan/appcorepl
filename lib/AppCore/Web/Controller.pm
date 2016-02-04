@@ -147,6 +147,7 @@ package AppCore::Web::Controller;
 		
 		my $req = $class->stash->{req} || AppCore::Common->context->current_request;
 		
+		print_stack_trace;
 		die "No request in class stash (stash->{req} undef and no current_request)"
 			if !$req;
 		
