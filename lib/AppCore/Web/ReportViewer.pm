@@ -429,6 +429,8 @@ package AppCore::Web::ReportViewer;
 						\@arg_data,
 						$self->stash
 					);
+					
+				@report_data = @{ $data_listref || [] };
 				
 				if(!@report_columns)
 				{

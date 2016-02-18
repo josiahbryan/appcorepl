@@ -638,6 +638,9 @@ package AppCore::Common;
 			$a = 'pm';
 		}
 		
+		# Remove stringified leading zero
+		$x[1] +=0;
+		
 		my $yr = substr($x[0],2,2);
 		
 		return "$x[1]/$x[2]/$yr ".($h<10?($h+0):$h).":$x[4]$a";
