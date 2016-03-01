@@ -572,7 +572,8 @@ package AppCore::DBI::SimpleListModel;
 		
 		my %col_match_type = (
 			#'code' => '=',
-			#'id'   => '=',
+			'id'   => '=',
+			$cdbi_class->primary_column => '='
 		);
 		
 		my %col_q_cast = (
@@ -608,6 +609,9 @@ package AppCore::DBI::SimpleListModel;
 			$title2 =~ s/\s//g;
 			$col_name_map{$title2} = $field;
 		}
+		
+		# Alias 'id' to primary column
+		$col_name_map{id} = $cdbi_class->primary_column;
 		
 		my @string_query_cols = map { $_->{field} } @schema;
 		
@@ -1010,13 +1014,13 @@ package AppCore::DBI::SimpleListModel;
 			my $filter_wild = lc($filter);
 			#$filter_wild =~ s/\s+/%/g;
 			
-			$filter_wild =~ s/\s+/ /g;	# collapse spaces
+			$filter_wild =~ s/\s+/ /g;	 # collapse spaces
 			my $filter_nonwild = $filter_wild;
 			
-			$filter_wild =~ s/[^\da-z]/ /g;	# remove anything not a digit or a letter
-			$filter_wild =~ s/(.)/$1%/g;	# insert '%' between every character
-			$filter_wild =~ s/%\s*%/%/g;	# collapse '% %' into '%'
-			$filter_wild = '%'.$filter_wild;
+			$filter_wild =~ s/[^\da-z]/ /g;	 # remove anything not a digit or a letter
+			$filter_wild =~ s/(.)/$1%/g;	 # insert '%' between every character
+			$filter_wild =~ s/%\s*%/%/g;	 # collapse '% %' into '%'
+			$filter_wild = '%'.$filter_wild; # '%' implicitly is added to the end by the regex 2 lines above
 
 			# Get the list of columns to use in our ratio
 			my @fmt = $class->can('stringify_fmt') ? $class->stringify_fmt : ();

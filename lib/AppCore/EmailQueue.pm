@@ -348,6 +348,11 @@ Server: $host
 				$args{Password} = $prof->{pass} || 'Notify1125';
 			}
 			
+			if($pkg eq 'Net::SMTP::SSL')
+			{
+				$args{'SSL_verify_mode'} = 'SSL_VERIFY_NONE';
+			}
+			
  			#use Data::Dumper;
 			#print STDERR Dumper \%args;
 				
