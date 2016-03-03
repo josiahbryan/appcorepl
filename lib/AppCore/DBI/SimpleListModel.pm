@@ -666,6 +666,8 @@ package AppCore::DBI::SimpleListModel;
 # 			$col_name_map{firstname} = $col_name_map{first};
 # 			$col_name_map{lastname}  = $col_name_map{last};
 			
+			my $negate_flag = $is_neg{$raw_term};
+			
 			if($search_col)
 			{
 				$search_col = lc $search_col;
@@ -679,7 +681,10 @@ package AppCore::DBI::SimpleListModel;
 				{
 					if($filter_hash->{$termoid})
 					{
-						push @search_sql, $filter_hash->{$termoid}->{sql};
+						push @search_sql,
+							$negate_flag ? 'not ('.$filter_hash->{$termoid}->{sql}.')' : 
+								$filter_hash->{$termoid}->{sql};
+								
 						$filter_hash->{$termoid}->{selected} = 1; # since this is a ref, it should update the UI above
 						
 						next RAW_TERM;
@@ -699,8 +704,6 @@ package AppCore::DBI::SimpleListModel;
 			{
 				$termoid = $raw_term;
 			}
-			
-			my $negate_flag = $is_neg{$raw_term};
 			
 			if(($search_col && !$termoid) || (!$search_col && length($termoid) < $MIN_TERMOID_LENGTH))
 			{
