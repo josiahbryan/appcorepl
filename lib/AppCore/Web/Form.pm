@@ -153,20 +153,21 @@ package AppCore::Web::Form;
 		#		$hash->{$bind_name}->{class_name};
 		my $class_obj = $hash->{$bind_name}->{class_name};
 		
+		my $field_data = $hash->{$bind_name};
+		
 		print STDERR "Form: validate_page: bind_name: $bind_name, class_obj: $class_obj\n"
 			if $debug;
 			
 		# Orignal object given was a hashref of args, so rely on stored data to create fake column meta
 		if($class_obj eq 'HASH') 
 		{
-			my $field_data = $hash->{$bind_name};
-			
 			print STDERR "Form: validate_page: generating fake field meta, type: $field_data->{type}, linked: $field_data->{linked_class}\n"
 				if $debug;
 			
 			return {
 				type   => $field_data->{type},
 				linked => $field_data->{linked_class},
+				clause => $field_data->{linked_clause},
 			};
 		}
 		
@@ -188,7 +189,10 @@ package AppCore::Web::Form;
 			
 		error("No Meta for '$class_key'",
 			"Unable to load metadata for column '$class_key' on object '$class_obj_name' ($class_obj)") if !$meta;
-			
+		
+		# Add linked clause
+		$meta->{clause} = $field_data->{linked_clause};
+		
 		return $meta;
 	}
 	
@@ -211,6 +215,8 @@ package AppCore::Web::Form;
 		# Resolve UUID to a database field
 		$meta = $self->uuid_to_field_meta($uuid)
 			if !$meta;
+			
+		#die Dumper $meta;
 		
 		my $debug = 0;
 		
@@ -1254,16 +1260,6 @@ package AppCore::Web::Form;
 					
 					#print STDERR "$path: $ref ($type) [$val]\n";
 					
-					
-					$self->{field_meta}->{$ref} =
-					{
-						#class_obj_name => $class_obj_name,
-						#class_key      => $class_key,
-						class_name     => ref $class_obj ? ref $class_obj : $class_obj,
-						linked_class   => $node->{class},
-						type           => $type,
-					};
-					
 					#error([$self->{field_meta}, $class_obj]);
 					
 					my $format = $node->format;
@@ -2282,6 +2278,18 @@ package AppCore::Web::Form;
 					
 					push @html, "$t" . ($is_pairtab ? "</td></tr><!--/.end input-group [pairtab]-->\n" : "</div><!--/.end input-group [div]-->\n");
 					$consumed = 1;
+					
+					
+					$self->{field_meta}->{$ref} =
+					{
+						#class_obj_name => $class_obj_name,
+						#class_key      => $class_key,
+						class_name     => ref $class_obj ? ref $class_obj : $class_obj,
+						linked_class   => $node->{class},
+						linked_clause  => $node->clause,
+						type           => $type,
+					};
+					
 				}
 			}
 			elsif($name eq 'panel')

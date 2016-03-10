@@ -656,7 +656,7 @@ package AppCore::Common;
 			$$unit = $new_unit;
 			
 			# De-plural if it will round out to "1"
-			$$unit =~ s/s$// if $$x > 0 && $$x < 2;
+			$$unit =~ s/s$// if floor($$x) == 1; #$$x > 0 && $$x < 1.5;
 			
 			
 			#print STDERR "...down to $$x $$unit ---\n";
@@ -685,8 +685,9 @@ package AppCore::Common;
 # 		goto _approx_time_ago_end if _unit_divide_if('millenia',	1000,		\$x, \$unit);
 # 		goto _approx_time_ago_end if _unit_divide_if('eons',	100,		$x, $unit);
 		_approx_time_ago_end:
-		$x += 0.5 if $x - int($x) >= 0.5; 
-		$x = int($x); # remove decimals
+		#$x += 0.5 if $x - int($x) >= 0.5; 
+		#$x = int($x); # remove decimals
+		$x = floor($x);
 		#print STDERR "[$orig] Done, returning $x $unit\n";
 		return wantarray ? ($x,$unit) : "$x $unit";
 		
