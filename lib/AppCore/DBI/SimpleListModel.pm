@@ -272,7 +272,7 @@ package AppCore::DBI::SimpleListModel;
 	sub compile_list
 	{
 		my $self = shift;
-		my ($start,$length) = @_;
+		my ($start,$length,$debug) = @_;
 		
 		my $class = $self->cdbi_class;
 		my $dbh = $class->db_Main;
@@ -447,7 +447,7 @@ package AppCore::DBI::SimpleListModel;
 		
 		#use AppCore::Common;
 		#die Dumper \@$query_args;
-		#die AppCore::Common::debug_sql($sql_table, @$query_args);
+		#die AppCore::Common::debug_sql($sql_table, @$query_args) if $debug;
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
 		#print STDERR AppCore::Common::get_stack_trace();
@@ -622,201 +622,217 @@ package AppCore::DBI::SimpleListModel;
 			@string_query_cols = grep { $string_query_fields{ lc $_ } } @string_query_cols;
 		}
 		
-		RAW_TERM: foreach my $raw_term (@term_words)
+		foreach my $possible_union (@term_words)
 		{
-			# We keep a list of all the IDs we match for this raw_term,
-			# then at the end we merge them into @id_list_master
-			my @term_id_list;
-			
-			print STDERR "[Debug] parse_string_query(): \$raw_term: '$raw_term'\n" if $DEBUG;
-			my ($search_col, $termoid) = $raw_term =~ /^([\w_]+):\s*(.*)$/;
-			
-			print STDERR "[Debug] parse_string_query(): \$search_col: '$search_col', \$termoid: '$termoid'\n" if $DEBUG;
-
-			# We dont want to use the user's search term directly in SQL, so we will search first then build a list of IDs and use that in the search clause
-			my @value_cols = @string_query_cols;
-			
-			#my @user_cols = qw/created_by assigned_to/;
-			
-# 			my %col_name_map = qw/
-# 				last lastname
-# 				first firstname
-# 				middle --
-# 				display _display_
-# 				name _display_
-# 				status --
-# 				recruiter --
-# 				r --
-# 				code --
-# 				event event
-# 				program programs
-# 				phone phone
-# 				email email
-# 			/;
-# 			$col_name_map{id}        = $master_type eq 'pr' ? 'p.ProspectID' : 's.StudentUID';
-# 			$col_name_map{status}    = $master_type eq 'pr' ? 'p.Status' : 's.ProspectStatus';
-# 			$col_name_map{recruiter} = $master_type eq 'pr' ? 'p.[Recruiters Name]' : 's.RecruiterName';
-# 			$col_name_map{r}         = $col_name_map{recruiter};
-# 			$col_name_map{code}	= $master_type eq 'pr' ? q{(case when p.[User Defined] <> '' then p.[User Defined] else 'Z-NoCode' end)} :
-# 									 q{(case when s.UserDefined    <> '' then s.UserDefined    else 'Z-NoCode' end)};
-# 			$col_name_map{event}     = $master_type eq 'pr' ? 'p.Event' : 's.ProspectEvent';
-# 			$col_name_map{first}     = $master_type eq 'pr' ? 'p.FirstName' : 's.FirstName';
-# 			$col_name_map{last}      = $master_type eq 'pr' ? 'p.LastName' : 's.LastName';
-# 			$col_name_map{middle}    = $master_type eq 'pr' ? 'p.MiddleInitial' : 's.MiddleName';
-# 			$col_name_map{firstname} = $col_name_map{first};
-# 			$col_name_map{lastname}  = $col_name_map{last};
-			
-			my $negate_flag = $is_neg{$raw_term};
-			
-			if($search_col)
+			my @union_search_sql;
+			my @union_terms = split(/\|/, $possible_union);
+			#die Dumper \@union_terms if @union_terms > 1;
+			RAW_TERM: foreach my $raw_term (@union_terms)
 			{
-				$search_col = lc $search_col;
+				# We keep a list of all the IDs we match for this raw_term,
+				# then at the end we merge them into @id_list_master
+				my @term_id_list;
 				
-				if(defined $col_name_map{$search_col})
+				print STDERR "[Debug] parse_string_query(): \$raw_term: '$raw_term'\n" if $DEBUG;
+				my ($search_col, $termoid) = $raw_term =~ /^([\w_]+):\s*(.*)$/;
+				
+				print STDERR "[Debug] parse_string_query(): \$search_col: '$search_col', \$termoid: '$termoid'\n" if $DEBUG;
+
+				# We dont want to use the user's search term directly in SQL, so we will search first then build a list of IDs and use that in the search clause
+				my @value_cols = @string_query_cols;
+				
+				#my @user_cols = qw/created_by assigned_to/;
+				
+	# 			my %col_name_map = qw/
+	# 				last lastname
+	# 				first firstname
+	# 				middle --
+	# 				display _display_
+	# 				name _display_
+	# 				status --
+	# 				recruiter --
+	# 				r --
+	# 				code --
+	# 				event event
+	# 				program programs
+	# 				phone phone
+	# 				email email
+	# 			/;
+	# 			$col_name_map{id}        = $master_type eq 'pr' ? 'p.ProspectID' : 's.StudentUID';
+	# 			$col_name_map{status}    = $master_type eq 'pr' ? 'p.Status' : 's.ProspectStatus';
+	# 			$col_name_map{recruiter} = $master_type eq 'pr' ? 'p.[Recruiters Name]' : 's.RecruiterName';
+	# 			$col_name_map{r}         = $col_name_map{recruiter};
+	# 			$col_name_map{code}	= $master_type eq 'pr' ? q{(case when p.[User Defined] <> '' then p.[User Defined] else 'Z-NoCode' end)} :
+	# 									 q{(case when s.UserDefined    <> '' then s.UserDefined    else 'Z-NoCode' end)};
+	# 			$col_name_map{event}     = $master_type eq 'pr' ? 'p.Event' : 's.ProspectEvent';
+	# 			$col_name_map{first}     = $master_type eq 'pr' ? 'p.FirstName' : 's.FirstName';
+	# 			$col_name_map{last}      = $master_type eq 'pr' ? 'p.LastName' : 's.LastName';
+	# 			$col_name_map{middle}    = $master_type eq 'pr' ? 'p.MiddleInitial' : 's.MiddleName';
+	# 			$col_name_map{firstname} = $col_name_map{first};
+	# 			$col_name_map{lastname}  = $col_name_map{last};
+				
+				my $negate_flag = $is_neg{$raw_term};
+				
+				if($search_col)
 				{
-					@value_cols = ($col_name_map{$search_col});
-					#@user_cols = ();
-				}
-				elsif($search_col eq 'filter')
-				{
-					if($filter_hash->{$termoid})
+					$search_col = lc $search_col;
+					
+					if(defined $col_name_map{$search_col})
 					{
-						push @search_sql,
-							$negate_flag ? 'not ('.$filter_hash->{$termoid}->{sql}.')' : 
-								$filter_hash->{$termoid}->{sql};
-								
-						$filter_hash->{$termoid}->{selected} = 1; # since this is a ref, it should update the UI above
-						
-						next RAW_TERM;
+						@value_cols = ($col_name_map{$search_col});
+						#@user_cols = ();
+					}
+					elsif($search_col eq 'filter')
+					{
+						if($filter_hash->{$termoid})
+						{
+							push @union_search_sql,
+								$negate_flag ? 'not ('.$filter_hash->{$termoid}->{sql}.')' : 
+									$filter_hash->{$termoid}->{sql};
+									
+							$filter_hash->{$termoid}->{selected} = 1; # since this is a ref, it should update the UI above
+							
+							next RAW_TERM;
+						}
+						else
+						{
+							die "Invalid filter '$termoid'";
+						}
 					}
 					else
 					{
-						die "Invalid filter '$termoid'";
+						die "Search field '$search_col' does not exist, ".Dumper(\%col_name_map)."\n";
+						$termoid = $raw_term;
 					}
 				}
 				else
 				{
-					die "Search field '$search_col' does not exist, ".Dumper(\%col_name_map)."\n";
 					$termoid = $raw_term;
 				}
+				
+				if(($search_col && !$termoid) || (!$search_col && length($termoid) < $MIN_TERMOID_LENGTH))
+				{
+					warn "Not using termoid '$termoid' - less than $MIN_TERMOID_LENGTH characters (search_col:$search_col)";
+					next RAW_TERM;
+				}
+				
+				# Allow wildcard searching
+				$termoid =~ s/\*/%/g;
+				
+				print STDERR "[Debug] parse_string_query():     Parsed fields, \@value_cols =(".join(',',@value_cols).")\n" if $DEBUG;
+				#print STDERR "[Debug] parse_string_query():     Parsed fields, \@user_cols  =(".join(',',@user_cols).")\n"  if $DEBUG;
+
+				#die Dumper { value_cols => \@value_cols, user_cols => \@user_cols, search_col => $search_col, term => $termoid };
+				if(@value_cols)
+				{
+					# TODO: Handle special cols
+					my %special_cols = (); #map { $_ => 1 } qw/.../;
+					my @useful_cols = grep { !$special_cols{$_} } @value_cols;
+					my @ids;
+					
+					print STDERR "[Debug] parse_string_query():     Value Cols, \@useful_cols =(".join(',',@useful_cols).")\n"  if $DEBUG;
+
+					if(@useful_cols)
+					{
+						my %multicols = (
+							#phone	=> [ qw/phone1 phone2 mobilephone/ ],
+							#email	=> [ qw/email1 email3/ ],
+						);
+						
+						my %col_specific_termoid = ();
+						
+						# Store all cols requested before removing the multicols
+						my %allcol_map = map { $_ => 1 } @useful_cols;
+						
+						# Remove multicols from useful because they will be added to stmpt lowr
+						@useful_cols = grep { !$multicols{$_} } @useful_cols;
+						foreach my $key (keys %multicols)
+						{
+							# Only add the cols for the multicol if the col $key was requested originally
+							push @useful_cols, @{ $multicols{$key} }
+								if $allcol_map{$key};
+						}
+						
+						foreach my $key (@useful_cols)
+						{
+							# Hackish way of specially handling phone numbers
+							if($key =~ /phone/)
+							{
+								my $phone = $termoid;
+								$phone =~ s/[^\d]//g;
+								$phone =~ s/^1(\d{10})/$1/;
+								$phone =~ s/^(\d{3})(\d{3})(\d{4})$/\%$1\%$2\%$3\%/ if length($phone) == 10;
+								$phone =~ s/^(\d{3})(\d{4})$/\%$1\%$2\%/ if length($phone) ==  7;
+								#$phone = '%'.$phone.'%' if $phone !~ /(\d{10})/;
+								#foreach my $col (@{ $multicols{$key} })
+								#{
+									$col_specific_termoid{$key} = $phone;
+								#}
+							}
+						}
+						
+						# Build our likes
+						#my @likes = map { ($_ eq '_display_' ? "FirstName+' '+MiddleInitial+' '+LastName" : $_).' like ?' } @useful_cols;
+						
+						my %col_name_subtitutions = %col_name_map;
+						
+						#$col_name_subtitutions{'_display_'} = 
+						#	$master_type eq 'pr' ?  "p.LastName+', '+p.FirstName+' '+p.MiddleInitial" :
+						#				"s.LastName+', '+s.FirstName+' '+s.MiddleName";
+						
+						my @multi_values = split /[,\|]/, $termoid;
+						my @multi_stmt;
+						my @multi_args;
+						
+						# NOTE: More testing is needed to see how this multi-value termoid code
+						# performs in diverse scenarios
+						foreach my $subtermoid (@multi_values)
+						{
+							
+							my @likes = map { $self->get_string_sql_for_field($col_name_subtitutions{$_} ? $col_name_subtitutions{$_} : $_).' '.
+									($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
+									($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
+									# NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
+									grep { $_ ne 'id' || $subtermoid+0 < 2147483647 } @useful_cols;
+							
+							# Build the stmt and arg list for the where clause
+							my $stmt = '(' . join(($negate_flag ? ' and ' : ' or '), @likes) . ')';
+							my @args = map { 
+								my $col = $_;
+								
+								$col eq 'id'                 ? int($subtermoid+0) :
+								$col_specific_termoid{$col}  ? $col_specific_termoid{$col} : 
+								$col_match_type{$col} eq '=' ? $subtermoid :
+									($subtermoid =~ /%/ ? $subtermoid : '%'.$subtermoid.'%') 
+									
+							} grep { $_ ne 'id' || $subtermoid+0 < 2147483647 }  @useful_cols;
+							
+							push @multi_stmt, $stmt;
+							push @multi_args, @args;
+						}
+						
+						my $stmt = @multi_stmt == 1 ? shift @multi_stmt : '(' . join(' or ', @multi_stmt). ')';
+						my @args = @multi_args;
+						
+						#die Dumper \@useful_cols, \@args;
+						#die $stmt."\n\n".Dumper(\@args);
+						
+						#push @search_sql,  ($negate_flag ? 'not ' : '') . $stmt;
+						push @union_search_sql,  $stmt; #($negate_flag ? 'not ' : '') . $stmt;
+						push @search_args, @args;
+					}
+				}
+			}
+			
+			if(@union_search_sql == 1)
+			{
+				push @search_sql, @union_search_sql;
 			}
 			else
 			{
-				$termoid = $raw_term;
+				push @search_sql, '(' . join(' or ', @union_search_sql). ')';
 			}
 			
-			if(($search_col && !$termoid) || (!$search_col && length($termoid) < $MIN_TERMOID_LENGTH))
-			{
-				warn "Not using termoid '$termoid' - less than $MIN_TERMOID_LENGTH characters (search_col:$search_col)";
-				next RAW_TERM;
-			}
-			
-			# Allow wildcard searching
-			$termoid =~ s/\*/%/g;
-			
-			print STDERR "[Debug] parse_string_query():     Parsed fields, \@value_cols =(".join(',',@value_cols).")\n" if $DEBUG;
-			#print STDERR "[Debug] parse_string_query():     Parsed fields, \@user_cols  =(".join(',',@user_cols).")\n"  if $DEBUG;
-
-			#die Dumper { value_cols => \@value_cols, user_cols => \@user_cols, search_col => $search_col, term => $termoid };
-			if(@value_cols)
-			{
-				# TODO: Handle special cols
-				my %special_cols = (); #map { $_ => 1 } qw/.../;
-				my @useful_cols = grep { !$special_cols{$_} } @value_cols;
-				my @ids;
-				
-				print STDERR "[Debug] parse_string_query():     Value Cols, \@useful_cols =(".join(',',@useful_cols).")\n"  if $DEBUG;
-
-				if(@useful_cols)
-				{
-					my %multicols = (
-						#phone	=> [ qw/phone1 phone2 mobilephone/ ],
-						#email	=> [ qw/email1 email3/ ],
-					);
-					
-					my %col_specific_termoid = ();
-					
-					# Store all cols requested before removing the multicols
-					my %allcol_map = map { $_ => 1 } @useful_cols;
-					
-					# Remove multicols from useful because they will be added to stmpt lowr
-					@useful_cols = grep { !$multicols{$_} } @useful_cols;
-					foreach my $key (keys %multicols)
-					{
-						# Only add the cols for the multicol if the col $key was requested originally
-						push @useful_cols, @{ $multicols{$key} }
-							if $allcol_map{$key};
-					}
-					
-					foreach my $key (@useful_cols)
-					{
-						# Hackish way of specially handling phone numbers
-						if($key =~ /phone/)
-						{
-							my $phone = $termoid;
-							$phone =~ s/[^\d]//g;
-							$phone =~ s/^1(\d{10})/$1/;
-							$phone =~ s/^(\d{3})(\d{3})(\d{4})$/\%$1\%$2\%$3\%/ if length($phone) == 10;
-							$phone =~ s/^(\d{3})(\d{4})$/\%$1\%$2\%/ if length($phone) ==  7;
-							#$phone = '%'.$phone.'%' if $phone !~ /(\d{10})/;
-							#foreach my $col (@{ $multicols{$key} })
-							#{
-								$col_specific_termoid{$key} = $phone;
-							#}
-						}
-					}
-					
-					# Build our likes
-					#my @likes = map { ($_ eq '_display_' ? "FirstName+' '+MiddleInitial+' '+LastName" : $_).' like ?' } @useful_cols;
-					
-					my %col_name_subtitutions = %col_name_map;
-					
-					#$col_name_subtitutions{'_display_'} = 
-					#	$master_type eq 'pr' ?  "p.LastName+', '+p.FirstName+' '+p.MiddleInitial" :
-					#				"s.LastName+', '+s.FirstName+' '+s.MiddleName";
-					
-					my @multi_values = split /[,\|]/, $termoid;
-					my @multi_stmt;
-					my @multi_args;
-					
-					# NOTE: More testing is needed to see how this multi-value termoid code
-					# performs in diverse scenarios
-					foreach my $subtermoid (@multi_values)
-					{
-						
-						my @likes = map { $self->get_string_sql_for_field($col_name_subtitutions{$_} ? $col_name_subtitutions{$_} : $_).' '.
-								  ($col_match_type{$_}        ? ($negate_flag ? '!' : '').$col_match_type{$_} :  ($negate_flag ? ' not':'').' like ').' '.
-								  ($col_q_cast{$_}            ? $col_q_cast{$_} : '?') }
-								  # NOTE: NB In code below, the limiter 2_147_483_647 is max 'int' for MSSQL
-								  grep { $_ ne 'id' || $subtermoid+0 < 2147483647 } @useful_cols;
-						
-						# Build the stmt and arg list for the where clause
-						my $stmt = '(' . join(($negate_flag ? ' and ' : ' or '), @likes) . ')';
-						my @args = map { 
-							my $col = $_;
-							
-							$col eq 'id'                 ? int($subtermoid+0) :
-							$col_specific_termoid{$col}  ? $col_specific_termoid{$col} : 
-							$col_match_type{$col} eq '=' ? $subtermoid :
-								 ($subtermoid =~ /%/ ? $subtermoid : '%'.$subtermoid.'%') 
-								
-						} grep { $_ ne 'id' || $subtermoid+0 < 2147483647 }  @useful_cols;
-						
-						push @multi_stmt, $stmt;
-						push @multi_args, @args;
-					}
-					
-					my $stmt = '(' . join(' or ', @multi_stmt). ')';
-					my @args = @multi_args;
-					
-					#die Dumper \@useful_cols, \@args;
-					#die $stmt."\n\n".Dumper(\@args);
-					
-					#push @search_sql,  ($negate_flag ? 'not ' : '') . $stmt;
-					push @search_sql,  $stmt; #($negate_flag ? 'not ' : '') . $stmt;
-					push @search_args, @args;
-				}
-			}
 		}
 
 		my $res = {
@@ -826,6 +842,7 @@ package AppCore::DBI::SimpleListModel;
 		
 		print STDERR "parse_string_query: query: '$search_query', result: ".Dumper($res)  if $DEBUG;
 		#die debug_sql($res->{sql}, @{$res->{args}});
+			#if $search_query =~ /\|/;
 		
 		return $res;
 	}
