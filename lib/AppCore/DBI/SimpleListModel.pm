@@ -824,12 +824,13 @@ package AppCore::DBI::SimpleListModel;
 				}
 			}
 			
-			if(@union_search_sql == 1)
+			if(@union_search_sql <= 1)
 			{
 				push @search_sql, @union_search_sql;
 			}
 			else
 			{
+				#die Dumper \@union_search_sql, $possible_union;
 				push @search_sql, '(' . join(' or ', @union_search_sql). ')';
 			}
 			
