@@ -586,12 +586,28 @@ package AppCore::DBI;
 		my $args = shift;
 		
 		my $dbh = $class->db_Main;
+				
+		my $db = $class->meta->{db} || $class->meta->{database};
+		if(!$db)
+		{
+			my $dsn = $dbh->{Name};
+			$dsn =~ /database=([^;]+)/;
+			$db = $1;
+			#die Dumper $db,$dsn;
+		}
+		$db = $dbh->quote_identifier($db);
+		
+		my $self_table = $dbh->quote_identifier($class->table);
 		
 		my $s = $class->_get_orderby_fields($args);
 		
 		#use Data::Dumper;
 		#die Dumper $s;
 		#print STDERR "get_orderby_sql: s:".Dumper($s);
+		
+		# For use in the inner loop to make table monikers unique
+		my $moniker_sequence_num = 0;
+		
 		
 		my @order;
 		foreach my $field_data (@$s)
@@ -617,10 +633,6 @@ package AppCore::DBI;
 				#print STDERR "Debug: get_orderby_sql: field: '$field' ->linked:".$field_meta->{linked}.", get_stringify_sql on linked: ".$field_meta->{linked}->get_stringify_sql."\n";
 				#print STDERR "[".(ref $class? ref $class : $class)."] Debug: get_orderby_sql: field: '$field' ->linked:".$field_meta->{linked}."\n";
 				
-				# Last true arg indicates that the stringify SQL function
-				# should use that class's 'order by' fields instead of the stringify fmt
-				my $concat = $field_meta->{linked}->get_stringify_sql(0,0,1);
-					
 				my $linked_meta = eval '$field_meta->{linked}->meta';
 
 				if(!$linked_meta || !$linked_meta->{db} || !$linked_meta->{database})
@@ -630,28 +642,31 @@ package AppCore::DBI;
 					$linked_meta->{db} = $1;
 				}
 				
+				
 				my $other_db   = $dbh->quote_identifier($linked_meta->{db} || $linked_meta->{database});
 				
 				my $table      = $dbh->quote_identifier($field_meta->{linked}->table);
 				my $primary    = $dbh->quote_identifier($field_meta->{linked}->primary_column);
 				my $self_field = $dbh->quote_identifier($field_meta->{field});
 				
-				
-				my $dbh = $class->db_Main;
-				
-				my $db = $class->meta->{db} || $class->meta->{database};
-				if(!$db)
+				my $self_ref  = "$db.$self_table";
+				my $other_ref = "$other_db.$table";
+				my $moniker   = "";
+				if($other_ref eq $self_ref)
 				{
-					my $dsn = $dbh->{Name};
-					$dsn =~ /database=([^;]+)/;
-					$db = $1;
-					#die Dumper $db,$dsn;
+					# This is to handle subqueries that query the same table as the outer query.
+					# For example, say we're trying to make a subquery for a column called 'parentid' that looks up the
+					# name of the parent row in the same table - we've got to make the table monikers unique for the query
+					# to process correctly, since its the same table.
+					$moniker   = $dbh->quote_identifier($field_meta->{linked}->table.(++$moniker_sequence_num));
+					$other_ref = $moniker;
 				}
-				$db = $dbh->quote_identifier($db);
 				
-				my $self_table = $dbh->quote_identifier($class->table);
+				# Last true arg indicates that the stringify SQL function
+				# should use that class's 'order by' fields instead of the stringify fmt
+				my $concat = $field_meta->{linked}->get_stringify_sql(0,0,1,$moniker);
 				
-				$field_sql = "IFNULL((SELECT $concat FROM $other_db.$table WHERE $other_db.$table.$primary=$db.$self_table.$self_field LIMIT 1),'')\n";
+				$field_sql = "IFNULL((SELECT $concat FROM $other_db.$table $moniker WHERE $other_ref.$primary=$db.$self_table.$self_field LIMIT 1),'')\n";
 			}
 			else
 			{
@@ -667,12 +682,13 @@ package AppCore::DBI;
 	}
 	
 	
-	sub get_stringify_sql
+	sub get_stringify_sql#($lower_case||0,$depth||0,$user_order||0,$tbl_moniker||undef)
 	{
-		my $self       = shift;
-		my $lower_case = shift || 0;
-		my $depth      = shift || 0;
-		my $use_order  = shift || 0;
+		my $self        = shift;
+		my $lower_case  = shift || 0;
+		my $depth       = shift || 0;
+		my $use_order   = shift || 0;
+		my $tbl_moniker = shift || undef; # MUST be already quoted via quote_identifier()
 		
 		my @fmt        = $self->can('stringify_fmt') ? $self->stringify_fmt : ();
 		
@@ -702,7 +718,7 @@ package AppCore::DBI;
 		
 		#print STDERR "[".(ref $self? ref $self : $self)."] Debug: get_stringify_sql: \@fmt=(".join('|',@fmt).")\n";
 		
-		return $self->_create_string_sql(\@fmt,$lower_case,$depth,$use_order);
+		return $self->_create_string_sql(\@fmt,$lower_case,$depth,$use_order,$tbl_moniker);
 	}
 	
 	use constant MAX_SQL_STRINGIFY_DEPTH => 3;
@@ -714,6 +730,7 @@ package AppCore::DBI;
 		my $lower_case  = shift || 0;
 		my $depth       = shift || 0;  # guards against recursive stringification
 		my $use_orderby = shift || 0;
+		my $tbl_moniker = shift || undef; # MUST be already quoted via quote_identifier()
 		
 		# Buffer for final SQL
 		my @buf;
@@ -730,7 +747,10 @@ package AppCore::DBI;
 		}
 		$db = $dbh->quote_identifier($db);
 		
-		my $self_table = $dbh->quote_identifier($self->table);
+		my $self_table =
+			$tbl_moniker ?
+			$tbl_moniker :  # We ASSUME already quoted
+			$dbh->quote_identifier($self->table);
 					
 		foreach my $val (@$fmt)
 		{

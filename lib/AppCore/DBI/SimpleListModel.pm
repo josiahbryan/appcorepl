@@ -277,8 +277,8 @@ package AppCore::DBI::SimpleListModel;
 		my $class = $self->cdbi_class;
 		my $dbh = $class->db_Main;
 		
-		# For use in the inner loop to make table monkiers unique
-		my $monkier_sequence_num = 0;
+		# For use in the inner loop to make table monikers unique
+		my $moniker_sequence_num = 0;
 		
 		my $db    = $dbh->quote_identifier($self->get_db_name);
 		my $table = $dbh->quote_identifier($class->table);
@@ -313,10 +313,6 @@ package AppCore::DBI::SimpleListModel;
 			my $link = $class->field_meta($col)->{linked};
 			if($link && eval '$link->can("get_stringify_sql")')
 			{
-				my $concat     = $link->get_stringify_sql;
-				#die Dumper $concat if $col eq 'empid';
-				#die Dumper $concat;
-					
 				my $meta = eval '$link->meta';
 				#die Dumper $meta if $x->{linked} =~ /Auth/;
 				if(!$meta || !$meta->{db} || !$meta->{database})
@@ -336,18 +332,23 @@ package AppCore::DBI::SimpleListModel;
 				
 				my $self_ref  = "$db.$self_table";
 				my $other_ref = "$other_db.$table";
-				my $monkier   = "";
+				my $moniker   = "";
 				if($other_ref eq $self_ref)
 				{
 					# This is to handle subqueries that query the same table as the outer query.
 					# For example, say we're trying to make a subquery for a column called 'parentid' that looks up the
-					# name of the parent row in the same table - we've got to make the table monkiers unique for the query
+					# name of the parent row in the same table - we've got to make the table monikers unique for the query
 					# to process correctly, since its the same table.
-					$monkier   = $dbh->quote_identifier($link->table.(++$monkier_sequence_num));
-					$other_ref = $monkier;
+					$moniker   = $dbh->quote_identifier($link->table.(++$moniker_sequence_num));
+					$other_ref = $moniker;
 				}
+				
+				#Args: get_stringify_sql($lower_case||0,$depth||0,$user_order||0,$tbl_moniker||undef)
+				my $concat     = $link->get_stringify_sql(0,0,0,$moniker);
+				#die Dumper $concat if $col eq 'parent_articleid';
+				#die Dumper $concat;
 					
-				push @columns, "(SELECT $concat FROM $other_db.$table $monkier WHERE $other_ref.$primary=$self_ref.$self_field) \n".
+				push @columns, "(SELECT $concat FROM $other_db.$table $moniker WHERE $other_ref.$primary=$self_ref.$self_field) \n".
 					"\tAS ".$dbh->quote_identifier($col)."\n";
 				
 				# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
@@ -447,7 +448,7 @@ package AppCore::DBI::SimpleListModel;
 		
 		#use AppCore::Common;
 		#die Dumper \@$query_args;
-		#die AppCore::Common::debug_sql($sql_table, @$query_args) if $debug;
+		#die AppCore::Common::debug_sql($sql_table, @$query_args);# if $debug;
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
 		#print STDERR AppCore::Common::get_stack_trace();
@@ -1256,8 +1257,8 @@ package AppCore::DBI::SimpleListModel;
 		my $class = $self->cdbi_class;
 		my $dbh = $class->db_Main;
 		
-		# For use in the inner loop to make table monkiers unique
-		my $monkier_sequence_num = 0;
+		# For use in the inner loop to make table monikers unique
+		my $moniker_sequence_num = 0;
 		
 		my $db    = $dbh->quote_identifier($self->get_db_name);
 		my $table = $dbh->quote_identifier($class->table);
@@ -1275,10 +1276,6 @@ package AppCore::DBI::SimpleListModel;
 		my $linked_clause = 0;
 		if($link && eval '$link->can("get_stringify_sql")')
 		{
-			my $concat     = $link->get_stringify_sql;
-			#die Dumper $concat if $col eq 'empid';
-			#die Dumper $concat;
-				
 			my $meta = eval '$link->meta';
 			#die Dumper $meta if $x->{linked} =~ /Auth/;
 			if(!$meta || !$meta->{db} || !$meta->{database})
@@ -1300,19 +1297,24 @@ package AppCore::DBI::SimpleListModel;
 			
 			my $self_ref  = "$db.$self_table";
 			my $other_ref = "$other_db.$table";
-			my $monkier   = "";
+			my $moniker   = "";
 			if($other_ref eq $self_ref)
 			{
 				# This is to handle subqueries that query the same table as the outer query.
 				# For example, say we're trying to make a subquery for a column called 'parentid' that looks up the
-				# name of the parent row in the same table - we've got to make the table monkiers unique for the query
+				# name of the parent row in the same table - we've got to make the table monikers unique for the query
 				# to process correctly, since its the same table.
-				$monkier   = $dbh->quote_identifier($link->table.(++$monkier_sequence_num));
-				$other_ref = $monkier;
+				$moniker   = $dbh->quote_identifier($link->table.(++$moniker_sequence_num));
+				$other_ref = $moniker;
 			}
+			
+			#Args: get_stringify_sql($lower_case||0,$depth||0,$user_order||0,$tbl_moniker||undef)
+			my $concat     = $link->get_stringify_sql(0,0,0,$moniker);
+			#die Dumper $concat if $col eq 'empid';
+			#die Dumper $concat;
 				
-			#push @columns, "DISTINCT (SELECT $concat FROM $other_db.$table $monkier WHERE $other_ref.$primary=$self_ref.$self_field AND $link_clause) AS ".$dbh->quote_identifier($col);
-			$linked_table = "$other_db.$table $monkier";
+			#push @columns, "DISTINCT (SELECT $concat FROM $other_db.$table $moniker WHERE $other_ref.$primary=$self_ref.$self_field AND $link_clause) AS ".$dbh->quote_identifier($col);
+			$linked_table = "$other_db.$table $moniker";
 			$linked_clause = "$other_ref.$primary=$self_ref.$self_field AND $link_clause"; 
 			push @columns, "DISTINCT $concat AS ".$dbh->quote_identifier($col);
 		}

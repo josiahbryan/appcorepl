@@ -193,6 +193,8 @@ package AppCore::Web::Form;
 		# Add linked clause
 		$meta->{clause} = $field_data->{linked_clause};
 		
+		#die Dumper $hash, $field_data, $meta;
+		
 		return $meta;
 	}
 	
@@ -266,7 +268,12 @@ package AppCore::Web::Form;
 				$validate_action,
 				$value,
 				$r,
-				($meta->{fk_constraint} || '1=1').' and '.($form_opts->{static_fk_constraint} || '1=1'));
+				join(' and ',
+					($meta->{fk_constraint} || '1=1'),
+					($meta->{clause} || '1=1'),
+					($form_opts->{static_fk_constraint} || '1=1')
+				)
+			);
 		}
 		else
 		{
