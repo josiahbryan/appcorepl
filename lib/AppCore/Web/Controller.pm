@@ -424,7 +424,9 @@ package AppCore::Web::Controller;
 		}
 		elsif($validate_action eq 'validate')
 		{
-			my $value = $validator->validate_string($value);
+			my $clause = $class->autocomplete_fkclause($validator, $fk_clause) || $fk_clause;
+			
+			my $value = $validator->validate_string($value, $clause);
 			my $ref = {
 				value => $value,
 				text  => $validator->stringify($value)

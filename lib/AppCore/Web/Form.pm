@@ -269,8 +269,8 @@ package AppCore::Web::Form;
 				$value,
 				$r,
 				join(' and ',
-					($meta->{fk_constraint} || '1=1'),
-					($meta->{clause} || '1=1'),
+					($meta->{fk_constraint}             || '1=1'),
+					($meta->{clause}                    || '1=1'),
 					($form_opts->{static_fk_constraint} || '1=1')
 				)
 			);
@@ -302,7 +302,7 @@ package AppCore::Web::Form;
 		my $hash = decode_json($field_meta->json);
 		$hash ||= {};
 		
-		#die Dumper $hash;
+		#die Dumper $hash, $req, $form_opts;
 		
 		my $result_hash = {};
 		
@@ -336,8 +336,9 @@ package AppCore::Web::Form;
 				# object is expected to have the column 'termid')
 				$meta_obj  = $meta_objs->{$class_obj_name};
 				
-				my $linked_class = undef;
-				my $meta_title   = undef;
+				my $linked_class  = undef;
+				my $linked_clause = undef;
+				my $meta_title    = undef;
 				
 				# Before we store the value given from the $req object for this field (Ex termid)
 				# into the $class_obj, first we have to check to see if it's a "linked" value,
@@ -358,24 +359,63 @@ package AppCore::Web::Form;
 					};
 					$meta = {} if !$meta;
 					
-					$linked_class = $meta->{linked};
-					$meta_title   = $meta->{title};
+					$linked_class  = $meta->{linked};
+					$linked_clause = $meta->{linked_clause};
+					$meta_title    = $meta->{title};
 				}
 				elsif($cached_data->{linked_class})
 				{
-					$linked_class = $cached_data->{linked_class};
-					$meta_title   = AppCore::Common::guess_title($class_key);
+					$linked_class  = $cached_data->{linked_class};
+					$meta_title    = AppCore::Common::guess_title($class_key);
 				}
 				
-				# If the value is, in fact, a "linked" value AND the value looks like an
-				# integer, then we go ahead and validate the value via the linked class
+				# Allow the cached data to override the current field_meta,
+				# because the linked_clause in cached_data came from the
+				# field description in the <form> XML, not the Perl DBI code,
+				# e.g. the linked_clause in $cached_data is located "closer" to
+				# the actual UI location this field is used, so consider
+				# it more relevant than the Perl module's linked_clause, if any
+				$linked_clause = $cached_data->{linked_clause}
+					      if $cached_data->{linked_clause};
+				
+				# If the value is, in fact, a "linked" value AND the value doesn't look like
+				# an integer, then we go ahead and validate the value via the linked class
 				# before storing it
 				if($linked_class && $req_val !~ /^\d+$/)
 				{
+					my $static_fk_constraint_cb = $form_opts->{static_fk_constraint_cb};
+					
+# 					die Dumper $static_fk_constraint_cb, $form_opts
+# 						if $ref =~ /roomid/;
+# 						
+					my $static_fk_constraint;
+					if(ref $static_fk_constraint_cb eq 'CODE')
+					{
+						my $err = undef;
+						eval {
+							$static_fk_constraint = $static_fk_constraint_cb->($linked_class);
+							$err = $@;
+						};
+						$err = $@ if $@;
+						if($err)
+						{
+							error("Error with $meta_title",
+								"There was an error in what you typed for ${meta_title} when calling the 'static_fk_constraint_cb' callback:".
+								"<h1 style='color:red'>${err}</h1>".
+								"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
+								"<br><br>");
+						}
+					}
+					
 					my $err = undef;
 					eval
 					{
-						$req_val = $linked_class->validate_string($req_val);
+						$req_val = $linked_class->validate_string($req_val,
+							join(' and ',
+								($linked_clause        || '1=1'),
+ 								($static_fk_constraint || '1=1')
+							)
+						);
 						$err = $@;
 					};
 					$@ = $err if !$@;
@@ -387,6 +427,14 @@ package AppCore::Web::Form;
 							"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
 							"<br><br>");
 					}
+					
+# 					die Dumper {
+# 						req_val => $req_val, 
+# 						linked_clause => $linked_clause, 
+# 						static_fk_constraint => $static_fk_constraint,
+# 						#form_opts => $form_opts,
+# 					}
+# 						if $ref =~ /roomid/;
 				}
 				
 				# By this point, the value the user provided has been validated (if linked),

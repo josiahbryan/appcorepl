@@ -797,7 +797,12 @@ package AppCore::DBI;
 				$is_good = [] if !$is_good || ref $is_good ne 'ARRAY';
 				$is_bad  = [] if !$is_bad  || ref $is_bad  ne 'ARRAY';
 				
-				push @buf, join '', 'IF(', "\n", $condition, ',', "\n", $self->_create_string_sql($is_good,$lower_case), ',', "\n", $self->_create_string_sql($is_bad,$lower_case), ')';
+				push @buf, join '', 
+					'IF(', "\n",
+						$condition, ',', "\n",
+						$self->_create_string_sql($is_good, $lower_case, $depth), ',', "\n",
+						$self->_create_string_sql($is_bad,  $lower_case, $depth),
+					')';
 				
 			}
 			# Column references start with a hash, so to reference column 'title', use '#title'
@@ -828,6 +833,7 @@ package AppCore::DBI;
 					
 					my $meta = eval '$other_meta->{linked}->meta';
 					#die Dumper $meta if $other_meta->{linked} =~ /Auth/;
+					
 					if(!$meta || !$meta->{db} || !$meta->{database})
 					{
 						my $dsn = $other_meta->{linked}->db_Main->{Name};
@@ -1026,8 +1032,9 @@ package AppCore::DBI;
 		
 		my $debug = shift || 0;
 		
-		my ($regexp,$fields,$index_count) = $class->get_stringify_regex();
+		my ($regexp, $fields, $index_count) = $class->get_stringify_regex();
 		print "$class->get_stringified_fields($val): Regex: $regexp\n" if $debug;
+		
 		my @match = $val =~ /^$regexp$/;
 		#print Dumper [ $val, @match ], $fields,$index_count;
 		
@@ -1125,13 +1132,13 @@ package AppCore::DBI;
 			my $k = $f->{field};
 			my $t = $f->{type};
 			
-			$t = $t =~ /varchar/i     ? 'String' :
-			$t =~ /(int|float)/i ? 'Number' :
-			$t =~ /datetime/i    ? 'DateTime' : 
-			$t =~ /timestamp/i   ? 'TimeStamp' : 
-			$t =~ /time/i        ? 'Time' :
-			$t =~ /enum/i        ? 'EnumList' :
-			'String';
+			$t = 	$t =~ /varchar/i     ? 'String' :
+				$t =~ /(int|float)/i ? 'Number' :
+				$t =~ /datetime/i    ? 'DateTime' : 
+				$t =~ /timestamp/i   ? 'TimeStamp' : 
+				$t =~ /time/i        ? 'Time' :
+				$t =~ /enum/i        ? 'EnumList' :
+						       'String';
 			
 			$hash{$k} = $hash{lc $k} = $t;
 		}
