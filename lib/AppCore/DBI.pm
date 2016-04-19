@@ -1854,7 +1854,7 @@ package AppCore::DBI;
 		
 		eval {
 		
-		#print STDERR "Connecting to db $db, host $host...\n";
+		#print STDERR "Connecting to db $db, host $host, user=$user, pass=$pass...\n";
 		$DB_CACHE{$key} = 
 	#$host eq '10.0.1.5' ? 
 	#		DBI::ReplicationProxy->connect($db) : 

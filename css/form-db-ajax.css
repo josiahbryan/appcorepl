@@ -1,0 +1,83 @@
+		
+		.db-search-modal   .list-group {
+			border-radius: 0;
+			border: 0;
+			
+		}
+			.db-search-modal  .list-group-item:first-child,
+			.db-search-modal  .list-group-item:last-child
+			{
+				border-radius: 0;
+			}
+			
+			.db-search-modal  .list-group-item {
+				border-left: 0;
+				border-right: 0;
+			}
+			
+			.db-search-modal  .list-group-item:first-child {
+				border-top: 0;
+			}
+			
+			.db-search-modal  .list-group-item:last-child {
+				border-bottom: 0;
+			}
+		
+			.db-search-modal .list-group-wrapper {
+				border: 1px solid #ccc;
+				height: 31rem;
+				overflow: auto;
+				border-top: 0;
+			}
+			
+			.db-search-modal .filter-control.loading {
+				background: url(/appcore/mods/Content/images/ajax-loader-balls-xparent.gif) no-repeat 8px center;
+				color: rgba(0,0,0,0.5);
+			}
+		
+		
+		/* This doesnt work - should disable the zoom-on-touch in the input on mobile browsers, but...nope...not on chrome anyway.
+		.db-search-modal .filter-control {
+			-moz-text-size-adjust: none;
+			-webkit-text-size-adjust: none;
+			-ms-text-size-adjust: none;
+		}*/
+		
+		
+		
+		
+		.form-input-group {
+			display: inline-block;
+		}
+		
+		.form-input-group .db-search-btn {
+			/*margin-left: .25em;*/
+		}
+		
+		.form-input-group .db-search-btn .placeholder {
+			color: rgba(0,0,0,0.8);
+			font-weight: normal;
+			
+		}
+		
+		.form-input-group .db-search-btn .caret {
+			margin-left: 6px;
+			margin-right: 0px;
+		}
+		
+		/* Styling for the '...' button, not used right now */
+		/*.form-input-group .db-search-btn {
+			white-space: nowrap;
+		}
+		
+		.form-input-group .db-search-btn .btn  {
+			display: inline-block;
+		}
+		
+		.form-input-group .db-search-btn .btn + .btn {
+			margin-left: -2px;
+		}
+		
+		.form-input-group .db-search-btn .btn:first-child {
+			margin-right: 0;
+		}*/

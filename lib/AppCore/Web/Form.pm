@@ -1575,26 +1575,6 @@ package AppCore::Web::Form;
 							
 							{
 		
-								
-								push @html, $t."\t $prefix",
-									"<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'>",
-										"<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
-											.($length ? "size=$length ":"")
-											.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
-											.($format ? "f:format="._quote($format)." ":"")
-											.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
-											."class='text $bootstrap_form_control_class f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
-											.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
-											." "
-											.($readonly ? 'readonly' : "")
-											." id='$label_id'/>",
-									"</div>";
-									
-								push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-								push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
-								push @html, '</span>' if $bootstrap_flag;
-								push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
-								
 								my $noun = eval '$class->meta->{class_noun}' || "Linked Record";
 								
 								if(!$self->{form_opts}->{validate_url})
@@ -1613,11 +1593,35 @@ package AppCore::Web::Form;
 										"The UUID you used with your form ($uuid) won't work for AJAX validation of database values (relevant field: $ref) because the validator encodes the Form UUID with the field bind into a string seperated by '.' (example: $bind_uuid) - and your UUID contains a '.' - choose a different UUID or use render='select' on '$ref'");
 								}
 								
-								push @html, "<script>",
-									"\$(function() { var hookFunction = window.databaseLookupHook;",
-									"if(typeof(hookFunction) == 'function')",
-										"hookFunction(\$('#${label_id}'),'$url', '$bind_uuid','$val_url_new');",
-									"});</script>";
+								#push @html, "<script>",
+								#	"\$(function() { var hookFunction = window.databaseLookupHook;",
+								#	"if(typeof(hookFunction) == 'function')",
+								#		"hookFunction(\$('#${label_id}'), '$url', '$bind_uuid', '$val_url_new'); else throw new Error('No window.databaseLookupHook defined');",
+								#	"});</script>";
+								
+								
+								push @html, $t."\t $prefix",
+									"<div style='display:inline' f:db_class='$class' id='${label_id}_error_border'>",
+										"<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' "
+											."data-url="._quote($url).' ' 
+											."data-bind-uuid="._quote($bind_uuid).' '
+											."data-url-new="._quote($val_url_new).' '
+											.($length ? "size=$length ":"")
+											.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
+											.($format ? "f:format="._quote($format)." ":"")
+											.($type   ? "f:type="._quote($type)." ".($type =~ /(int|float|num)/ ? "style='text-align:right' ":""):"")
+											."class='text $bootstrap_form_control_class f-ajax-fk ".($node->class?$node->class.' ':'').($readonly?'readonly ':'')."'"
+											.($val_stringified?" value='".encode_entities($val_stringified)."'":'')
+											." "
+											.($readonly ? 'readonly' : "")
+											." id='$label_id'/>",
+									"</div>";
+									
+								push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
+								push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+								push @html, '</span>' if $bootstrap_flag;
+								push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
+								
 								
 								# Search btn
 								#/linux-icons/Bluecurve/16x16/stock/panel-searchtool.png
