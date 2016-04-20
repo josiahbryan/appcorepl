@@ -1,37 +1,42 @@
 
-function include(url, type) {
-	
-	if(type == 'css')
-	{
-		var inc = document.createElement('link');
-		
-		inc.rel  = 'stylesheet';
-		inc.href = url;
-		
-		
-		var s = document.getElementsByTagName('script')[0];
-		s.parentNode.insertBefore(inc, s);
-	}
-	else
-	if(type == 'html')
-	{
-		$.ajax({
-			url: url,
-			type: 'GET',
-			success: function(data) {
-				$(document.body).append($(data));
-			}
-			
-		});
-	}
-	
-}
-
-include('/appcore/js/form-db-ajax.inc.html', 'html');
-include('/appcore/css/form-db-ajax.css', 'css');
-
 $(function() {
 	
+	function include(url, type, callback) {
+		
+		if(type == 'css')
+		{
+			var inc = document.createElement('link');
+			
+			inc.rel  = 'stylesheet';
+			inc.href = url;
+		
+			var s = document.getElementsByTagName('script')[0];
+			s.parentNode.insertBefore(inc, s);
+		}
+		else
+		if(type == 'html')
+		{
+			$.ajax({
+				url: url,
+				type: 'GET',
+				success: function(data) {
+					
+					var $data = $(data);
+					
+					$(document.body).append($data);
+					
+					if(typeof(callback) == 'function')
+						callback($data);
+				}
+				
+			});
+		}
+		
+	}
+
+	include('/appcore/js/form-db-ajax.inc.html', 'html', dbSearchDialogSetup);
+	include('/appcore/css/form-db-ajax.css',     'css');
+
 	// Override options, key is hookUrlRoot
 	var optionsOverride = {};
 	
@@ -153,7 +158,7 @@ $(function() {
 		
 		var data = dbLookupOptions.ajax.data(filter, page);
 		
-		console.debug("primeDbCache: url:",urlRoot,", data:",data, "page:",page);
+		//console.debug("primeDbCache: url:",urlRoot,", data:",data, "page:",page);
 		
 		var cacheKey = dbLookupOptions.ajax.cacheKey(filter, page, showItemChooser.hookUrlRoot);
 		
@@ -168,20 +173,14 @@ $(function() {
 			url: showItemChooser.hookUrlRoot+'/search',
 			data: data,
 			success: function(result) {
-				//console.debug("ajax results:",result);
 				
-				console.debug("primeDbCache: url:",urlRoot,", loaded:",result);
-		
+				//console.debug("primeDbCache: url:",urlRoot,", loaded:",result);
 				
 				dbLookupOptions.resultCache(cacheKey, result);
 			},
 
 			error: function(result) {
 				
-				//bufferNextPageLoad.locked = false;
-				
-				//alert("Error:");
-				//console.debug(result.responseText);
 				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 			}
 			
@@ -198,8 +197,11 @@ $(function() {
 		var $dialog   = $('.db-search-modal');
 		
 		// Move dialog out of current document flow position and to end of body to avoid any local-specific styles
-		$dialog.remove();
-		$('body').append($dialog);
+		if(!$dialog.parent().is('body'))
+		{
+			$dialog.remove();
+			$('body').append($dialog);
+		}
 		
 		var $filter   = $dialog.find('.filter-control');
 		var $list     = $dialog.find('.list-group');
@@ -308,8 +310,10 @@ $(function() {
 						if(showItemChooser.currentWidget)
 						{
 							var w = showItemChooser.currentWidget;
+							
 							w.find('.txt').html(string);
 							w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
+							
 							showItemChooser.currentElm.val(id).trigger('change');
 							
 							w.find('.btn').focus();
@@ -536,10 +540,18 @@ $(function() {
 				{
 					$active.removeClass('active')
 					$sib.addClass('active');
-					$sib.get(0).scrollIntoView({
-						behavior: "smooth",
-						block: "start"
-					});
+					
+					var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
+					var top = $listWrap.scrollTop();
+					var elmHeight = $sib.height();
+					
+					if(elmTop < 0)
+					{
+						$sib.get(0).scrollIntoView({
+							behavior: "smooth",
+							block: "start"
+						});
+					}
 				}
 				
 				return;
@@ -554,10 +566,36 @@ $(function() {
 				{
 					$active.removeClass('active')
 					$sib.addClass('active');
-					$sib.get(0).scrollIntoView({
-						behavior: "smooth",
-						block: "end"
-					});
+					
+					var top = $listWrap.scrollTop();
+					var height = $listWrap.height();
+					var scrollBottom = top + height;
+					
+					var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
+					var elmHeight = $sib.height();
+					var elmBottom = elmTop + elmHeight;
+					
+// 					console.log({
+// 						top: top,
+// 						height: height,
+// 						scrollBottom: scrollBottom,
+// 						elmTop: elmTop,
+// 						elmHeight: elmHeight,
+// 						elmBottom: elmBottom,
+// 						flag: elmBottom > height ? true : false
+// 					});
+						
+					
+					if(elmBottom > height)
+					{
+						$listWrap.scrollTop(
+							$listWrap.scrollTop() + elmHeight * 2.5
+						);
+						/*$sib.get(0).scrollIntoView({
+							behavior: "smooth",
+							block: "start"
+						});*/
+					}
 				}
 				else
 				{
@@ -833,7 +871,8 @@ $(function() {
 	
 	function showItemChooser($widget, $elm, hookUrlRoot, urlNew)
 	{
-		dbSearchDialogSetup();
+		// dbSearchDialogSetup is called by include()
+		//dbSearchDialogSetup();
 		
 		// $widget is the UI widget (button, etc)
 		// $elm is the hidden input element that gets passed back to the server
