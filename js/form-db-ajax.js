@@ -37,9 +37,6 @@ $(function() {
 	include('/appcore/js/form-db-ajax.inc.html', 'html', dbSearchDialogSetup);
 	include('/appcore/css/form-db-ajax.css',     'css');
 
-	// Override options, key is hookUrlRoot
-	var optionsOverride = {};
-	
 	/* Add in our search dialog */
 	var pageSize = 25;
 	var PAGE_ONE_BASED = false;
@@ -70,7 +67,13 @@ $(function() {
 				return x.join('.');
 			},
 		},
+  
+		// Override options, key is hookUrlRoot
+		optionsOverride: {},
 		
+		// used by primeDbCache to prevent priming multiple times
+		cacheStarted: {},
+  
 		cachedResults: {},
 		
 		resultCache: function(cacheKey, result) {
@@ -92,9 +95,9 @@ $(function() {
 		},
 		
 		formatResult: function(result) {
-			if(optionsOverride[showItemChooser.hookUrlRoot] &&
-			   optionsOverride[showItemChooser.hookUrlRoot].formatResult)
-				return optionsOverride[showItemChooser.hookUrlRoot].formatResult(result);
+			if(this.optionsOverride[showItemChooser.hookUrlRoot] &&
+			   this.optionsOverride[showItemChooser.hookUrlRoot].formatResult)
+				return this.optionsOverride[showItemChooser.hookUrlRoot].formatResult(result);
 			
 			if(result == undefined || result == null || !result)
 				return "";
@@ -104,9 +107,11 @@ $(function() {
 			return text;
 		},
 		formatSelection: function(result) {
-			if(optionsOverride[showItemChooser.hookUrlRoot] &&
-			   optionsOverride[showItemChooser.hookUrlRoot].formatSelection)
-				return optionsOverride[showItemChooser.hookUrlRoot].formatSelection(result);
+			//console.log("formatSelection: result:",result,", current root:",showItemChooser.hookUrlRoot);
+			
+			if(this.optionsOverride[showItemChooser.hookUrlRoot] &&
+			   this.optionsOverride[showItemChooser.hookUrlRoot].formatSelection)
+				return this.optionsOverride[showItemChooser.hookUrlRoot].formatSelection(result);
 			
 			if(result == undefined || result == null || !result)
 				return "";
@@ -147,8 +152,9 @@ $(function() {
 		escapeMarkup: function (m) { return m; } // we do not want to escape markup since we are displaying html in results
 	};
 	
+	//window.dbLookupOptions = dbLookupOptions;
 	
-	var primeDbCache = function(urlRoot)
+	function primeDbCache(urlRoot)
 	{
 		showItemChooser.hookUrlRoot = urlRoot;
 		//loadResultsPage('', 0, true);
@@ -166,8 +172,11 @@ $(function() {
 		if(cacheData)
 			return;
 		
-		// This prevents priming the same URL multiple times - this will get overwritten when it loads
-		dbLookupOptions.resultCache(cacheKey, {});
+		// This prevents priming the same URL multiple times
+		if(dbLookupOptions.cacheStarted[cacheKey])
+			return;
+	
+		dbLookupOptions.cacheStarted[cacheKey] = true;
 		
 		$.ajax({
 			url: showItemChooser.hookUrlRoot+'/search',
@@ -407,7 +416,7 @@ $(function() {
 		
 			var data = dbLookupOptions.ajax.data(filter, page);
 			
-			//console.debug("loadResultsPage: data:",data, "page:",page);
+			//console.debug("loadResultsPage: filter:",filter,", data:",data, ", page:",page);
 			
 			specialRows.noResult.remove();
 			
@@ -452,8 +461,9 @@ $(function() {
 				url: showItemChooser.hookUrlRoot+'/search',
 				data: data,
 				success: function(result) {
-					//console.debug("ajax results:",result);
-					
+					//console.debug("loadResultsPage: ajax results:",result);
+					//console.debug("loadResultsPage: results from server:", result);
+			
 					bufferNextPageLoad.locked = false;
 					
 					requestData.results = result;
@@ -735,10 +745,21 @@ $(function() {
 	}
 	
 	
-	function setupLookupUi($jq, hookUrlRoot, openFlag, urlNew)
+	window.setupLookupUi = function($jq, hookUrlRoot, openFlag, urlNew, formatters)
 	{
 		showItemChooser.hookUrlRoot = hookUrlRoot;
 		
+		// Store overrides if given
+		if(formatters)
+		{
+			if(!dbLookupOptions.optionsOverride[hookUrlRoot])
+				dbLookupOptions.optionsOverride[hookUrlRoot] = {};
+			
+			dbLookupOptions.optionsOverride[hookUrlRoot].formatResult    = formatters.formatResult;
+			dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;
+		}
+		
+		// Grab initial list from the server
 		primeDbCache(hookUrlRoot);
 		
 		var pageSize = 25;
@@ -821,6 +842,9 @@ $(function() {
 			
 			var $widget = $(buttonHtml);
 			
+			if($elm.attr('data-btn-class'))
+				$widget.addClass($elm.attr('data-btn-class'));
+			
 			$widget.find('.txt').html('<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 			
 // 				if(urlNew)
@@ -847,7 +871,10 @@ $(function() {
 			}
 			else
 			{
-				$widget.find('.txt').html(currentVal || '<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
+				$widget.find('.txt').html(currentVal ? 
+					dbLookupOptions.formatSelection({ value: currentVal }) : 
+					'<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>'
+			);
 			}
 			
 			$widget.bind('click', function() {
@@ -973,7 +1000,7 @@ $(function() {
 	
 	function databaseLookupHook($elm, urlRoot, formUuid, urlNew)
 	{
-		console.log("databaseLookupHook:",urlRoot);
+		//console.log("databaseLookupHook:",urlRoot);
 		
 		var hookUrlRoot = urlRoot+'/'+formUuid;
 		
@@ -986,6 +1013,16 @@ $(function() {
 		databaseLookupHook($this,
 			$this.attr('data-url'),
 			$this.attr('data-bind-uuid'),
+			$this.attr('data-url-new')
+		);
+	});
+	
+	$('.f-ajax-fk[data-url-root]').each(function() {
+		
+		var $this = $(this);
+		setupLookupUi($this,
+			$this.attr('data-url-root'),
+			false,
 			$this.attr('data-url-new')
 		);
 	});
