@@ -874,7 +874,7 @@ $(function() {
 				$widget.find('.txt').html(currentVal ? 
 					dbLookupOptions.formatSelection({ value: currentVal }) : 
 					'<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>'
-			);
+				);
 			}
 			
 			$widget.bind('click', function() {
@@ -893,10 +893,43 @@ $(function() {
 				showItemChooser($widget, $elm, hookUrlRoot, urlNew);
 			});
 			
+			$elm.attr("data-hook-url-root", hookUrlRoot);
+			$elm.attr("data-url-new", urlNew);
+			
+			jQuery.data($elm[0], "db-button", $widget);
+			
 		});
 	};
 	
-	function showItemChooser($widget, $elm, hookUrlRoot, urlNew)
+	$.fn.showItemChooser = function(prefill) {
+		$(this).each(function() {
+			var $this = $(this);
+			
+			showItemChooser(
+				jQuery.data(this, "db-button"),
+				$this, 
+				$this.attr("data-hook-url-root"),
+				$this.attr("data-url-new"),
+				prefill
+			);
+		});
+	};
+	
+	$.fn.setupItemChooser = function(urlRoot, openFlag, urlNew, formatters) {
+		$(this).each(function() {
+			var $this = $(this);
+		
+			setupLookupUi(
+				$this,
+				urlRoot,
+				openFlag,
+				urlNew,
+				formatters
+			);
+		});
+	}
+	
+	function showItemChooser($widget, $elm, hookUrlRoot, urlNew, prefill)
 	{
 		// dbSearchDialogSetup is called by include()
 		//dbSearchDialogSetup();
@@ -942,7 +975,7 @@ $(function() {
 		
 		// Reset filter 
 		$filter
-			.val('') //showItemChooser.preBuffer)
+			.val(prefill ? prefill : '') //showItemChooser.preBuffer)
 			// 'initial-load' doesn't buffer the query with a timeout
 			// since hopefully we've already got the first page in cache.
 			// This just improves the user experience a bit, thats all.

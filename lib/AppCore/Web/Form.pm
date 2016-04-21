@@ -896,12 +896,14 @@ package AppCore::Web::Form;
 			
 			push @html, $t, "\t\t<input type='hidden' name='AppCore::Web::Form::ModelMeta.uuid' value='$form->{uuid}'>\n" if $form->{uuid};
 			
-			my $tmpl = AppCore::Web::Common::load_template(
-				AppCore::Config->get('WWW_DOC_ROOT').
-				AppCore::Config->get('WWW_ROOT').
-				'/tmpl/form-db-ajax.tmpl');
-				
-			push @html, $tmpl->output;
+# 			my $tmpl = AppCore::Web::Common::load_template(
+# 				AppCore::Config->get('WWW_DOC_ROOT').
+# 				AppCore::Config->get('WWW_ROOT').
+# 				'/tmpl/form-db-ajax.tmpl');
+# 				
+# 			push @html, $tmpl->output;
+			
+			push @html, "\t\t<script src='/appcore/js/form-db-ajax.js'></script>\n";
 			
 			foreach my $child ( @{$node->children} )
 			{
