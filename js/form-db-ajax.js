@@ -279,11 +279,16 @@ $(function() {
 				showItemChooser.currentWidget.find('.txt').text()
 				: null;
 			
+			var currentId = 
+				showItemChooser.currentElm ? 
+				showItemChooser.currentElm.val() :
+				null;
+				
 			var specialResetText = "<i>(Reset/Clear currently selected " + 
 						($title.attr('placeholder') ?
 							$title.attr('placeholder') : "Item")
 						+ ")</i>";
-						
+			
 			for(var i=0; i<list.length; i++)
 			{
 				var row = list[i];
@@ -292,9 +297,11 @@ $(function() {
 					specialResetText :
 					dbLookupOptions.formatResult(row);
 					
-				var isActive = !row.clearResultItem
-					&& showItemChooser.currentWidget
-					&& currentText == html;
+				//var isActive = !row.clearResultItem
+				//	&& showItemChooser.currentWidget
+				//	&& currentText == html;
+				var isActive = row.clearResultItem ? false : 
+					 row.id == currentId ? true: false;
 					
 				//console.debug("idx ",i,", this html:",html,", button html:",currentText,", isActive:",isActive);
 				
@@ -334,7 +341,11 @@ $(function() {
 						return false;
 					});
 					
+					
 				$list.append($wrap);
+				
+				if(isActive)
+					$wrap.get(0).scrollIntoView();
 				
 				resultSetBuffer.push(row);
 			}
@@ -420,7 +431,7 @@ $(function() {
 			
 			specialRows.noResult.remove();
 			
-			if(page == 0)
+			//if(page == 0)
 				//$list.prepend(specialRows.loading);
 			//else
 				$list.append(specialRows.loading);
