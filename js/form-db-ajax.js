@@ -35,7 +35,7 @@ $(function() {
 	}
 
 	include('/appcore/js/form-db-ajax.inc.html', 'html', dbSearchDialogSetup);
-	include('/appcore/css/form-db-ajax.css',     'css');
+	include('/appcore/css/form-db-ajax.css?_=1',     'css');
 
 	/* Add in our search dialog */
 	var pageSize = 25;
@@ -856,6 +856,10 @@ $(function() {
 			if($elm.attr('data-btn-class'))
 				$widget.addClass($elm.attr('data-btn-class'));
 			
+			//console.log("Creating button for ",this,", is disabled:",$elm.is(':disabled'));
+			if($elm.is(':disabled'))
+				$widget.addClass('disabled');
+			
 			$widget.find('.txt').html('<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 			
 // 				if(urlNew)
@@ -889,10 +893,16 @@ $(function() {
 			}
 			
 			$widget.bind('click', function() {
+				if($widget.is('.disabled'))
+					return false;
+				
 				showItemChooser($widget, $elm, hookUrlRoot, urlNew);
 			});
 			
 			$widget.find('.btn').on('keypress', function(e) {
+				if($widget.is('.disabled'))
+					return false;
+				
 				//if(!e) 
 				//	e = window.event;
 					

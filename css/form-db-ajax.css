@@ -81,3 +81,13 @@
 		.form-input-group .db-search-btn .btn:first-child {
 			margin-right: 0;
 		}*/
+		
+		
+		.db-search-btn.disabled .btn {
+			/*background: red;*/
+			cursor: default;
+		}
+		
+		.db-search-btn.disabled .caret {
+			display: none;
+		}
