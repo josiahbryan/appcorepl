@@ -323,7 +323,7 @@ package AppCore::Web::Controller;
 	
 	sub autocomplete_util
 	{
-		my ($class, $validator, $validate_action, $value, $r, $fk_clause) = @_;
+		my ($class, $validator, $validate_action, $value, $r, $fk_clause, $disable_ranking) = @_;
 		
 		$fk_clause ||= '1=1';
 		
@@ -391,7 +391,7 @@ package AppCore::Web::Controller;
 					
 					0, # my $include_empty	= shift || 0;		# Include an empty option at the start?
 					0, # my $debug		= shift || 0;		# Print debug info to stderr?
-					1  # my $enable_ranking	= shift || 0;		# Enable sorting results based on ranking?
+					$disable_ranking ? 0 : 1  # my $enable_ranking	= shift || 0;		# Enable sorting results based on ranking?
 			);
 			
 			if(ref $result ne 'HASH')
