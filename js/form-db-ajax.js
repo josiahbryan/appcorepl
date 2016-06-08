@@ -189,8 +189,8 @@ $(function() {
 			},
 
 			error: function(result) {
-				
-				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+				console.log(result.responseText);
+// 				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 			}
 			
 		});
@@ -492,8 +492,8 @@ $(function() {
 					bufferNextPageLoad.locked = false;
 					
 					//alert("Error:");
-					//console.debug(result.responseText);
-					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+					console.debug(result.responseText);
+// 					$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 				}
 				
 			});
@@ -746,8 +746,8 @@ $(function() {
 				$loading.hide();
 				
 				//alert("Error:");
-				//console.debug(result.responseText);
-				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
+				console.debug(result.responseText);
+// 				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 			}
 			
 		});
