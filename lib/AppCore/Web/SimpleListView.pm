@@ -328,15 +328,21 @@ package AppCore::Web::SimpleListView;
 # 				$model->columns;
 # 			
 # 			$tmpl->param(header => \@columns); 
-			
-			$worksheet->write($y,$x++,$output_args->{page_title} || 'Database Export ('.(ref($class) ? ref($class) : $class).')',$fmt_bold); # if $output_args->{page_title};
-			$x=0; 
-			$y++;
-			$worksheet->write($y,$x++,'Date: ');
-			$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
-			$worksheet->insert_image(0,4, $output_args->{logo_image_file})
-				if $output_args->{logo_image_file};
-			
+
+			# NOTE: Removed basic header
+# 			$worksheet->write($y,$x++,$output_args->{page_title} || 'Database Export ('.(ref($class) ? ref($class) : $class).')',$fmt_bold); # if $output_args->{page_title};
+# 			$x=0; 
+# 			$y++;
+# 			$worksheet->write($y,$x++,'Date: ');
+# 			$worksheet->write($y,$x++,AppCore::Common::date(),$fmt_bold);
+# 			$worksheet->insert_image(0,4, $output_args->{logo_image_file})
+# 				if $output_args->{logo_image_file};
+# 			
+# 			$y++;
+# 			$y++;
+# 			
+
+
 			## Compile and add the list values to the template
 			my $rows = $model->compile_list();
 			
@@ -349,8 +355,6 @@ package AppCore::Web::SimpleListView;
 			
 			#my $row_highlighting_enabled = defined $self->{enable_row_highlighting} ? $self->{enable_row_highlighting} : 1;
 			
-			$y++;
-			$y++;
 			
 			my @cols = @{ $output_args->{columns} || [] };
 			
