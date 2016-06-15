@@ -207,6 +207,8 @@ function AWSV_AjaxScrollAdapter(args) {
 		
 		updatePagingDisplay(result);
 		
+		$('#list_table').trigger('scrolladapter.rendered');
+		
 	}
 	
 	var processResultQueue = function() {
