@@ -544,7 +544,7 @@ $(function() {
 			hasMoreResults  = true;
 			resultSetBuffer = [];
 			
-			console.log("queryResults: currentFilter:",currentFilter,", currentPage:",currentPage,", filter=",$filter[0]);
+			//console.log("queryResults: currentFilter:",currentFilter,", currentPage:",currentPage,", filter=",$filter[0]);
 			
 			loadResultsPage(currentFilter, currentPage);
 			
@@ -711,8 +711,18 @@ $(function() {
 		$filter.on('initial-load', bufferQueryResults);
 		
 		$filter.on('keyup', function(e) {
-			if(showItemChooser.currentElm)
-				showItemChooser.currentElm.trigger('filter.changed', e, $(this).val());
+			var elm = showItemChooser.currentElm;
+			
+			if(elm)
+			{
+				var val = $(this).val();
+				
+				
+				//console.log('form-db-ajax: filter.changed: val:',val,', currentElm:',showItemChooser.currentElm);
+				elm.attr('data-current-filter', val);
+				
+				elm.trigger('filter.changed', e, val);
+			}
 		});
 	}
 	
@@ -916,8 +926,11 @@ $(function() {
 // 					$widget.find('.btn-new').remove();
 				
 			$widget.insertAfter($elm);
-			if(!$elm.is(':visible') || $elm.attr('type') == 'hidden')
-				$widget.hide();
+			
+			/*
+			 * if(!$elm.is(':visible') || $elm.attr('type') == 'hidden')
+			 *	$widget.hide();
+			 */
 			
 			$elm.hide();
 			
@@ -1072,8 +1085,6 @@ $(function() {
 			$filter.focus(); //.select();
 			
 		//showItemChooser.preBuffer = '';
-		
-		console.log("at end of showItemChooser, showItemChooser.currentElm=",showItemChooser.currentElm[0]);
 	}
 	
 	//dbSearchDialogSetup();
