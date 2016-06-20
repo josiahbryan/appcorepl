@@ -1,6 +1,11 @@
 
 $(function() {
 	
+	if(window.FORM_DB_AJAX_LOADED)
+		return;
+	
+	window.FORM_DB_AJAX_LOADED = true;
+	
 	function include(url, type, callback) {
 		
 		if(type == 'css')
@@ -140,7 +145,7 @@ $(function() {
 				
 			if (id !== "")
 			{
-				console.log("initSelection: stringify: ",id);
+				//console.log("initSelection: stringify: ",id);
 				$.ajax(url)
 					.done(function(data) {
 						
@@ -181,7 +186,7 @@ $(function() {
 	
 		dbLookupOptions.cacheStarted[cacheKey] = true;
 		
-		console.log("primeDbCache: ",showItemChooser.hookUrlRoot+'/search',": ",data);
+		//console.log("primeDbCache: ",showItemChooser.hookUrlRoot+'/search',": ",data);
 		$.ajax({
 			url: showItemChooser.hookUrlRoot+'/search',
 			data: data,
@@ -554,7 +559,7 @@ $(function() {
 			if(e)
 			{
 				var key = e.which;
-				console.log("key press:", e);
+				//console.log("key press:", e);
 				
 				var escPressed = key == 27;
 				if(escPressed)
@@ -674,7 +679,7 @@ $(function() {
 				}
 			}
 			
-			console.log("bufferQueryResults: hit timer, timer for:",dbLookupOptions.ajax.quietMillis,"ms");
+			//console.log("bufferQueryResults: hit timer, timer for:",dbLookupOptions.ajax.quietMillis,"ms");
 			
 			// Delay X ms then load the result from the server
 			clearTimeout(bufferQueryResults.tid);
@@ -704,6 +709,11 @@ $(function() {
 		$filter.on('change',       bufferQueryResults);
 		$filter.on('keyup',        bufferQueryResults);
 		$filter.on('initial-load', bufferQueryResults);
+		
+		$filter.on('keyup', function(e) {
+			if(showItemChooser.currentElm)
+				showItemChooser.currentElm.trigger('filter.changed', e, $(this).val());
+		});
 	}
 	
 	// From http://stackoverflow.com/questions/20989458/select2-open-dropdown-on-focus
@@ -799,11 +809,11 @@ $(function() {
 			dbLookupOptions.optionsOverride[hookUrlRoot].formatResult    = formatters.formatResult;
 			dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;
 			
-			console.log("setupLookupUi: formatters for ",hookUrlRoot,": ",dbLookupOptions.optionsOverride[hookUrlRoot]);
+			//console.log("setupLookupUi: formatters for ",hookUrlRoot,": ",dbLookupOptions.optionsOverride[hookUrlRoot]);
 		}
 		else
 		{
-			console.log("setupLookupUi: NO formatters given for ",hookUrlRoot);
+			//console.log("setupLookupUi: NO formatters given for ",hookUrlRoot);
 		}
 		
 		// Grab initial list from the server
@@ -906,6 +916,9 @@ $(function() {
 // 					$widget.find('.btn-new').remove();
 				
 			$widget.insertAfter($elm);
+			if(!$elm.is(':visible') || $elm.attr('type') == 'hidden')
+				$widget.hide();
+			
 			$elm.hide();
 			
 			//var initString = $elm.attr('x:initial-string');
@@ -999,14 +1012,6 @@ $(function() {
 		
 		// $widget is the UI widget (button, etc)
 		// $elm is the hidden input element that gets passed back to the server
-		
-		console.log("showItemChooser: ",{
-			widget: $widget,
-			elm: $elm,
-			hookUrlRoot: hookUrlRoot,
-			urlNew: urlNew,
-			prefill: prefill
-		});
 		
 		showItemChooser.currentWidget = $widget;
 		showItemChooser.currentElm    = $elm;
