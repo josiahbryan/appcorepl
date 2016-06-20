@@ -152,7 +152,7 @@ $(function() {
 		escapeMarkup: function (m) { return m; } // we do not want to escape markup since we are displaying html in results
 	};
 	
-	//window.dbLookupOptions = dbLookupOptions;
+	window.dbLookupOptionsDebug = dbLookupOptions;
 	
 	function primeDbCache(urlRoot)
 	{
@@ -327,10 +327,15 @@ $(function() {
 						{
 							var w = showItemChooser.currentWidget;
 							
-							w.find('.txt').html(string);
-							w.find('.btn').attr('title', string.replace(/<[^\>]+>/g,''));
+							var title = string.replace(/<[^\>]+>/g,'');
 							
-							showItemChooser.currentElm.val(id).trigger('change');
+							w.find('.txt').html(string);
+							w.find('.btn').attr('title', title);
+							
+							showItemChooser.currentElm
+								.val(id)
+								.attr('title', title)
+								.trigger('change');
 							
 							w.find('.btn').focus();
 							
