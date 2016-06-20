@@ -1074,7 +1074,8 @@ $(function() {
 		//$dialog.find('.list-group-wrapper').scrollTop(0);
 
 		$dialog.modal({ show: true });
-				
+		
+		/*
 		var isMobile = window.matchMedia("only screen and (max-width: 770px)").matches;
 		//console.debug(isMobile);
 	
@@ -1082,6 +1083,8 @@ $(function() {
 		// because that will (could) pop up an onscreen keyboard would would
 		// obscure a lot of the list
 		if(!isMobile)
+			
+		*/
 			$filter.focus(); //.select();
 			
 		//showItemChooser.preBuffer = '';
