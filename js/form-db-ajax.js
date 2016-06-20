@@ -139,12 +139,15 @@ $(function() {
 				url = showItemChooser.hookUrlRoot+'/stringify?value=' + id;
 				
 			if (id !== "")
+			{
+				console.log("initSelection: stringify: ",id);
 				$.ajax(url)
 					.done(function(data) {
 						
 						//console.debug("Got data from server:", data.result);
 						callback({value: data.result.text});
 					});
+			}
 		},
 		
 		//dropdownCssClass: "bigdrop", // apply css that makes the dropdown taller
@@ -178,6 +181,7 @@ $(function() {
 	
 		dbLookupOptions.cacheStarted[cacheKey] = true;
 		
+		console.log("primeDbCache: ",showItemChooser.hookUrlRoot+'/search',": ",data);
 		$.ajax({
 			url: showItemChooser.hookUrlRoot+'/search',
 			data: data,
@@ -355,7 +359,6 @@ $(function() {
 				resultSetBuffer.push(row);
 			}
 			
-			var curVal = showItemChooser.currentElm.val();
 			//console.debug("cur val:",curVal);
 			
 			if(clickFirstResultWhenLoaded)
@@ -368,12 +371,16 @@ $(function() {
 					.click();
 			}
 			else
-			if(!curVal || curVal == 0 || latestResultSetFilter != '')
+			if(showItemChooser.currentElm)
 			{
-				$list.find('.list-group-item:not(.clear-item)')
-					.removeClass('active')
-					.first()
-					.addClass('active');
+				var curVal = showItemChooser.currentElm.val();
+				if(!curVal || curVal == 0 || latestResultSetFilter != '')
+				{
+					$list.find('.list-group-item:not(.clear-item)')
+						.removeClass('active')
+						.first()
+						.addClass('active');
+				}
 			}
 		};
 		
@@ -518,17 +525,6 @@ $(function() {
 				bufferNextPageLoad();
 		};
 		
-		var bufferNextPageLoad = function() {
-			if(bufferNextPageLoad.locked)
-				return;
-			
-			if(!hasMoreResults)
-				return;
-			
-			currentPage ++;
-			loadResultsPage(currentFilter, currentPage);
-		};
-		
 		var queryResults = function() {
 			
 			var filter = $filter.val();
@@ -543,142 +539,171 @@ $(function() {
 			hasMoreResults  = true;
 			resultSetBuffer = [];
 			
+			console.log("queryResults: currentFilter:",currentFilter,", currentPage:",currentPage,", filter=",$filter[0]);
+			
 			loadResultsPage(currentFilter, currentPage);
 			
 		};
 		
-		var bufferQueryResults = function(event) {
+		var bufferQueryResults = function(e) {
+			if(!e)
+				e = window.event;
 			
 			clickFirstResultWhenLoaded = false;
 			
-			//console.log("key press:",event.which);
-			
-			var escPressed = event.which == 27;
-			if(escPressed)
-				return;
-				
-			if(event.which == 38) // up
+			if(e)
 			{
-				var $active  = $list.find('.list-group-item.active'),
-					$sib = $active.prev('.list-group-item');
+				var key = e.which;
+				console.log("key press:", e);
 				
-				if($sib.size() > 0)
-				{
-					$active.removeClass('active')
-					$sib.addClass('active');
-					
-					var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
-					var top = $listWrap.scrollTop();
-					var elmHeight = $sib.height();
-					
-					if(elmTop < 0)
-					{
-						$sib.get(0).scrollIntoView({
-							behavior: "smooth",
-							block: "start"
-						});
-					}
-				}
-				
-				return;
-			}
-			else
-			if(event.which == 40) // down
-			{
-				var $active  = $list.find('.list-group-item.active'),
-					$sib = $active.next('.list-group-item');
-				
-				if($sib.size() > 0)
-				{
-					$active.removeClass('active')
-					$sib.addClass('active');
-					
-					var top = $listWrap.scrollTop();
-					var height = $listWrap.height();
-					var scrollBottom = top + height;
-					
-					var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
-					var elmHeight = $sib.height();
-					var elmBottom = elmTop + elmHeight;
-					
-// 					console.log({
-// 						top: top,
-// 						height: height,
-// 						scrollBottom: scrollBottom,
-// 						elmTop: elmTop,
-// 						elmHeight: elmHeight,
-// 						elmBottom: elmBottom,
-// 						flag: elmBottom > height ? true : false
-// 					});
-						
-					
-					if(elmBottom > height)
-					{
-						$listWrap.scrollTop(
-							$listWrap.scrollTop() + elmHeight * 2.5
-						);
-						/*$sib.get(0).scrollIntoView({
-							behavior: "smooth",
-							block: "start"
-						});*/
-					}
-				}
-				else
-				{
-					bufferNextPageLoad();
-				}
-					
-				return;
-			}
-			
-			//console.log("paused:",showItemChooser.pauseKeyHandling);
-			
-			var enterPressed = event.which == 13;
-			if(enterPressed) 
-			{
-				if(showItemChooser.pauseKeyHandling)
+				var escPressed = key == 27;
+				if(escPressed)
 					return;
 					
-				//console.debug("vis:",$('.db-search-modal').is(':visible'));
-				
-				var filter = $filter.val();
-				filter = filter.replace(/(^\s+|\s+$)/g, '');
-			
-				// Only click the first entry if its loaded AND
-				// if the filter in the box matches the filter
-				// used to load current result set
-				if(resultSetBuffer.length > 0 && 
-					latestResultSetFilter == filter)
+				if(key == 38) // up
 				{
-					$list.find('.list-group-item.active')
-						.first()
-						//.addClass('active')
-						.click();
+					var $active  = $list.find('.list-group-item.active'),
+						$sib = $active.prev('.list-group-item');
+					
+					if($sib.size() > 0)
+					{
+						$active.removeClass('active')
+						$sib.addClass('active');
 						
+						var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
+						var top = $listWrap.scrollTop();
+						var elmHeight = $sib.height();
+						
+						if(elmTop < 0)
+						{
+							$sib.get(0).scrollIntoView({
+								behavior: "smooth",
+								block: "start"
+							});
+						}
+					}
+					
 					return;
 				}
 				else
+				if(key == 40) // down
 				{
-					// If either test failed, fall thru to loaded
-					// a new result set, and flag the first one
-					// to be 'clicked' as soon as its loaded
-					clickFirstResultWhenLoaded = true;
+					var $active  = $list.find('.list-group-item.active'),
+						$sib = $active.next('.list-group-item');
+					
+					if($sib.size() > 0)
+					{
+						$active.removeClass('active')
+						$sib.addClass('active');
+						
+						var top = $listWrap.scrollTop();
+						var height = $listWrap.height();
+						var scrollBottom = top + height;
+						
+						var elmTop = $sib.offset().top - $listWrap.offset().top + 15;
+						var elmHeight = $sib.height();
+						var elmBottom = elmTop + elmHeight;
+						
+	// 					console.log({
+	// 						top: top,
+	// 						height: height,
+	// 						scrollBottom: scrollBottom,
+	// 						elmTop: elmTop,
+	// 						elmHeight: elmHeight,
+	// 						elmBottom: elmBottom,
+	// 						flag: elmBottom > height ? true : false
+	// 					});
+							
+						
+						if(elmBottom > height)
+						{
+							$listWrap.scrollTop(
+								$listWrap.scrollTop() + elmHeight * 2.5
+							);
+							/*$sib.get(0).scrollIntoView({
+								behavior: "smooth",
+								block: "start"
+							});*/
+						}
+					}
+					else
+					{
+						bufferNextPageLoad();
+					}
+						
+					return;
 				}
 				
-				//console.debug("enterPressed, resultSetBuffer.length:",resultSetBuffer.length,", clickFirstResultWhenLoaded:",clickFirstResultWhenLoaded);
+				//console.log("paused:",showItemChooser.pauseKeyHandling);
 				
+				var enterPressed = key == 13;
+				if(enterPressed) 
+				{
+					if(showItemChooser.pauseKeyHandling)
+						return;
+						
+					//console.debug("vis:",$('.db-search-modal').is(':visible'));
+					
+					var filter = $filter.val();
+					filter = filter.replace(/(^\s+|\s+$)/g, '');
 				
+					// Only click the first entry if its loaded AND
+					// if the filter in the box matches the filter
+					// used to load current result set
+					if(resultSetBuffer.length > 0 && 
+						latestResultSetFilter == filter)
+					{
+						$list.find('.list-group-item.active')
+							.first()
+							//.addClass('active')
+							.click();
+							
+						return;
+					}
+					else
+					{
+						// If either test failed, fall thru to loaded
+						// a new result set, and flag the first one
+						// to be 'clicked' as soon as its loaded
+						clickFirstResultWhenLoaded = true;
+					}
+					
+					//console.debug("enterPressed, resultSetBuffer.length:",resultSetBuffer.length,", clickFirstResultWhenLoaded:",clickFirstResultWhenLoaded);
+					
+					
+				}
 			}
+			
+			console.log("bufferQueryResults: hit timer, timer for:",dbLookupOptions.ajax.quietMillis,"ms");
 			
 			// Delay X ms then load the result from the server
 			clearTimeout(bufferQueryResults.tid);
 			bufferQueryResults.tid = setTimeout(queryResults, dbLookupOptions.ajax.quietMillis);
 		};
 		
-		$listWrap.on('scroll', checkScrollPosition);
-		$filter.on('change', bufferQueryResults);
-		$filter.on('keyup',  bufferQueryResults);
-		$filter.on('initial-load', queryResults);
+		// NOTE: Using the same tid variable (bufferQueryResults.tid)
+		// so we properly stomp on each others timers 
+		var bufferNextPageLoad = function() {
+			if(bufferNextPageLoad.locked)
+				return;
+			
+			if(!hasMoreResults)
+				return;
+			
+			// Delay X ms then load the result from the server
+			clearTimeout(bufferQueryResults.tid);
+			bufferQueryResults.tid = setTimeout(nextPageLoad, dbLookupOptions.ajax.quietMillis);
+		};
+		
+		var nextPageLoad = function() {
+			currentPage ++;
+			loadResultsPage(currentFilter, currentPage);
+		};
+		
+		$listWrap.on('scroll',     checkScrollPosition);
+		$filter.on('change',       bufferQueryResults);
+		$filter.on('keyup',        bufferQueryResults);
+		$filter.on('initial-load', bufferQueryResults);
 	}
 	
 	// From http://stackoverflow.com/questions/20989458/select2-open-dropdown-on-focus
@@ -773,6 +798,12 @@ $(function() {
 			
 			dbLookupOptions.optionsOverride[hookUrlRoot].formatResult    = formatters.formatResult;
 			dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;
+			
+			console.log("setupLookupUi: formatters for ",hookUrlRoot,": ",dbLookupOptions.optionsOverride[hookUrlRoot]);
+		}
+		else
+		{
+			console.log("setupLookupUi: NO formatters given for ",hookUrlRoot);
 		}
 		
 		// Grab initial list from the server
@@ -931,6 +962,8 @@ $(function() {
 		$(this).each(function() {
 			var $this = $(this);
 			
+			//console.log("$.fn.showItemChooser: this:",this,",  url:",$this.attr("data-hook-url-root"), ", prefill:",prefill);
+			
 			showItemChooser(
 				jQuery.data(this, "db-button"),
 				$this, 
@@ -942,7 +975,9 @@ $(function() {
 	};
 	
 	$.fn.setupItemChooser = function(urlRoot, openFlag, urlNew, formatters) {
-		$(this).each(function() {
+		var $self = $(this);
+		
+		$self.each(function() {
 			var $this = $(this);
 		
 			setupLookupUi(
@@ -953,6 +988,8 @@ $(function() {
 				formatters
 			);
 		});
+		
+		return $self;
 	}
 	
 	function showItemChooser($widget, $elm, hookUrlRoot, urlNew, prefill)
@@ -963,11 +1000,20 @@ $(function() {
 		// $widget is the UI widget (button, etc)
 		// $elm is the hidden input element that gets passed back to the server
 		
+		console.log("showItemChooser: ",{
+			widget: $widget,
+			elm: $elm,
+			hookUrlRoot: hookUrlRoot,
+			urlNew: urlNew,
+			prefill: prefill
+		});
+		
 		showItemChooser.currentWidget = $widget;
 		showItemChooser.currentElm    = $elm;
 		showItemChooser.hookUrlRoot   = hookUrlRoot;
 		showItemChooser.urlNew        = urlNew;
 		showItemChooser.pauseKeyHandling = true;
+		
 		setTimeout(function() {
 			showItemChooser.pauseKeyHandling = false;
 		}, 250);
@@ -1021,6 +1067,8 @@ $(function() {
 			$filter.focus(); //.select();
 			
 		//showItemChooser.preBuffer = '';
+		
+		console.log("at end of showItemChooser, showItemChooser.currentElm=",showItemChooser.currentElm[0]);
 	}
 	
 	//dbSearchDialogSetup();
