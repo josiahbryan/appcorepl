@@ -1936,7 +1936,7 @@ package AppCore::Web::Form;
 								my $q_get = AppCore::DBI->dbh($db)->prepare($sql);
 								$q_get->execute();
 								
-								push @list, {valueid=>'-',text=>'(Unknown/NA)',hint=>''};
+								push @list, {valueid=>'',text=>'(Unknown/NA)',hint=>''};
 								push @list, $_ while $_ = $q_get->fetchrow_hashref;
 								
 								if($class->can('form_format_hint_text'))
