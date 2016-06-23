@@ -712,6 +712,7 @@ package AppCore::Web::Form;
 	sub _is_pairtab
 	{
 		my $parent = shift;
+		return 0 if !$parent;
 		return lc $parent->node eq 'fieldlist' || lc $parent->node eq 'table';
 	}
 	
@@ -1776,7 +1777,6 @@ package AppCore::Web::Form;
 							foreach my $op (@list)
 							{
 								my $radio_id = $label_id.'_'._entity_encode(_remove_quotes($op->{valueid}));
-								$radio_id =~ s/[^a-zA-Z0-9_-]//g;
 								
 								#"onchange='\$(\"hint_$label_id\").innerHTML=this.options[this.selectedIndex].getAttribute(\"f:hint\");FormMgr.fieldChanged(this.getAttribute(\"f:bind\"),this.value)' onkeypress='var t=this;setTimeout(function(){t.onchange()},5)'";
 								
