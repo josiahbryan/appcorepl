@@ -341,21 +341,21 @@ function AWSV_AjaxScrollAdapter(args) {
 		var viewportWidth;
 		if (document.compatMode === 'BackCompat') {
 			viewportHeight = document.body.clientHeight;
-			viewportWidth = document.body.clientWidth;
+			viewportWidth  = document.body.clientWidth;
 		} else {
 			viewportHeight = document.documentElement.clientHeight;
-			viewportWidth = document.documentElement.clientWidth;
+			viewportWidth  = document.documentElement.clientWidth;
 		}
 		
 		
-		var top = $(window).scrollTop();
-		var height = viewportHeight;
+		var top            = $(window).scrollTop();
+		var height         = viewportHeight;
 		
-		var scrollBottom = top + height;
-		var contentHeight = $list.height();
+		var scrollBottom   = top + height;
+		var contentHeight  = $list.height();
 		var triggerPercent = 90;
-		var triggerPixel = contentHeight * (triggerPercent / 100);
-		var hitTrigger = scrollBottom > triggerPixel;
+		var triggerPixel   = contentHeight * (triggerPercent / 100);
+		var hitTrigger     = scrollBottom > triggerPixel;
 		
 		//console.debug(top,height,scrollBottom,contentHeight,triggerPixel,hitTrigger);
 		
