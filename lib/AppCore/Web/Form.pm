@@ -290,10 +290,48 @@ package AppCore::Web::Form;
 		my $form_opts = shift;
 		my $meta_objs = shift || {};
 		
-		my $uuid = $req->{'AppCore::Web::Form::ModelMeta.uuid'};
-		error("Unable to Find Form UUID","Cannot find 'AppCore::Web::Form::ModelMeta.uuid' in posted data")
-			if !$uuid;
 		
+		my $result_hash = {};
+		
+		my $class_obj_refs = {};
+		
+		
+		my $uuid = $req->{'AppCore::Web::Form::ModelMeta.uuid'};
+		
+		# If multiple (\0) uuids posted from jQuery, it will be in 'AppCore::Web::Form::ModelMeta.uuid[]'
+		$uuid = $req->{'AppCore::Web::Form::ModelMeta.uuid[]'} if !$uuid;
+		
+		if($uuid =~ /\0/)
+		{
+			# Multiple UUIDs in the request
+			my @uuids = split /\0/, $uuid;
+			#die Dumper \@uuids;
+			foreach my $uuid (@uuids)
+			{
+				$self->_store_values($uuid, $req, $form_opts, $meta_objs, $result_hash, $class_obj_refs);
+			}
+		}
+		else
+		{
+			error("Unable to Find Form UUID","Cannot find 'AppCore::Web::Form::ModelMeta.uuid' in posted data. <pre>".Dumper($uuid,$req)."</pre>")
+				if !$uuid;
+			
+			$self->_store_values($uuid, $req, $form_opts, $meta_objs, $result_hash, $class_obj_refs);
+		}
+		
+		# Update each $class_obj we touched just once for speed
+		$_->update foreach values %$class_obj_refs;
+		
+		return $result_hash;
+	}
+	
+	sub _store_values
+	{
+		my ($self, $uuid, $req, $form_opts, $meta_objs, $result_hash, $class_obj_refs) = @_;
+		
+		error("Unable to Find Form UUID","Cannot find 'AppCore::Web::Form::ModelMeta.uuid' in args to _store_values")
+			if !$uuid;
+				
 		my $field_meta = AppCore::Web::Form::ModelMeta->by_field(uuid => $uuid);
 		
 		error("Invalid Form UUID","The 'AppCore::Web::Form::ModelMeta.uuid' in posted data does not exist in the database")
@@ -303,10 +341,6 @@ package AppCore::Web::Form;
 		$hash ||= {};
 		
 		#die Dumper $hash, $req, $form_opts;
-		
-		my $result_hash = {};
-		
-		my $class_obj_refs = {};
 		
 		foreach my $ref (keys %{ $hash })
 		{
@@ -494,9 +528,6 @@ package AppCore::Web::Form;
 			$result_hash->{$ref} = $req_val;
 			
 		}
-		
-		# Update each $class_obj we touched just once for speed
-		$_->update foreach values %$class_obj_refs;
 		
 		#error($result_hash);
 		
