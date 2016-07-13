@@ -37,7 +37,16 @@ package AppCore::EmailQueue;
 			{       field   => 'msg',		type    => 'longtext' 		},
 			{       field   => 'result',		type    => 'varchar(255)'	},
 			{       field   => 'timestamp',		type    => 'timestamp', 	default => 'CURRENT_TIMESTAMP', null => 'NO' },
-		]
+		],
+		
+		schema_update_opts => {
+			indexes => {
+				idx_res_ts => [qw/result timestamp/],
+				idx_ts => [qw/timestamp/],
+				idx_sent => [qw/sentflag/],
+		
+			},
+		}
 	});
 
 	sub apply_mysql_schema

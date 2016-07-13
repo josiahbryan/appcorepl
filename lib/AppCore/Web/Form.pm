@@ -2653,7 +2653,15 @@ package AppCore::Web::Form::ModelMeta;
 			{	field => 'timestamp',	type => 'timestamp'	},
 			{	field => 'uuid',	type => 'varchar(255)' },
 			{	field => 'json',	type => 'longtext'},
-		]
+		],
+		
+		
+		schema_update_opts => {
+			indexes => {
+				idx_uuid => [qw/uuid/],
+		
+			},
+		}
 	});
 	
 	sub apply_mysql_schema
