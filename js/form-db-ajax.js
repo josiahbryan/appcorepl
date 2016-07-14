@@ -326,6 +326,13 @@ $(function() {
 							idx    = $elm.attr('x:idx'),
 							result = resultSetBuffer[idx];
 						
+						if(!result)
+						{
+							if(window.console && console.error)
+								console.error("form-db-ajax:click: No result at index ",idx,", resultSetBuffer:",resultSetBuffer);
+							return;
+						}
+							
 						var string = 
 							result.clearResultItem ? '<i class="placeholder">(' + ($title.attr('placeholder') || 'Select an Item') + ')</i>' :
 							dbLookupOptions.formatSelection(result);
