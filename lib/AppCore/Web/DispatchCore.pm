@@ -381,6 +381,7 @@ package AppCore::Web::DispatchCore;
 				#die Dumper $response;
 				
 				binmode STDOUT;
+				$| = 1; # Don't buffer STDOUT just incase something happens
 				
 				# Process output HTTP codes
 				my $code = $response->{status};

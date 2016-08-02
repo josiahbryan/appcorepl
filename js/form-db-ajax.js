@@ -1085,7 +1085,10 @@ $(function() {
 		// Fix for cusor placement based on http://stackoverflow.com/questions/511088/use-javascript-to-place-cursor-at-end-of-text-in-text-input-element
 		$filter.focus(function(){
 			var that = this;
-			setTimeout(function(){ that.selectionStart = that.selectionEnd = 10000; }, 0);
+			setTimeout(function(){
+				that.selectionStart = that.selectionEnd = 10000;
+				//that.focus();
+			}, 0);
 		});
 		
 		/*
@@ -1098,9 +1101,11 @@ $(function() {
 		if(!isMobile)
 			
 		*/
-			$filter.focus(); //.select();
-			
-
+			//$filter.focus(); //.select();
+		
+		setTimeout(function() {
+			$filter.focus();
+		}, 100);
 		//showItemChooser.preBuffer = '';
 	}
 	
