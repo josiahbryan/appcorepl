@@ -2588,7 +2588,7 @@ package AppCore::DBI;
 			my $col_val    = $self->get($col_name);
 			my $param_name = $key_prefix.$col_name;
 			
-			$dest_hash->{$param_name} = $col_val;
+			$dest_hash->{$param_name} = ''.$col_val;
 			
 			my $fm = $self->field_meta($col_name);
 			
