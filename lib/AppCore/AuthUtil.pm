@@ -29,8 +29,12 @@ package AppCore::AuthUtil;
 	{
 		my $ent = shift;
 		return $ent if !$ent; 
+		
+		my @columns = $ent->columns;
+		
 		local $_;
-		$ent->{$_} = $ent->get($_) foreach $ent->columns;
+		$ent->{$_} = $ent->get($_) foreach @columns;
+		
 		return $ent;
 	}
 	
@@ -42,6 +46,7 @@ package AppCore::AuthUtil;
 		
 		my $old_user = $ctx->user;
 		$ctx->user(undef);
+		$ctx->auth_ticket(undef);
 		
 		if(getcookie(TICKET_COOKIE))
 		{
@@ -79,6 +84,21 @@ package AppCore::AuthUtil;
 		return 1;
 	}
 	
+	sub parse_ticket
+	{
+		#shift if $_[0] eq __PACKAGE__;
+		my ($class, $tk) = @_;
+		
+		#print STDERR $class."::parse_ticket: ",$tk;
+		#my $tk = shift;
+		
+		my ($tk_user,$tk_pass) = $tk =~ /^(.*)\.([^\.]+)$/;
+		return {
+			user => $tk_user,
+			pass => $tk_pass
+		};
+	}
+	
 	
 	sub authenticate
 	{
@@ -96,11 +116,20 @@ package AppCore::AuthUtil;
 		
 		my $ADMIN_GROUP = AppCore::User::Group->find_or_create({name => 'ADMIN'});
 	
-		#if(!AppCore::User->retrieve(1)) # No first user, assume no users created - yes, a hack!
+		# If no users created in the database, create a default user
 		if(!AppCore::User->sql_single('COUNT(userid)')->select_val)
 		{
-			my $admin = AppCore::User->insert({user=>'admin',email=>AppCore::Config->get('WEBMASTER_EMAIL'),display=>'Administrator',pass=>'admin'});
-			AppCore::User::GroupList->insert({userid=>$admin,groupid=>$ADMIN_GROUP});
+			my $admin = AppCore::User->insert({
+				user    => 'admin',
+				pass    => 'admin',
+				display => 'Administrator',
+				email   => AppCore::Config->get('WEBMASTER_EMAIL'),
+			});
+			
+			AppCore::User::GroupList->insert({
+				userid  => $admin,
+				groupid => $ADMIN_GROUP
+			});
 		}
 		
 		my $args = $ctx->http_args || {};
@@ -120,9 +149,11 @@ package AppCore::AuthUtil;
 		#print STDERR "authenticate(): cookie:'$tk'\n";
 		
 		debug("cookie = '$tk'");
-		my ($tk_user,$tk_pass) = $tk =~ /^(.*)\.([^\.]+)$/;
-		$user||=$tk_user;
-		$pass||=$tk_pass;
+		
+		my $ticket = __PACKAGE__->parse_ticket($tk);
+		
+		$user||=$ticket->{user};
+		$pass||=$ticket->{pass};
 		
 		$user = $args->{user} if !$user;
 		$pass = $args->{pass} if !$pass;
@@ -207,21 +238,36 @@ package AppCore::AuthUtil;
 		
 		#print STDERR "authenticate: user '$user', expected pass '".$user_object->pass."'\n";
 		
-		my $hash = md5_hex(join('',$user,$user_object?$user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
+		my $hash = md5_hex(join('', $user, $user_object ? $user_object->pass:undef)); #,$ENV{REMOTE_ADDR}));
+		
 		debug("\$user_object='$user_object', target hash='$hash', target pass='".$user_object->pass."', user=[$user], pass=[$pass], fb_token:".$user_object->fb_token);
-		if($user_object && $user && $pass &&
-		   ($pass eq $user_object->pass || 
-		    $pass eq $hash              || 
-		    ($user_object->fb_token &&
-			$pass eq $user_object->fb_token) ||
-		    $user_object->try_ad_auth($user, $pass)))
+		if($user_object &&
+		   $user_object->pass &&
+		   $user &&
+		   $pass && 
+		   (
+			$pass eq $user_object->pass || 
+			$pass eq $hash              || 
+				($user_object->fb_token &&
+				 $user_object->fb_token eq $pass) 
+						    ||
+			$user_object->try_ad_auth($user, $pass)
+		   )
+		)
 		{
-			$ctx->user($user_object);
+			# Create our auth_ticket using the md5 hashed user/pass
 			$tk = join('.',$user,$hash);
 			setcookie(TICKET_COOKIE,$tk);
+			
+			# Store auth_ticket in Context for use elsewhere, such as cross-app authentication (e.g. SocketCluster)
+			$ctx->auth_ticket($tk);
+		
+			# Set the current user on the context
+			$ctx->user($user_object);
+			
 			#session(TICKET_COOKIE,$tk);
 			#AppCore::Session->save;
-		
+			
 			debug("authenticating '$user', returning true");
 			return _cdbi_load_all_columns($ctx->user);
 		}
