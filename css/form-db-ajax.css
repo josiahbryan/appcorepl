@@ -2,6 +2,7 @@
 		.db-search-modal   .list-group {
 			border-radius: 0;
 			border: 0;
+			margin: 0 !important;
 			
 		}
 			.db-search-modal  .list-group-item:first-child,
