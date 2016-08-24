@@ -435,6 +435,12 @@ package AppCore::DBI;
 		# From Class::DBI::Relationship::_add_methods
 		no strict 'refs';
 		foreach my $method (keys %methods) {
+			if($class->can($method))
+			{
+				#warn "Not overriding ${class}::".$method." - method already exists";
+				next;
+			}
+			
 			*{"$class\::$method"} = $methods{$method};
 		}
 	}
@@ -559,6 +565,10 @@ package AppCore::DBI;
 			my $data = $hash->{$subclass_link_key};
 			next if !defined $data;
 			
+			# Get existing items to delete if not found in $data
+			my @existing_items = $object->$subclass_link_key();
+			my %seen_items;
+			
 			# Process every item in the list
 			foreach my $list_item (@{$data || []})
 			{
@@ -570,8 +580,32 @@ package AppCore::DBI;
 					$debug
 				});
 				
+				$seen_items{$class_object->id} = 1;
+				
 				#use Data::Dumper;
-				#print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created '$class_object' from hash: ".Dumper($list_item);
+				print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created '$class_object' from hash: ".Dumper($list_item)
+					if $debug;
+			}
+			
+			# Delete any items not in the given list
+			my $has_deleted = $class->has_field('deleted');
+			foreach my $existing_item (@existing_items)
+			{
+				if(!$seen_items{$existing_item->id})
+				{
+					print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: Deleting existing item $existing_item\n"
+						if $debug;
+					
+					if($has_deleted)
+					{
+						$existing_item->deleted(1);
+						$existing_item->update;
+					}
+					else
+					{
+						$existing_item->delete
+					}
+				}
 			}
 		}
 		
