@@ -3043,7 +3043,7 @@ package AppCore::DBI;
 						$class = $class->{linked} if ref $class;
 					
 						print STDERR "mysql_schema_update: Updating has_many linked class: $class\n";
-					#	mysql_schema_update($class);
+						mysql_schema_update($class);
 					}
 				}
 			}
