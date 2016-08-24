@@ -131,7 +131,17 @@ package AppCore::Web::Controller;
 	{
 		my $class = shift;
 		my $val   = shift;
-		my $json  = ref $val ? encode_json($val) : $val;
+		my $json  = undef;
+		
+		eval {
+			$json = ref $val ? encode_json($val) : $val;
+		};
+		
+		if($@)
+		{
+			use Data::Dumper;
+			die "output_json: Error when getting json: $@, data: ".Dumper($val);
+		}
 		
 # 		my $debug = 1;
 # 		

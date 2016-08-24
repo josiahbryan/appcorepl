@@ -260,7 +260,21 @@ package AppCore::Web::Form;
 		if($type eq 'database')
 		{
 			my $value = $req->value || $req->term;
-			print STDERR "Form: validate_page: type=database: value: $value, fk_constraint: '$meta->{fk_constraint}'\n" #.Dumper($meta)
+			
+			my $fk_constraint = $meta->{fk_constraint};
+			# TODO: I don't know if this will work ...
+			if(ref $fk_constraint eq 'CODE')
+			{
+				$fk_constraint = $fk_constraint->($meta);
+			}
+# 			elsif(ref $fk_constraint && UNIVERSAL::isa($fk_constraint, 'AppCore::DBI'))
+# 			{
+# 				my $class_name = ref $fk_constraint;
+# 				#my @fields = $
+# 				# TODO: use AppCore::DBI::get_fields_linked_to to get incoming links, and construct "fooid=".$fk_constraint->id clause
+# 			}
+			
+			print STDERR "Form: validate_page: type=database: value: $value, fk_constraint: '$fk_constraint'\n" #.Dumper($meta)
 				if $debug;
 			
 			return AppCore::Web::Controller->autocomplete_util(
@@ -269,7 +283,7 @@ package AppCore::Web::Form;
 				$value,
 				$r,
 				join(' and ',
-					($meta->{fk_constraint}             || '1=1'),
+					($fk_constraint                     || '1=1'),
 					($meta->{clause}                    || '1=1'),
 					($form_opts->{static_fk_constraint} || '1=1')
 				)

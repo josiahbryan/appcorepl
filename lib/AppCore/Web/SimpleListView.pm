@@ -514,16 +514,18 @@ package AppCore::Web::SimpleListView;
 			## Setup the header
 			my @columns = map
 				{
-					$_->{field_name} = $_->{field};
-					$_->{title}      = $_->{title} ? $_->{title} : AppCore::Common::guess_title($_->{field});
-					$_->{current_sort_column} = 1 if $model->sort_column eq $_->{field};
-					$_->{'sort_dir_' . $model->sort_direction eq 'ASC' ? 'asc' : 'desc'} = 1;
-					$_->{page}  = $page;
+					my $header = {
+						field_name	=> $_->{field},
+						title		=> $_->{title} ? $_->{title} : AppCore::Common::guess_title($_->{field}),
+						current_sort_column => $model->sort_column eq $_->{field} ? 1:0,
+						('sort_dir_' . $model->sort_direction eq 'ASC' ? 'asc' : 'desc') => 1,
+						page		=> $page
+					};
 					
 					# If we were using an advanced filtering model (filters per col)
 					#$_->{has_filter} = 1 if $model->filter->is_filtered($_->filed_name}; 
 					
-					$_;
+					$header;
 				} 
 				$model->columns;
 			
