@@ -170,7 +170,6 @@ package AppCore::DBI;
 		# If no meta specified yet, create our own meta
 		if(!$meta)
 		{
-			
 			$meta = 
 			{
 				
@@ -197,6 +196,7 @@ package AppCore::DBI;
 				$dsn =~ /database=([^;]+)/;
 				$db = $1;
 				
+# 				print STDERR __PACKAGE__."::meta(): class:'$class', extracted db '$db' from dsn '$dsn' ******\n";
 				$meta->{db} = $meta->{database} = $db;
 			}
 			
@@ -359,7 +359,7 @@ package AppCore::DBI;
 				}
 				else
 				{
-					my %hash = ${ $meta->{has_many} || {} };
+					my %hash = %{ $meta->{has_many} || {} };
 					$class->has_many($_ => $hash{$_}) foreach keys %hash;
 				} 
 			}
@@ -370,6 +370,215 @@ package AppCore::DBI;
 		
 		return $meta;
 	}
+	
+	sub has_many
+	{
+		my $class = shift;
+		my $key   = shift;
+		my $args  = shift;
+		
+		$class = ref $class if ref $class;
+		
+		my $linked_class      = ref $args ? $args->{linked} : $args;
+		my $linked_field_meta = ref $args ? $args->{field}  : undef;
+		
+		if(!$linked_field_meta)
+		{
+			my @linked_fields = $linked_class->get_fields_linked_to($class);
+			
+			$linked_field_meta = shift @linked_fields;
+			
+			if(@linked_fields)
+			{
+				#warn "has_many: $key: More than one field in $linked_class links to $class, assuming first field found ('$linked_field_meta->{field}'). Specify has_many as hashref, like 'foo => { linked => 'X::Y', field => 'field_on_y_that_links_to_foo' }' to avoid this warning or override";
+			}
+			
+			
+		}
+		
+		my $linked_field      = ref $linked_field_meta ? $linked_field_meta->{field} : $linked_field_meta;
+		
+		die "has_many: $key: Unable to find linked field"
+			if !$linked_field;
+			
+		my $linked_constraint = $linked_field . ' = ?';
+		
+		my $has_deleted       = $linked_class->has_field('deleted');
+		my $static_constraint = $has_deleted ? 'AND deleted != 1' : '';
+			
+		my %methods = (
+			$key	=> sub {
+				my $self = shift;
+				my $clause = join ' ',
+					$linked_constraint,
+					$static_constraint, 
+					'order by',
+					$linked_class->get_orderby_sql;
+					
+				return $linked_class->retrieve_from_sql($clause, $self);
+			},
+			
+			"add_to_".$key => sub {
+				
+				my $self = shift;
+				my $data = shift;
+				
+				$data->{$linked_field} = $self;
+				
+				#print STDERR ref($self)."::add_to_$key: ID $self: \$linked_field=$linked_field, insert data: ".Dumper($data);
+				
+				return $linked_class->insert($data);
+				
+			},
+		);
+		
+		# From Class::DBI::Relationship::_add_methods
+		no strict 'refs';
+		foreach my $method (keys %methods) {
+			*{"$class\::$method"} = $methods{$method};
+		}
+	}
+	
+	sub get_fields_linked_to
+	{
+		my ($class, $dest) = @_;
+		
+		$dest = ref $dest if ref $dest;
+		my @fields = grep { 
+			$_->{linked} eq $dest
+		} @{ $class->meta->{schema} || [] };
+		
+		return @fields;
+	}
+	
+	sub to_compound_hash
+	{
+		my $self = shift;
+		my $expand_to_strings = shift;
+		$expand_to_strings = 1 if !defined $expand_to_strings;
+		
+		my $base = $self->stringify_into_hash({}, undef, $expand_to_strings); #{}, undef, 0); # 0 = disable expanding into _string, etc
+		
+		foreach my $key (keys %{
+			$self->meta->{has_many} || {}
+		})
+		{
+			$base->{$key} = [
+# 				map { $_->stringify_into_hash({}, undef, $expand_to_strings) }
+				map { $_->to_compound_hash($expand_to_strings) }
+				$self->$key()
+			];
+		}
+		
+		return $base;
+	}
+	
+	sub from_compound_hash
+	{
+		my $self = shift;
+		my $hash = shift;
+		my $args = shift;
+		
+		my $debug = shift || 0;
+		
+		print STDERR "[debug] from_compound_hash: ".(ref $self ? ref $self : $self).": ".Dumper($hash, $args)
+			if $debug;
+		
+		# Build list of columns we can set
+		my $pri   = $self->primary_column;
+		my @cols  =
+			grep { $_->{field} ne $pri } 
+			@{$self->meta->{schema}};
+			
+		# Get object
+		my $object = ref $self ? $self : undef;
+		
+		# Object not $self but primary key given, so retrieve
+		if($hash->{$pri} || ref $object)
+		{
+			if(!$object)
+			{
+				$object = $self->retrieve($hash->{$pri});
+				die "$self: from_compound_hash: Unable to find $pri '$hash->{$pri}'"
+					if !$object;
+			}
+			elsif($hash->{$pri})
+			{
+				die (ref $self).": Refusing to execute from_compound_hash() because primary key $pri doesn't match \$self. \$self->$pri is ".$self->id.", incoming data $pri is: $hash->{$pri}"
+					if $hash->{$pri} != $self->id;
+			}
+		
+			# Update contact based on compound hash allowed fields
+			my %set = 
+				map  { $_->{field} => $hash->{$_->{field}} }
+				grep { defined $hash->{$_->{field}}        }
+				@cols;
+			
+			print STDERR "[debug] from_compound_hash: hash had pri '$pri', got object '$object', setting with \%set, \@cols: ".Dumper(\%set, \@cols)
+				if $debug;
+			
+			$object->set(%set);
+			$object->update;
+			
+		}
+		# No existing object, create
+		else
+		{
+			my %set = map {
+				$_->{field} =>
+					$hash->{$_->{field}} ? 
+					$hash->{$_->{field}} :
+					$_->{default}
+			} @cols;
+			
+			if(my $insert_args = $args->{insert})
+			{
+				my $insert_object = $insert_args->{parent_object};
+				my $insert_method = $insert_args->{accessor};
+				
+				$object = $insert_object->$insert_method(\%set);
+			}
+			else
+			{
+				$object = $self->insert(\%set);
+			}
+			
+		}
+			
+		
+		# Process related subclasses
+		my %subclass_links = %{ $object->meta->{has_many} || {} };
+		
+		foreach my $subclass_link_key (keys %subclass_links)
+		{
+			my $class = $subclass_links{$subclass_link_key};
+			
+			$class = $class->{linked} if ref $class;
+			
+			# Get data from compound hash
+			my $data = $hash->{$subclass_link_key};
+			next if !defined $data;
+			
+			# Process every item in the list
+			foreach my $list_item (@{$data || []})
+			{
+				my $class_object = $class->from_compound_hash($list_item, {
+					insert => {
+						parent_object => $object,
+						accessor      => 'add_to_'.$subclass_link_key
+					},
+					$debug
+				});
+				
+				#use Data::Dumper;
+				#print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created '$class_object' from hash: ".Dumper($list_item);
+			}
+		}
+		
+		return $object;
+		
+	}
+	
 	
 	
 	sub has_field
@@ -2580,6 +2789,9 @@ package AppCore::DBI;
 		
 		my $dest_hash  = shift || {};
 		my $prefix     = shift || undef;
+		my $expand_linked = shift;
+		
+		$expand_linked = 1 if !defined $expand_linked;
 		
 		my $key_prefix = $prefix ? $prefix.'_' :'';
 		
@@ -2592,7 +2804,7 @@ package AppCore::DBI;
 			
 			my $fm = $self->field_meta($col_name);
 			
-			if($fm && $fm->{linked})
+			if($expand_linked && $fm && $fm->{linked})
 			{
 				eval 'use '.$fm->{linked};
 				
@@ -2629,7 +2841,7 @@ package AppCore::DBI;
 					}
 				};
 				
-				warn "Error when trying to auto-create URLs: $@" if $@;
+				warn "Error when trying to auto-create URL for '$param_name', value '$string_val': $@" if $@;
 			}
 		}
 		
@@ -2789,6 +3001,8 @@ package AppCore::DBI;
 					die "Error getting meta() from '$class': $@";
 				}
 				
+# 				print STDERR Dumper $meta;
+				
 				if(!$meta->{schema} || ref $meta->{schema} ne 'ARRAY')
 				{
 					die "Error in meta data from '$class': No 'schema' element or invalid 'schema' reference type";
@@ -2815,6 +3029,23 @@ package AppCore::DBI;
 				}	
 				
 				mysql_schema_update($meta->{db},$meta->{table},$meta->{schema},$meta->{schema_update_opts});
+				
+				
+				# Process related subclasses
+				if(ref $meta->{has_many} eq 'HASH')
+				{
+					my %subclass_links = %{ $meta->{has_many} || {} };
+					
+					foreach my $subclass_link_key (keys %subclass_links)
+					{
+						my $class = $subclass_links{$subclass_link_key};
+						
+						$class = $class->{linked} if ref $class;
+					
+						print STDERR "mysql_schema_update: Updating has_many linked class: $class\n";
+					#	mysql_schema_update($class);
+					}
+				}
 			}
 			
 			return 1;
@@ -3027,7 +3258,7 @@ package AppCore::DBI;
 				$opts->{before_alter}->($dbh,\@changed_columns) if ref $opts->{before_alter} eq 'CODE';
 	
 				my $sql = join ";\n", @alter;
-				print STDERR "Debug: Alter table: \n$sql\n";
+				print STDERR "Debug: [$db] Alter table: \n$sql\n";
 				
 				push @sql, $sql;
 	
