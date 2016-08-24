@@ -304,11 +304,11 @@ package AppCore::Web::Common;
 			AppCore::Common->context->x('http_cookie_cache',{}) if !AppCore::Common->context->x('http_cookie_cache');
 			AppCore::Common->context->x('http_cookie_cache')->{$name} = $value;
 		}
-		elsif(AppCore::Common->context->{cgi})
+		else
 		{
 			#my $cookie = "Set-Cookie: ".url_encode($name)."=".url_encode($value)."; expires=$exp; path=/\n";
 			#my $cookie = "Set-Cookie: ".$name."=".url_encode($value)."; expires=$exp; path=/\n";
-			my $cookie = AppCore::Common->context->{cgi}->cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
+			my $cookie = AppCore::Common->context()->{cgi}->cookie(-name => "$name", -value =>["$value"], -expires=>"$exp",-path=>"/");
 			
 			if(!AppCore::Common->context->{mod_fastcgi})
 			{
