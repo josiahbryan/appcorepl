@@ -11,14 +11,52 @@ package AppCore::DBI::SimpleListModel;
 	
 	use AppCore::Common;
 	
+	# The old/existing/legacy way of generating SQL for the compile_list()
+	# routine takes a linked field, say, "userid", and expands the 
+	# linked field (whatever userid stringifies to from the user table)
+	# and puts the resulting string in the "userid" column - e.g. the 
+	# data output in the userid column is no longer the "userid", but
+	# the string value from the linked table. The SQL normally then
+	# puts the original userid in a column suffixed with "_raw",
+	# e.g. "userid_raw"....
+	# 
+	# Fine, I get it, I designed it that way 3-7 years ago.
+	# - But I don't like it anymore.
+	# - But there's a lot of legacy/existing code that relies on that behaviour.
+	# 
+	# Enter '$EXPAND_LINKED_COLS_WITH_STRING_SUFFIX' - much like the
+	# corresponding "stringify_into_hash" vs "to_stringified_hash" methods
+	# in AppCore::DBI, if you set $EXPAND_LINKED_COLS_WITH_STRING_SUFFIX to
+	# a true value, the compile_list() routine will no longer do the "_raw"
+	# suffix. Instead, it will leave the userid in userid and put the 
+	# userid string from the linked table into "userid_string".
+	# 
+	# Simple, right? Good. 
+	# 
+	# Want this to be the default for all your AppCore::DBI classes?
+	# Set $AppCore::DBI::SimpleListModel::EXPAND_LINKED_COLS_WITH_STRING_SUFFIX 
+	# in some root class, like your web controller's root class, etc.
+	# 
+	our $EXPAND_LINKED_COLS_WITH_STRING_SUFFIX = 0;
+	
 	our $MIN_TERMOID_LENGTH = 3;
 	
 	sub new
 	{
 		my $class = shift;
 		my $cdbi_class = shift;
-		return bless {cdbi_class=>$cdbi_class}, $class;
+		return bless {
+			cdbi_class                => $cdbi_class,
+			use_string_suffix_not_raw => $EXPAND_LINKED_COLS_WITH_STRING_SUFFIX || 0,
+		}, $class;
 	}
+	
+	sub set_use_string_suffix_not_raw {
+		my ($self, $val) = @_;
+		$self->{use_string_suffix_not_raw} = $val;
+	}
+	
+	sub use_string_suffix_not_raw { shift->{use_string_suffix_not_raw} }
 
 	# Method: set_filter($string)
 	# Set $string as the $string to search for when compiling the list and only return entries in the list that contain $string
@@ -300,6 +338,10 @@ package AppCore::DBI::SimpleListModel;
 		}
 		
 		
+		# See comments at start of file about $EXPAND_LINKED_COLS_WITH_STRING_SUFFIX
+		# - which sets the default for $use_string_suffix_not_raw for new models
+		my $use_string_suffix_not_raw = $self->{use_string_suffix_not_raw};
+		
 		## Create the list of columns to select from the database
 		my @columns;
 		my $got_pri = 0;
@@ -347,13 +389,28 @@ package AppCore::DBI::SimpleListModel;
 				my $concat     = $link->get_stringify_sql(0,0,0,$moniker);
 				#die Dumper $concat if $col eq 'parent_articleid';
 				#die Dumper $concat;
-					
-				push @columns, "(SELECT $concat FROM $other_db.$table $moniker WHERE $other_ref.$primary=$self_ref.$self_field) \n".
-					"\tAS ".$dbh->quote_identifier($col)."\n";
 				
-				# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
-				push @columns, "$self_ref.$self_field \n".
-					"\tAS ".$dbh->quote_identifier($col.'_raw')."\n";
+				my $stringify_select_sql =
+					"(SELECT $concat FROM $other_db.$table $moniker WHERE $other_ref.$primary=$self_ref.$self_field) \n";
+					
+				if($use_string_suffix_not_raw)
+				{
+					push @columns, $stringify_select_sql.
+						"\tAS ".$dbh->quote_identifier($col.'_string')."\n";
+					
+					# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
+					push @columns, "$self_ref.$self_field \n".
+						"\tAS ".$dbh->quote_identifier($col)."\n";
+				}
+				else
+				{
+					push @columns, $stringify_select_sql.
+						"\tAS ".$dbh->quote_identifier($col)."\n";
+					
+					# Add a $col+'_raw' column (ex: userid_raw) which is just the $col from this table but not stringified
+					push @columns, "$self_ref.$self_field \n".
+						"\tAS ".$dbh->quote_identifier($col.'_raw')."\n";
+				}
 			}
 			else
 			{

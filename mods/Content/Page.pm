@@ -607,6 +607,8 @@ package Content::Page::ThemeEngine;
 	use Scalar::Util 'blessed';
 	use base 'AppCore::DBI';
 	
+	use JSON qw/encode_json/;
+	
 	# For subnav modifications...
 	#use Clone::More qw( clone );
 
@@ -1186,9 +1188,13 @@ package Content::Page::ThemeEngine;
 		else
 		{
 			$pgdat->{nav_path} = $self->breadcrumb_list->list;
-			#die Dumper $self->breadcrumb_list->list;
+# 			die Dumper $self->breadcrumb_list->list;
 			#timemark("ABD just get breadcrumbs");
 		}
+		
+		# Give the page the breadcrumbs as a JSON object for use as desired
+# 		die Dumper $pgdat->{nav_path};
+		$pgdat->{nav_path_json} = encode_json($pgdat->{nav_path});
 			
 		#timemark("ABD before page.tmpl");
 		eval
