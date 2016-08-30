@@ -949,7 +949,7 @@ package AppCore::Web::Form;
 # 				
 # 			push @html, $tmpl->output;
 			
-			push @html, "\t\t<script src='/appcore/js/form-db-ajax.js?20160824.1'></script>\n";
+			push @html, "\t\t<script src='/appcore/js/form-db-ajax.js?20160829.1'></script>\n";
 			
 			foreach my $child ( @{$node->children} )
 			{

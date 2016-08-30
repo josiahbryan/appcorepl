@@ -40,7 +40,7 @@ $(function() {
 	}
 
 	include('/appcore/js/form-db-ajax.inc.html', 'html', dbSearchDialogSetup);
-	include('/appcore/css/form-db-ajax.css?_=2',     'css');
+	include('/appcore/css/form-db-ajax.css?_=3',     'css');
 
 	/* Add in our search dialog */
 	var pageSize = 25;
