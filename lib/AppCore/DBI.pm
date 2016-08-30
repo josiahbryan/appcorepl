@@ -459,21 +459,39 @@ package AppCore::DBI;
 	
 	sub to_compound_hash
 	{
-		my $self = shift;
+		my $self              = shift;
 		my $expand_to_strings = shift;
-		$expand_to_strings = 1 if !defined $expand_to_strings;
+		my $include_meta      = shift;
 		
+		$expand_to_strings = 1 if !defined $expand_to_strings;
+		$include_meta      = 1 if !defined $include_meta;
+		
+		# Build initial hash
 		my $base = $self->stringify_into_hash({}, undef, $expand_to_strings); #{}, undef, 0); # 0 = disable expanding into _string, etc
 		
+		if($include_meta)
+		{
+			# Self-describe as much as possible
+			$base->{_meta} = {
+				fields   => $self->meta->{field_map},
+				has_many => $self->meta->{has_many} 
+			};
+		}
+		
+		# Add in linked items (which also will self-describe)
 		foreach my $key (keys %{
 			$self->meta->{has_many} || {}
 		})
 		{
 			$base->{$key} = [
 # 				map { $_->stringify_into_hash({}, undef, $expand_to_strings) }
-				map { $_->to_compound_hash($expand_to_strings) }
+				map { $_->to_compound_hash($expand_to_strings, $include_meta) }
 				$self->$key()
 			];
+			
+			# Include meta for sub-classes here incase the list is empty
+			$base->{'_fields_'.$key} = $self->meta->{has_many}->{$key}->meta->{field_map}
+				if $include_meta;
 		}
 		
 		return $base;
