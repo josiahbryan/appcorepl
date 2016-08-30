@@ -1194,7 +1194,10 @@ package Content::Page::ThemeEngine;
 		
 		# Give the page the breadcrumbs as a JSON object for use as desired
 # 		die Dumper $pgdat->{nav_path};
-		$pgdat->{nav_path_json} = encode_json($pgdat->{nav_path});
+		eval {
+			$pgdat->{nav_path_json} = encode_json($pgdat->{nav_path} || []);
+		};
+		warn "Error: $@ while converting ".Dumper($pgdat->{nav_path})." to json" if $@;
 			
 		#timemark("ABD before page.tmpl");
 		eval
