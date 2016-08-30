@@ -418,6 +418,17 @@ package AppCore::DBI;
 				return $linked_class->retrieve_from_sql($clause, $self);
 			},
 			
+			# Helper method to return class name of linked class
+			$key."_class" => sub {
+				return $linked_class;
+			},
+			
+			# Another helper
+			$key."_class_field" => sub {
+				return $linked_field;
+			},
+			
+			# Helper to add a linked class
 			"add_to_".$key => sub {
 				
 				my $self = shift;
@@ -464,7 +475,7 @@ package AppCore::DBI;
 		my $include_meta      = shift;
 		
 		$expand_to_strings = 1 if !defined $expand_to_strings;
-		$include_meta      = 1 if !defined $include_meta;
+		$include_meta      = 0 if !defined $include_meta;
 		
 		# Build initial hash
 		my $base = $self->stringify_into_hash({}, undef, $expand_to_strings); #{}, undef, 0); # 0 = disable expanding into _string, etc
@@ -2181,6 +2192,58 @@ package AppCore::DBI;
 			);
 		}
 		return 1;
+	}
+	
+	
+	# Find the object with fields in $required, creating if not existing - in this case, it's like find_or_create()
+	# If object not found, after inserting, it will set fields to values in $defaults.
+	# If object is found, will use set_if_unset() to set fields in $defaults if fields are falsy
+	# Regardless, if $force_fields (hash) is given, will call set_if() to update fields on object to values in $force_fields
+	sub find_or_create_defaults
+	{
+		my ($class, $required, $defaults, $force_fields) = @_;
+		
+		my $object = $class->by_field(%$required);
+		if(!$object)
+		{
+			$object = $class->insert($required);
+			
+			if($defaults)
+			{
+				$object->set($_, $defaults->{$_})
+					foreach keys %$defaults;
+			}
+				
+			$object->update;
+		}
+		elsif($defaults)
+		{
+			$object->set_if_unset($defaults);
+		}
+		
+		if($force_fields)
+		{
+			$object->update
+				if $object->set_if($force_fields);
+		}
+		
+		return $object;
+	}
+	
+	
+	sub set_if_unset
+	{
+		my ($self, $defaults) = @_;
+		
+		foreach my $key (keys %$defaults)
+		{
+			$self->set($key, $defaults->{$key})
+				if !$self->get($key);
+		}
+		
+		$self->update;
+		
+		return $self;
 	}
 	
 	sub set_if
