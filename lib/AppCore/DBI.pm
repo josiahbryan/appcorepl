@@ -443,6 +443,11 @@ package AppCore::DBI;
 			},
 		);
 		
+		$class->add_trigger(before_delete => sub {
+			my $object = shift;
+			$object->$key->delete_all;
+		});
+		
 		# From Class::DBI::Relationship::_add_methods
 		no strict 'refs';
 		foreach my $method (keys %methods) {
