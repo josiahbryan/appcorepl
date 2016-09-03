@@ -934,6 +934,8 @@ $(function() {
 				
 			$widget.insertAfter($elm);
 			
+			$elm.appendTo($widget);
+			
 			/*
 			 * if(!$elm.is(':visible') || $elm.attr('type') == 'hidden')
 			 *	$widget.hide();

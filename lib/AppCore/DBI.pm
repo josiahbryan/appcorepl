@@ -384,6 +384,9 @@ package AppCore::DBI;
 		
 		if(!$linked_field_meta)
 		{
+			eval('use '.$linked_class);
+			warn "Error in has_many: Can't load '$linked_class': $@" if $@;
+			
 			my @linked_fields = $linked_class->get_fields_linked_to($class);
 			
 			$linked_field_meta = shift @linked_fields;
@@ -398,7 +401,7 @@ package AppCore::DBI;
 		
 		my $linked_field      = ref $linked_field_meta ? $linked_field_meta->{field} : $linked_field_meta;
 		
-		die "has_many: $key: Unable to find linked field"
+		die "$class: has_many: $key: Unable to find linked field from $linked_class into $class"
 			if !$linked_field;
 			
 		my $linked_constraint = $linked_field . ' = ?';
@@ -495,10 +498,13 @@ package AppCore::DBI;
 		}
 		
 		# Add in linked items (which also will self-describe)
-		foreach my $key (keys %{
-			$self->meta->{has_many} || {}
-		})
+		my $has_many = $self->meta->{has_many} || {};
+		foreach my $key (keys %$has_many)
 		{
+			my $args         = $has_many->{$key};
+			my $linked_class = ref $args ? $args->{linked} : $args;
+			#my $linked_field_meta = ref $args ? $args->{field}  : undef;
+		
 			$base->{$key} = [
 # 				map { $_->stringify_into_hash({}, undef, $expand_to_strings) }
 				map { $_->to_compound_hash($expand_to_strings, $include_meta) }
@@ -506,7 +512,7 @@ package AppCore::DBI;
 			];
 			
 			# Include meta for sub-classes here incase the list is empty
-			$base->{'_fields_'.$key} = $self->meta->{has_many}->{$key}->meta->{field_map}
+			$base->{'_fields_'.$key} = $linked_class->meta->{field_map}
 				if $include_meta;
 		}
 		
@@ -576,10 +582,15 @@ package AppCore::DBI;
 				my $insert_object = $insert_args->{parent_object};
 				my $insert_method = $insert_args->{accessor};
 				
+				print STDERR "[debug] $self: from_compound_hash: Calling parent object insert method '$insert_method' with args: ".Dumper(\%set)
+					if $debug;
+				
 				$object = $insert_object->$insert_method(\%set);
 			}
 			else
 			{
+				print STDERR "[debug] from_compound_hash: Calling OUR insert method with args: ".Dumper(\%set)
+					if $debug;
 				$object = $self->insert(\%set);
 			}
 			
@@ -603,6 +614,16 @@ package AppCore::DBI;
 			my @existing_items = $object->$subclass_link_key();
 			my %seen_items;
 			
+			# Used as the key for items to delete
+# 			my $existing_item_key_field = $hash->{'_'.$subclass_link_key.'_key_field'}
+# 				|| 'id';
+			
+			# TODO: Make this work as an option
+			# To do that, we have to update the insert code, above, to adapt a find_or_create() methodology if this field is set by the user
+			my $existing_item_key_field = 'id';
+			
+# 			print STDERR "from_compound_hash: existing_item_key_field: '$existing_item_key_field'\n";
+			
 			# Process every item in the list
 			foreach my $list_item (@{$data || []})
 			{
@@ -614,18 +635,20 @@ package AppCore::DBI;
 					$debug
 				});
 				
-				$seen_items{$class_object->id} = 1;
+				$seen_items{$class_object->$existing_item_key_field} ++;
 				
 				#use Data::Dumper;
 				print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created '$class_object' from hash: ".Dumper($list_item)
 					if $debug;
 			}
 			
+# 			print STDERR "from_compound_hash: seen_items: ".Dumper(\%seen_items)."\n";
+			
 			# Delete any items not in the given list
 			my $has_deleted = $class->has_field('deleted');
 			foreach my $existing_item (@existing_items)
 			{
-				if(!$seen_items{$existing_item->id})
+				if(!$seen_items{$existing_item->$existing_item_key_field})
 				{
 					print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: Deleting existing item $existing_item\n"
 						if $debug;
@@ -2149,11 +2172,42 @@ package AppCore::DBI;
 		
 		return $DB_CACHE{$key};
 	}
-	# 
+	
+	sub fix_not_null
+	{
+		my $class = shift;
+		
+		my $args = shift;
+		
+		#print STDERR "[".(ref $class?ref $class:$class)."]: fix_not_nul($args)\n";
+		
+		my @fields = @{ $class->meta->{schema} || [] };
+		foreach my $field (@fields)
+		{
+			next if $field->{key} eq 'PRI';
+			
+			$args->{$field->{field}} = $field->{default}
+				if $field->{null} == 0 &&
+				  !defined $args->{$field->{field}} &&
+				   defined $field->{default};
+		}
+		
+		return $args;
+	}
 	
 	sub insert
 	{
 		my $self = shift;
+		my $args = shift;
+		
+		my $fix_null_flag = shift;
+		$fix_null_flag = 1 if !defined $fix_null_flag;
+		
+		#print STDERR "[".(ref $class?ref $class:$class)."]: insert($args,$fix_null_flag)\n";
+		
+		$self->fix_not_null($args) 
+		   if $fix_null_flag;
+		
 		my $dbh = $self->db_Main;
 	# 	if($dbh->isa('DBI::ReplicationProxy'))
 	# 	{
@@ -2166,7 +2220,10 @@ package AppCore::DBI;
 	# 	{
 	# 		#print "Not a rep proxy (".ref($dbh).")/(".ref($self).")/($self)\n";
 	# 	}
-		return $self->SUPER::insert(@_);
+	
+		
+	
+		return $self->SUPER::insert($args, @_);
 		
 	}
 	*create = \&insert;
