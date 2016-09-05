@@ -162,8 +162,25 @@ $(function() {
 	
 	window.dbLookupOptionsDebug = dbLookupOptions;
 	
+	window.primeCallsPending = [];
+	
+	// 20160905 JB: Added 'primeCallsPending' to stagger the hit to the server for multipel primeDbCache calls
+	// primarily to allow ajax calls that directly affect the visible UI to get responded to earlier than the prime calls.
 	function primeDbCache(urlRoot)
 	{
+		window.primeCallsPending.push(urlRoot);
+		//console.log("primeDbCache: (start) window.primeCallsPending:",window.primeCallsPending);
+		
+		if(window.primeCallsPending.length > 1)
+			return;
+		
+		_primeDbCache(urlRoot);
+		
+	}
+	
+	function _primeDbCache(urlRoot)
+	{
+		
 		showItemChooser.hookUrlRoot = urlRoot;
 		//loadResultsPage('', 0, true);
 		
@@ -195,10 +212,24 @@ $(function() {
 				//console.debug("primeDbCache: url:",urlRoot,", loaded:",result);
 				
 				dbLookupOptions.resultCache(cacheKey, result);
+				
+				var current = window.primeCallsPending.shift();
+				if(window.primeCallsPending.length)
+					// [0] will be shifted off here when we end it
+					_primeDbCache(window.primeCallsPending[0]);
+				
+				//console.log("primeDbCache: (end+) window.primeCallsPending:",window.primeCallsPending);
 			},
 
 			error: function(result) {
 				console.log(result.responseText);
+				
+				var current = window.primeCallsPending.shift();
+				if(window.primeCallsPending.length)
+					// [0] will be shifted off here when we end it
+					_primeDbCache(window.primeCallsPending[0]);
+				
+				//console.log("primeDbCache: (end-) window.primeCallsPending:",window.primeCallsPending);
 // 				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 			}
 			
