@@ -162,25 +162,42 @@ $(function() {
 	
 	window.dbLookupOptionsDebug = dbLookupOptions;
 	
-	window.primeCallsPending = [];
+	var _primeCallsPending = [];
 	
 	// 20160905 JB: Added 'primeCallsPending' to stagger the hit to the server for multipel primeDbCache calls
 	// primarily to allow ajax calls that directly affect the visible UI to get responded to earlier than the prime calls.
 	function primeDbCache(urlRoot)
 	{
-		window.primeCallsPending.push(urlRoot);
-		//console.log("primeDbCache: (start) window.primeCallsPending:",window.primeCallsPending);
+		_primeCallsPending.push(urlRoot);
+		//console.log("primeDbCache: (start) _primeCallsPending:",_primeCallsPending);
 		
-		if(window.primeCallsPending.length > 1)
+		if(_primeCallsPending.length > 1)
 			return;
 		
 		_primeDbCache(urlRoot);
-		
 	}
+	
+	
+	function setResultsForQuery(urlRoot, filter, list) {
+		
+		var result = {
+			start: 0,
+			limit: Infinity,
+			total: Infinity,
+			list: list
+		};
+		
+		var cacheKey = dbLookupOptions.ajax.cacheKey(filter, 0, urlRoot);
+		
+		dbLookupOptions.resultCache(cacheKey, result);
+		
+		return cacheKey;
+	};
+	
+	window.setItemChooserResultsForQuery = setResultsForQuery;
 	
 	function _primeDbCache(urlRoot)
 	{
-		
 		showItemChooser.hookUrlRoot = urlRoot;
 		//loadResultsPage('', 0, true);
 		
@@ -195,7 +212,17 @@ $(function() {
 		
 		var cacheData = dbLookupOptions.resultCache(cacheKey);
 		if(cacheData)
+		{
+			// Remove current priming call
+			_primeCallsPending.shift();
+			
+			// If more URLs left to prime, then call back in to this function (the internal _primeDbCache, not the "public" primeDbCache)
+			if(_primeCallsPending.length)
+				// [0] will be shifted off here when we end it
+				_primeDbCache(_primeCallsPending[0]);
+			
 			return;
+		}
 		
 		// This prevents priming the same URL multiple times
 		if(dbLookupOptions.cacheStarted[cacheKey])
@@ -213,23 +240,29 @@ $(function() {
 				
 				dbLookupOptions.resultCache(cacheKey, result);
 				
-				var current = window.primeCallsPending.shift();
-				if(window.primeCallsPending.length)
-					// [0] will be shifted off here when we end it
-					_primeDbCache(window.primeCallsPending[0]);
+				// Remove current priming call
+				_primeCallsPending.shift();
 				
-				//console.log("primeDbCache: (end+) window.primeCallsPending:",window.primeCallsPending);
+				// If more URLs left to prime, then call back in to this function (the internal _primeDbCache, not the "public" primeDbCache)
+				if(_primeCallsPending.length)
+					// [0] will be shifted off here when we end it
+					_primeDbCache(_primeCallsPending[0]);
+				
+				//console.log("primeDbCache: (end+) _primeCallsPending:",_primeCallsPending);
 			},
 
 			error: function(result) {
 				console.log(result.responseText);
 				
-				var current = window.primeCallsPending.shift();
-				if(window.primeCallsPending.length)
-					// [0] will be shifted off here when we end it
-					_primeDbCache(window.primeCallsPending[0]);
+				// Remove current priming call
+				_primeCallsPending.shift();
 				
-				//console.log("primeDbCache: (end-) window.primeCallsPending:",window.primeCallsPending);
+				// If more URLs left to prime, then call back in to this function (the internal _primeDbCache, not the "public" primeDbCache)
+				if(_primeCallsPending.length)
+					// [0] will be shifted off here when we end it
+					_primeDbCache(_primeCallsPending[0]);
+				
+				//console.log("primeDbCache: (end-) _primeCallsPending:",_primeCallsPending);
 // 				$(document.body).html('<div class="alert alert-danger style="margin:1em 4em">'+result.responseText+'</div>');
 			}
 			
@@ -535,6 +568,7 @@ $(function() {
 					requestData.results = result;
 					requestData.rxd     = true;
 					
+					//console.log("search success: ",requestData.cacheKey, " => ", result);
 					dbLookupOptions.resultCache(requestData.cacheKey, result);
 					
 					processResultQueue();
@@ -844,6 +878,14 @@ $(function() {
 	}
 	
 	
+	window.setLookupFormatters = function(hookUrlRoot, formatters) {
+		if(!dbLookupOptions.optionsOverride[hookUrlRoot])
+			dbLookupOptions.optionsOverride[hookUrlRoot] = {};
+		
+		dbLookupOptions.optionsOverride[hookUrlRoot].formatResult    = formatters.formatResult;
+		dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;	
+	};
+	
 	window.setupLookupUi = function($jq, hookUrlRoot, openFlag, urlNew, formatters)
 	{
 		showItemChooser.hookUrlRoot = hookUrlRoot;
@@ -851,11 +893,7 @@ $(function() {
 		// Store overrides if given
 		if(formatters)
 		{
-			if(!dbLookupOptions.optionsOverride[hookUrlRoot])
-				dbLookupOptions.optionsOverride[hookUrlRoot] = {};
-			
-			dbLookupOptions.optionsOverride[hookUrlRoot].formatResult    = formatters.formatResult;
-			dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;
+			setLookupFormatters(hookUrlRoot, formatters);
 			
 			//console.log("setupLookupUi: formatters for ",hookUrlRoot,": ",dbLookupOptions.optionsOverride[hookUrlRoot]);
 		}
