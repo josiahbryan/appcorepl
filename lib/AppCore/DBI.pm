@@ -439,7 +439,7 @@ package AppCore::DBI;
 				
 				$data->{$linked_field} = $self;
 				
-				#print STDERR ref($self)."::add_to_$key: ID $self: \$linked_field=$linked_field, insert data: ".Dumper($data);
+				print STDERR ref($self)."::add_to_$key: ID $self: \$linked_field=$linked_field, insert data: ".Dumper($data);
 				
 				return $linked_class->insert($data);
 				
@@ -527,7 +527,7 @@ package AppCore::DBI;
 		
 		my $debug = shift || 0;
 		
-		print STDERR "[debug] from_compound_hash: ".(ref $self ? ref $self : $self).": ".Dumper($hash, $args)
+		print STDERR "[debug] ".(ref $self ? ref $self : $self)."::from_compound_hash: ".Dumper($hash) #, $args)
 			if $debug;
 		
 		# Build list of columns we can set
@@ -560,7 +560,8 @@ package AppCore::DBI;
 				grep { defined $hash->{$_->{field}}        }
 				@cols;
 			
-			print STDERR "[debug] from_compound_hash: hash had pri '$pri', got object '$object', setting with \%set, \@cols: ".Dumper(\%set, \@cols)
+			#print STDERR "[debug] from_compound_hash: hash had pri '$pri', got object '$object', setting with \%set, \@cols: ".Dumper(\%set, \@cols)
+			print STDERR "[debug] from_compound_hash: hash had pri '$pri', got object '$object', setting with \%set: ".Dumper(\%set)
 				if $debug;
 			
 			$object->set(%set);
@@ -624,9 +625,13 @@ package AppCore::DBI;
 			
 # 			print STDERR "from_compound_hash: existing_item_key_field: '$existing_item_key_field'\n";
 			
+			my $has_deleted = $class->has_field('deleted');
+			
 			# Process every item in the list
 			foreach my $list_item (@{$data || []})
 			{
+# 				print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: going to create a '$class' from hash: ".Dumper($list_item);
+				
 				my $class_object = $class->from_compound_hash($list_item, {
 					insert => {
 						parent_object => $object,
@@ -637,15 +642,20 @@ package AppCore::DBI;
 				
 				$seen_items{$class_object->$existing_item_key_field} ++;
 				
+				if($has_deleted)
+				{
+					$class_object->deleted(0);
+					$class_object->update;
+				}
+				
 				#use Data::Dumper;
-				print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created '$class_object' from hash: ".Dumper($list_item)
+				print STDERR "[debug] ".ref($object).": from_compound_hash: key $subclass_link_key: created/updated '$class_object' from hash: ".Dumper($list_item)
 					if $debug;
 			}
 			
 # 			print STDERR "from_compound_hash: seen_items: ".Dumper(\%seen_items)."\n";
 			
 			# Delete any items not in the given list
-			my $has_deleted = $class->has_field('deleted');
 			foreach my $existing_item (@existing_items)
 			{
 				if(!$seen_items{$existing_item->$existing_item_key_field})

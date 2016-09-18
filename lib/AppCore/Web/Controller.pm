@@ -337,7 +337,7 @@ package AppCore::Web::Controller;
 		
 		$fk_clause ||= '1=1';
 		
-		my $debug = 1;
+		my $debug = 0;
 		
 		$r = $class->stash->{r} if !$r;
 		
