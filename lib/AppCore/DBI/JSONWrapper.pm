@@ -14,8 +14,22 @@
 package AppCore::DBI::JSONWrapper;
 {
 	use vars qw/$AUTOLOAD/;
-	use JSON qw/to_json from_json/;
+	use JSON;
 	use Data::Dumper;
+	
+	
+	
+	sub from_json {
+		my $json = shift;
+		my $obj = JSON->new->utf8(1)->decode($json); 
+		return $obj;
+	}
+	
+	sub to_json {
+		my $obj = shift;
+		
+		return JSON->new->latin1(1)->encode($obj);
+	}
 	
 	sub x
 	{
