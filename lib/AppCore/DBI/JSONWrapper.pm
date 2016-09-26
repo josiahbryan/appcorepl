@@ -19,13 +19,13 @@ package AppCore::DBI::JSONWrapper;
 	
 	
 	
-	sub from_json {
+	sub _from_json {
 		my $json = shift;
 		my $obj = JSON->new->utf8(1)->decode($json); 
 		return $obj;
 	}
 	
-	sub to_json {
+	sub _to_json {
 		my $obj = shift;
 		
 		return JSON->new->latin1(1)->encode($obj);
@@ -63,7 +63,7 @@ package AppCore::DBI::JSONWrapper;
 		my $json = $inst->get($column_name);
 		my $self = bless {
 			col	=> $column_name,
-			data	=> from_json( $json ? $json : '{}'),
+			data	=> _from_json( $json ? $json : '{}'),
 			changed	=> 0,
 			inst	=> $inst
 		}, $class;
@@ -104,7 +104,7 @@ package AppCore::DBI::JSONWrapper;
 	sub update
 	{
 		my $self = shift;
-		my $json = to_json($self->{data});
+		my $json = _to_json($self->{data});
 		$self->{inst}->set($self->{col}, $json);
 		$self->{inst}->{$self->{col}} = $json;
 		#print STDERR "Debug: save '".$self->{inst}->setup_data."' on post ".$self->{inst}."\n";
