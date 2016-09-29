@@ -31,7 +31,7 @@ package AppCore::DBI::JSONWrapper;
 			AppCore::Common::print_stack_trace();
 			warn __PACKAGE__.": Error parsing json: $err, json: $json\n";
 		}
-		return $obj;
+		return $obj || {};
 	}
 	
 	sub _to_json {
