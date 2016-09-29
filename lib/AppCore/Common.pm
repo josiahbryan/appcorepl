@@ -58,7 +58,7 @@ package AppCore::Common;
 		
 		date_math 
 		stamp 
-		nice_date 
+		nice_date
 		date 
 		dt_date
 		utc_date

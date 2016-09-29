@@ -21,14 +21,35 @@ package AppCore::DBI::JSONWrapper;
 	
 	sub _from_json {
 		my $json = shift;
-		my $obj = JSON->new->utf8(1)->decode($json); 
+		my $obj;
+		eval {
+			$obj = JSON->new->utf8(1)->decode($json);
+		};
+		if($@)
+		{
+			$err = $@;
+			AppCore::Common::print_stack_trace();
+			warn __PACKAGE__.": Error parsing json: $err, json: $json\n";
+		}
 		return $obj;
 	}
 	
 	sub _to_json {
 		my $obj = shift;
 		
-		return JSON->new->latin1(1)->encode($obj);
+		my $json; 
+
+		eval {
+			$json = JSON->new->latin1(1)->encode($obj);
+		};
+		if($@)
+		{
+			$err = $@;
+			AppCore::Common::print_stack_trace();
+			warn __PACKAGE__.": Error encoding json: $err\n";
+		}
+		
+		return $json;
 	}
 	
 	sub x
