@@ -63,6 +63,7 @@ package AppCore::Common;
 		dt_date
 		utc_date
 		simple_duration_to_hours
+		humanify_date
 		to_delta_string
 		delta_minutes
 		seconds_since
@@ -188,6 +189,109 @@ package AppCore::Common;
 		return $dur_hours;
 		
 	
+	}
+	
+	sub humanify_date
+	{
+		my $date = shift;
+		my $return_hash = shift || 0;
+		
+		my $return_string = undef;
+		my $data_hash;
+		
+		
+		eval {
+			
+			#$date = '2015-12-16 00:00:00';
+			
+			my ($a,$b,$c,$d,$e,$f) = $date =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
+			
+			return undef if !$a || !$b || !$c;
+			
+			my @months = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
+			
+			my $no_time = $d == 0 && $e == 0 && $f == 0;
+			
+			my $delta_date = $no_time ? (split /\s/, $date)[0].' '.(split /\s/, scalar(date()))[1] :  $date;
+			
+			my $delta = delta_minutes($delta_date) * -1; # make positive if in the future
+			
+			#die Dumper $delta, $months[$b-1], $date;
+			
+			my $abs_delta = abs($delta);
+			
+			#die Dumper $abs_delta;
+			
+			my $category = undef;
+			
+			my $just_date = $a.'-'.$b.'-'.$c;
+			if($just_date eq (split /\s/, scalar(date()))[0])
+			{
+				#die Dumper $date, $no_time;
+				if($no_time)
+				{
+					$return_string = 'Today';
+					$delta = 0;
+					
+					$category = 'today';
+				}
+				else
+				{
+					$category = 'today_min';
+					
+					$return_string = to_delta_string($abs_delta, 1);
+					if($delta < 1) # fix "in 0 minutes"
+					{
+						$return_string = 'moments' if $abs_delta <= 2;
+						$return_string .= ' ago';
+					}
+					else
+					{
+						$return_string = 'in '.$return_string;
+					}
+				}
+			}
+			elsif($abs_delta < 24 * 60 * 2) # Less than one day away
+			{
+				$return_string = $delta > 0 ? 'Tomorrow' : 'Yesterday';
+				$category = 'day';
+			}
+			elsif($abs_delta < 24 * 60 * 7)
+			{
+				$return_string = $delta > 0 ? 'This Week' : to_delta_string($abs_delta, 1).' ago';
+				$category = 'week';
+			}
+			elsif($delta > 0)
+			{
+				$category = 'year';
+				$return_string = $months[$b-1].' '.int($c);
+				
+				if($delta >= 24 * 60 * 365)
+				{
+					$category = 'year1';
+					$return_string .= ' '.$a;
+				}
+			}
+			elsif($delta < 0)
+			{
+				$category = 'past';
+				$return_string = to_delta_string($abs_delta, 1).' ago';
+			}
+			
+			$data_hash = {
+				string => $return_string,
+				delta  => $delta,
+				abs_delta => $abs_delta,
+				category => $category
+			};
+			
+			#die Dumper $data_hash;
+		};
+		
+		warn $@ if $@;
+		
+		return $return_hash ? $data_hash : $return_string;
+		
 	}
 	
 	sub to_delta_string
