@@ -247,6 +247,7 @@ Server: $host
 	sub _internal_transmit
 	{
 		my $self = shift;
+		my $debug = shift || 1;
 	
 		my $data = $self->msg;
 		if($data =~ /^#file:(.*)$/)
@@ -269,11 +270,20 @@ Server: $host
 
 		$domain = lc $domain;
 		
+		print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: domain: '$domain'\n" if $debug;
+		
 		my $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{$domain};
+		
+		print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: prof[1]: $prof\n" if $debug;
+		
 		   $prof = AppCore::Config->get('EMAIL_DOMAIN_CONFIG')->{'*'} if !$prof;
+
+		print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: prof[2]: $prof\n" if $debug;
 		
 		if(!$prof)
 		{
+			print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: no profile for '*' (default)\n" if $debug;
+			
 			# Just IGNORE this message because we'll assume another script will 
 			# run with a different config that *will* handle this domain - no harm in just ignoring it.
 # 			$self->sentflag(1);
@@ -289,7 +299,8 @@ Server: $host
 		# If config says its allowed (a true value) but no config, assume direct relay
 		$prof = { server => 'localhost' } if !ref $prof;
 		
-		#print STDERR "Debug: Profile domain: $domain, using server: '$prof->{server}'\n";
+		print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: Profile domain: $domain, using server: '$prof->{server}'\n"
+			if $debug;
 		
 		
 		my $pkg = $prof->{pkg};
@@ -307,6 +318,8 @@ Server: $host
 
 		if($prof->{server} eq 'localhost')
 		{
+			print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: ** localhost **\n" if $debug;
+			
 			$self->sentflag(1);
 			$self->result("OK: Sent via direct relay");
 			$self->update;
@@ -327,6 +340,8 @@ Server: $host
 			
 			my ($tuser,$tdomain) = split /\@/, $self->msg_to;
 			$tdomain =~ s/>$//g;
+			
+			print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: relay tdomain='$tdomain'\n" if $debug;
 
 			$self->_relay($tdomain,$self->msg_from,$self->msg_to,$data);
 			
@@ -359,11 +374,34 @@ Server: $host
 			
 			if($pkg eq 'Net::SMTP::SSL')
 			{
-				$args{'SSL_verify_mode'} = 'SSL_VERIFY_NONE';
+				#$args{'SSL_verify_mode'} = 'SSL_VERIFY_NONE';
+				#$args{'SSL_verify_mode'} = 'SSL_VERIFY_PEER';
+				
+				if($prof->{ssl_ca_file})
+				{
+					print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: Using SSL CA file: $prof->{ssl_ca_file}\n"
+						if $debug;
+						
+					IO::Socket::SSL::set_defaults(
+						SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+						SSL_ca_file     => $prof->{ssl_ca_file}
+						
+					);
+				}
+				else
+				{
+					IO::Socket::SSL::set_defaults(
+						SSL_verify_mode	=> IO::Socket::SSL::SSL_VERIFY_NONE()
+					);
+				}
+				
 			}
 			
  			#use Data::Dumper;
 			#print STDERR Dumper \%args;
+			
+			print STDERR "[debug] ".__PACKAGE__."::_internal_transmit: Package: $pkg, Server: $prof->{server}, Final args:".Dumper(\%args)
+				if $debug;
 				
 			my $cache_key = $domain.$prof->{user};
 			my $handle_data = $SMTP_HANDLE_CACHE{$cache_key};
