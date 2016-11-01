@@ -1032,11 +1032,19 @@ $(function() {
 				);
 			}
 			
-			$widget.bind('click', function() {
+			$widget.bind('click', function(e) {
 				if($widget.is('.disabled'))
 					return false;
 				
+				if(!e)
+					e = window.event;
+			
+				if(e)
+					e.preventDefault();
+				
 				showItemChooser($widget, $elm, hookUrlRoot, urlNew);
+				
+				return false;
 			});
 			
 			$widget.find('.btn').on('keypress', function(e) {
