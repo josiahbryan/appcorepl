@@ -415,6 +415,8 @@ $(function() {
 							showItemChooser.currentElm
 								.val(id)
 								.attr('title', title)
+								// Used in our change-detect code attached below
+								.attr('data-verified-id', id)
 								.trigger('change');
 							
 							w.find('.btn').focus();
@@ -1031,6 +1033,28 @@ $(function() {
 					'<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>'
 				);
 			}
+			
+			$elm.on('change', function() {
+				var $elm = $(this);
+				var newId = $elm.val();
+				if(newId != $elm.attr('data-verified-id'))
+				{
+					// Remove initial-string otherwise initSelection will just use that instead of validating new id with server
+					$elm.attr('x:initial-string', '');
+					
+					showItemChooser.hookUrlRoot = $elm.attr("data-hook-url-root");
+					
+					//console.log('Value changed, re-stringifying newId ', newId);
+					
+					$widget.find('.txt').html('<i class="fa fa-spin fa-refresh"></i>');
+					
+					dbLookupOptions.initSelection($elm, function(result) {
+						$widget.find('.txt').html(
+							dbLookupOptions.formatSelection(result)
+						);
+					});
+				}
+			});
 			
 			$widget.bind('click', function(e) {
 				if($widget.is('.disabled'))
