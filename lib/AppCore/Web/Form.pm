@@ -432,16 +432,16 @@ package AppCore::Web::Form;
 				if($linked_class && $req_val !~ /^\d+$/)
 				{
 					my $static_fk_constraint_cb = $form_opts->{static_fk_constraint_cb};
-					
+# 					
 # 					die Dumper $static_fk_constraint_cb, $form_opts
-# 						if $ref =~ /roomid/;
+# 						if $ref =~ /categoryid/;
 # 						
 					my $static_fk_constraint;
 					if(ref $static_fk_constraint_cb eq 'CODE')
 					{
 						my $err = undef;
 						eval {
-							$static_fk_constraint = $static_fk_constraint_cb->($linked_class);
+							$static_fk_constraint = $static_fk_constraint_cb->($linked_class, $class_key);
 							$err = $@;
 						};
 						$err = $@ if $@;
@@ -458,12 +458,15 @@ package AppCore::Web::Form;
 					my $err = undef;
 					eval
 					{
-						$req_val = $linked_class->validate_string($req_val,
+						my $clauses = 
 							join(' and ',
 								($linked_clause        || '1=1'),
  								($static_fk_constraint || '1=1')
-							)
-						);
+							);
+							
+# 						die $clauses if $class_key eq 'categoryid';
+						
+						$req_val = $linked_class->validate_string($req_val, $clauses);
 						$err = $@;
 					};
 					$@ = $err if !$@;
@@ -471,7 +474,7 @@ package AppCore::Web::Form;
 					{
 						error("Error with $meta_title",
 							"There was an error in what you typed for $meta_title:".
-							"<h1 style='color:red'>$@</h1>".
+							"<h1 style='color:red'><pre>$@</pre></h1>".
 							"<a href='javascript:void(window.history.go(-1))'>&laquo; Go back to previous screen</a>".
 							"<br><br>");
 					}
@@ -482,7 +485,7 @@ package AppCore::Web::Form;
 # 						static_fk_constraint => $static_fk_constraint,
 # 						#form_opts => $form_opts,
 # 					}
-# 						if $ref =~ /roomid/;
+# 						if $ref =~ /categoryid/;
 				}
 				
 				# By this point, the value the user provided has been validated (if linked),

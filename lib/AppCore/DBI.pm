@@ -2003,7 +2003,7 @@ package AppCore::DBI;
 					#my ($fklookup_sql,@args) = $class->get_fkquery_sql($val,$fkclause,$debug);
 					
 					#$fklookup_sql = "select $q_primary from ".$fklookup_sql;
-					my $fklookup_sql = "select $q_primary from $q_table where $concat like ?";
+					my $fklookup_sql = "select $q_primary from $q_table where $concat like ? \nAND $fkclause";
 					$val =~ s/\s+/%/g;
 					my @args = ('%'.lc($val).'%');
 					
@@ -2011,6 +2011,8 @@ package AppCore::DBI;
 					
 					$sth = $dbh->prepare($fklookup_sql);
 					$sth->execute(@args);
+					
+# 					die AppCore::Common::debug_sql($fklookup_sql, @args) if $orig_val eq '[XG] OmegaPure Krill';
 						
 					print STDERR "$class: rows:".$sth->rows."\n" if $debug;
 						
