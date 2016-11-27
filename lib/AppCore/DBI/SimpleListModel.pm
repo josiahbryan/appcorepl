@@ -143,7 +143,7 @@ package AppCore::DBI::SimpleListModel;
 	
 	# Method: list_columns()
 	# Return the list of columns that you want to see in the reults - defaults to all columns.
-	sub list_columns { @{ shift->{list_columns} || [] } }
+	sub list_columns { shift->{list_columns} || [] }
 	
 	# Method: set_list_columns()
 	# Set the list of columns that you want to see in the reults. Note: The list is not checked for valid column names.
@@ -352,7 +352,12 @@ package AppCore::DBI::SimpleListModel;
 # 				my $link = $class->field_meta($col)->{linked};
 # 				#die Dumper eval '$link->can("get_stringify_sql")' ? 1:0;
 # 			}
-			my $link = $class->field_meta($col)->{linked};
+			
+			my $meta = $class->field_meta($col);
+			die "Cannot find metadata for column '$col' on class $class"
+				if !$meta;
+			
+			my $link = $meta->{linked};
 			if($link && eval '$link->can("get_stringify_sql")')
 			{
 				my $meta = eval '$link->meta';
