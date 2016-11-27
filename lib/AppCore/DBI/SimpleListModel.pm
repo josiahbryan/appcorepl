@@ -143,7 +143,7 @@ package AppCore::DBI::SimpleListModel;
 	
 	# Method: list_columns()
 	# Return the list of columns that you want to see in the reults - defaults to all columns.
-	sub list_columns { shift->{list_columns} || [] }
+	sub list_columns { shift->{list_columns} }
 	
 	# Method: set_list_columns()
 	# Set the list of columns that you want to see in the reults. Note: The list is not checked for valid column names.
