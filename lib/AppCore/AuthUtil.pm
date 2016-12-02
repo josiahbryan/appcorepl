@@ -212,7 +212,10 @@ package AppCore::AuthUtil;
 			# the request.....
 			#setcookie('user','0'); # empty out the old cookies
 			#setcookie('pass','0'); # empty out the old cookies
-			print STDERR "authenticate: Empty user and empty pass\n";
+			#print STDERR "authenticate: Empty user and empty pass\n";
+			
+			$@ = "authenticate: Empty user and empty pass";
+			
 			return 0;
 		}
 		
