@@ -290,18 +290,13 @@ $(function() {
 		var $listWrap = $dialog.find('.list-group-wrapper');
 		var $title    = $dialog.find('.db-search-title');
 		
-		var nounTitle =
-			($title.attr('placeholder') ?
-			 $title.attr('placeholder') : "Item")
-			
-		var specialRows = {
-			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No '+nounTitle.toLowerCase()+' found</a>'),
-			loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')
-		};
-		
 		var currentPage = 0;
 		var currentFilter = '';
 		var hasMoreResults = true;
+		
+		var specialRows = {
+			loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')	
+		};
 		
 		// We're using a request queue so that servers that respond
 		// with requests out-of-order can be properly sequenced
@@ -315,7 +310,20 @@ $(function() {
 		var clickFirstResultWhenLoaded = false;
 		
 		var updateList = function(processedResults) {
-		
+			
+			var $placeholderItem = $(showItemChooser.currentElm);
+			var nounTitle =
+				($placeholderItem.attr('placeholder') ?
+				 $placeholderItem.attr('placeholder') : "Item");
+				
+			console.log("placeholderItem: ", showItemChooser.currentElm);
+			
+			specialRows.noResult = $('<a href="#" class="list-group-item special-row alert alert-danger">No '+nounTitle.toLowerCase()+' found</a>');
+			
+			$filter.attr('placeholder', 'Search for a ' + nounTitle.toLowerCase() + ' by typing the first few letters or a phrase');
+			
+
+				
 			var list       = processedResults.results;
 			hasMoreResults = processedResults.more;
 			
@@ -336,8 +344,6 @@ $(function() {
 					emptyList = true;
 					list = [];
 				}
-				
-				
 				
 				// Add a special item at the very start of the list
 				// to "clear" the current item (an option that, when clicked,
@@ -390,7 +396,7 @@ $(function() {
 				//var isActive = !row.clearResultItem
 				//	&& showItemChooser.currentWidget
 				//	&& currentText == html;
-				var isActive = row.clearResultItem ? false : 
+				var isActive = row.clearResultItem || row.addNewItem ? false : 
 					 row.id == currentId ? true: false;
 					
 				//console.debug("idx ",i,", this html:",html,", button html:",currentText,", isActive:",isActive);
@@ -399,7 +405,7 @@ $(function() {
 					.html(html)
 					.attr('x:id',  row.clearResultItem ? '0' : row.id)
 					.attr('x:idx', i + startIdx)
-					.addClass(row.clearResultItem ? 'clear-item' : (isActive ? 'active' : ''))
+					.addClass(row.clearResultItem || row.addNewItem ? 'clear-item' : (isActive ? 'active' : ''))
 					.on('click', function(e) {
 						e = e || window.event;
 					
@@ -435,6 +441,9 @@ $(function() {
 												return;
 											}
 											
+											// Kill cache because we added new item
+											dbLookupOptions.cachedResults = {};
+											
 											var result = data.result;
 											
 											console.debug("create item: val=",val,", data=",data);
@@ -463,9 +472,6 @@ $(function() {
 												
 												//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
 											}
-											
-											
-											
 											
 										},
 										error: function(error) {
@@ -556,7 +562,7 @@ $(function() {
 				resultSetBuffer.push(row);
 			}
 			
-			if(emptyList)
+			if(emptyList && specialRows.noResult)
 				$list.append(specialRows.noResult);
 			
 			//console.debug("cur val:",curVal);
@@ -631,7 +637,8 @@ $(function() {
 			while(requestQueue.length > 0)
 				requestQueue.pop();
 			
-			specialRows.loading.remove();
+			if(specialRows.loading)
+				specialRows.loading.remove();
 			$filter.removeClass('loading');
 		};
 		
@@ -641,12 +648,14 @@ $(function() {
 			
 			//console.debug("loadResultsPage: filter:",filter,", data:",data, ", page:",page);
 			
-			specialRows.noResult.remove();
+			if(specialRows.noResult)
+				specialRows.noResult.remove();
 			
 			//if(page == 0)
 				//$list.prepend(specialRows.loading);
 			//else
-				$list.append(specialRows.loading);
+				if(specialRows.loading)
+					$list.append(specialRows.loading);
 			
 			$filter.addClass('loading');
 			
@@ -733,7 +742,8 @@ $(function() {
 			
 			//filter = "zym";
 			
-			specialRows.noResult.remove();
+			if(specialRows.noResult)
+				specialRows.noResult.remove();
 			
 			currentFilter   = filter;
 			currentPage     = 0;
@@ -764,7 +774,7 @@ $(function() {
 				if(key == 38) // up
 				{
 					var $active  = $list.find('.list-group-item.active'),
-						$sib = $active.prev('.list-group-item');
+						$sib = $active.prev('.list-group-item:not(.clear-item)');
 					
 					if($sib.size() > 0)
 					{
@@ -790,7 +800,7 @@ $(function() {
 				if(key == 40) // down
 				{
 					var $active  = $list.find('.list-group-item.active'),
-						$sib = $active.next('.list-group-item');
+						$sib = $active.next('.list-group-item:not(.clear-item)');
 					
 					if($sib.size() > 0)
 					{
