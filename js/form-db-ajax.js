@@ -290,8 +290,12 @@ $(function() {
 		var $listWrap = $dialog.find('.list-group-wrapper');
 		var $title    = $dialog.find('.db-search-title');
 		
+		var nounTitle =
+			($title.attr('placeholder') ?
+			 $title.attr('placeholder') : "Item")
+			
 		var specialRows = {
-			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No items found</a>'),
+			noResult: $('<a href="#" class="list-group-item special-row alert alert-danger">No '+nounTitle.toLowerCase()+' found</a>'),
 			loading:  $('<a href="#" class="list-group-item special-row alert alert-warning"><i class="fa fa-spin fa-spinner"></i> Loading more results ...</a>')
 		};
 		
@@ -317,6 +321,8 @@ $(function() {
 			
 			//console.log("updateList: currentPage:",currentPage);
 			
+			var emptyList = false;
+			
 			if(currentPage == 0)
 			{
 				$list.empty();
@@ -327,18 +333,26 @@ $(function() {
 			
 				if(!list || list.length <= 0)
 				{
-					$list.append(specialRows.noResult);
-					return;
+					emptyList = true;
+					list = [];
 				}
+				
+				
 				
 				// Add a special item at the very start of the list
 				// to "clear" the current item (an option that, when clicked,
 				// just clears the value in the box)
-				if(!list[0].clearResultItem)
+				if((!list || !list.length || list[0].clearResultItem) 
+					&& showItemChooser.allowResetItem)
 					list.unshift({
 						clearResultItem: true
 					});
 				
+				if((!list || !list.length || !list[0].addNewItem) 
+					&& showItemChooser.allowNewItem)
+					list.unshift({
+						addNewItem: true
+					});
 			}
 			
 			//console.debug("updateList: currentPage:",currentPage,", items:", $list.find('.list-group-item'));
@@ -357,17 +371,20 @@ $(function() {
 				showItemChooser.currentElm.val() :
 				null;
 				
-			var specialResetText = "<i>(Reset/Clear currently selected " + 
-						($title.attr('placeholder') ?
-							$title.attr('placeholder') : "Item")
-						+ ")</i>";
+			var specialResetText = "<i>(Reset/Clear currently selected " +  nounTitle + ")</i>";
+				
+			var addNewItemText =
+				  "<input class='form-control new-item-control' placeholder='Add New " + nounTitle + "'>"
+				+ "<button class='btn btn-success btn-add-new-item'"
+					+ "style='float: right;margin-top: -31px;margin-right: 3px;'"
+					+ "><i class='fa fa-plus add-new-icon'></i></button>";
 			
 			for(var i=0; i<list.length; i++)
 			{
 				var row = list[i];
 				var html =
-					row.clearResultItem ?
-					specialResetText :
+					row.clearResultItem ? specialResetText :
+					row.addNewItem ? addNewItemText :
 					dbLookupOptions.formatResult(row);
 					
 				//var isActive = !row.clearResultItem
@@ -383,7 +400,90 @@ $(function() {
 					.attr('x:id',  row.clearResultItem ? '0' : row.id)
 					.attr('x:idx', i + startIdx)
 					.addClass(row.clearResultItem ? 'clear-item' : (isActive ? 'active' : ''))
-					.on('click', function() {
+					.on('click', function(e) {
+						e = e || window.event;
+					
+						console.log("e.click: ", e.target);
+						if(e && e.target && $(e.target).is('input, button, .add-new-icon'))
+						{
+							if($(e.target).is('.btn-add-new-item, .add-new-icon'))
+							{
+								var $input = $(this).parent().find('.new-item-control'),
+								    $btn   = $(this).parent().find('.btn-add-new-item .fa');
+								var val = $input.val();
+								
+								$btn.removeClass('fa-plus')
+									.addClass('fa-spin')
+									.addClass('fa-refresh');
+								$input.css('opacity',0.5);
+								
+								var url = showItemChooser.hookUrlRoot+'/create';
+								
+								if(val != "" && val)
+								{
+									console.debug("create url:",url,", value=",val);
+									$.ajax({
+										url: url,
+										data: {
+											value: val
+										},
+										success: function(data) {
+											if(!data.result || !data)
+											{
+												console.error("Invalid result:",data);
+												alert("Error creating item");
+												return;
+											}
+											
+											var result = data.result;
+											
+											console.debug("create item: val=",val,", data=",data);
+											
+											var string = dbLookupOptions.formatSelection(result);
+											
+											$('.db-search-modal').modal('hide');
+											
+											if(showItemChooser.currentWidget)
+											{
+												var w = showItemChooser.currentWidget;
+												
+												var title = string.replace(/<[^\>]+>/g,'');
+												
+												w.find('.txt').html(string);
+												w.find('.btn').attr('title', title);
+												
+												showItemChooser.currentElm
+													.val(result.id)
+													.attr('title', title)
+													// Used in our change-detect code attached below
+													.attr('data-verified-id', result.id)
+													.trigger('change');
+												
+												w.find('.btn').focus();
+												
+												//console.debug("Clicked row ",idx,", id:",id,", result:",result,", string:",string);
+											}
+											
+											
+											
+											
+										},
+										error: function(error) {
+											console.error(error);
+											alert("Error creating item");
+										}
+									});
+								}
+								else
+								{
+									alert("Type something to create");
+								}
+								
+							}
+							
+							return false;
+						}
+							
 						
 						var $elm       = $(this),
 							id     = $elm.attr('x:id'),
@@ -431,11 +531,33 @@ $(function() {
 					
 				$list.append($wrap);
 				
+				$wrap.find('.new-item-control').on('keyup', function(e) {
+					e = e || window.event;
+					if(e && e.which == 13)
+					{
+						console.log("key up enter");
+						$(this).parent().find('.btn-add-new-item').click();
+					}
+					
+				});
+				
+				
+// 				$wrap.find('.btn-add-new').click(function() {
+// 					console.log("btn add new click");
+// 					var $input = $(this).parent().find('.new-item-control');
+// 					var val = $input.val();
+// 					console.debug("New btn clicked: ", val);
+// 					return false;
+// 				});
+				
 				if(isActive)
 					$wrap.get(0).scrollIntoView();
 				
 				resultSetBuffer.push(row);
 			}
+			
+			if(emptyList)
+				$list.append(specialRows.noResult);
 			
 			//console.debug("cur val:",curVal);
 			
@@ -888,7 +1010,7 @@ $(function() {
 		dbLookupOptions.optionsOverride[hookUrlRoot].formatSelection = formatters.formatSelection;	
 	};
 	
-	window.setupLookupUi = function($jq, hookUrlRoot, openFlag, urlNew, formatters)
+	window.setupLookupUi = function($jq, hookUrlRoot, openFlag, allowNewItem, formatters, allowResetItem)
 	{
 		showItemChooser.hookUrlRoot = hookUrlRoot;
 		
@@ -971,7 +1093,7 @@ $(function() {
 				// Can't get styling to work with this to prevent wrapping around 768px, so not using it for now
 				//'<button class="btn btn-info btn-sm">...</button>',
 				
-				// Add item button - removed below if no urlNew
+				// Add item button - removed below if no allowNewItem
 // 					'<button class="btn btn-default btn-new btn-sm">',
 // 						'<i class="fa fa-plus-square-o"></i>',
 // 						'<span class="btn-text">New Item</span>',
@@ -996,9 +1118,9 @@ $(function() {
 			
 			$widget.find('.txt').html('<i class="placeholder">(' + ($elm.attr('placeholder') || 'Select an Item') + ')</i>');
 			
-// 				if(urlNew)
+// 				if(allowNewItem)
 // 					$widget.find('.btn-new')
-// 						.attr('data-url', urlNew)
+// 						.attr('data-url', allowNewItem)
 // 						.on('click', loadExternalDialog);
 // 				else
 // 					$widget.find('.btn-new').remove();
@@ -1066,7 +1188,7 @@ $(function() {
 				if(e)
 					e.preventDefault();
 				
-				showItemChooser($widget, $elm, hookUrlRoot, urlNew);
+				showItemChooser($widget, $elm, hookUrlRoot, allowNewItem);
 				
 				return false;
 			});
@@ -1083,11 +1205,11 @@ $(function() {
 				// This gets reset once dialog is visible
 				//showItemChooser.preBuffer += char;
 				
-				showItemChooser($widget, $elm, hookUrlRoot, urlNew);
+				showItemChooser($widget, $elm, hookUrlRoot, allowNewItem, allowResetItem);
 			});
 			
 			$elm.attr("data-hook-url-root", hookUrlRoot);
-			$elm.attr("data-url-new", urlNew);
+			$elm.attr("data-allow-new", allowNewItem);
 			
 			jQuery.data($elm[0], "db-button", $widget);
 			
@@ -1104,13 +1226,13 @@ $(function() {
 				jQuery.data(this, "db-button"),
 				$this, 
 				$this.attr("data-hook-url-root"),
-				$this.attr("data-url-new"),
+				$this.attr("data-allow-new"),
 				prefill
 			);
 		});
 	};
 	
-	$.fn.setupItemChooser = function(urlRoot, openFlag, urlNew, formatters) {
+	$.fn.setupItemChooser = function(urlRoot, openFlag, allowNewItem, formatters, allowResetItem) {
 		var $self = $(this);
 		
 		$self.each(function() {
@@ -1120,15 +1242,16 @@ $(function() {
 				$this,
 				urlRoot,
 				openFlag,
-				urlNew,
-				formatters
+				allowNewItem,
+				formatters,
+				allowResetItem
 			);
 		});
 		
 		return $self;
 	}
 	
-	function showItemChooser($widget, $elm, hookUrlRoot, urlNew, prefill)
+	function showItemChooser($widget, $elm, hookUrlRoot, allowNewItem, prefill, allowResetItem)
 	{
 		// dbSearchDialogSetup is called by include()
 		//dbSearchDialogSetup();
@@ -1139,7 +1262,8 @@ $(function() {
 		showItemChooser.currentWidget = $widget;
 		showItemChooser.currentElm    = $elm;
 		showItemChooser.hookUrlRoot   = hookUrlRoot;
-		showItemChooser.urlNew        = urlNew;
+		showItemChooser.allowNewItem  = allowNewItem;
+		showItemChooser.allowResetItem = allowResetItem;
 		showItemChooser.pauseKeyHandling = true;
 		
 		setTimeout(function() {
@@ -1159,13 +1283,13 @@ $(function() {
 		$title.attr('placeholder', $elm.attr('placeholder'));
 		
 		// Setup the "Add New Item" button
-		if(urlNew)
-			$dialog.find('.btn-new')
-				.attr('data-url', urlNew)
-				.on('click', loadExternalDialog)
-				.html('<i class="fa fa-plus-square-o"></i> Add new '+$elm.attr('placeholder') + '...')
-				.show();
-		else
+// 		if(allowNewItem)
+// 			$dialog.find('.btn-new')
+// 				.attr('data-url', allowNewItem)
+// 				.on('click', loadExternalDialog)
+// 				.html('<i class="fa fa-plus-square-o"></i> Add new '+$elm.attr('placeholder') + '...')
+// 				.show();
+// 		else
 			$dialog.find('.btn-new').hide();
 		
 		// Reset dialog
@@ -1214,45 +1338,45 @@ $(function() {
 	
 	//dbSearchDialogSetup();
 	
-	setTimeout(function() {
-		if(window.location.hash)
-		{
-			//open:edit-form-student-advisorid
-			
-			//console.log("found hash:",window.location.hash);
-			if(window.location.hash.match(/^#open:/))
-			{
-				var openId = window.location.hash;
-				openId = openId.replace('#open:', '');
-				//console.log(openId);
-				
-				var $elm = $('#' + openId);
-				if($elm.size() <= 0)
-				{
-					console.log("Internal Error: Cannot automatically open '"+openId+'": no element found matching that ID');
-					return;
-				}
-				
-				var $btn = $elm.siblings(".db-search-btn");
-				
-				if($btn.size() <= 0)
-				{
-					console.log("Internal Error: Cannot automatically open '"+openId+'": no .db-search-btn sibling found adjacent to input');
-					return;
-				}
-				
-				$btn.find('.btn').click();
-			}
-		}
-	}, 100);
+// 	setTimeout(function() {
+// 		if(window.location.hash)
+// 		{
+// 			//open:edit-form-student-advisorid
+// 			
+// 			//console.log("found hash:",window.location.hash);
+// 			if(window.location.hash.match(/^#open:/))
+// 			{
+// 				var openId = window.location.hash;
+// 				openId = openId.replace('#open:', '');
+// 				//console.log(openId);
+// 				
+// 				var $elm = $('#' + openId);
+// 				if($elm.size() <= 0)
+// 				{
+// 					console.log("Internal Error: Cannot automatically open '"+openId+'": no element found matching that ID');
+// 					return;
+// 				}
+// 				
+// 				var $btn = $elm.siblings(".db-search-btn");
+// 				
+// 				if($btn.size() <= 0)
+// 				{
+// 					console.log("Internal Error: Cannot automatically open '"+openId+'": no .db-search-btn sibling found adjacent to input');
+// 					return;
+// 				}
+// 				
+// 				$btn.find('.btn').click();
+// 			}
+// 		}
+// 	}, 100);
 	
-	function databaseLookupHook($elm, urlRoot, formUuid, urlNew)
+	function databaseLookupHook($elm, urlRoot, formUuid, allowNewItem)
 	{
 		//console.log("databaseLookupHook:",urlRoot);
 		
 		var hookUrlRoot = urlRoot+'/'+formUuid;
 		
-		setupLookupUi($elm, hookUrlRoot, false, urlNew);
+		setupLookupUi($elm, hookUrlRoot, false, allowNewItem);
 	}
 	
 	$('.f-ajax-fk[data-bind-uuid]').each(function() {
@@ -1261,7 +1385,7 @@ $(function() {
 		databaseLookupHook($this,
 			$this.attr('data-url'),
 			$this.attr('data-bind-uuid'),
-			$this.attr('data-url-new')
+			$this.attr('data-allow-new')
 		);
 	});
 	
@@ -1271,7 +1395,7 @@ $(function() {
 		setupLookupUi($this,
 			$this.attr('data-url-root'),
 			false,
-			$this.attr('data-url-new')
+			$this.attr('data-allow-new')
 		);
 	});
 	

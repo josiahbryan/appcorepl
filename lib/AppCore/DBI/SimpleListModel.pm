@@ -510,7 +510,7 @@ package AppCore::DBI::SimpleListModel;
 		
 		#use AppCore::Common;
 		#die Dumper \@$query_args;
-		#die AppCore::Common::debug_sql($sql_table, @$query_args);# if $debug;
+# 		die AppCore::Common::debug_sql($sql_table, @$query_args);# if $debug;
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 		
 		#print STDERR AppCore::Common::get_stack_trace();
@@ -905,7 +905,7 @@ package AppCore::DBI::SimpleListModel;
 		};
 		
 		print STDERR "parse_string_query: query: '$search_query', result: ".Dumper($res)  if $DEBUG;
-		#die debug_sql($res->{sql}, @{$res->{args}});
+# 		die debug_sql($res->{sql}, @{$res->{args}});
 			#if $search_query =~ /\|/;
 		
 		return $res;

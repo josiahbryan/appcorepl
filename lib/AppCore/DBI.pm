@@ -481,9 +481,11 @@ package AppCore::DBI;
 		my $self              = shift;
 		my $expand_to_strings = shift;
 		my $include_meta      = shift;
+		my $include_url       = shift;
 		
 		$expand_to_strings = 1 if !defined $expand_to_strings;
 		$include_meta      = 0 if !defined $include_meta;
+		$include_url       = 1 if !defined $include_url;
 		
 		# Build initial hash
 		my $base = $self->stringify_into_hash({}, undef, $expand_to_strings); #{}, undef, 0); # 0 = disable expanding into _string, etc
@@ -495,6 +497,11 @@ package AppCore::DBI;
 				fields   => $self->meta->{field_map},
 				has_many => $self->meta->{has_many} 
 			};
+		}
+		
+		if($include_url && $self->can('url'))
+		{
+			$base->{url} = $self->url;
 		}
 		
 		# Add in linked items (which also will self-describe)
@@ -1340,7 +1347,7 @@ package AppCore::DBI;
 		my $class = shift;
 		my $val = shift;
 		
-		my $debug = shift || 0;
+		my $debug = shift || 1;
 		
 		my ($regexp, $fields, $index_count) = $class->get_stringify_regex();
 		print "$class->get_stringified_fields($val): Regex: $regexp\n" if $debug;
