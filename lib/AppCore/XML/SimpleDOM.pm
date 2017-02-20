@@ -10,6 +10,8 @@ package AppCore::XML::SimpleDOM;
 
 #	use Carp;
 
+	use AppCore::Web::Common;
+
 	use Digest::MD5 qw/md5_hex/;
 	use Storable qw/store retrieve/;
 	use File::stat;
@@ -111,7 +113,7 @@ Example:
 		
 		return if $name eq 'DESTROY';
 		
-		#print STDERR "DEBUG: AUTOLOAD() [$node] ACCESS $name\n"; # if $debug;
+# 		print STDERR "DEBUG: AUTOLOAD() [$node] ACCESS $name\n"; # if $debug;
 		return $node->get($name);
 	}
 

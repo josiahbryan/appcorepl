@@ -439,7 +439,7 @@ package AppCore::DBI;
 				
 				$data->{$linked_field} = $self;
 				
-				print STDERR ref($self)."::add_to_$key: ID $self: \$linked_field=$linked_field, insert data: ".Dumper($data);
+				#print STDERR ref($self)."::add_to_$key: ID $self: \$linked_field=$linked_field, insert data: ".Dumper($data);
 				
 				return $linked_class->insert($data);
 				
