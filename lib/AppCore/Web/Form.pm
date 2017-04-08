@@ -1511,7 +1511,7 @@ package AppCore::Web::Form;
 					if($hint && ($hint_pos eq 'above' || $hint_pos eq 'top'))
 					{
 						$hint = text2html($hint, 1);
-						push @html, "<span class='hint'>$hint</span><br>" if !$hidden;
+						push @html, "<span class='hint'>${TR_PREFIX}$hint${TR_SUFFIX}</span><br>" if !$hidden;
 					}
 					
 					
@@ -2381,7 +2381,7 @@ package AppCore::Web::Form;
 					if($hint && $hint_pos ne 'above')
 					{
 						$hint = text2html($hint, 1);
-						push @html, ($hint_pos eq 'below' ? '<br>': '') . "<span class='hint'>$hint</span>"; # .($is_pairtab ? "" : "<br>");
+						push @html, ($hint_pos eq 'below' ? '<br>': '') . "<span class='hint'>${TR_PREFIX}$hint${TR_SUFFIX}</span>"; # .($is_pairtab ? "" : "<br>");
 					}
 					
 					
