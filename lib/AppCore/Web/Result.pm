@@ -37,7 +37,7 @@ package AppCore::Web::Result;
 		my %args = @_;
 		
 		$args{status} 		||= 200;
-		$args{content_type}	||= 'text/html';
+		$args{content_type}	||= 'text/html;charset="utf-8"';
 		$args{is_fragment}	||= 1;
 	
 		bless \%args, $class;
@@ -208,7 +208,7 @@ package AppCore::Web::Result;
 # 		}
 		#die Dumper $title;
 		
-		my $ctype = 'text/html';
+		my $ctype = 'text/html;charset="utf-8"';
 		if(index($out,'<content_type')>-1)
 		{
 			$out=~s/<content_type>(.*?)<\/content_type>//g;

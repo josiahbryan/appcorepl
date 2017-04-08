@@ -76,7 +76,7 @@ package AppCore::Web::DispatchCore;
 # 		print "<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>";
 # 		exit;
 
-		die AppCore::Web::Common::RequestException->new(500, ["Content-Type", "text/html"],
+		die AppCore::Web::Common::RequestException->new(500, ["Content-Type", 'text/html;charset="utf-8"'],
 			"<style>pre {white-space: pre-wrap;white-space: -moz-pre-wrap;  white-space: -pre-wrap;      white-space: -o-pre-wrap;word-wrap: break-word;}</style><h1>Internal Server Error</h1>An error was encountered while processing the page you requested:<blockquote class='ffjc-error' style='margin-top:1.5em;margin-bottom:1.5em'><pre style='font-size:175%;font-weight:bold;margin-top:2px;margin-bottom:0'>$text</pre><br><a href='javascript:window.history.go(-1)'>&laquo; Return to the previous page ...</a><br><br></blockquote><p>For more information about this error, or help resolving this issue in a timely manner, please contact the webmaster at <a href='mailto:${email}'>${email}</a>.</p>");
 		
 		
@@ -414,7 +414,7 @@ package AppCore::Web::DispatchCore;
 				{
 					#$out[0]||='text/html';
 					print "Status: 404 File Not Found\r\n";
-					print "Content-Type: ".($response->content_type || 'text/html')."\r\n\r\n";
+					print "Content-Type: ".($response->content_type || 'text/html;charset="utf-8"')."\r\n\r\n";
 					print $response->body || "<h1>404 File Not Found</h1>Sorry, the requested URL does not exist.";
 				}
 				elsif($code == 500)

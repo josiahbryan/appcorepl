@@ -85,6 +85,10 @@ package AppCore::Web::Form;
 	use JSON qw/encode_json decode_json/;
 	use Digest::MD5 qw/md5_hex md5_base64/;
 	
+	# Can be set by users of this class to wrap labels in a translation tag for marking phrases to be translated
+	our $TR_PREFIX = '';
+	our $TR_SUFFIX = '';
+	
 	sub error
 	{
 		my ($title, $error) = @_;
@@ -1129,7 +1133,9 @@ package AppCore::Web::Form;
 							my $label_class = $node->{attrs}->{'label-class'} || '';
 						
 							push @html, $t."\t <label class='row-label row-label-pre $label_class' title=\"".encode_entities($node->label)."\">", 
+								    $TR_PREFIX,
 								    _convert_newline($node->label), 
+								    $TR_SUFFIX,
 								    ':</label> ',
 								    "\n";
 								    
@@ -1448,7 +1454,9 @@ package AppCore::Web::Form;
 									($render eq 'radio' ? "style='cursor:default !important'" : ''),
 									" title=\"".encode_entities($node->label)."\"",
 									'>', 
+									$TR_PREFIX,
 									_convert_newline($node->label), 
+									$TR_SUFFIX,
 									':</label> ', "\n"  if !$hidden;
 								push @html, $t, "\t", '</td>', "\n" if $is_pairtab; # || $first_row_child;
 								#push @html, "\n$t<td>\n$t" if $first_row_child;
@@ -1545,7 +1553,7 @@ package AppCore::Web::Form;
 							."</span></b>";
 						
 						push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" : "");
 						push @html, '</span>' if $bootstrap_flag;
 						push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 						push @html, ($readonly == 2 ? "<input type='hidden' name='$ref' value='".encode_entities($val)."' id='out.$label_id'/>" : "");
@@ -1564,7 +1572,7 @@ package AppCore::Web::Form;
 							."</textarea>";
 							
 						push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+						push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" : "");
 						push @html, '</span>' if $bootstrap_flag;
 						push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 						
@@ -1669,7 +1677,7 @@ package AppCore::Web::Form;
 									"</div>";
 									
 								push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-								push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+								push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" : "");
 								push @html, '</span>' if $bootstrap_flag;
 								push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 								
@@ -1838,7 +1846,7 @@ package AppCore::Web::Form;
 									." onchange='\$(\"#$label_id\").val(this.value);var elm=\$(\"#hint_$label_id\");if(this.getAttribute(\"f:hint\")) {elm.html(this.getAttribute(\"f:hint\").show())}else{elm.hide()}' "
 									." onkeypress='var t=this;setTimeout(function(){t.onchange()},5)'"
 									."><label for='$radio_id' style='cursor:pointer'> "
-									._convert_spaces_to_nbsp(_entity_encode(_convert_newline($op->{text})))
+									.$TR_PREFIX._convert_spaces_to_nbsp(_entity_encode(_convert_newline($op->{text}))).$TR_SUFFIX
 									."</label>"
 									.($op->{selected} ? "<script>setTimeout(function(){\$('#$radio_id').change()},5);</script>" : "")
 									."</div>\n";
@@ -1851,7 +1859,7 @@ package AppCore::Web::Form;
 							
 							
 							push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-							push @html, $t, "\t<label for='$label_id' class='form-input-suffix'>$suffix</label>\n" if $suffix;
+							push @html, $t, "\t<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>\n" if $suffix;
 							push @html, '</span>' if $bootstrap_flag;
 							push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 							push @html, $t, "\t<br>\n" if $auto_hint && $hint_pos eq 'below';
@@ -2085,7 +2093,9 @@ package AppCore::Web::Form;
 										#.($lv_my_attr ? " f:lv_attr="._quote(_entity_encode($_->{lv_attr})) : "")
 										.($_->{selected} ? " selected":"")
 										.">"
+										.$TR_PREFIX
 										._entity_encode($_->{text})
+										.$TR_SUFFIX
 										."</option>" 
 									} @list))
 								."\n$t</select>\n";
@@ -2138,7 +2148,7 @@ package AppCore::Web::Form;
 # 							}
 							
 							push @html, '<span class="input-group-addon last">' if $bootstrap_flag;
-							push @html, "$t<label for='$label_id' class='form-input-suffix'>$suffix</label>" if $suffix;
+							push @html, "$t<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" if $suffix;
 							push @html, '</span>' if $bootstrap_flag;
 							push @html, "</div><!--/.fg-line-->" if $bootstrap_flag;
 							push @html, ($auto_hint && $hint_pos eq 'below' ? "<br>" : "")
@@ -2154,7 +2164,7 @@ package AppCore::Web::Form;
 							."class='".($node->class ? $node->class.' ':'')."' "
 							."id='$label_id'"
 							.($val?">".encode_entities($val)."</$nn>":'>')
-							.($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" : "");
+							.($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" : "");
 					}
 					elsif($type eq 'range')
 					{
@@ -2175,7 +2185,7 @@ package AppCore::Web::Form;
  						for ($cur_step = $min; $cur_step <= $max; $cur_step += $step)
  						{
  							my $selected = $val > $last_step && $val <= $cur_step ? ' selected' : '';
- 							push @html, "$prefix\t<option${selected}>$cur_step</option>\n";
+ 							push @html, "$prefix\t<option${selected}>${TR_SUFFIX}$cur_step${TR_PREFIX}</option>\n";
  							$last_step = $cur_step;
  						}
 						
@@ -2211,7 +2221,9 @@ package AppCore::Web::Form;
 									($render eq 'radio' ? "style='cursor:default !important'" : ''),
 									" title=\"".encode_entities($node->label)."\"",
 									'>', 
+									$TR_PREFIX,
 									_convert_newline($node->label), 
+									$TR_SUFFIX,
 									'</label> ', "\n"  if !$hidden;
 							}
 						}	
@@ -2243,7 +2255,7 @@ package AppCore::Web::Form;
 						}
 						else
 						{
-							push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>$suffix</label>" :"")."\n";
+							push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" :"")."\n";
 						}
 						push @html, '</div><!--/.fg-line-->' if $bootstrap_flag;
 						
@@ -2352,7 +2364,9 @@ package AppCore::Web::Form;
 								($render eq 'radio' ? "style='cursor:default !important'" : ''),
 								" title=\"".encode_entities($node->label)."\"",
 								'>', 
+								$TR_PREFIX,
 								_convert_newline($node->label), 
+								$TR_SUFFIX,
 								'</label> ', "\n"  if !$hidden;
 							push @html, $t, "\t", '</td>', "\n" if $is_pairtab; # || $first_row_child;
 							#push @html, "\n$t<td>\n$t" if $first_row_child;

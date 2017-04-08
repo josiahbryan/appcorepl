@@ -3484,7 +3484,7 @@ package AppCore::DBI;
 			# Compose the SQL statement and send to the server
 			my @buff = 'CREATE TABLE `'.$table.'` (';
 			push @buff, join (", ", map { _mysql_fieldspec($_) } @$fields);
-			push @buff, ')';
+			push @buff, ') character set utf8mb4';
 			my $sql = join '',@buff;
 			
 			print STDERR "Debug: $sql\n";

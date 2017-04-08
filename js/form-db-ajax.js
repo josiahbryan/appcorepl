@@ -40,7 +40,7 @@ $(function() {
 	}
 
 	include('/appcore/js/form-db-ajax.inc.html', 'html', dbSearchDialogSetup);
-	include('/appcore/css/form-db-ajax.css?_=3',     'css');
+	include('/appcore/css/form-db-ajax.css?_=3', 'css');
 
 	/* Add in our search dialog */
 	var pageSize = 25;
@@ -87,13 +87,13 @@ $(function() {
 			
 			if(result)
 			{
-				//console.log("resultCache: key:",cacheKey,": storing result:",result);
+				console.log("resultCache: key:",cacheKey,": storing result:",result);
 				cache[cacheKey] = result;
 			}
 			else
 			{
 				result = cache[cacheKey];
-				//console.log("resultCache: key:",cacheKey,": returning result:",result);
+				console.log("resultCache: key:",cacheKey,": returning result:",result);
 			}
 			
 			return result;

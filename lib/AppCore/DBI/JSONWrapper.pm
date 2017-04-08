@@ -126,9 +126,10 @@ package AppCore::DBI::JSONWrapper;
 	{
 		my $self = shift;
 		my $json = _to_json($self->{data});
-		$self->{inst}->set($self->{col}, $json);
-		$self->{inst}->{$self->{col}} = $json;
-		#print STDERR "Debug: save '".$self->{inst}->setup_data."' on post ".$self->{inst}."\n";
+		my $col = $self->{col};
+		$self->{inst}->set($col, $json);
+		$self->{inst}->{$col} = $json;
+# 		print STDERR "Debug: save '".$self->{inst}->$col."' on inst ".$self->{inst}."\n";
 		return $self->{inst}->update;
 	}
 }
