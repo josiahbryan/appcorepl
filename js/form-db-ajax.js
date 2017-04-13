@@ -1037,7 +1037,35 @@ $(function() {
 		}
 		
 		// Grab initial list from the server
-		primeDbCache(hookUrlRoot);
+		if(!primeDbCache.primed)
+		{
+			/***************************
+			 *	NOTE
+			 *
+			 *	In some deployments, we've had intermitant reports that when multiple fields using form-db-ajax
+			 *	are on a page, SOMETIMES clicking on one field shows the list results for another field on the page.
+			 *	We have NOT been able to reproduce this in testing in any way. However, the prevaling theory is that
+			 *	it has something to do with some sort of race condition or order-of-loading on the page with regards
+			 *	to the way the cache is primed. Basically, the theory is that somehow primeDbCache is to blame - but
+			 *	without a reproducable problem report, we can't be sure.
+			 *	
+			 *	Therefore, if priming the cache for multiple fields is connected to the root cause, then by limiting
+			 *	the cache using a singleton flag (e.g. if .primed is false), we only prime the cache for the FIRST
+			 *	field on the page - even if form-db-ajax is used in multiple places on the page.
+			 *	
+			 *	This is a TEMPORARY BAND-AID fix - this does not address the root cause. All this does is (hopefully)
+			 *	prevent the problem from affecting the users. This is simply a tradeoff between not priming the cache
+			 *	at all and the "phantom bug" - so by priming the cache for only the first field, we still prime
+			 *	for "the majority" of pages that just use form-db-ajax once per page. And if they use it more than once,
+			 *	then all this means is the subsequent fields will just do JIT loading instead of having a primed cache
+			 *	when the user clicks the selection button.
+			 *
+			 *****************************/
+			
+			
+			primeDbCache.primed = true;
+			primeDbCache(hookUrlRoot);
+		}
 		
 		var pageSize = 25;
 // 		$jq.on('change', function() {
