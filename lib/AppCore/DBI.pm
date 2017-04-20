@@ -79,6 +79,7 @@ package AppCore::DBI;
 					   $AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_USER} || DEFAULT_USER,
 					   $AppCore::DBI::DBPARAMS_CLASS_CACHE{$class}->{DEFAULT_PASS} || DEFAULT_PASS,
 					   %DBI_ATTRS);
+			
 # 			if ( $ENV{'MOD_PERL'} and !$Apache::ServerStarting ) 
 # 			{
 # 				Apache2::RequestUtil->request->pnotes( $key, $dbh );
@@ -2172,14 +2173,16 @@ package AppCore::DBI;
 		#print STDERR "dbh($db): CACHE MISS: $key\n"; # ********************************** Mark 2: ".Dumper(\%attrs);
 		
 		eval {
-		
-		#print STDERR "Connecting to db $db, host $host, user=$user, pass=$pass...\n";
-		$DB_CACHE{$key} = 
-	#$host eq '10.0.1.5' ? 
-	#		DBI::ReplicationProxy->connect($db) : 
-			DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=1,mysql_multi_statements=1",$user, $pass,{'RaiseError' => 1, %attrs});
-		#print STDERR "Connected.\n";
-		
+			
+			#print STDERR "Connecting to db $db, host $host, user=$user, pass=$pass...\n";
+			my $dbh = $DB_CACHE{$key} = 
+		#$host eq '10.0.1.5' ? 
+		#		DBI::ReplicationProxy->connect($db) : 
+				DBI->connect("DBI:mysql:database=$db;host=$host;mysql_enable_utf8=1,mysql_multi_statements=1",$user, $pass,{'RaiseError' => 1, %attrs});
+			#print STDERR "Connected.\n";
+			
+			$dbh->do("SET NAMES 'utf8mb4'");
+			
 		};
 		if($@)
 		{
