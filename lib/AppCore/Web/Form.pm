@@ -911,7 +911,7 @@ package AppCore::Web::Form;
 
 		my $DEBUG = 0;
 		
-		#print STDERR $t, "--> ".$node->node."\n";
+		print STDERR $t, "--> ".$node->node."[".$node->value."]\n" if $DEBUG;
 		
 		if(!$node->{id})
 		{
@@ -929,6 +929,7 @@ package AppCore::Web::Form;
 		
 		if($@)
 		{
+			print STDERR $t, "--> ".$node->node.": Error: $@\n" if $DEBUG;
 			AppCore::Common::print_stack_trace();
 			error("Error Loading Stack",[ map { ref $_ ? "$_" : ref $_ } ( @stack, $node ) ] );	
 		}
@@ -936,6 +937,8 @@ package AppCore::Web::Form;
 		
 		if(lc $node->node eq 'f:form')
 		{
+			
+			print STDERR $t, "--> ".$node->node.": mark1\n" if $DEBUG;
 			
 			#print STDERR "Form Frag: ".$node->is_form_fragment."\n";
 			my $FORM_TAG_NAME = lc $node->is_form_fragment eq 'true' || $node->is_form_fragment eq '1' || !$node->{attrs}->{action} ? 'div' : 'form';
@@ -974,17 +977,21 @@ package AppCore::Web::Form;
 			my $name = lc $node->node;
 			print STDERR $tt.$node->node."\n" if ($name ne '#text' || $node->value =~ /[^\s\n\r]/) && $DEBUG;
 			
+			print STDERR $t, "--> ".$node->node.": mark2\n" if $DEBUG;
+			
 			#my $path = join('->',@stack,$node->node);
 			
 			my $consumed = 0;
 			
 			if($name eq '#comment')
 			{
+				print STDERR $t, "--> ".$node->node.": mark3\n" if $DEBUG;
 				push @html, $t, "<!--" . $node->value . "-->\n";
 				$consumed = 1;
 			}
 			elsif($name eq '#text')
 			{
+				print STDERR $t, "--> ".$node->node.": mark4\n" if $DEBUG;
 				my $v = $node->value;
 				if($v =~ /[^\s\n\r]/)
 				{
@@ -1003,6 +1010,7 @@ package AppCore::Web::Form;
 # 			}
 			elsif($name =~ /^perl:(.*)$/)
 			{
+				print STDERR $t, "--> ".$node->node.": mark5\n" if $DEBUG;
 				my $val = eval($1);
 				error("Error Parsing Perl at $path",$@) if $@;
 				push @html, $t, "$val\n";
@@ -1011,6 +1019,7 @@ package AppCore::Web::Form;
 			}
 			elsif($name eq 'hr')
 			{
+				print STDERR $t, "--> ".$node->node.": mark6\n" if $DEBUG;
 				my $parent = $stack[$#stack];
 				my $is_pairtab = _is_pairtab($parent);
 				if($is_pairtab)
@@ -1051,6 +1060,7 @@ package AppCore::Web::Form;
 			}
 			elsif($name =~ /h[12345]/i)
 			{
+				print STDERR $t, "--> ".$node->node.": mark7\n" if $DEBUG;
 				my $parent = $stack[$#stack];
 				my $is_pairtab = _is_pairtab($parent);
 				if($is_pairtab)
@@ -1071,6 +1081,7 @@ package AppCore::Web::Form;
 			}
 			elsif($name =~ /br/i)
 			{
+				print STDERR $t, "--> ".$node->node.": mark8\n" if $DEBUG;
 				my $parent = $stack[$#stack];
 				my $is_pairtab = _is_pairtab($parent);
 				if($is_pairtab)
@@ -1082,6 +1093,8 @@ package AppCore::Web::Form;
 			}
 			elsif($name eq 'input' || $name eq 'row')
 			{
+				print STDERR $t, "--> ".$node->node.": mark9, bind: ", $node->bind," [$name]\n" if $DEBUG;
+				
 				my $bootstrap_flag = $form->{'enable-bootstrap'} eq 'true' || $form->{'enable-bootstrap'} eq '1';
 				
 				my $bootstrap_form_control_class = $bootstrap_flag ? 'form-control' : '';
@@ -1089,6 +1102,8 @@ package AppCore::Web::Form;
 				#if(!$node->type && ($node->ref || $node->bind))
 				if($name eq 'row' && !$node->bind)
 				{
+					print STDERR $t, "--> ".$node->node.": mark9.1, bind: ", $node->bind," [$name]\n" if $DEBUG;
+					
 					my $parent = $stack[$#stack];
 					my $is_pairtab = _is_pairtab($parent);
 					
@@ -1173,6 +1188,8 @@ package AppCore::Web::Form;
 				}
 				elsif($node->bind)
 				{
+					print STDERR $t, "--> ".$node->node.": mark9.2, bind: ", $node->bind," [$name]\n" if $DEBUG;
+					
 					my $ref = $node->ref || $node->bind;
 					
 					$ref = $node->input if $name eq 'row' && !$ref;
@@ -1269,6 +1286,8 @@ package AppCore::Web::Form;
 							"Value for '$ref' not defined in options given to post_process() or render()") if !defined $val;
 					}
 					
+					print STDERR $t, "--> ".$node->node.": mark9.3\n" if $DEBUG;
+					
 					$node->{value} = $val;
 					
 					#eval
@@ -1316,6 +1335,8 @@ package AppCore::Web::Form;
 
 					
 					my $type = $node->type;
+					
+					print STDERR $t, "--> ".$node->node.": mark9.4\n" if $DEBUG;
 					
 					if($class_obj &&
 					   UNIVERSAL::isa($class_obj, 'AppCore::DBI'))
@@ -1370,6 +1391,8 @@ package AppCore::Web::Form;
 						}
 					}
 					
+					print STDERR $t, "--> ".$node->node.": mark9.5\n" if $DEBUG;
+					
 					#print STDERR "$path: $ref ($type) [$val]\n";
 					
 					#error([$self->{field_meta}, $class_obj]);
@@ -1413,6 +1436,8 @@ package AppCore::Web::Form;
 					}
 					
 					my $empty_label = 0;
+					
+					print STDERR $t, "--> ".$node->node.": mark9.6\n" if $DEBUG;
 					
 					if(!$already_has_label || $node->{label})
 					{
@@ -1481,6 +1506,8 @@ package AppCore::Web::Form;
 # 									if !$node->{placeholder} && !$node->{ng}; # ng = no guess
 					}	
 					
+					print STDERR $t, "--> ".$node->node.": mark9.7\n" if $DEBUG;
+					
 # 					error("Error",{
 # 						already_has_label => $already_has_label,
 # 						html => encode_entities(join('',@html))
@@ -1517,6 +1544,8 @@ package AppCore::Web::Form;
 					
 					if($readonly)
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.8\n" if $DEBUG;
+						
 						my $class  = $node->class;
 						#my $source = $node->source;
 						my $val_stringified = $val;
@@ -1560,6 +1589,8 @@ package AppCore::Web::Form;
 					}
 					elsif($type eq 'text')
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.9\n" if $DEBUG;
+						
 						my $rows = $node->rows || 10;
 						my $cols = $node->cols || 40;
 						push @html, $t."\t <textarea"
@@ -1581,6 +1612,8 @@ package AppCore::Web::Form;
 					}
 					elsif($type eq 'database' || $type eq 'enum')
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.10\n" if $DEBUG;
+						
 						my $class  = $node->class;
 						my $source = $node->source;
 						
@@ -1588,6 +1621,7 @@ package AppCore::Web::Form;
 						
 						if($render eq 'ajax_input')
 						{
+							print STDERR $t, "--> ".$node->node.": mark9.11 [$class]\n" if $DEBUG;
 							#error("Ajax Input Not Implemented","Error in $path: Ajax Input not implemented yet.");
 							
 							if(!$class)
@@ -1787,11 +1821,12 @@ package AppCore::Web::Form;
 # 								push @html, $t,"\t<script>setTimeout(function(){ajax_verify(\$('#$label_id'),\"$class\",\"$source\")},1000)</script>\n";
 # 							}
 
-							
+							print STDERR $t, "--> ".$node->node.": mark9.12\n" if $DEBUG;
 							
 						}
 						elsif($render eq 'radio')
 						{
+							print STDERR $t, "--> ".$node->node.": mark9.13\n" if $DEBUG;
 							error("Cannot Render Database as Radio","Error in $path: Cannot render a database model item as a radio button") if $type eq 'database';
 							
 							my @list;
@@ -1875,6 +1910,7 @@ package AppCore::Web::Form;
 						}
 						elsif($render eq 'select')
 						{
+							print STDERR $t, "--> ".$node->node.": mark9.14\n" if $DEBUG;
 # 							my $live_filter = $node->filter;
 # 							my ($lv_other_item,$lv_other_itemid, $lv_other_attr, $lv_my_attr, $lv_other_noun, $lv_my_noun);
 # 							
@@ -2101,6 +2137,7 @@ package AppCore::Web::Form;
 								."\n$t</select>\n";
 							push @html, "</div>" if $bootstrap_flag;
 								
+							print STDERR $t, "--> ".$node->node.": mark9.15\n" if $DEBUG;
 							
 							if($type eq 'database')
 							{
@@ -2154,9 +2191,13 @@ package AppCore::Web::Form;
 							push @html, ($auto_hint && $hint_pos eq 'below' ? "<br>" : "")
 									."<span class='hint' id='hint_$label_id' style='display:none'></span>";
 						}
+						
+						print STDERR $t, "--> ".$node->node.": mark9.16\n" if $DEBUG;
 					}
 					elsif($render eq 'div' || $render eq 'span')
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.17\n" if $DEBUG;
+						
 						my $nn = $render eq 'div' ? 'div' : 'span';
 						push @html, "$t\t $prefix<$nn "
 							.($format ? "f:format="._quote($format)." ":"")
@@ -2168,9 +2209,18 @@ package AppCore::Web::Form;
 					}
 					elsif($type eq 'range')
 					{
-						my $min = $node->min || 0;
-						my $max = $node->max || 100;
-						my $step = $node->step || 10;
+						print STDERR $t, "--> ".$node->node.": mark9.18\n" if $DEBUG;
+						
+						my $min  = $node->{attrs}->{min}+0  ||   0;
+						my $max  = $node->{attrs}->{max}+0  || 100;
+						my $step = $node->{attrs}->{step}+0 ||  10;
+# 						
+# 						if(ref $max)
+# 						{
+# 							print Dumper $max;
+# 							die 1;
+# 						}
+						$max = 0 if ref $max;
 						
 						push @html, "$prefix<select data-type='range' "
 							." name='$ref'"
@@ -2181,6 +2231,9 @@ package AppCore::Web::Form;
 						
  						my $last_step = 0;
  						my $cur_step  = 0;
+ 						
+ 						print STDERR $t, "--> ".$node->node.": mark9.18.1 [ $min - $max / $step ]\n" if $DEBUG;
+ 						
  						push @html, "$prefix\t<option>-</option>\n";
  						for ($cur_step = $min; $cur_step <= $max; $cur_step += $step)
  						{
@@ -2191,11 +2244,15 @@ package AppCore::Web::Form;
 						
 						push @html, "</select>";
 						
+						print STDERR $t, "--> ".$node->node.": mark9.18.99\n" if $DEBUG;
+						
 						# Disabling for now due to IExplore bug
 						#push @html, "<script>\$('#$label_id').ext = new Ext.form.TextArea({applyTo:'$label_id',grow:true});</script>" if $self->{_extjs} && !$extjs_disable;
 					}
 					elsif($type eq 'bool')
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.19\n" if $DEBUG;
+						
 						push @html, "$prefix<input type='checkbox' "
 							." name='$ref'"
 							." id='$label_id'"
@@ -2232,6 +2289,8 @@ package AppCore::Web::Form;
 					}
 					else # All other rendering types (string, etc)
 					{
+						print STDERR $t, "--> ".$node->node.": mark9.20\n" if $DEBUG;
+						
 						#push @html, "$prefix<div style='display:inline'><input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 'text')."' f:bind='$label_id' "
 						push @html, $t."\t $prefix<input name='$ref' type='".($render eq 'hidden' ? 'hidden' : 
 								$node->{attrs}->{'type-hint'} ? $node->{attrs}->{'type-hint'} : 'text')."' "
@@ -2258,6 +2317,8 @@ package AppCore::Web::Form;
 							push @html, ($suffix ? "<label for='$label_id' class='form-input-suffix'>${TR_PREFIX}$suffix${TR_SUFFIX}</label>" :"")."\n";
 						}
 						push @html, '</div><!--/.fg-line-->' if $bootstrap_flag;
+						
+						print STDERR $t, "--> ".$node->node.": mark9.21\n" if $DEBUG;
 						
 						unless($hidden)
 						{
@@ -2338,13 +2399,15 @@ package AppCore::Web::Form;
 
 						};
 						
-						
+						print STDERR $t, "--> ".$node->node.": mark9.22\n" if $DEBUG;
 					}
 					
 					if($node->label
 						&& $type ne 'bool'
 						&& $node->{attrs}->{'label-location'} eq 'right')
 					{
+						
+						print STDERR $t, "--> ".$node->node.": mark9.23\n" if $DEBUG;
 						
 						my $text = $node->label;
 						$text=~s/(^\s+|\s+$)//g;
@@ -2384,6 +2447,7 @@ package AppCore::Web::Form;
 						push @html, ($hint_pos eq 'below' ? '<br>': '') . "<span class='hint'>${TR_PREFIX}$hint${TR_SUFFIX}</span>"; # .($is_pairtab ? "" : "<br>");
 					}
 					
+					print STDERR $t, "--> ".$node->node.": mark9.24\n" if $DEBUG;
 					
 # 					push @html, "\n$t<script>FormMgr.regField('$label_id',\$('#$label_id'))</script>";
 # 					my $calc = $node ? $node->calculate : undef;
@@ -2414,10 +2478,16 @@ package AppCore::Web::Form;
 						type           => $type,
 					};
 					
+					print STDERR $t, "--> ".$node->node.": mark9.25\n" if $DEBUG;
+					
 				}
+				
+				print STDERR $t, "--> ".$node->node.": mark9.26\n" if $DEBUG;
 			}
 			elsif($name eq 'panel')
 			{
+				print STDERR $t, "--> ".$node->node.": mark10\n" if $DEBUG;
+				
 				my $lay = $node->layout;
 				
 				my $parent = $stack[$#stack];
