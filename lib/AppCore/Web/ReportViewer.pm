@@ -169,7 +169,7 @@ package AppCore::Web::ReportViewer;
 	
 	sub generate_report
 	{
-		my ($self, $arg_hash, $ignore_incomplete, $pagination_url_base) = @_;
+		my ($self, $arg_hash, $ignore_incomplete, $pagination_url_base, $disable_render) = @_;
 		
 		# NOTE: If $pagination_url_base is defined,
 		# generate_report() will ATTEMPT to paginate
@@ -261,6 +261,8 @@ package AppCore::Web::ReportViewer;
 			
 			@report_columns = @tmp_list;
 		}
+		
+		$arg_data_complete = 0 if $disable_render;
 		
 		# Get the data
 		my @report_data;
@@ -538,6 +540,8 @@ package AppCore::Web::ReportViewer;
 	{
 		my $self = shift;
 		
+		my $disable_render = $self->{disable_render};
+		
 		my $req = $self->req;
 		
 		my $report = $self->report_model;
@@ -620,7 +624,10 @@ package AppCore::Web::ReportViewer;
 			undef, 
 			
 			# enable paging - this will be undef if output_format not HTML
-			$pagination_url_base 
+			$pagination_url_base,
+			
+			# If true, only compiles arg hash, doesn't execute SQL or certain data hooks
+			$disable_render
 		);
 		
 		# Output the data
