@@ -2341,12 +2341,28 @@ package AppCore::Web::Form;
 								my $jquery = qq`
 								
 								\$(function() {
-									\$( "#${label_id}" ).datepicker({
+
+									var \$label_id = \$("#${label_id}");
+
+									// Make the datepicker compatible with all browsers - BA20171117
+									var isIE 	   = false || document.documentMode;
+									var isEdge     = !isIE && window.StyleMedia;
+									var isSafari   = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
+
+									if(isEdge || isSafari) {
+										if(\$label_id.attr('type') == 'date') {
+											\$label_id.attr('type', 'text');
+											\$label_id.css('text-align', 'center');
+										}
+									}
+									
+									\$label_id.datepicker({
 										showOn: "both",
 										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "//jqueryui.com/resources/demos/datepicker/images/calendar.gif",
 										buttonImageOnly: true,
 										dateFormat: "yy-mm-dd",
 									});
+
 								});
 								
 								`;
