@@ -934,7 +934,15 @@ package AppCore::Web::Form;
 			AppCore::Common::print_stack_trace();
 			error("Error Loading Stack",[ map { ref $_ ? "$_" : ref $_ } ( @stack, $node ) ] );	
 		}
-		
+
+		# Check browser types and set them in window object - BA 20171122
+		push @html, '<script>
+			$(function() {
+				window.isIE  	= false || document.documentMode;
+				window.isEdge   = !isIE && window.StyleMedia;
+				window.isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window["safari"] || (typeof safari !== "undefined" && safari.pushNotification));
+			});
+		</script>';
 		
 		if(lc $node->node eq 'f:form')
 		{
@@ -2351,11 +2359,7 @@ package AppCore::Web::Form;
 									if(!$isMobile) {
 
 										// Make the datepicker compatible with all browsers - BA20171117
-										var isIE 	   = false || document.documentMode;
-										var isEdge     = !isIE && window.StyleMedia;
-										var isSafari   = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
-
-										if(isEdge || isSafari) {
+										if(window.isEdge || window.isSafari) {
 											if(\$label_id.attr('type') == 'date') {
 												\$label_id.attr('type', 'text');
 												\$label_id.css('text-align', 'center');
