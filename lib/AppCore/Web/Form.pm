@@ -84,6 +84,7 @@ package AppCore::Web::Form;
 	use AppCore::XML::SimpleDOM;
 	use JSON qw/encode_json decode_json/;
 	use Digest::MD5 qw/md5_hex md5_base64/;
+	use AppCore::Web::MobileDetect;
 	
 	# Can be set by users of this class to wrap labels in a translation tag for marking phrases to be translated
 	our $TR_PREFIX = '';
@@ -933,7 +934,15 @@ package AppCore::Web::Form;
 			AppCore::Common::print_stack_trace();
 			error("Error Loading Stack",[ map { ref $_ ? "$_" : ref $_ } ( @stack, $node ) ] );	
 		}
-		
+
+		# Check browser types and set them in window object - BA 20171122
+		push @html, '<script>
+			$(function() {
+				window.isIE  	= false || document.documentMode;
+				window.isEdge   = !isIE && window.StyleMedia;
+				window.isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window["safari"] || (typeof safari !== "undefined" && safari.pushNotification));
+			});
+		</script>';
 		
 		if(lc $node->node eq 'f:form')
 		{
@@ -2337,6 +2346,8 @@ package AppCore::Web::Form;
 								#push @html, "<script>\$('#$label_id').ext = new Ext.ux.form.DateTime({applyTo:'$label_id',dateFormat:'Y-m-d',timeFormat:'H:i:s'});var field=\$('#$label_id');field.name='$ref';field.style.display='none';</script>";
 								
 								#push @html, "<script>\$('#$label_id').ext = EAS.Data.XType.Date.applyTo('$label_id')</script>";
+
+								my $isMobile = ismobile($ENV{HTTP_USER_AGENT});
 								
 								my $jquery = qq`
 								
@@ -2344,24 +2355,28 @@ package AppCore::Web::Form;
 
 									var \$label_id = \$("#${label_id}");
 
-									// Make the datepicker compatible with all browsers - BA20171117
-									var isIE 	   = false || document.documentMode;
-									var isEdge     = !isIE && window.StyleMedia;
-									var isSafari   = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window['safari'] || (typeof safari !== 'undefined' && safari.pushNotification));
+									// Check if device is mobile, then don't add jquery datepicker to field because mobiles have their own calendars - BA 20171119
+									if(!$isMobile) {
 
-									if(isEdge || isSafari) {
-										if(\$label_id.attr('type') == 'date') {
-											\$label_id.attr('type', 'text');
-											\$label_id.css('text-align', 'center');
+										// Make the datepicker compatible with all browsers - BA20171117
+										if(window.isEdge || window.isSafari) {
+											if(\$label_id.attr('type') == 'date') {
+												\$label_id.attr('type', 'text');
+												\$label_id.css('text-align', 'center');
+											}
 										}
-									}
 									
-									\$label_id.datepicker({
-										showOn: "both",
-										buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "//jqueryui.com/resources/demos/datepicker/images/calendar.gif",
-										buttonImageOnly: true,
-										dateFormat: "yy-mm-dd",
-									});
+										\$label_id.datepicker({
+											showOn: "both",
+											buttonImage: window.CALENDAR_ICON ? window.CALENDAR_ICON : "//jqueryui.com/resources/demos/datepicker/images/calendar.gif",
+											buttonImageOnly: true,
+											dateFormat: "yy-mm-dd",
+										});
+										
+									}
+									// Handle fields which have 'f:type='date', but type='text'
+									else
+										\$label_id.attr('type', 'date');
 
 								});
 								
