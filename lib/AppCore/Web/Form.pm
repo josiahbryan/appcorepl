@@ -935,14 +935,6 @@ package AppCore::Web::Form;
 			error("Error Loading Stack",[ map { ref $_ ? "$_" : ref $_ } ( @stack, $node ) ] );	
 		}
 
-		# Check browser types and set them in window object - BA 20171122
-		push @html, '<script>
-			$(function() {
-				window.isIE  	= false || document.documentMode;
-				window.isEdge   = !isIE && window.StyleMedia;
-				window.isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window["safari"] || (typeof safari !== "undefined" && safari.pushNotification));
-			});
-		</script>';
 		
 		if(lc $node->node eq 'f:form')
 		{
@@ -969,6 +961,15 @@ package AppCore::Web::Form;
 # 			push @html, $tmpl->output;
 			
 			push @html, "\t\t<script src='/appcore/js/form-db-ajax.js?201704112.1'></script>\n";
+			
+			# Check browser types and set them in window object - BA 20171122
+			push @html, '<script>
+				$(function() {
+					window.isIE  	= false || document.documentMode;
+					window.isEdge   = !isIE && window.StyleMedia;
+					window.isSafari = /constructor/i.test(window.HTMLElement) || (function (p) { return p.toString() === "[object SafariRemoteNotification]"; })(!window["safari"] || (typeof safari !== "undefined" && safari.pushNotification));
+				});
+			</script>';
 			
 			foreach my $child ( @{$node->children} )
 			{
