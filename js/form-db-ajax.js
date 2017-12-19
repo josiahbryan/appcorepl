@@ -1304,7 +1304,7 @@ $(function() {
 		showItemChooser.allowResetItem = allowResetItem;
 		showItemChooser.pauseKeyHandling = true;
 
-		console.error("[showItemChooser]", { $widget, $elm, hookUrlRoot, allowNewItem, prefill, allowResetItem });
+		//console.error("[showItemChooser]", { $widget, $elm, hookUrlRoot, allowNewItem, prefill, allowResetItem });
 
 		setTimeout(function() {
 			showItemChooser.pauseKeyHandling = false;
@@ -1426,7 +1426,7 @@ $(function() {
 			$this.attr('data-url'),
 			$this.attr('data-bind-uuid'),
 			$this.attr('data-allow-new') == 'true',
-			$this.attr('data-allow-reset') == 'true',
+			$this.attr('data-allow-reset') == 'true'
 		);
 	});
 
@@ -1438,7 +1438,7 @@ $(function() {
 			false,
 			$this.attr('data-allow-new') == 'true',
 			null,
-			$this.attr('data-allow-reset') == 'true',
+			$this.attr('data-allow-reset') == 'true'
 		);
 	});
 
