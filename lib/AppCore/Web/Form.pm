@@ -1709,6 +1709,7 @@ package AppCore::Web::Form;
 											."data-url="._quote($url).' '
 											."data-bind-uuid="._quote($bind_uuid).' '
 											."data-url-new="._quote($val_url_new).' '
+											."data-allow-new=".($node->creatable ? 'true' : 'false').' '
 											."data-allow-reset=".($node->resetable ? 'true' : 'false').' '
 											.($length ? "size=$length ":"")
 											.($node->placeholder ? "placeholder='".$node->placeholder."'":"")
