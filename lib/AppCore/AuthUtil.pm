@@ -145,7 +145,7 @@ package AppCore::AuthUtil;
 		
 		my $redirect = shift;
 		
-		my $tk = getcookie(TICKET_COOKIE); #session(TICKET_COOKIE); #getcookie(TICKET_COOKIE); #$ctx->auth_ticket;
+		my $tk = getcookie(TICKET_COOKIE) || $args->{auth_ticket}; #session(TICKET_COOKIE); #getcookie(TICKET_COOKIE); #$ctx->auth_ticket;
 		#print STDERR "authenticate(): cookie:'$tk'\n";
 		
 		debug("cookie = '$tk'");
