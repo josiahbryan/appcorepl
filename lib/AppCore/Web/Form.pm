@@ -509,6 +509,18 @@ package AppCore::Web::Form;
 								if $meta->{type} =~ /(date|time)/ &&
 								   $req_val      =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
 
+							# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
+							undef $req_val
+								if $meta->{type} =~ /(int|double|float|real)/ &&
+								   $req_val      eq '';
+
+							# Set default value if not defined and meta specifies not null and a default
+							$req_val = $meta->{default}
+								if !defined $req_val &&
+									defined $meta->{null} &&
+									!$meta->{null} &&
+									defined $meta->{default};
+
 							$class_obj->set($class_key, $req_val);
 
 							# Used to update() below on $class_obj
