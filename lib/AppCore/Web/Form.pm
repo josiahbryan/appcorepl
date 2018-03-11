@@ -511,7 +511,7 @@ package AppCore::Web::Form;
 
 							# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
 							undef $req_val
-								if $meta->{type} =~ /(int|double|float|real)/ &&
+								if $meta->{type} =~ /(int|double|float|real|date|datetime|time)/ &&
 								   $req_val      eq '';
 
 							# Set default value if not defined and meta specifies not null and a default
