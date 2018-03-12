@@ -385,10 +385,14 @@ package AppCore::DBI;
 	sub audit_values
 	{
 		my $self = shift;
+		my $pri  = $self->primary_column;
 
 		foreach my $meta (@{ $self->meta->{schema} || [] }) {
-
 			my $field   = $meta->{field};
+
+			# Don't audit primary_column, should never change
+			next if $field eq $pri;
+
 			my $req_val = $self->get($field);
 
 			my $audited_val = $self->audit_value($req_val, $meta);
