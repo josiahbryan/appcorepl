@@ -503,27 +503,8 @@ package AppCore::Web::Form;
 					{
 						eval
 						{
-							my $meta = $class_obj->field_meta($class_key);
-
-							undef $req_val
-								if $meta->{type} =~ /(date|time)/ &&
-								   $req_val      =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
-
-							# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
-							undef $req_val
-								if $meta->{type} =~ /(int|double|float|real|date|time)/ &&
-								   $req_val      eq '';
-
-							#die Dumper [$req_val, $meta]
-							#	if $class_key eq 'repeat_end_date';
-
-							# Set default value if not defined and meta specifies not null and a default
-							$req_val = $meta->{default}
-								if !defined $req_val &&
-									defined $meta->{null} &&
-									!$meta->{null} &&
-									defined $meta->{default};
-
+							# Value auditing against the schema has been moved internal
+							# to AppCore::DBI in before_update() triggers
 							$class_obj->set($class_key, $req_val);
 
 							# Used to update() below on $class_obj

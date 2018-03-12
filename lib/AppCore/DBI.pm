@@ -367,32 +367,12 @@ package AppCore::DBI;
 
 			# Add trigger to audit data inserted against schema for empty strings and defaults
 			$class->add_trigger(before_create  => sub {
-				my $self = shift;
+				shift->audit_values();
+			});
 
-				foreach my $meta (@{ $self->meta->{schema} || [] }) {
-
-					my $field   = $meta->{field};
-					my $req_val = $self->get($field);
-
-					undef $req_val
-						if $meta->{type} =~ /(date|time)/ &&
-						   $req_val      =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
-
-					# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
-					undef $req_val
-						if $meta->{type} =~ /(int|double|float|real|date|time)/ &&
-						   $req_val      eq '';
-
-					# Set default value if not defined and meta specifies not null and a default
-					$req_val = $meta->{default}
-						if !defined $req_val &&
-							defined $meta->{null} &&
-							!$meta->{null} &&
-							defined $meta->{default};
-
-					$self->set($field, $req_val);
-				};
-
+			# Add trigger to audit data updated against schema for empty strings and defaults
+			$class->add_trigger(before_update  => sub {
+				shift->audit_values();
 			});
 
 			# Prevents re-audits on each meta() call
@@ -400,6 +380,45 @@ package AppCore::DBI;
 		}
 
 		return $meta;
+	}
+
+	sub audit_values
+	{
+		my $self = shift;
+
+		foreach my $meta (@{ $self->meta->{schema} || [] }) {
+
+			my $field   = $meta->{field};
+			my $req_val = $self->get($field);
+
+			my $audited_val = $self->audit_value($req_val, $meta);
+
+			$self->set($field, $audited_val);
+		};
+	}
+
+	# audit_value() used above by audit_values()
+	sub audit_value#($req_val, $meta)
+	{
+		my ($self, $req_val, $meta) = @_;
+
+		undef $req_val
+			if $meta->{type} =~ /(date|time)/ &&
+			   $req_val      =~ /^(0000-00-00|00:00:00|0000-00-00 00:00:00)$/;
+
+		# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
+		undef $req_val
+			if $meta->{type} =~ /(int|double|float|real|date|time)/ &&
+			   $req_val      eq '';
+
+		# Set default value if not defined and meta specifies not null and a default
+		$req_val = $meta->{default}
+			if !defined $req_val &&
+				defined $meta->{null} &&
+				!$meta->{null} &&
+				defined $meta->{default};
+
+		return $req_val;
 	}
 
 	sub has_many
