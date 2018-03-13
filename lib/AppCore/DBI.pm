@@ -412,7 +412,7 @@ package AppCore::DBI;
 
 		# MariaDB >=10.2 gives "incorrect X value" if setting int/double to an empty string
 		undef $req_val
-			if $meta->{type} =~ /(int|double|float|real|date|time)/ &&
+			if $meta->{type} =~ /(int|double|float|real|date|time|enum)/ &&
 			   $req_val      eq '';
 
 		# Set default value if not defined and meta specifies not null and a default
