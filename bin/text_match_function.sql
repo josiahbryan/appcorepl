@@ -16,6 +16,10 @@ BEGIN
 	ELSE  
 		SET max_len = s2_len;  
 	END IF; 
+	
+	if max_len = 0 then
+		return 0;
+	end if;
     
 	if lower(s1) like concat('%',lower(s2),'%') then
 		return round((1 - (abs(s1_len - s2_len) / max_len)) * 100);
