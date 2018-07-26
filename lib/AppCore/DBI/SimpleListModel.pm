@@ -331,7 +331,7 @@ package AppCore::DBI::SimpleListModel;
 		my $ranking_enabled =
 			$self->{search_ranking} &&
 			length($self->filter) > 0;
-		
+
 		if($ranking_enabled)
 		{
 			($rank_column, $rank_column_args) = $self->create_rank_column(undef,1);
@@ -510,7 +510,7 @@ package AppCore::DBI::SimpleListModel;
 
 		#use AppCore::Common;
 		#die Dumper \@$query_args;
-# 		die AppCore::Common::debug_sql($sql_table, @$query_args);# if $debug;
+		# die AppCore::Common::debug_sql($sql_table, @$query_args);# if $debug;
 		#print STDERR "SQL: ".$sql_table."\n". ($query_args ? "Args: ".join(',',map{$dbh->quote($_)} @$query_args)."\n" : "NO ARGS\n");
 
 		#print STDERR AppCore::Common::get_stack_trace();

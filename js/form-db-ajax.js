@@ -87,13 +87,13 @@ $(function() {
 
 			if(result)
 			{
-				console.log("resultCache: key:",cacheKey,": storing result:",result);
+				// console.log("resultCache: key:",cacheKey,": storing result:",result);
 				cache[cacheKey] = result;
 			}
 			else
 			{
 				result = cache[cacheKey];
-				console.log("resultCache: key:",cacheKey,": returning result:",result);
+				// console.log("resultCache: key:",cacheKey,": returning result:",result);
 			}
 
 			return result;

@@ -397,6 +397,8 @@ package AppCore::DBI;
 
 			my $audited_val = $self->audit_value($req_val, $meta);
 
+			# print STDERR "[audit_values] $field:{$req_val}=>{$audited_val}\n";
+
 			$self->set($field, $audited_val);
 		};
 	}
