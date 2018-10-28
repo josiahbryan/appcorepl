@@ -21,7 +21,7 @@ package AppCore::XML::SimpleDOM;
 	my %cache;
 
 =head1 Synopsis
-Example: 
+Example:
 	my $dom1 = AppCore::XML::SimpleDOM->parse_xml('/my/config.xml')
 	my $usage = AppCore::XML::SimpleDOM->parse_xml('<a_bunch_of><xml><data usage="just for demo"/></xml></a_bunch_of>')->xml->data->usage;
 =cut
@@ -32,16 +32,16 @@ Example:
 
 		my $class = shift;
 		my $file  = shift;
-		
+
 		return $class->new_node(load_xml($file)->{root});
 	}
 
-	sub new_node 
+	sub new_node
 	{
 		my $that  = shift;
 		my $class = ref($that) || $that;
 		my $node = shift;
-			
+
 		#return $cache{$node} if defined $cache{$node};
 		#die "Got past cache for $node\n";
 		#print "Got past cache for node $node\n";
@@ -54,9 +54,9 @@ Example:
 				$node->{$_} = $node->{attrs}->{$_} if !defined $node->{$_};
 			}
 		}
-		
+
 		return $node;
-	}	
+	}
 
 	use Data::Dumper;
 
@@ -71,9 +71,9 @@ Example:
 
 		my $name = lc $node->node;
 		#print STDERR "to_xml: $t $name\n";
-		
+
 		my @xml;
-		
+
 		push @xml, $t, "<".$name. (keys %{$node->attrs} ? " " : "");
 		push @xml, join (" ", map { $_ . "=\"".encode_entities($node->attrs->{$_})."\"" } keys %{$node->attrs});
 
@@ -97,22 +97,22 @@ Example:
 		{
 			push @xml, "/>\n";
 		}
-		
+
 		return join '', @xml;
 	}
 
 
-	sub AUTOLOAD 
+	sub AUTOLOAD
 	{
 		my $node = shift;
 		#my $type = ref($node)
 		#	or croak "$node is not an object";
-		
+
 		my $name = shift || $AUTOLOAD;
 		$name =~ s/.*:://;   # strip fully-qualified portion
-		
+
 		return if $name eq 'DESTROY';
-		
+
 # 		print STDERR "DEBUG: AUTOLOAD() [$node] ACCESS $name\n"; # if $debug;
 		return $node->get($name);
 	}
@@ -124,9 +124,9 @@ Example:
 
 		#my $debug = 1 if $name eq 'status';
 		#print STDERR "DEBUG: get() [$node] ACCESS $name\n"; # if $debug;
-		
+
 		my $is_hash = UNIVERSAL::isa($node,'HASH'); #$node =~ /HASH/;
-		
+
 		if($name eq 'children')
 		{
 			my @kids = $is_hash ? @{$node->{children}} : @$node;
@@ -134,16 +134,16 @@ Example:
 			$_ = $node->new_node($_) foreach @kids;
 			@kids = grep { $_->{node} ne '#text' || $_->{value} =~ /[^\s\n\r]/ } @kids;
 			$node->{children} = \@kids;
-			
+
 			return $node unless $is_hash;
 		}
-		
+
 		if($is_hash)
 		{
 			return $node->{$name}          || $node->{lc $name}          if defined $node->{$name}          || defined $node->{lc $name};
 			return $node->{attrs}->{$name} || $node->{attrs}->{lc $name} if defined $node->{attrs}->{$name} || defined $node->{attrs}->{lc $name};
 		}
-		
+
 		#print STDERR "DEBUG: $node: $name...\n" if $debug;
 		#print STDERR "DEBUG: $node: [".ref($node)."]\n" if $debug;
 		#print "DEBUG: [$node] ACCESS $name - mark 2\n" if $debug;
@@ -151,22 +151,22 @@ Example:
 		foreach(@kids)
 		{
 			#return $node->new_node($_) if $_->{node} eq $name || $_->{attrs}->{id} eq $name || $_->{attrs}->{name} eq $name;
-			if ($_->{node} eq $name || $_->{attrs}->{id} eq $name || $_->{attrs}->{name} eq $name)
+			if (lc $_->{node} eq lc $name || $_->{attrs}->{id} eq $name || lc $_->{attrs}->{name} eq lc $name)
 			{
 				#AppCore::Common::print_stack_trace;
 				my $x = $node->new_node($_);
 				#print Dumper $x;
 				return $x;
-				
+
 			}
-			
+
 		}
-		
+
 		#print "DEBUG: [$node] ACCESS $name - mark 3\n" if $debug;
-		
+
 		if($name =~ /^.+s$/)
 		{
-			my $m = $name; 
+			my $m = $name;
 			$m =~ s/s$//g;
 			my @list;
 			foreach(@kids)
@@ -175,10 +175,10 @@ Example:
 			}
 			return $node->new_node(\@list) if @list;
 		}
-		
+
 		#croak "Unknown field '$name'"; # for node '$node->node'";
 		return undef;
-	}  
+	}
 
 
 
@@ -188,66 +188,66 @@ Example:
 
 	sub load_xml
 	{
-		my $file = shift;	
+		my $file = shift;
 		my $name = shift;
-		
+
 		#print STDERR "file=$file, name=$name\n";
-		
+
 		if(!-f $file)
 		{
 			warn "Invalid file ".substr($file,0,255).", trying to load as XML" unless index($file,'>') > 0;
 			#AppCore::Common::print_stack_trace();
 			#AppCore::Web::Common::error("data",[$file,$name,-f $file]);
 			my $parser = new XML::DOM::Parser;
-			
+
 			$file =~ s/^.*?<\?xml[^\>]+>//g;
-			
-			
+
+
 			my $doc = $parser->parse ($file);
-			
+
 			#die Dumper($doc);
-			
+
 			my %id_hash;
 			my $root = shift @{node_to_list($doc,\%id_hash)};
-			
+
 			#print Dumper $list,\%id_hash;
-			
+
 			my $rep = {root=>$root,tags=>\%id_hash, _mtime => undef};
-			
+
 			$doc->dispose;
-			
+
 			return $rep;
 		}
 
 		my $cache = '/tmp/eas-xml-simpledom-'.md5_hex($file).'.cache.storable';
-		
+
 		#print "Parsing XML $file...\n";
-		
+
 		die "Invalid file '$file'" if !-f $file;
-		
+
 		my $rep = -f $cache ? retrieve($cache) : undef;
-		
+
 		my $mtime = stat($file)->mtime + 199;
-		
+
 		#print STDERR "my mtime: $mtime, rep->{_mtime} is $rep->{_mtime}\n";
-		
+
 		if(!$rep || $rep->{_mtime} != $mtime)
 		{
 			#print STDERR "[-CACHE MISS] for $file, \$cache=$cache\n";
 			my $parser = new XML::DOM::Parser;
 			my $doc = $parser->parsefile ($file);
-			
+
 			#die Dumper($doc);
-			
+
 			my %id_hash;
 			my $root = shift @{node_to_list($doc,\%id_hash)};
-			
+
 			#print Dumper $list,\%id_hash;
-			
+
 			$rep = {root=>$root,tags=>\%id_hash, _mtime => $mtime};
-			
+
 			$doc->dispose;
-			
+
 			store $rep, $cache;
 			system("chmod 777 $cache");
 		}
@@ -255,9 +255,9 @@ Example:
 		{
 			#print STDERR "[+CACHE HIT] for $file, \$cache=$cache\n";
 		}
-		
-		
-		return $rep;	
+
+
+		return $rep;
 	}
 
 
@@ -265,7 +265,7 @@ Example:
 	{
 		my $byid = shift;
 		my $ref = shift;
-		
+
 		if(ref $ref eq 'HASH')
 		{
 			#print STDERR "HASH:".Dumper $ref;
@@ -288,22 +288,22 @@ Example:
 	{
 		my $master = shift;
 		my $hash = shift || {};
-		
+
 		my @nodes = $master->getChildNodes;
-		
+
 		my @list;
-		
+
 		foreach my $node (@nodes)
 		{
 			my $ref = {
 				node	=>	$node->getNodeName,
 				value	=>	$node->getNodeValue,
 			};
-			
+
 			my @attribs;
-			
+
 			#print "Name: ",$node->getNodeName,", Value: ",$node->getNodeValue,"\n";
-			
+
 			my $map = $node->getAttributes();
 			if($map)
 			{
@@ -314,17 +314,17 @@ Example:
 					push @attribs, { attrib => $attr->getNodeName, value => $attr->getNodeValue };
 				}
 			}
-			
+
 			my %map = map {$_->{attrib}=>$_->{value}} @attribs;
-			
+
 			$ref->{attrs}    = \%map;
 			#$ref->{attrlist} = \@attribs;
-			
+
 			$ref->{children} = node_to_list($node,$hash);
-			
+
 			if(!$ref->{value})
 			{
-				
+
 				my @text;
 				my @real;
 				foreach my $child (@{$ref->{children}})
@@ -338,7 +338,7 @@ Example:
 						push @real, $child;
 					}
 				}
-				
+
 				if(!@real && @text)
 				{
 					$ref->{children} = \@real;
@@ -350,12 +350,12 @@ Example:
 					#$ref->{children} = \@kids;
 				}
 			}
-			
+
 			$hash->{$map{id}} = $ref if defined $map{id};
-			
+
 			push @list, $ref;
 		}
-		
+
 		#@list = grep { $_->{node} ne '#text' || $_->{value} && $_->{value} =~ /[^\s\n\r]/ } @list;
 		return \@list;
 	}
@@ -363,26 +363,25 @@ Example:
 	sub find_tags
 	{
 		my $node = shift;
-		
+
 		$node = $node->{root} if exists $node->{root};
-		
+
 		my $tag = shift;
-		
+
 		my $one = shift || 0;
-		
+
 		#print "Search[$tag], At[$node->{node}]\n";
 		my @tags;
 		push @tags, $node if $node->{node} eq $tag;
 		return @tags if @tags && $one;
-		
+
 		foreach my $child (@{$node->{children}})
 		{
 			push @tags, find_tags($child,$tag,$one);
 			return @tags if @tags && $one;
 		}
-		
+
 		return @tags;
 	}
 };
 1;
-

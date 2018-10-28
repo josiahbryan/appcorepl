@@ -3037,19 +3037,20 @@ package AppCore::DBI;
 
 	}
 
-	sub stringify_into_hash#($dest_hash,$key_prefix)
+	sub stringify_into_hash#($dest_hash, $key_prefix, $expand_linked=1, $columns)
 	{
 		my $self       = shift;
 
 		my $dest_hash  = shift || {};
 		my $prefix     = shift || undef;
 		my $expand_linked = shift;
+		my $columns = shift || [$self->columns];
 
 		$expand_linked = 1 if !defined $expand_linked;
 
 		my $key_prefix = $prefix ? $prefix.'_' :'';
 
-		foreach my $col_name ($self->columns)
+		foreach my $col_name (@{$columns || []})
 		{
 			my $col_val    = $self->get($col_name);
 			my $param_name = $key_prefix.$col_name;

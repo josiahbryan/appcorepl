@@ -21,45 +21,45 @@ BEGIN
 
 package AppCore::Common;
 {
-	
+
 	use strict;
-	
+
 	use AppCore::RunContext;
 	#use AppCore::EmailQueue;
-	
+
 	use Data::Dumper;
 	use DateTime;
-	
+
 	require Exporter;
 	use vars qw/@ISA @EXPORT/;
 	@ISA = qw(Exporter);
-	
+
 	@EXPORT = qw/
-		Dumper 
-		context 
-		
-		pad 
-		rpad 
-		min 
+		Dumper
+		context
+
+		pad
+		rpad
+		min
 		max
 		commify
-		trim_spaces 
-		
-		called_from 
+		trim_spaces
+
+		called_from
 		print_stack_trace
-		 
-		if_defined 
-		is_print 
-		inlist 
+
+		if_defined
+		is_print
+		inlist
 		in_acl_list
 		peek
-		 
+
 		send_email
-		
-		date_math 
-		stamp 
+
+		date_math
+		stamp
 		nice_date
-		date 
+		date
 		dt_date
 		utc_date
 		simple_duration_to_hours
@@ -70,49 +70,49 @@ package AppCore::Common;
 		iso_date_to_seconds
 		pretty_timestamp
 		approx_time_ago
-		
-		read_file 
+
+		read_file
 		write_file
-		
+
 		parse_csv
 		parse_email_address_string
-		
-		taint_sql 
-		taint_sys 
-		taint_text 
-		taint_number 
+
+		taint_sql
+		taint_sys
+		taint_text
+		taint_number
 		taint
-		
+
 		guess_title
-		
+
 		MY_LINE
-		SYS_PATH_BASE 
+		SYS_PATH_BASE
 		SYS_PATH_MODULES
 		SYS_PACKAGE_BASE
-		
+
 		timemark
 
 		elide_string
-		
+
 		hsv2rgb
 		random_color_for_key
-		
+
 		debug_sql
 		dump_sth_to_html
-		
+
 		/;
-		
+
 	sub EMAILQUEUE_SPOOL_DIR { '/appcluster/var/spool/emailqueue' }
-	
+
 	sub SYS_PATH_BASE    { AppCore::Config->get("APPCORE_ROOT") }
 	sub SYS_PATH_MODULES { SYS_PATH_BASE . '/modules' }
 	sub SYS_PACKAGE_BASE { 'AppCore::Web::Module' }
-	
+
 	### Section: Bootstrap Library Paths
 	# This adds the ./lib directory under each moduled to @INC so that
 	# other modules can use packages defined by other modules without
 	# having to prefix everything with EAS::Module::$modname::
-	BEGIN 
+	BEGIN
 	{
 		#print STDERR "AppCore::Common: BEGIN 1\n";
 		opendir(DIR, SYS_PATH_MODULES);
@@ -123,18 +123,18 @@ package AppCore::Common;
 	}
 
 	my $GlobalContext;
-	
+
 	sub context
 	{
 		$GlobalContext = AppCore::RunContext->new if !$GlobalContext;
 		return $GlobalContext;
 	}
-	
+
 	sub MY_LINE() {my (undef,$f,$l) = caller(0);"[$f:$l] "}
-	
+
 	sub min{my($a,$b)=@_;$a<$b?$a:$b}
 	sub max{my($a,$b)=@_;$a>$b?$a:$b}
-	
+
 	sub trim_spaces
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -142,7 +142,7 @@ package AppCore::Common;
 		$tmp =~ s/(^\s+|\s+$)//g;
 		return $tmp;
 	}
-	
+
 	sub nice_date
 	{
 		#return '' unless $_[0] ne '';
@@ -158,15 +158,15 @@ package AppCore::Common;
 		}
 		return "$date$h1:$m1:$s1 $a";
 	}
-	
+
 	our %DurationConversion = qw/h 1 d 24 w 168 m 672 y 8760/;
 	our %DurationNames = qw/h hours w weeks m months y years/;
-		
+
 	sub simple_duration_to_hours
 	{
 		my $dur = shift;
 		my ($num,$unit) = $dur =~ /^(\.\d+|\d(?:\.\d+)?)\s*(\w)?\w*$/;
-		
+
 		my $ex = "Example: '4.5d' or '4.5 days'";
 		if(!defined $num)
 		{
@@ -181,49 +181,49 @@ package AppCore::Common;
 		{
 			die "Invalid unit of time '$unit' - valid units are: hours (h), days (d), weeks (w), months (m), or years (y). $ex";
 		}
-		
+
 		my $dur_hours = $DurationConversion{$unit} * $num;
-		
+
 		#print STDERR "Converted '$dur' to $dur_hours hours\n";
-		
+
 		return $dur_hours;
-		
-	
+
+
 	}
-	
+
 	sub humanify_date
 	{
 		my $date = shift;
 		my $return_hash = shift || 0;
-		
+
 		my $return_string = undef;
 		my $data_hash;
-		
-		
+
+
 		eval {
-			
+
 			#$date = '2015-12-16 00:00:00';
-			
+
 			my ($a,$b,$c,$d,$e,$f) = $date =~ /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
-			
+
 			return undef if !$a || !$b || !$c;
-			
+
 			my @months = qw/Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec/;
-			
+
 			my $no_time = $d == 0 && $e == 0 && $f == 0;
-			
+
 			my $delta_date = $no_time ? (split /\s/, $date)[0].' '.(split /\s/, scalar(date()))[1] :  $date;
-			
+
 			my $delta = delta_minutes($delta_date) * -1; # make positive if in the future
-			
+
 			#die Dumper $delta, $months[$b-1], $date;
-			
+
 			my $abs_delta = abs($delta);
-			
+
 			#die Dumper $abs_delta;
-			
+
 			my $category = undef;
-			
+
 			my $just_date = $a.'-'.$b.'-'.$c;
 			if($just_date eq (split /\s/, scalar(date()))[0])
 			{
@@ -232,13 +232,13 @@ package AppCore::Common;
 				{
 					$return_string = 'Today';
 					$delta = 0;
-					
+
 					$category = 'today';
 				}
 				else
 				{
 					$category = 'today_min';
-					
+
 					$return_string = to_delta_string($abs_delta, 1);
 					if($delta < 1) # fix "in 0 minutes"
 					{
@@ -265,7 +265,7 @@ package AppCore::Common;
 			{
 				$category = 'year';
 				$return_string = $months[$b-1].' '.int($c);
-				
+
 				if($delta >= 24 * 60 * 365)
 				{
 					$category = 'year1';
@@ -277,61 +277,61 @@ package AppCore::Common;
 				$category = 'past';
 				$return_string = to_delta_string($abs_delta, 1).' ago';
 			}
-			
+
 			$data_hash = {
 				string => $return_string,
 				delta  => $delta,
 				abs_delta => $abs_delta,
 				category => $category
 			};
-			
+
 			#die Dumper $data_hash;
 		};
-		
+
 		warn $@ if $@;
-		
+
 		return $return_hash ? $data_hash : $return_string;
-		
+
 	}
-	
+
 	sub to_delta_string
 	{
 		my $line = { min => shift };
-		
+
 		my $short_format = shift || 0;
-		
-		if($line->{min} > 60)
+
+		if($line->{min} >= 60)
 		{
 			my $hr = int($line->{min}/60);
 			$line->{min} =  ($line->{min} - $hr*60);
 			$line->{hour} = $hr;
 			$line->{hour_suffix} = ' hr'.($hr>1?'s':'').', ';
-			
-			if($line->{hour} > 24)
+
+			if($line->{hour} >= 24)
 			{
 				my $day = int($line->{hour} / 24);
 				$line->{hour} = ($line->{hour} - $day*24);
 				$line->{hour_suffix} = ' hr'.($line->{hour}>1?'s':'').', ';
 				$line->{day} = $day;
 				$line->{day_suffix} = ' day'.($day>1?'s':'').', ';
-				
-				if($line->{day} > 7)
+
+				if($line->{day} >= 7)
 				{
 					my $week = int($line->{day} / 7);
 					$line->{day} = ($line->{day} - $week*7);
 					$line->{day_suffix} = ' day'.($line->{day}>1?'s':'').', ';
 					$line->{week} = $week;
 					$line->{week_suffix} = ' week'.($week>1?'s':'').', ';
-					
-					if($line->{week} > 4)
+
+					if($line->{week} >= 4)
 					{
 						my $month = int($line->{week} / 4);
 						$line->{week} = ($line->{week} - $month*4);
 						$line->{week_suffix} = ' week'.($line->{week}>1?'s':'').', ';
 						$line->{month} = $month;
 						$line->{month_suffix} = ' month'.($month>1?'s':'').', ';
-						
-						if($line->{month} > 12)
+
+						if($line->{month} >= 12)
 						{
 							my $year = int($line->{month} / 12);
 							$line->{month} = ($line->{month} - $year*12);
@@ -343,14 +343,14 @@ package AppCore::Common;
 				}
 			}
 		}
-		
+
 # 		my $push_key = sub {
 # 			my $key = shift;
 # 			return 0 if ! if $line->{$key};
 # 			push @ago, $line->{$key}.$line->{$key.'_suffix'};
 # 			return scalar @ago;
 # 		};
-# 		
+#
 # 		my @ago;
 # 		if($short_format)
 # 		{
@@ -362,20 +362,20 @@ package AppCore::Common;
 # 			{
 # 				$push_key->($key);
 # 			}
-# 			
+#
 # 			push @ago, int($line->{min}).' min';
 # 		}
-		
+
 		my @ago;
 		foreach my $key (qw/year month week day hour/)
 		{
 			push @ago, $line->{$key}.$line->{$key.'_suffix'} if $line->{$key};
 		}
-		
+
 		push @ago, int($line->{min}).' min';
-		
+
 		my $ago = join '', @ago;
-		
+
 		if($short_format && @ago > 2)
 		{
 			@ago = @ago[0 .. 1];
@@ -383,19 +383,19 @@ package AppCore::Common;
 			$ago =~ s/,\s$//g;
 			#die Dumper \@ago, $ago;
 		}
-		
+
 		$ago =~ s/, 0 min$//g;
 
 		return $ago;
 	}
-	
-	
+
+
 	sub dt_date
 	{
 		my $date = shift || date();
 		my $tz   = shift || 'local';
 		my ($y,$m,$d,$h,$mn,$s) = split/[-\s:]/, $date;
-		
+
 		my %args;
 		$args{year}   = $y  if $y;
 		$args{month}  = $m  if $m;
@@ -404,15 +404,15 @@ package AppCore::Common;
 		$args{minute} = $mn if $mn;
 		$args{second} = $s  if $s;
 		$args{time_zone} = $tz if $tz;
-		
+
 		return DateTime->new(%args);
 	}
-	
+
 	sub utc_date
 	{
 		return DateTime->now( time_zone => 'UTC' )->datetime;
 	}
-	
+
 	sub date #{ my $d = `date`; chomp $d; $d=~s/[\r\n]//g; $d; };
 	{
 		if(@_ == 1) { @_ = (epoch=>shift) }
@@ -424,7 +424,7 @@ package AppCore::Common;
 		my ($sec,$min,$hour) = localtime($x);
 		my $date = "$ty-".rpad($tm).'-'.rpad($td);
 		my $time = rpad($hour).':'.rpad($min).':'.rpad($sec);
-		
+
 		#shift() ? $time : "$date $time";
 		if($args{small})
 		{
@@ -433,7 +433,7 @@ package AppCore::Common;
 			{
 				$hour -= 12;
 				$a = 'p';
-				
+
 				$hour = 12 if $hour == 0;
 			}
 			return int($tm).'/'.int($td).' '.int($hour).':'.rpad($min).$a;
@@ -443,8 +443,8 @@ package AppCore::Common;
 			return $args{array} ? ($date,$time) : "$date $time";
 		}
 	}
-	
-	
+
+
 	# Since learning more perl, I found I probably
 	# could do '$_[0].=$_[1]x$_[2]' but I havn't gotten
 	# around to changing (and testing) this code.
@@ -457,7 +457,7 @@ package AppCore::Common;
 		$_.=$chr while length()<$len;
 		$_;
 	}
-	
+
 	sub rpad
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -467,7 +467,7 @@ package AppCore::Common;
 		$_=$chr.$_ while length()<$len;
 		$_;
 	}
-	
+
 	sub called_from
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -475,15 +475,15 @@ package AppCore::Common;
 		my ($package, $filename,$line) = caller(1);
 		#my (undef,undef,$line) = caller(1);
 		my (undef,undef,undef,$subroutine) = caller(2);
-		
+
 		if($short)
 		{
 			$filename =~ s/^.*\/([^\/]+)/$1/;
 		}
-	
+
 		"$filename:$line / $subroutine()";
 	}
-	
+
 	sub get_stack_trace
 	{
 		my $offset = 1+(shift||0);
@@ -496,7 +496,7 @@ package AppCore::Common;
 			(undef,undef,undef, $subroutine, $hasargs,
 				$wantarray, $evaltext, $is_require, $hints, $bitmask) = caller($x+$offset+1);
 			#print "$x:Base[1]='$tmp' ($package:$line:$subroutine)\n";
-			
+
 			if($filename && $filename ne '')
 			{
 				#print STDERR "\t$x: Called from $filename:$line".($subroutine?" in $subroutine":"")."\n";
@@ -509,50 +509,50 @@ package AppCore::Common;
 		}
 		return $str;
 	}
-	
+
 	sub print_stack_trace
 	{
 		my $x = shift;
 		my $st = get_stack_trace($x+1);
 		print STDERR $st;
 		return $st;
-		
+
 	}
 	sub if_defined { foreach(@_) { return $_ if defined } }
-	
+
 	sub is_print($)
 	{
 		local $_ = ord shift ;
 		return $_ >= 32 && $_ < 126;
 	}
-	
+
 	sub peek{$_[$#_]}
-	
+
 	sub inlist
 	{
 		my $val = shift;
 		my $listref = shift;
-		
+
 		return undef if !defined $val;
-		
+
 		foreach my $item (@$listref)
 		{
 			return 1 if $item && $val && $item eq $val;
 		}
 		return 0;
 	}
-	
-	
+
+
 	sub in_acl_list
 	{
 		my $val = shift;
 		my $valtype = shift || 'empid';
 		my $list = shift;
-		
+
 		my $g = $valtype eq 'group' ? 1:0;
-		
+
 		return undef if !defined $val;
-		
+
 		local $_;
 		foreach (@$list)
 		{
@@ -560,10 +560,10 @@ package AppCore::Common;
 		}
 		return 0;
 	}
-	
-	
+
+
 	# create timestamp down to the second (fmt: YYYY-MM-DD HH:MM:SS)
-	sub stamp 
+	sub stamp
 	{
 		my $ty = ((localtime)[5] + 1900);
 		my $tm =  (localtime)[4] + 1;
@@ -573,16 +573,16 @@ package AppCore::Common;
 		my $time = rpad($hour).':'.rpad($min).':'.rpad($sec);
 		return "$date $time";
 	}
-	
-	sub commify 
+
+	sub commify
 	{
 		local $_  = shift;
 		1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
 		return $_;
 	}
-	
-	
-	sub parse_csv 
+
+
+	sub parse_csv
 	{
 		my $text = shift;      # record containing comma-separated values
 		my @new  = ();
@@ -595,8 +595,8 @@ package AppCore::Common;
 		}gx;
 		push(@new, undef) if substr($text, -1,1) eq ',';
 		return @new;      # list of values that were comma-separated
-	} 
-	
+	}
+
 	sub parse_email_address_string
 	{
 		my $string = shift;
@@ -615,20 +615,20 @@ package AppCore::Common;
 			$name =~ s/(^\s|\s+$)//g;
 			return (guess_title($name), $email);
 		}
-			
+
 	}
 
-	
-	sub date_math 
+
+	sub date_math
 	{
 		my ($date, $days) = @_;
-			
+
 		my ($y,$m,$d) = ( $date =~ /(\d\d\d\d)-(\d\d)-(\d\d)/);
 		my $old = new DateTime(month=>$m,day=>$d,year=>$y);
 		my $n = undef;
-		
+
 		$days = -($old->day_of_week) if $days == 0; # find week start
-		
+
 		if($days > 0)
 		{
 			return $old->add( days => $days )->ymd;
@@ -638,45 +638,45 @@ package AppCore::Common;
 			return $old->subtract( days => -($days) )->ymd;
 		}
 	}
-	
-	
-	
-	
+
+
+
+
 	sub send_email
 	{
 		#my ($list,$subject,$text,$high_import_flag,$from) = @_;
 		shift;
-		
+
 		# Doesn't actually transmit - the transmit() method is called from bin/emailqueue.pl
-		eval 'use AppCore::EmailQueue'; 
-		
+		eval 'use AppCore::EmailQueue';
+
 		AppCore::EmailQueue->send_email(@_);
 
 	}
-	
-	
+
+
 	sub delta_minutes
 	{
 		eval 'use DateTime';
-		
+
 		my $test  = shift;
 		my $test2 = shift || undef;
-		
+
 		my ($a,$b,$c,$d,$e,$f) = $test=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
-		
+
 		return undef if !$a || !$b || !$c;
-		
+
 		#die "Ok";
-		
+
 		$d = 0  if !$d;
 		$d = 23 if $d >= 24;
-		
+
 		$e = 0  if !$e;
 		$e = 59 if $e >= 60;
-		
+
 		$f = 0  if !$f;
 		$f = 59 if $f >= 60;
-		
+
 		my $then = DateTime->new(
 			year      => $a,
 			month     => $b,
@@ -687,10 +687,10 @@ package AppCore::Common;
 			time_zone => 'local'
 		);
 		#$then->add(hours=>6);
-		
+
 		# how many minutes from $test to NOW ?
 		my $dt;
-		
+
 		if(!defined $test2)
 		{
 			$dt = DateTime->now( time_zone => 'local' );# time_zone => 'UTC' );
@@ -699,18 +699,18 @@ package AppCore::Common;
 		else
 		{
 			my ($a,$b,$c,$d,$e,$f) = $test2=~/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/;
-			
+
 			$d = 0  if !$d;
 			$d = 23 if $d >= 24;
-			
+
 			$e = 0  if !$e;
 			$e = 59 if $e >= 60;
-			
+
 			$f = 0  if !$f;
 			$f = 59 if $f >= 60;
-			
+
 			#$dt = DateTime->new(year=>$a,month=>$b,day=>$c,hour=>$d,minute=>$e,second=>$f,time_zone=>'UTC');
-			
+
 			$dt = DateTime->new(
 				year      => $a,
 				month     => $b,
@@ -721,18 +721,18 @@ package AppCore::Common;
 				time_zone => 'local'
 			);
 		}
-		
+
 		#print STDERR "delta_minutes: then:".$then->datetime.", now:".$dt->datetime."\n";
-		
+
 		my $res = $dt->subtract_datetime_absolute($then);
 		return $res->delta_seconds / 60;
 	}
-		
+
 	sub pretty_timestamp
 	{
 		my $time = shift;
 		my @x = $time =~ /(\d+)-(\d+)-(\d+) (\d+):(\d+):(\d+)/;
-		
+
 		my $h = $x[3];
 		my $a = 'am';
 		if($h >= 12)
@@ -741,28 +741,28 @@ package AppCore::Common;
 			$h = 12 if $h == 0;
 			$a = 'pm';
 		}
-		
+
 		# Remove stringified leading zero
 		$x[1] +=0;
-		
+
 		my $yr = substr($x[0],2,2);
-		
+
 		return "$x[1]/$x[2]/$yr ".($h<10?($h+0):$h).":$x[4]$a";
 	}
-	
+
 	sub _unit_divide_if($$$$)
-	{ 
-		my ($new_unit,$val,$x,$unit) = @_; 
+	{
+		my ($new_unit,$val,$x,$unit) = @_;
 		if($$x>$val)
 		{
 			#print STDERR "$$x>$val ...\n";
 			$$x /= $val;
 			$$unit = $new_unit;
-			
+
 			# De-plural if it will round out to "1"
 			$$unit =~ s/s$// if floor($$x) == 1; #$$x > 0 && $$x < 1.5;
-			
-			
+
+
 			#print STDERR "...down to $$x $$unit ---\n";
 			return 0;
 		}
@@ -770,9 +770,9 @@ package AppCore::Common;
 		{
 			#print STDERR "$$x<$val $new_unit, still $$x $$unit /\n";
 			return 1;
-		} 
+		}
 	}
-	
+
 	sub approx_time_ago
 	{
 		my $date = shift;
@@ -789,27 +789,27 @@ package AppCore::Common;
 # 		goto _approx_time_ago_end if _unit_divide_if('millenia',	1000,		\$x, \$unit);
 # 		goto _approx_time_ago_end if _unit_divide_if('eons',	100,		$x, $unit);
 		_approx_time_ago_end:
-		#$x += 0.5 if $x - int($x) >= 0.5; 
+		#$x += 0.5 if $x - int($x) >= 0.5;
 		#$x = int($x); # remove decimals
 		$x = floor($x);
 		#print STDERR "[$orig] Done, returning $x $unit\n";
 		return wantarray ? ($x,$unit) : "$x $unit";
-		
+
 	}
-	
+
 	use POSIX;
 	sub seconds_since
-	{ 
+	{
 		shift if $_[0] eq __PACKAGE__;
 		my $previous_timestamp = shift;
 		return iso_date_to_seconds(date()) - iso_date_to_seconds($previous_timestamp);
 	}
-	
+
 	sub iso_date_to_seconds
 	{
 		shift if $_[0] eq __PACKAGE__;
 		my $datetime = shift;
-	
+
 		my @dash = split(/-/, $datetime);
 		my $year = $dash[0];
 		$year = $year - 1900;
@@ -824,12 +824,12 @@ package AppCore::Common;
 		my $sec = $col[2];
 		my $wday = 0;
 		my $yday = 0;
-	
+
 		my $unixtime = mktime ($sec, $min, $hour, $day, $mon, $year, $wday, $yday);
 		return $unixtime;
 	}
-	
-	
+
+
 	sub taint_sql
 	{
 		my $val = shift;
@@ -840,33 +840,33 @@ package AppCore::Common;
 		$val=~s/(^\s|\s$)//g; # remove spaces at beginnning/end
 		return $val;
 	}
-	
+
 	sub taint_text
 	{
 		my $val = shift;
 		$val =~ s/[^\w\d\_\-\.\!\@\#\$\%\^&*\(\)\'\"\[\]\_\=\+\`\~\,\/\?\:\;\{\}\|\\\s]//g;
 		return $val;
 	}
-	
-	
+
+
 	sub taint
 	{
 		my $val = shift;
 		my $reg = shift;
-		
+
 		$reg = '[^\d]+' if $reg eq '\d';
-		
+
 		$val =~ s/^$reg$//g;
 		return $val;
 	}
-	
+
 	sub taint_number
 	{
 		my $val = shift;
 		$val =~ s/^[^-+\d\.]+$//g;
 		return $val;
 	}
-	
+
 	# Function: guess_title($name)
 	# Static - guess the title for $name. E.g. converts foo_bar or FooBar to 'Foo Bar', quoteestid or quoteest to 'Quote Est.' and a few other minor optimizations.
 	my %TITLE_CACHE;
@@ -892,24 +892,24 @@ package AppCore::Common;
 			$name .= '?' if $name =~ /^is/i;
 			$name =~ s/id$//gi;
 			my $chr = '#';
-			$name =~ s/num$/$chr/gi; 
+			$name =~ s/num$/$chr/gi;
 			$name =~ s/datetime$/Date\/Time/gi;
 			$name =~ s/\best\b/Est./gi;
 		}
-		
+
 		$TITLE_CACHE{$oname} =  $name;
 		#s/id$//g;
 		#s/[_-]/ /g;
 		#s/\best\b/est./g;
 		#s/(^\w|\s\w)/uc($1)/segi;
-		
+
 		return $name;
 	}
-	
+
 	my $uniqueid_counter = 0;
 	sub uniqueid { return 'id'.time().($uniqueid_counter++) }
-	
-	
+
+
 	sub changes_to_html
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -923,11 +923,11 @@ package AppCore::Common;
 			my $val = $changes{$col};
 			my $old_val = undef;
 			($val, $old_val) = @$val if ref $val eq 'ARRAY';
-			
-			if($meta && $meta->{linked} && eval '$ref->get($col)->can("stringify")') 
+
+			if($meta && $meta->{linked} && eval '$ref->get($col)->can("stringify")')
 			{
 				$val = $ref->get($col)->stringify;
-				
+
 				if($old_val)
 				{
 					undef $@;
@@ -935,18 +935,18 @@ package AppCore::Common;
 					warn "Error stringifying old value: $@" if $@;
 				}
 			}
-			
+
 			if($old_val && $meta->{linked})
 			{
 				eval '$old_val = $meta->{linked}->retrieve($old_val)';
 			}
-			
+
 			#print STDERR "Debug: col($col),title(".($title?$title:'(undef)')."),linked(".($title?$title->{linked}:'(undef)')."): changes($changes{$col})\n";
-			
+
 			my $title = $meta ? ($meta->{title} ? $meta->{title} : AppCore::Common::guess_title($col)) : AppCore::Common::guess_title($col);
-			
-			"<span class='field_title'>$title</span> ". 
-				(defined $old_val ? 
+
+			"<span class='field_title'>$title</span> ".
+				(defined $old_val ?
 					(	"from ".
 						'"<span class="field_value">'.(ref $old_val && eval '$old_val->can("stringify")' ? $old_val->stringify : $old_val).'</span>" '.
 						"to ")
@@ -955,10 +955,10 @@ package AppCore::Common;
 		} @keys;
 		@out = grep {$_} @out;
 		my $str = @out > 2 ? (join(', ', @out[0..$#out-1]).', and '.$out[$#out]) : join(' and ',@out);
-		
+
 		return $str;
 	}
-	
+
 	sub read_file
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -968,8 +968,8 @@ package AppCore::Common;
 		close(FILE);
 		return join '', @buffer;
 	}
-	
-	
+
+
 	sub write_file
 	{
 		shift if $_[0] eq __PACKAGE__;
@@ -978,7 +978,7 @@ package AppCore::Common;
 		print FILE join '', @_;
 		close(FILE);
 	}
-	
+
 	use Time::HiRes qw/time/;
 	our $LastTime = 0;
 	our $TimeSum;
@@ -997,7 +997,7 @@ package AppCore::Common;
 			print STDERR "[TIME MARK] ".sprintf('%04d',int($diff * 1000))."ms (".sprintf('%04d',int($TimeSum* 1000))."ms total) ".($title?" - $title":"")." at ".called_from(1)."\n";
 			#print STDERR "[TIME MARK] ".sprintf('%02f',($diff ))."s (".sprintf('%02f',($TimeSum ))."s total) ".($title?" - $title":"")." at ".called_from(1)."\n";
 		}
-		
+
 		$LastTime = time;
 	}
 
@@ -1073,30 +1073,30 @@ package AppCore::Common;
 	}
 
 	srand(time);
-	
+
 	sub debug_sql
 	{
 		my $sql = shift;
 		my @args = @_;
-		
+
 		my $dbh = AppCore::DBI->dbh;
 		my $get_arg = sub {
 			my $x = shift(@args);
 			return $x eq '' || $x =~ /[^\d]/ ? $dbh->quote($x) : $x;
 		};
-		
+
 		$sql =~ s/\?/$get_arg->()/segi;
 		return $sql;
 	}
-	
+
 	sub dump_sth_to_html
 	{
 		my $sth = shift;
-		
+
 		my @result;
 		push @result, $_ while $_ = $sth->fetchrow_hashref;
 		my @keys = sort { $a cmp $b } keys %{$result[0] || {}};
-		
+
 		my @html;
 		push @html, "<table border=1 class='table table-responsive table-striped table-hover'>";
 		push @html, "<thead>";
@@ -1114,7 +1114,7 @@ package AppCore::Common;
 		}
 		push @html, "</tbody>";
 		push @html, "</table>";
-		
+
 		return join "\n", @html;
 	}
 };
