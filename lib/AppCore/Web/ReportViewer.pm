@@ -16,6 +16,7 @@ package AppCore::Web::ReportViewer;
 {
 	use strict;
 
+	use AppCore::DBI;
 	use AppCore::Web::Common;
 	use AppCore::Web::Form;
 
@@ -64,6 +65,16 @@ package AppCore::Web::ReportViewer;
 
 	sub set_file{ shift->set_template(@_) }
 
+	# Set dbi_class to control what AppCore::DBI-derived class gets called for
+	# bulk_execute(). This allows you to customize the database connection
+	# by configuring the dbh() of the given class to return the desired handle
+	# when called internally by bulk_execute()
+	sub set_dbi_class {
+		my ($self, $dbi_class) = @_;
+		$self->{dbi_class} = $dbi_class;
+	}
+
+	sub dbi_class { shift->{dbi_class} || 'AppCore::DBI' }
 
 	sub x
 	{
@@ -309,7 +320,7 @@ package AppCore::Web::ReportViewer;
 					{
 						# Count rows
 						my ($listref, $last_sth) =
-							AppCore::DBI->bulk_execute(
+							$self->dbi_class->bulk_execute(
 								$report->{count_sql},
 								@sql_args
 							);
@@ -371,8 +382,10 @@ package AppCore::Web::ReportViewer;
 					}
 				}
 
+				# die AppCore::Common::debug_sql($report_sql, @sql_args) if AppCore::Common->context->current_user->id == 1;
+
 				my ($listref, $last_sth) =
-					AppCore::DBI->bulk_execute(
+					$self->dbi_class->bulk_execute(
 						$report_sql,
 						@sql_args
 					);

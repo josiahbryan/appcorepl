@@ -3501,8 +3501,9 @@ package AppCore::DBI;
 				if(!exists $fields{$key})
 				{
 					# Decide if this is safe
-					push @alter, 'ALTER TABLE `'.$table.'` DROP `'.$key.'`';
-					push @changed_columns, {col=>$key,type=>'DROP'};
+# 					push @alter, 'ALTER TABLE `'.$table.'` DROP `'.$key.'`';
+					warn "Drop may be needed on $table.$key ...not dropping to protect data\n";
+# 					push @changed_columns, {col=>$key,type=>'DROP'};
 				}
 			}
 

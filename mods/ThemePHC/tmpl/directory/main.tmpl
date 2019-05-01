@@ -265,7 +265,7 @@ div.dlinfo td.text img
 			<tr>
 				<td class=text valign=top>
 					<tmpl_unless is_mobile><center><a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'><img src='%%modpath%%/images/pdf.gif' border=0></a></center></tmpl_unless>
-					<b>Did you know?</b> You can download a <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>printable version of the directory</a>! Just <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>click here</a> to download and print off your own 22-page full-color copy!
+					<b>Did you know?</b> You can download a <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>printable version of the directory</a>! Just <a href='/connect/directory/pdf/PHC_FamilyDirectory.pdf'>click here</a> to download and print off your own multi-page full-color copy!
 				</td>
 			</tr>
 		</table>
@@ -485,10 +485,105 @@ div.dlinfo td.text img
 // 		});
 		//setTimeout(pagingFunc,500);
 		</tmpl_unless>
+		
+		
+		var closestToOffset = function($collection, offset) {
+			var el = null,
+				elOffset,
+				x = offset.left,
+				y = offset.top,
+				distance,
+				dx,
+				dy,
+				minDistance;
+			
+			$collection.each(function() {
+			
+				elOffset = $(this).offset();
+
+				if (
+					(x >= elOffset.left)  && (x <= elOffset.right) &&
+					(y >= elOffset.top)   && (y <= elOffset.bottom)
+				) {
+					el = $(this);
+					return false;
+				}
+
+				var offsets = [[elOffset.left, elOffset.top], [elOffset.right, elOffset.top], [elOffset.left, elOffset.bottom], [elOffset.right, elOffset.bottom]];
+				for (off in offsets)
+				{
+					dx = offsets[off][0] - x;
+					dy = offsets[off][1] - y;
+					distance = Math.sqrt((dx*dx) + (dy*dy));
+					if (minDistance === undefined || distance < minDistance) {
+						minDistance = distance;
+						el = $(this);
+					}
+				}
+			});
+			return el;
+		}
+
+		var nameHideTid;
+		
+		$(window).bind('scroll', function(){
+			
+			clearTimeout(nameHideTid);
+			$('.scroll-name-display').show();
+			
+			var y = $(window).scrollTop(),
+				x = $(window).width() / 2;
+				max = $(document.body).height(),
+				percent = y/max,
+				newTop = $(window).height() * percent;
+			
+			var $collection = $('.family_divider');
+			
+			//$('.scroll-name-display').animate('top', newTop+'px');
+			$('.scroll-name-display').css('top',newTop+'px');
+			
+			//console.log("max:",max, ", y:",y, "perc:",percent,", newTop:",newTop);
+			
+			var $el = closestToOffset($collection, { left: x, top: y });
+			
+			//console.log("Closest: ",$el,", last:", $el.attr('data-last'));
+			
+			var str = $el.attr('data-last') + "";
+			str = str.substring(0,3) + (str.length > 3 ? '...' : '');
+			
+			$('.scroll-name-display').html(str);
+			
+			nameHideTid = setTimeout(function() {
+				$('.scroll-name-display').fadeOut('fast');
+			}, 2500);
+		});
+		
+		setTimeout(function() {
+			$('.scroll-name-display').hide();
+		}, 100);
+		
 	
 	});
 	
 	</script>
+	
+	<div class='scroll-name-display'>
+	</div>
+	
+	<style>
+	.scroll-name-display {
+		position: fixed;
+		right: 0;
+		top: 0;
+		width: 3em;
+		padding: .5em;
+		color: white;
+		font-size: 32px;
+		font-weight: bold;
+		background: rgba(0,0,0,0.75);
+		font-family: Monospace;
+	}
+	</style>
 	
 	<!--
 	<div class='paging top'>
