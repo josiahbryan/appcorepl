@@ -257,7 +257,7 @@ package AppCore::Web::ReportViewer;
 		# Since the list hook gets the report, it can change columns (or anything else) as desired
 		if(ref $report->{report_mudge_hook} eq 'CODE')
 		{
-			$report->{report_mudge_hook}->($report, $arg_data_complete, $arg_hash);
+			$report->{report_mudge_hook}->($report, $arg_data_complete, $arg_hash, \@arg_data);
 		}
 
 
@@ -298,6 +298,8 @@ package AppCore::Web::ReportViewer;
 						: $_->{value} }
 					grep { !$_->{exclude_from_sql} }
 					@arg_data;
+
+				# die Dumper [\@sql_args, \@arg_data];
 
 				# Make a copy of the SQL string because if pagination is enabled,
 				# we'll add a 'LIMIT' to it, and we don't want that LIMIT
