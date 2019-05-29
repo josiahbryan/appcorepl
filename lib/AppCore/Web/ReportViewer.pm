@@ -809,6 +809,10 @@ package AppCore::Web::ReportViewer;
 				}
 			}
 
+			# Sanitize worksheet name and remove extra spaces
+			$worksheet_name =~ s/[^A-Za-z0-9-\s]//g;
+			$worksheet_name =~ s/\s{2,}/ /g;
+
 			my $worksheet = $workbook->add_worksheet(substr($worksheet_name,0,30));
 
 			#  Add and define a format
